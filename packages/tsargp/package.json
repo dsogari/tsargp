@@ -52,7 +52,7 @@
   },
   "scripts": {
     "prepare": "bun run dist",
-    "dist": "tsc -b && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "dist": "tsc -b && tsc -b examples && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "browser": {
     "fs": false

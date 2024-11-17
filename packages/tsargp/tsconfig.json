@@ -6,6 +6,5 @@
     "removeComments": true,
     "preserveConstEnums": true
   },
-  "references": [{ "path": "./examples" }],
   "include": ["./lib/enums.ts"]
 }
