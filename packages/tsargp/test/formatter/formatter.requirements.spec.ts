@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options, OptionRegistry, req } from '../../lib/options';
-import { AnsiFormatter } from '../../lib/formatter';
+import { HelpFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
-describe('AnsiFormatter', () => {
+describe('HelpFormatter', () => {
   describe('format', () => {
     describe('a forward requirement is specified', () => {
       it('handle an option that requires the presence or absence of another', () => {
@@ -21,7 +21,7 @@ describe('AnsiFormatter', () => {
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
-        const message = new AnsiFormatter(registry.options).format();
+        const message = new HelpFormatter(registry.options).format();
         expect(message.wrap()).toEqual(
           `  -f           Requires -s.\n  -s  <param>  Requires no -f.\n`,
         );
@@ -59,7 +59,7 @@ describe('AnsiFormatter', () => {
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
-        const message = new AnsiFormatter(registry.options).format();
+        const message = new HelpFormatter(registry.options).format();
         expect(message.wrap()).toEqual(
           `  -f    Requires (-s or (no -a and (-s != {a: 1, b: [2]} or -a != [1, 'a', {a: false}]))).\n`,
         );
@@ -81,7 +81,7 @@ describe('AnsiFormatter', () => {
         options.flag.requires.toString = () => 'fcn';
         options.single.requires.item.toString = () => 'fcn';
         const registry = new OptionRegistry(options);
-        const message = new AnsiFormatter(registry.options).format();
+        const message = new HelpFormatter(registry.options).format();
         expect(message.wrap()).toEqual(
           `  -f           Requires <fcn>.\n  -s  <param>  Requires not <fcn>.\n`,
         );
@@ -103,7 +103,7 @@ describe('AnsiFormatter', () => {
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
-        const message = new AnsiFormatter(registry.options).format();
+        const message = new HelpFormatter(registry.options).format();
         expect(message.wrap()).toEqual(
           `  -f           Required if -s.\n  -s  <param>  Required if no -f.\n`,
         );
@@ -141,7 +141,7 @@ describe('AnsiFormatter', () => {
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
-        const message = new AnsiFormatter(registry.options).format();
+        const message = new HelpFormatter(registry.options).format();
         expect(message.wrap()).toEqual(
           `  -f    Required if (-s or (no -a and (-s != {a: 1, b: [2]} or -a != [1, 'a', {a: false}]))).\n`,
         );
@@ -163,7 +163,7 @@ describe('AnsiFormatter', () => {
         options.flag.requiredIf.toString = () => 'fcn';
         options.single.requiredIf.item.toString = () => 'fcn';
         const registry = new OptionRegistry(options);
-        const message = new AnsiFormatter(registry.options).format();
+        const message = new HelpFormatter(registry.options).format();
         expect(message.wrap()).toEqual(
           `  -f           Required if <fcn>.\n  -s  <param>  Required if not <fcn>.\n`,
         );

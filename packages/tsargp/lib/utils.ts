@@ -560,7 +560,7 @@ export function streamWidth(stream: 'stdout' | 'stderr'): number | undefined {
 
 /**
  * @param width The terminal width (in number of columns)
- * @returns True if styles should be omitted from terminal strings
+ * @returns True if styles should be omitted from ANSI strings
  * @see https://clig.dev/#output
  */
 export function omitStyles(width: number): boolean {

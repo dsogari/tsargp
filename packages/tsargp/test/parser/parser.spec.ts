@@ -2,7 +2,6 @@ import { describe, expect, it, jest } from 'bun:test';
 import { ErrorMessage } from '../../lib/styles';
 import { type Options, OptionValues } from '../../lib/options';
 import { ArgumentParser } from '../../lib/parser';
-import { AnsiFormatter, JsonFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -48,24 +47,11 @@ describe('ArgumentParser', () => {
     });
 
     describe('parsing a help option', () => {
-      it('throw an empty message when there are no formats', () => {
-        const options = {
-          help: {
-            type: 'help',
-            names: ['-h'],
-            sections: [{ type: 'groups' }],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(/^$/);
-      });
-
       it('save the help message when the option explicitly asks so', () => {
         const options = {
           help: {
             type: 'help',
             names: ['-h'],
-            formats: { ansi: AnsiFormatter },
             sections: [{ type: 'groups' }],
             saveMessage: true,
           },
@@ -74,7 +60,7 @@ describe('ArgumentParser', () => {
         expect(parser.parse([])).resolves.toEqual({ help: undefined });
         expect(parser.parse(['-h'])).resolves.toEqual({
           help: expect.objectContaining({
-            message: expect.stringMatching(`  -h    Available formats are {'ansi'}.`),
+            message: expect.stringMatching(`  -h`),
           }),
         });
       });
@@ -90,7 +76,6 @@ describe('ArgumentParser', () => {
             type: 'help',
             names: ['-h'],
             synopsis: 'the help option',
-            formats: { ansi: AnsiFormatter },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
@@ -106,7 +91,6 @@ describe('ArgumentParser', () => {
             type: 'help',
             names: ['-h'],
             group: 'group  heading',
-            formats: { ansi: AnsiFormatter },
             sections: [
               { type: 'usage', title: 'usage  heading' },
               { type: 'groups', noWrap: true },
@@ -118,26 +102,6 @@ describe('ArgumentParser', () => {
         expect(parser.parse([])).resolves.not.toHaveProperty('help');
         expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(
           `usage heading\n\nprog [-h]\n\ngroup  heading\n\n-h`,
-        );
-      });
-
-      it('throw a help message with a JSON format', () => {
-        const options = {
-          flag: {
-            type: 'flag',
-            names: ['-f', '--flag'],
-          },
-          help: {
-            type: 'help',
-            names: ['-h'],
-            formats: { ansi: AnsiFormatter, json: JsonFormatter },
-            useFormat: true,
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        expect(parser.parse(['-h', 'json'])).rejects.toThrow(
-          `[{"type":"flag","names":["-f","--flag"],"preferredName":"-f"},` +
-            `{"type":"help","names":["-h"],"formats":{},"useFormat":true,"preferredName":"-h"}]`,
         );
       });
 
@@ -158,7 +122,6 @@ describe('ArgumentParser', () => {
           help: {
             type: 'help',
             names: ['-h'],
-            formats: { ansi: AnsiFormatter },
             sections: [{ type: 'groups' }],
             useFilter: true,
           },
@@ -174,7 +137,6 @@ describe('ArgumentParser', () => {
           help: {
             type: 'help',
             names: ['-h'],
-            formats: { ansi: AnsiFormatter },
             sections: [{ type: 'groups' }],
             useNested: true,
             useFilter: true,
@@ -201,7 +163,6 @@ describe('ArgumentParser', () => {
               help: {
                 type: 'help',
                 names: ['-h'],
-                formats: { ansi: AnsiFormatter },
                 sections: [{ type: 'groups' }],
                 useFilter: true,
               },

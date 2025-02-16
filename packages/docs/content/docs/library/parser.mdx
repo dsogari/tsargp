@@ -6,8 +6,8 @@ import { Callout } from 'nextra/components';
 
 # Parser
 
-The `ArgumentParser` class is the main library component. It can be instantiated with a set of
-option _definitions_ and provides methods to parse command-line arguments into option values.
+The `ArgumentParser` component handles parsing of command-line arguments. It can be instantiated
+with a set of option _definitions_ and provides methods to parse arguments into option values.
 
 ## Option values
 
@@ -190,7 +190,7 @@ the [custom callbacks]. It contains details about the current argument sequence 
   The option parameters preceding the word being completed, if any. Only available to the [complete
   callback].
 - `format` -
-  A utility function to create [terminal strings] with a formatted message. Only available to the
+  A utility function to create [ANSI strings] with a formatted message. Only available to the
   [parse callback].
 
 ### Word completion
@@ -335,12 +335,11 @@ they would pollute the output of process management utilities such as `ps`.
 [positional marker]: options#positional--marker
 
 {/* styles references */}
-[message]: styles#terminal-messages
 [custom phrases]: styles#custom-phrases
 [message configuration]: styles#message-configuration
 [warning messages]: styles#warning-message
 [completion message]: styles#completion-message
-[terminal strings]: styles#terminal-strings
+[ANSI strings]: styles#ansi-strings
 
 {/* formatter references */}
 [usage section]: formatter#usage-section

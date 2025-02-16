@@ -6,35 +6,13 @@ import { Callout } from 'nextra/components';
 
 # Formatter
 
-The `HelpFormatter` is an interface for components that handle formatting of help messages. Concrete
-classes that implement it can be instantiated with a set of option _definitions_ and provide methods
-to format help messages.
-
-## Help format
-
-There are four concrete classes of formatter, each one handling a different help message format:
-
-- `AnsiFormatter` -
-  formats help messages in ANSI format, i.e., they may contain escape sequences and are meant to be
-  printed in a terminal
-- `JsonFormatter` -
-  formats help messages in JSON format, i.e., they are meant to be consumed by introspection tools
-  and other applications
-- `CsvFormatter` -
-  formats help messages in CSV format, i.e., they are meant to be transformed and exchanged with
-  other applications
-- `MdFormatter` -
-  formats help messages in Markdown format, i.e., they are meant to be processed by documentation
-  tools, or to be versioned with the code
-
-<Callout type="warning">
-  Everything contained in this page relates to the `AnsiFormatter` class.
-</Callout>
+The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set
+of option _definitions_ and provide methods to render help messages in ANSI format.
 
 ## Help message
 
-Internally, the help message is a list of [terminal strings] that may contain control sequences and
-are meant to be printed in a terminal. Visually, it can be divided into the following pieces of
+Internally, the help message consists of [ANSI strings] that may contain control/escape sequences
+and are meant to be printed in a terminal. Visually, it can be divided into the following pieces of
 content:
 
 - section - a group of text lines, like the section of a document
@@ -304,9 +282,7 @@ They are summarized in the table below:
 | `requiredIf` | The option's conditional requirements                                        | `'Required if #0.'{:ts}`                                                         | `#0` = the requirements        |
 | `default`    | The option's default value                                                   | `'Defaults to #0.'{:ts}`                                                         | `#0` = the default value       |
 | `useNested`  | Whether a help option uses the next argument as the name of a nested command | `'Uses the next argument as the name of a nested command.'{:ts}`                 |                                |
-| `useFormat`  | Whether a help option uses the next argument as the name of a help format    | `'Uses the next argument as the name of a help format.'{:ts}`                    |                                |
 | `useFilter`  | Whether a help option uses the remaining arguments as option filter          | `'Uses the remaining arguments as option filter.'{:ts}`                          |                                |
-| `formats`    | The available help formats of a help option                                  | `'Available formats are #0.'{:ts}`                                               | `#0` = the help formats        |
 | `deprecated` | The option's deprecation notice                                              | `'Deprecated for #0.'{:ts}`                                                      | `#0` = the deprecation notice  |
 | `link`       | The option's external resource hyperlink                                     | `'Refer to #0 for details.'{:ts}`                                                | `#0` = the hyperlink           |
 
@@ -318,12 +294,8 @@ The `items` property specifies the kinds of help items that should be displayed 
 descriptions, and in which order. It is an array whose values can be one of the enumerators from
 `HelpItem`. The default is to print all items in the order listed in the [help phrases] table.
 
-<Callout type="info">Help items are only rendered in help messages in ANSI format.</Callout>
-
 <Callout type="default">
-  You might want to use this to limit the amount of information, especially if you intend to export
-  the help message in either CSV or Markdown format. In these formats, a table column is rendered
-  for each help item, regardless of whether it has information or not.
+  You might want to use this to limit the amount of information in the help message.
 </Callout>
 
 ### Option filter
@@ -361,6 +333,6 @@ multiple patterns are provided, any matched one will suffice to include an optio
 [inline parameters]: parser#inline-parameters
 
 {/* styles references */}
-[terminal strings]: styles#terminal-strings
+[ANSI strings]: styles#ansi-strings
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration

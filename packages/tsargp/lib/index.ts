@@ -12,10 +12,9 @@ export {
   bg8,
   ul8,
   ul,
-  TerminalString,
+  AnsiString,
   AnsiMessage,
   ErrorMessage,
-  JsonMessage,
   TextMessage,
   WarnMessage,
 } from './styles.js';

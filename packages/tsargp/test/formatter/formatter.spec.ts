@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, PartialFormatterConfig } from '../../lib/options';
-import { AnsiFormatter } from '../../lib/formatter';
+import { HelpFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
-describe('AnsiFormatter', () => {
+describe('HelpFormatter', () => {
   describe('format', () => {
     it('handle zero options', () => {
-      const formatter = new AnsiFormatter({});
+      const formatter = new HelpFormatter({});
       expect(formatter.format().wrap()).toEqual('');
     });
 
@@ -19,7 +19,7 @@ describe('AnsiFormatter', () => {
           group: 'group',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format('group');
+      const message = new HelpFormatter(options).format('group');
       expect(message.wrap()).toEqual(`  -f\n`);
     });
 
@@ -39,7 +39,7 @@ describe('AnsiFormatter', () => {
         },
       } as const satisfies Options;
       const config: PartialFormatterConfig = { descr: { absolute: true }, filter: ['flag'] };
-      const message = new AnsiFormatter(options, config).format();
+      const message = new HelpFormatter(options, config).format();
       expect(message.wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
     });
 
@@ -59,7 +59,7 @@ describe('AnsiFormatter', () => {
         },
       } as const satisfies Options;
       const config: PartialFormatterConfig = { items: [], filter: ['-f', 'sing'] };
-      const message = new AnsiFormatter(options, config).format();
+      const message = new HelpFormatter(options, config).format();
       expect(message.wrap()).toEqual(`  -f\n  -s  <param>\n`);
     });
 
@@ -69,29 +69,15 @@ describe('AnsiFormatter', () => {
           type: 'help',
           names: ['-h'],
           useNested: true,
-          useFormat: true,
           useFilter: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -h    ` +
           `Uses the next argument as the name of a nested command. ` +
-          `Uses the next argument as the name of a help format. ` +
           `Uses the remaining arguments as option filter.\n`,
       );
-    });
-
-    it('handle help formats', () => {
-      const options = {
-        help: {
-          type: 'help',
-          names: ['-h'],
-          formats: { ansi: AnsiFormatter },
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -h    Available formats are {'ansi'}.\n`);
     });
 
     it('handle a function option', () => {
@@ -101,7 +87,7 @@ describe('AnsiFormatter', () => {
           names: ['-f'],
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
     });
 
@@ -112,7 +98,7 @@ describe('AnsiFormatter', () => {
           names: ['-c'],
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -c  ...\n`);
     });
 
@@ -124,7 +110,7 @@ describe('AnsiFormatter', () => {
           required: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -f    Always required.\n`);
     });
 
@@ -136,7 +122,7 @@ describe('AnsiFormatter', () => {
           link: new URL('https://dsogari.github.io/tsargp/docs'),
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -f    Refer to https://dsogari.github.io/tsargp/docs for details.\n`,
       );
@@ -150,7 +136,7 @@ describe('AnsiFormatter', () => {
           deprecated: 'reason',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -f    Deprecated for reason.\n`);
     });
 
@@ -162,7 +148,7 @@ describe('AnsiFormatter', () => {
           cluster: 'fF',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
     });
 
@@ -174,7 +160,7 @@ describe('AnsiFormatter', () => {
           stdin: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -f    Reads data from standard input.\n`);
     });
 
@@ -186,7 +172,7 @@ describe('AnsiFormatter', () => {
           sources: ['VAR', new URL('file://path')],
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -f    Reads environment data from VAR, file://path/.\n`);
     });
 
@@ -198,7 +184,7 @@ describe('AnsiFormatter', () => {
           positional: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
     });
 
@@ -210,7 +196,7 @@ describe('AnsiFormatter', () => {
           positional: '--',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
       );
@@ -224,7 +210,7 @@ describe('AnsiFormatter', () => {
           separator: ',',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -a  [<param>...]  Values can be delimited with ','. Accepts multiple parameters.\n`,
       );
@@ -238,7 +224,7 @@ describe('AnsiFormatter', () => {
           append: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -a  [<param>...]  Accepts multiple parameters. Can be specified multiple times.\n`,
       );

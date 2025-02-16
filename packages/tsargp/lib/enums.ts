@@ -213,10 +213,6 @@ export const enum HelpItem {
    */
   useNested,
   /**
-   * Whether a help option uses the next argument as the name of a help format.
-   */
-  useFormat,
-  /**
    * Whether a help option uses the remaining arguments as option filter.
    */
   useFilter,
@@ -224,10 +220,6 @@ export const enum HelpItem {
    * The option's treatment of inline parameters.
    */
   inline,
-  /**
-   * The available help formats of a help option.
-   */
-  formats,
 }
 
 /**

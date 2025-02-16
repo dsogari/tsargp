@@ -488,39 +488,16 @@ two sections are included:
 - [usage section] - with `'Usage:'{:ts}` as heading, indented by 2 spaces
 - [groups section] - with `'Options:'{:ts}` as the default group heading
 
-#### Help formats
-
-The `formats` attribute specifies the available [help formatter] classes that can be used to render
-the message. It is an object that maps a format name to a formatter constructor. Its first entry
-will be used as the default format. If not provided, an empty message will be thrown instead.
-
-<Callout type="info">
-  Previous versions of the library used the ANSI formatter by default. However, importing its module
-  incurred considerable overhead in terms of code size for applications that did not use help
-  options at all.
-</Callout>
-
 #### Enable nested command
 
 The `useNested` attribute is an opt-in feature that allows the next argument to be used as the name
 of a nested [command] for which the help message should be assembled. For example, the invocation
 `cli --help cmd` would throw the help of the `cmd` command, if it exists.
 
-If a nested command with the specified name does not exist or does not have a help option, the
-argument may still be considered as either a help format (if [enable help format] is set) or an
-option filter (if [enable option filter] is set).
-
-<Callout type="default">
-  The nested help option may also enable formats and filters. In this case, an invocation like `cli
-  --help cmd json -f` would throw the help of the `cmd` command in JSON format, filtered by `-f`.
+<Callout type="info">
+  If a nested command with the specified name does not exist or does not have a help option, the
+  argument may still be considered as an option filter when [enable option filter] is set.
 </Callout>
-
-#### Enable help format
-
-The `useFormat` attribute is an opt-in feature that allows the next argument to be used as the name
-of a help format with which the help message should be assembled. For example, the invocation
-`cli --help json` would render the message in JSON format, provided that a formatter class for this
-format is available.
 
 #### Enable option filter
 
@@ -528,6 +505,11 @@ The `useFilter` attribute is an opt-in feature that allows the remaining argumen
 [option filter]. For example, the invocation `cli --help flag` would only include in the help
 message those options whose names, synopsis or environment data sources match the regex
 `/flag/i{:ts}`.
+
+<Callout type="default">
+  This feature may be used in conjunction with [enable nested command]. For example, the invocation
+  `cli --help cmd -f` would throw the help message of the `cmd` command, filtered by option `-f`.
+</Callout>
 
 ### Version option
 
@@ -558,8 +540,8 @@ subsequently exit the parsing loop. The option value can be either the result of
 parsed values themselves (by default).
 
 <Callout type="info">
-  When [word completion] is in effect, the callback will _not_ be called, since the completion will
-  have taken place before it gets a chance to execute.
+  When [word completion] is in effect, the parse callback will _not_ be called, since the completion
+  will have taken place before it gets a chance to execute.
 </Callout>
 
 <Callout type="default">
@@ -814,9 +796,7 @@ _not_ look for delimiters when trying to form an [argument sequence].
 {/* help attributes */}
 [formatter configuration]: #formatter-configuration
 [help sections]: #help-sections
-[help formats]: #help-formats
 [enable nested command]: #enable-nested-command
-[enable help format]: #enable-help-format
 [enable option filter]: #enable-option-filter
 
 {/* version attributes */}
@@ -854,10 +834,10 @@ _not_ look for delimiters when trying to form an [argument sequence].
 
 {/* formatter references */}
 [help formatter]: formatter
+[output format]: formatter#output-format
 [help items]: formatter#help-items
 [help item]: formatter#help-items
 [help entry]: formatter#help-entries
-[help format]: formatter#help-format
 [help sections]: formatter#help-sections
 [usage section]: formatter#usage-section
 [groups section]: formatter#groups-section

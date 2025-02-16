@@ -66,17 +66,17 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 - check if inline parameters are disallowed for an option (e.g., `-se=one`)
 - check if inline parameters are required for an option (e.g., `-ne 1`)
 
-### Help format and filters
+### Option filters
 
 - check if the help option accepts option filters (e.g., `-h -b -ne`)
-- check if the help option accepts a help format (e.g., `-h json`)
 - check if the help option accepts a nested command name (e.g., `-h hello`)
-- check if the all of the above can be combined (e.g., `-h hello json -h`)
+- check if the above can be combined (e.g., `-h hello -h`)
 
 ### Miscellaneous
 
 - check if the `-f` option can be specified without a parameter, and negated with `--no-flag`
 - check if the `-b` option can be specified in combination with required options
+- check if the help option accepts an output format (e.g., `-h =json`)
 
 ### Nested commands
 

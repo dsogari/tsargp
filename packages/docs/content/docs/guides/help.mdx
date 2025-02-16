@@ -95,10 +95,10 @@ Refer to [90m<website>[39m for support.
 ## Help command
 
 <Callout type="default">
-  Since this guide was written, the [enable nested] attribute for help options has been introduced.
-  It supersedes help commands and offers a more convenient way to achieve what is described below.
-  However, if you need an [enumeration] constraint for the available command names, then what
-  follows might still be relevant.
+  Since this guide was first written, the [enable nested command] attribute has been introduced. It
+  supersedes help commands and offers a more convenient way to achieve what is described below.
+  However, if you need [parameter choices] for the available command names, then what follows might
+  still be relevant.
 </Callout>
 
 Another way to offer help is by defining a "help" command. This method still uses the help option
@@ -174,14 +174,14 @@ The `progName` configuration flag is set in order to avoid appending the script 
 process title.
 
 <Callout type="info">
-  Keep in mind that, when word completion is in effect, the [command callback] will _not_ be called.
-  Thus, if the callback _does_ get executed, you need not worry about the [`compIndex`] flag for the
+  Keep in mind that, when word completion is in effect, the command's [parse callback] will _not_ be
+  executed. Conversely, if it _is_ executed, you need not worry about the [`compIndex`] flag for the
   delegated `parse` call.
 </Callout>
 
-[enumeration]: ../library/options#enumeration
-[enable nested]: ../library/options#enable-nested
+[parameter choices]: ../library/options#parameter-choices
+[parse callback]: ../library/options#parse-callback
 [help option]: ../library/options#help-option
 [command option]: ../library/options#command-option
-[command callback]: ../library/options#command-callback
+[nested options callback]: ../library/options#nested-options--callback
 [`compIndex`]: ../library/parser#completion-index

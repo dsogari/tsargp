@@ -1,5 +1,4 @@
 import type { Options, OptionValues } from 'tsargp';
-import { AnsiFormatter } from 'tsargp';
 
 /**
  * The option definitions for a multi-argument operation.
@@ -127,7 +126,6 @@ const mainOpts = {
     type: 'help',
     names: ['help'],
     synopsis: 'Prints this help message.',
-    formats: { ansi: AnsiFormatter },
   },
   ...addOpts,
   ...subOpts,

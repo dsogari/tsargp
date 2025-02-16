@@ -120,14 +120,14 @@ The `ul` constant holds the styles of underlined text:
 - `dotted` - dotted underline
 - `dashed` - dashed underline
 
-## Terminal strings
+## ANSI strings
 
-The `TerminalString` class is an internal component that handles the construction of strings that
+The `AnsiString` class is an internal component that handles the construction of strings that
 can be printed on a terminal. It has methods to split, append and wrap strings, with or without
 control sequences, and is used by the library in different places:
 
 - by both the [parser] and [validator], to create error and warning messages
-- by the [formatter], to build help messages
+- by the [help formatter], to build help messages
 
 The main logic implemented in this class is divided into _splitting_ and _wrapping_, as is explained
 in the next sections.
@@ -144,7 +144,7 @@ and processed by a formatting callback. This is used by the library in different
 
 - by the both the [parser] and [validator], to produce error and warning messages based on
   configured [error phrases]
-- by the [formatter], to assemble help items from configured [help phrases]
+- by the [help formatter], to assemble help items from configured [help phrases]
 
 This particular feature is only available in _phrases_, not in text attributes of option definitions.
 Specifiers are meant to be replaced with a value (or values, in case of arrays). The available ones
@@ -155,7 +155,7 @@ are:
 - `n` - a number value
 - `r` - a regular expression
 - `m` - a symbol value (e.g., option name)
-- `t` - a terminal string
+- `t` - a ANSI string
 - `u` - a URL hyperlink
 - `a` - an array value
 - `o` - an object value
@@ -172,7 +172,7 @@ or help item.
 Text can contain inline styles. This applies as well to phrases as to text attributes, which the
 formatter splits into words before adding to the help message.
 
-When splitting text, the terminal string will try its best to preserve styles. However, if you find
+When splitting text, the ANSI string will try its best to preserve styles. However, if you find
 some corner case that is not currently covered by our unit tests, please submit a [bug report].
 
 <Callout type="warning">
@@ -211,47 +211,43 @@ Text is wrapped according to a configured _width_, i.e., the number of terminal 
 limit each line of text.
 
 When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being
-redirected), the terminal string will avoid wrapping and will suppress some control sequences that
+redirected), the ANSI string will avoid wrapping and will suppress some control sequences that
 would otherwise be used to render the text in a terminal.
 
 The following features are supported in text wrapping.
 
 #### Indentation level
 
-A terminal string optionally has an indentation level, i.e., the starting column of the text
-content, relative to the first terminal column.
+A ANSI string optionally has an indentation level, i.e., the starting column of the text content,
+relative to the first terminal column.
 
-When wrapping text to the desired width, the terminal string will attempt to respect this setting,
+When wrapping text to the desired width, the ANSI string will attempt to respect this setting,
 but if the desired width does not accommodate the length of the largest word while respecting the
 string's indentation level, it will instead wrap lines relatively to the first terminal column.
 
 #### Text alignment
 
-A terminal string has an optional flag that indicates whether the text should be aligned to the
+A ANSI string has an optional flag that indicates whether the text should be aligned to the
 terminal's right boundary when being wrapped. This feature is used by the formatter in the help
 message's [description column].
 
 ## Messages
 
-There are different kinds of text content that an application might print in a terminal. We call
-them "messages" and provide a specific class for each kind of message that the library may produce.
+There are different kinds of content that an application might want to print in a terminal. We call
+them "messages" and provide a specific class for each kind of message that the library can produce.
+
 For convenience, all message classes have a `toString` method and a `message` property, both of
-which can be used to obtain a normal `string{:ts}`.
+which can be used to obtain a traditional `string{:ts}` message. However, each class uses a default
+terminal width to render the resulting string. The various classes are described below.
 
 <Callout type="default">
-  All messages produced by the library are instances of one of the classes described below. So you
-  can check the kind of a captured message through `instanceof{:ts}`.
+  All messages produced by the library are instances of one of these classes. So you can check the
+  kind of a captured message through `instanceof{:ts}`.
 </Callout>
-
-### User-facing messages
-
-User-facing messages are meant to be consumed by humans. Each message class of this kind uses a
-default terminal width to render the resulting string when calling `toString` or using the `message`
-property. They are described below.
 
 #### ANSI message
 
-The `AnsiMessage` is a base class that wraps a list of terminal strings.
+The `AnsiMessage` is a base class that wraps a list of ANSI strings.
 
 The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment
 variable (if present), or the `columns` property of the standard _output_ stream (i.e.,
@@ -263,7 +259,7 @@ equivalent.
   the associated stream will not have a `columns` property, thus defaulting to zero.
 </Callout>
 
-This class provides an additional `wrap` method to get a normal string. It accepts two optional
+This class provides an additional `wrap` method to get a traditional string. It accepts two optional
 parameters:
 
 - `width` - the desired terminal width (or zero to avoid wrapping)
@@ -277,17 +273,17 @@ The default value of `emitStyles` depends on a few environment variables:
 
 Generally, you should not alter the returned string after being wrapped, as this will mess up the
 disposition of text in the terminal. If you do need to, you can _prepend_ additional text ending
-with a line feed character `'\n'{:ts}`, or _append_ text starting with a line feed, as this will
+with a line feed character (`'\n'{:ts}`), or _append_ text starting with a line feed, as this will
 preserve the disposition of wrapped text.
 
 <Callout type="default">
-  Alternatively, you can retrieve the underlying terminal strings from the list and manipulate them
+  Alternatively, you can retrieve the underlying ANSI strings from the list and manipulate them
   before converting the message to string.
 </Callout>
 
 #### Warning message
 
-The `WarnMessage` class is a specialization of the ANSI message.
+The `WarnMessage` class is a specialization of the ANSI message, intended for warnings.
 
 The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment
 variable (if present), or the `columns` property of the standard _error_ stream (i.e.,
@@ -296,35 +292,14 @@ or equivalent.
 
 #### Error message
 
-The `ErrorMessage` class is a specialization of a warning message that actually derives from the
-standard `Error` class. It should be printed with `console.error{:ts}` or equivalent.
-
-#### Version message
-
-A version message is a plain `string{:ts}`, so it has no wrapping. However, it may be remodeled in
-future versions of the library to accommodate new features. It should be printed with
-`console.log{:ts}` or equivalent.
-
-### Machine-readable messages
-
-Machine-readable messages are meant to be consumed by computers. They are described below.
-
-#### JSON message
-
-The `JsonMessage` class represents a message in JSON format. It is intended for consumption by
-introspection tools and other text-processing applications. It should be printed with
-`console.log{:ts}` or equivalent.
+The `ErrorMessage` class is a specialization of the standard `Error` class. It has the same
+semantics as the warning message, so it should be printed with `console.error{:ts}` or equivalent.
 
 #### Text message
 
-The `TextMessage` class represents a list of text lines. It is used by the library in two places:
-
-- by the [parser] to throw [completion words], in which case it is meant to be consumed by the
-  completion builtins
-- by the [formatter] to create help messages in either CSV or Markdown [format]
-
-This message produces a string with lines separated by line feeds, and should be printed with
-`console.log{:ts}` or equivalent.
+The `TextMessage` class represents a list of text lines with no escape sequences or wrapping. It
+produces a string with lines separated by line feeds, and should be printed with `console.log{:ts}`
+or equivalent.
 
 ### Message configuration
 
@@ -385,6 +360,7 @@ string quoting. It has the following optional properties, whose keys are enumera
 {/* options references */}
 [option synopsis]: options#option-synopsis
 [deprecation notice]: options#deprecation-notice
+[version messages]: options#version-option
 
 {/* parser references */}
 [parser]: parser
@@ -395,8 +371,7 @@ string quoting. It has the following optional properties, whose keys are enumera
 [error phrases]: validator#error-phrases
 
 {/* formatter references */}
-[formatter]: formatter
-[format]: formatter#help-format
+[help formatter]: formatter
 [help phrases]: formatter#help-phrases
 [help section]: formatter#help-sections
 [description column]: formatter#description-column
@@ -404,4 +379,4 @@ string quoting. It has the following optional properties, whose keys are enumera
 
 {/* styles references */}
 [bug report]: https://github.com/dsogari/tsargp/issues/new?labels=bug
-[SGR]: https://www.wikiwand.com/en/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
+[SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters

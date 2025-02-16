@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../lib/options';
-import { AnsiFormatter } from '../../lib/formatter';
+import { HelpFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
-describe('AnsiFormatter', () => {
+describe('HelpFormatter', () => {
   describe('format', () => {
     it('handle a single-valued option with a regex constraint', () => {
       const options = {
@@ -14,7 +14,7 @@ describe('AnsiFormatter', () => {
           regex: /\d+/s,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -s  <param>  Values must match the regex /\\d+/s.\n`);
     });
 
@@ -26,7 +26,7 @@ describe('AnsiFormatter', () => {
           choices: ['one', 'two'],
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -s  <param>  Values must be one of {'one', 'two'}.\n`);
     });
 
@@ -38,7 +38,7 @@ describe('AnsiFormatter', () => {
           choices: { one: 'two' },
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -s  <param>  Values must be one of {'one'}.\n`);
     });
 
@@ -50,7 +50,7 @@ describe('AnsiFormatter', () => {
           limit: 2,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -a  [<param>...]  Accepts multiple parameters. Element count is limited to 2.\n`,
       );
@@ -64,7 +64,7 @@ describe('AnsiFormatter', () => {
           unique: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(options).format();
+      const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -a  [<param>...]  Accepts multiple parameters. Duplicate values will be removed.\n`,
       );
