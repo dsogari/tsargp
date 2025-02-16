@@ -1,0 +1,187 @@
+---
+title: Help - Guides - Docs
+---
+
+import { Callout } from 'nextra/components';
+
+# Help
+
+In this guide, we will be creating a command-line interface that provides different help mechanisms
+for end-users.
+
+## Help option
+
+The most straightforward way to provide help for your CLI is by declaring a [help option]. In its
+simplest form, it has the following definition:
+
+```ts
+import { type Options } from 'tsargp';
+export default {
+  help: {
+    type: 'help',
+    names: ['--help'],
+    synopsis: 'Prints this help message.',
+  },
+} as const satisfies Options;
+```
+
+You can increment it with an introduction, usage and footer:
+
+```ts
+import { type Options, style, fg } from 'tsargp';
+export default {
+  help: {
+    // ...
+    sections: [
+      {
+        type: 'text',
+        text: 'A command-line interface for <purpose>.',
+      },
+      {
+        type: 'usage',
+      },
+      {
+        type: 'groups',
+        title: 'Options:', // heading for the default option group
+        style: style(tf.underlined), // underlined option group headings
+      },
+      {
+        type: 'text',
+        text: `Refer to ${style(fg.brightBlack)}<website>${style(fg.default)} for support.`,
+      },
+    ],
+  },
+} as const satisfies Options;
+```
+
+You may also want to customize the formatter configuration, e.g.:
+
+```ts
+import { type Options, HelpItem, style, tf } from 'tsargp';
+export default {
+  help: {
+    // ...
+    config: {
+      names: { indent: 4 }, // indent option names by 4 spaces
+      descr: { breaks: 1 }, // line feed before option descriptions
+      param: { hidden: true }, // hide option parameter/examples
+      items: [HelpItem.desc, HelpItem.required, HelpItem.deprecated],
+      phrases: {
+        [HelpItem.desc]: '💡 %t', // option synopsis with emoji
+      },
+    },
+    styles: {
+      descr: style(tf.italic), // italic description for this option
+    },
+  },
+} as const satisfies Options;
+```
+
+Which, when invoked with `--help`, would render something like:
+
+```ansi
+A command-line interface for <purpose>.
+
+cli [[95m--help[0m]
+
+[4mOptions:[0m
+
+    [95m--help[0m
+              [3m💡 Prints this help message.[0m
+
+Refer to [90m<website>[39m for support.
+```
+
+## Help command
+
+<Callout type="default">
+  Since this guide was written, the [enable nested] attribute for help options has been introduced.
+  It supersedes help commands and offers a more convenient way to achieve what is described below.
+  However, if you need an [enumeration] constraint for the available command names, then what
+  follows might still be relevant.
+</Callout>
+
+Another way to offer help is by defining a "help" command. This method still uses the help option
+from the previous example, but increments it by providing a new syntax to obtain help for _nested_
+commands. For example, to present help for a nested command called `cmd`, the following invocations
+would be equivalent:
+
+```sh
+cli help cmd
+cli cmd --help
+```
+
+To achieve this, we have to define a [command option]. We can start with the definitions for the
+nested commands' options:
+
+```ts
+import type { Options } from 'tsargp';
+
+const cmd1Opts = {
+  // option definitions for cmd1, including its 'help'...
+} as const satisfies Options;
+
+const cmd2Opts = {
+  // option definitions for cmd2, including its 'help'...
+} as const satisfies Options;
+
+const helpOpts = {
+  name: {
+    type: 'single',
+    synopsis: 'The name of the nested command.',
+    choices: ['cmd1', 'cmd2'], // the names of nested commands
+    preferredName: 'command name', // appears in error messages
+    positional: true,
+    required: true, // error if called without a command name
+  },
+} as const satisfies Options;
+```
+
+Now we can define the main command options:
+
+```ts
+import type { Options, OptionValues } from 'tsargp';
+import { ArgumentParser } from 'tsargp';
+export default {
+  cmd1: {
+    type: 'command',
+    names: ['cmd1'],
+    options: cmd1Opts,
+    // ...
+  },
+  cmd2: {
+    type: 'command',
+    names: ['cmd2'],
+    options: cmd2Opts,
+    // ...
+  },
+  help: {
+    type: 'command',
+    names: ['help'],
+    synopsis: 'Prints the help message of a nested command.',
+    options: helpOpts,
+    async parse(param) {
+      const vals = param as OptionValues<typeof helpOpts>;
+      const opts = vals.name === 'cmd1' ? cmd1Opts : cmd2Opts;
+      // this will throw the help message
+      await new ArgumentParser(opts).parse(['--help'], { progName: '' });
+    },
+  },
+} as const satisfies Options;
+```
+
+The `progName` configuration flag is set in order to avoid appending the script name twice to the
+process title.
+
+<Callout type="info">
+  Keep in mind that, when word completion is in effect, the [command callback] will _not_ be called.
+  Thus, if the callback _does_ get executed, you need not worry about the [`compIndex`] flag for the
+  delegated `parse` call.
+</Callout>
+
+[enumeration]: ../library/options#enumeration
+[enable nested]: ../library/options#enable-nested
+[help option]: ../library/options#help-option
+[command option]: ../library/options#command-option
+[command callback]: ../library/options#command-callback
+[`compIndex`]: ../library/parser#completion-index

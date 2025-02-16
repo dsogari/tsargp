@@ -28,7 +28,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     env:
-      package: '@trulysimple/tsargp-docs'
+      package: '@tsargp/docs'
     steps:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1

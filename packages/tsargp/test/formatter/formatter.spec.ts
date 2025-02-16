@@ -1,29 +1,29 @@
-import { describe, expect, it } from 'vitest';
-import type { Options, FormatterConfig } from '../../lib';
-import { AnsiFormatter, OptionValidator } from '../../lib';
-import '../utils.spec'; // initialize globals
+import { describe, expect, it } from 'bun:test';
+import type { Options, PartialFormatterConfig } from '../../lib/options';
+import { AnsiFormatter } from '../../lib/formatter';
+
+process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
   describe('format', () => {
-    it('should handle zero options', () => {
-      const formatter = new AnsiFormatter(new OptionValidator({}));
+    it('handle zero options', () => {
+      const formatter = new AnsiFormatter({});
       expect(formatter.format().wrap()).toEqual('');
     });
 
-    it('should handle a flag option with a group', () => {
+    it('handle a flag option with a group', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option',
+          names: ['-f'],
           group: 'group',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format('group');
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option\n`);
+      const message = new AnsiFormatter(options).format('group');
+      expect(message.wrap()).toEqual(`  -f\n`);
     });
 
-    it('should filter options using a single regular expression', () => {
+    it('filter options using a single regular expression', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -31,230 +31,216 @@ describe('AnsiFormatter', () => {
         },
         flag2: {
           type: 'flag',
-          desc: 'A flag option',
+          synopsis: 'A flag option',
         },
-        boolean: {
-          type: 'boolean',
-          names: ['-b', '--boolean'],
+        single: {
+          type: 'single',
+          names: ['-s'],
         },
       } as const satisfies Options;
-      const validator = new OptionValidator(options);
-      const config: FormatterConfig = { descr: { absolute: true }, filter: ['flag'] };
-      const message = new AnsiFormatter(validator, config).format();
+      const config: PartialFormatterConfig = { descr: { absolute: true }, filter: ['flag'] };
+      const message = new AnsiFormatter(options, config).format();
       expect(message.wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
     });
 
-    it('should filter an option with environment variable using multiple regular expressions', () => {
+    it('filter an option with environment variable using multiple regular expressions', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', '--flag'],
+          names: ['-f'],
         },
         flag2: {
           type: 'flag',
-          desc: 'A flag option',
         },
-        boolean: {
-          type: 'boolean',
-          names: ['-b'],
-          envVar: 'BOOLEAN',
+        single: {
+          type: 'single',
+          names: ['-s'],
+          sources: ['SINGLE'],
         },
       } as const satisfies Options;
-      const validator = new OptionValidator(options);
-      const config: FormatterConfig = { items: [], filter: ['-f', 'bool'] };
-      const message = new AnsiFormatter(validator, config).format();
-      expect(message.wrap()).toEqual(`  -f, --flag\n  -b          <boolean>\n`);
+      const config: PartialFormatterConfig = { items: [], filter: ['-f', 'sing'] };
+      const message = new AnsiFormatter(options, config).format();
+      expect(message.wrap()).toEqual(`  -f\n  -s  <param>\n`);
     });
 
-    it('should handle a help option', () => {
+    it('handle a help option', () => {
       const options = {
         help: {
           type: 'help',
-          names: ['-h', '--help'],
-          desc: 'A help option.',
+          names: ['-h'],
           useNested: true,
           useFormat: true,
           useFilter: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
+      const message = new AnsiFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -h, --help    A help option. ` +
+        `  -h    ` +
           `Uses the next argument as the name of a nested command. ` +
           `Uses the next argument as the name of a help format. ` +
           `Uses the remaining arguments as option filter.\n`,
       );
     });
 
-    it('should handle a function option', () => {
+    it('handle help formats', () => {
+      const options = {
+        help: {
+          type: 'help',
+          names: ['-h'],
+          formats: { ansi: AnsiFormatter },
+        },
+      } as const satisfies Options;
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -h    Available formats are {'ansi'}.\n`);
+    });
+
+    it('handle a function option', () => {
       const options = {
         function: {
           type: 'function',
-          names: ['-f', '--function'],
-          desc: 'A function option',
+          names: ['-f'],
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --function    A function option\n`);
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
     });
 
-    it('should handle a command option', () => {
+    it('handle a command option', () => {
       const options = {
         command: {
           type: 'command',
-          names: ['-f', '--command'],
-          desc: 'A command option',
+          names: ['-c'],
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --command  ...  A command option\n`);
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -c  ...\n`);
     });
 
-    it('should handle a flag option with negation names', () => {
+    it('handle an option that is always required', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          negationNames: ['-no-f', '', '--no-flag'],
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -f, --flag    A flag option. Can be negated with -no-f, --no-flag.\n`,
-      );
-    });
-
-    it('should handle a flag option that is always required', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
+          names: ['-f'],
           required: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Always required.\n`);
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -f    Always required.\n`);
     });
 
-    it('should handle a flag option with an external link', () => {
+    it('handle a flag option with an external reference', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          link: new URL('https://trulysimple.dev/tsargp/docs'),
+          names: ['-f'],
+          link: new URL('https://dsogari.github.io/tsargp/docs'),
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
+      const message = new AnsiFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -f, --flag    A flag option. Refer to https://trulysimple.dev/tsargp/docs for details.\n`,
+        `  -f    Refer to https://dsogari.github.io/tsargp/docs for details.\n`,
       );
     });
 
-    it('should handle a flag option deprecated for a reason', () => {
+    it('handle a flag option deprecated for a reason', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
+          names: ['-f'],
           deprecated: 'reason',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Deprecated for reason.\n`);
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -f    Deprecated for reason.\n`);
     });
 
-    it('should handle a flag option with cluster letters', () => {
+    it('handle a flag option with cluster letters', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          clusterLetters: 'fF',
+          names: ['-f'],
+          cluster: 'fF',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -f, --flag    A flag option. Can be clustered with 'fF'.\n`,
-      );
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
     });
 
-    it('should handle a boolean option with an environment variable', () => {
+    it('handle a flag option that reads data from standard input', () => {
       const options = {
-        boolean: {
-          type: 'boolean',
-          names: ['-b', '--boolean'],
-          desc: 'A boolean option.',
-          envVar: 'VAR',
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          stdin: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -b, --boolean  <boolean>  A boolean option. Can be specified through the VAR environment variable.\n`,
-      );
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -f    Reads data from standard input.\n`);
     });
 
-    it('should handle a string option that accepts positional arguments', () => {
+    it('handle a flag option with an environment variable', () => {
       const options = {
-        string: {
-          type: 'string',
-          names: ['-s', '--string'],
-          desc: 'A string option.',
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          sources: ['VAR', new URL('file://path')],
+        },
+      } as const satisfies Options;
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -f    Reads environment data from VAR, file://path/.\n`);
+    });
+
+    it('handle a single-valued option that accepts positional arguments', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
           positional: true,
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -s, --string  <string>  A string option. Accepts positional parameters.\n`,
-      );
+      const message = new AnsiFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
     });
 
-    it('should handle a number option that accepts positional arguments after marker', () => {
+    it('handle a single-valued option that accepts positional arguments after marker', () => {
       const options = {
-        number: {
-          type: 'number',
-          names: ['-n', '--number'],
-          desc: 'A number option.',
+        single: {
+          type: 'single',
+          names: ['-s'],
           positional: '--',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
+      const message = new AnsiFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -n, --number  <number>  A number option. Accepts positional parameters that may be preceded by --.\n`,
+        `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
       );
     });
 
-    it('should handle a delimited strings option that can be specified multiple times', () => {
+    it('handle an array-valued option whose parameters can be delimited', () => {
       const options = {
-        strings: {
-          type: 'strings',
-          names: ['-ss', '--strings'],
-          desc: 'A strings option.',
-          append: true,
+        array: {
+          type: 'array',
+          names: ['-a'],
           separator: ',',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
+      const message = new AnsiFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -ss, --strings  <strings>  A strings option. Values are delimited by ','. May be specified multiple times.\n`,
+        `  -a  [<param>...]  Values can be delimited with ','. Accepts multiple parameters.\n`,
       );
     });
 
-    it('should handle a delimited numbers option that can be specified multiple times', () => {
+    it('handle an array-valued option that can be specified multiple times', () => {
       const options = {
-        numbers: {
-          type: 'numbers',
-          names: ['-ns', '--numbers'],
-          desc: 'A numbers option.',
+        array: {
+          type: 'array',
+          names: ['-a'],
           append: true,
-          separator: ',',
         },
       } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
+      const message = new AnsiFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -ns, --numbers  <numbers>  A numbers option. Values are delimited by ','. May be specified multiple times.\n`,
+        `  -a  [<param>...]  Accepts multiple parameters. Can be specified multiple times.\n`,
       );
     });
   });

@@ -1,7 +1,9 @@
 .husky
 .gitignore
 .prettierignore
-*.lockb
+*.lock
 *.toml
+*.txt
+*.svg
 CODEOWNERS
 LICENSE

@@ -1,284 +1,173 @@
-import { describe, expect, it } from 'vitest';
-import { type Options, AnsiFormatter, OptionValidator, req } from '../../lib';
-import '../utils.spec'; // initialize globals
+import { describe, expect, it } from 'bun:test';
+import { type Options, OptionRegistry, req } from '../../lib/options';
+import { AnsiFormatter } from '../../lib/formatter';
+
+process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
   describe('format', () => {
-    it('should handle an option that requires the presence of another', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requires: 'required',
-        },
-        required: {
-          type: 'boolean',
-          names: ['-req'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Requires -req.\n`);
-    });
+    describe('a forward requirement is specified', () => {
+      it('handle an option that requires the presence or absence of another', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requires: 'single',
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            requires: req.not('flag'),
+          },
+        } as const satisfies Options;
+        const registry = new OptionRegistry(options);
+        const message = new AnsiFormatter(registry.options).format();
+        expect(message.wrap()).toEqual(
+          `  -f           Requires -s.\n  -s  <param>  Requires no -f.\n`,
+        );
+      });
 
-    it('should handle an option that requires the absence of another', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requires: req.not('required'),
-        },
-        required: {
-          type: 'boolean',
-          names: ['-req'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Requires no -req.\n`);
-    });
-
-    it('should handle an option that requires options with specific values using expressions', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requires: req.one(
-            {
-              flag2: undefined,
-              boolean: null,
-            },
-            req.all(
+      it('handle a requirement with specific values using expressions', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requires: req.one(
               {
-                flag2: false,
-                boolean: true,
+                single: undefined,
               },
-              req.not({
-                string: 'a',
-                number: 1,
-                strings: ['a', 'b'],
-                numbers: [1, 2],
-              }),
+              req.all(
+                {
+                  array: null,
+                },
+                req.not({
+                  single: { a: 1, b: [2] },
+                  array: [1, 'a', { a: false }],
+                }),
+              ),
             ),
-          ),
-        },
-        flag2: {
-          type: 'flag',
-          names: ['-f2'],
-          hide: true,
-        },
-        boolean: {
-          type: 'boolean',
-          names: ['-b'],
-          hide: true,
-        },
-        string: {
-          type: 'string',
-          names: ['-s'],
-          hide: true,
-        },
-        number: {
-          type: 'number',
-          names: ['-n'],
-          hide: true,
-        },
-        strings: {
-          type: 'strings',
-          names: ['-ss'],
-          hide: true,
-        },
-        numbers: {
-          type: 'numbers',
-          names: ['-ns'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -f, --flag    A flag option. Requires ((-f2 and no -b) or ((-f2 == false and -b == true) and (-s != 'a' or -n != 1 or -ss != ['a', 'b'] or -ns != [1, 2]))).\n`,
-      );
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            group: null,
+          },
+          array: {
+            type: 'array',
+            names: ['-a'],
+            group: null,
+          },
+        } as const satisfies Options;
+        const registry = new OptionRegistry(options);
+        const message = new AnsiFormatter(registry.options).format();
+        expect(message.wrap()).toEqual(
+          `  -f    Requires (-s or (no -a and (-s != {a: 1, b: [2]} or -a != [1, 'a', {a: false}]))).\n`,
+        );
+      });
+
+      it('handle an option with a requirement callback', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requires: () => true,
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            requires: req.not(() => true),
+          },
+        } as const satisfies Options;
+        options.flag.requires.toString = () => 'fcn';
+        options.single.requires.item.toString = () => 'fcn';
+        const registry = new OptionRegistry(options);
+        const message = new AnsiFormatter(registry.options).format();
+        expect(message.wrap()).toEqual(
+          `  -f           Requires <fcn>.\n  -s  <param>  Requires not <fcn>.\n`,
+        );
+      });
     });
 
-    it('should handle an option with a forward requirement callback', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requires: () => true,
-        },
-      } as const satisfies Options;
-      options.flag.requires.toString = () => 'fcn';
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Requires <fcn>.\n`);
-    });
+    describe('a conditional requirement is specified', () => {
+      it('handle an option that is required if another is present or absent', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requiredIf: 'single',
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            requiredIf: req.not('flag'),
+          },
+        } as const satisfies Options;
+        const registry = new OptionRegistry(options);
+        const message = new AnsiFormatter(registry.options).format();
+        expect(message.wrap()).toEqual(
+          `  -f           Required if -s.\n  -s  <param>  Required if no -f.\n`,
+        );
+      });
 
-    it('should handle an option with a negated forward requirement callback', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requires: req.not(() => true),
-        },
-      } as const satisfies Options;
-      options.flag.requires.item.toString = () => 'fcn';
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Requires not <fcn>.\n`);
-    });
-
-    it('should handle an option that is required if another is present', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requiredIf: 'other',
-        },
-        other: {
-          type: 'boolean',
-          names: ['-req'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Required if -req.\n`);
-    });
-
-    it('should handle an option that is required if another is absent', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requiredIf: req.not('other'),
-        },
-        other: {
-          type: 'boolean',
-          names: ['-req'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Required if no -req.\n`);
-    });
-
-    it('should handle an option that is required if others are present or absent', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requiredIf: { other1: undefined, other2: null },
-        },
-        other1: {
-          type: 'boolean',
-          names: ['-req1'],
-          hide: true,
-        },
-        other2: {
-          type: 'boolean',
-          names: ['-req2'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -f, --flag    A flag option. Required if (-req1 and no -req2).\n`,
-      );
-    });
-
-    it('should handle an option that is required if other options have specific values using expressions', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requiredIf: req.one(
-            {
-              flag2: undefined,
-              boolean: null,
-            },
-            req.all(
+      it('handle a requirement with specific values using expressions', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requiredIf: req.one(
               {
-                flag2: false,
-                boolean: true,
+                single: undefined,
               },
-              req.not({
-                string: 'a',
-                number: 1,
-                strings: ['a', 'b'],
-                numbers: [1, 2],
-              }),
+              req.all(
+                {
+                  array: null,
+                },
+                req.not({
+                  single: { a: 1, b: [2] },
+                  array: [1, 'a', { a: false }],
+                }),
+              ),
             ),
-          ),
-        },
-        flag2: {
-          type: 'flag',
-          names: ['-f2'],
-          hide: true,
-        },
-        boolean: {
-          type: 'boolean',
-          names: ['-b'],
-          hide: true,
-        },
-        string: {
-          type: 'string',
-          names: ['-s'],
-          hide: true,
-        },
-        number: {
-          type: 'number',
-          names: ['-n'],
-          hide: true,
-        },
-        strings: {
-          type: 'strings',
-          names: ['-ss'],
-          hide: true,
-        },
-        numbers: {
-          type: 'numbers',
-          names: ['-ns'],
-          hide: true,
-        },
-      } as const satisfies Options;
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(
-        `  -f, --flag    A flag option. Required if ((-f2 and no -b) or ((-f2 == false and -b == true) and (-s != 'a' or -n != 1 or -ss != ['a', 'b'] or -ns != [1, 2]))).\n`,
-      );
-    });
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            group: null,
+          },
+          array: {
+            type: 'array',
+            names: ['-a'],
+            group: null,
+          },
+        } as const satisfies Options;
+        const registry = new OptionRegistry(options);
+        const message = new AnsiFormatter(registry.options).format();
+        expect(message.wrap()).toEqual(
+          `  -f    Required if (-s or (no -a and (-s != {a: 1, b: [2]} or -a != [1, 'a', {a: false}]))).\n`,
+        );
+      });
 
-    it('should handle an option with a conditional requirement callback', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requiredIf: () => true,
-        },
-      } as const satisfies Options;
-      options.flag.requiredIf.toString = () => 'fcn';
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Required if <fcn>.\n`);
-    });
-
-    it('should handle an option with a negated conditional requirement callback', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f', '--flag'],
-          desc: 'A flag option.',
-          requiredIf: req.not(() => true),
-        },
-      } as const satisfies Options;
-      options.flag.requiredIf.item.toString = () => 'fcn';
-      const message = new AnsiFormatter(new OptionValidator(options)).format();
-      expect(message.wrap()).toEqual(`  -f, --flag    A flag option. Required if not <fcn>.\n`);
+      it('handle an option with a requirement callback', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requiredIf: () => true,
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            requiredIf: req.not(() => true),
+          },
+        } as const satisfies Options;
+        options.flag.requiredIf.toString = () => 'fcn';
+        options.single.requiredIf.item.toString = () => 'fcn';
+        const registry = new OptionRegistry(options);
+        const message = new AnsiFormatter(registry.options).format();
+        expect(message.wrap()).toEqual(
+          `  -f           Required if <fcn>.\n  -s  <param>  Required if not <fcn>.\n`,
+        );
+      });
     });
   });
 });

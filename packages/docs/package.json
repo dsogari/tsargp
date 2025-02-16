@@ -1,12 +1,9 @@
 {
-  "name": "@trulysimple/tsargp-docs",
-  "version": "0.4.6",
+  "name": "@tsargp/docs",
+  "version": "1.0.0",
   "description": "Documentation for tsargp",
-  "homepage": "https://trulysimple.dev/tsargp/docs",
+  "homepage": "https://dsogari.github.io/tsargp/docs",
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "keywords": [
     "docs"
   ],
@@ -15,33 +12,33 @@
     "dist"
   ],
   "repository": {
-    "url": "git+https://github.com/trulysimple/tsargp.git",
+    "url": "git+https://github.com/dsogari/tsargp.git",
     "directory": "packages/docs"
   },
   "devDependencies": {
-    "@codemirror/lang-javascript": "^6.2.0",
-    "@next/third-parties": "^14.2.0",
+    "@codemirror/lang-javascript": "^6.2.3",
+    "@next/third-parties": "^15.1.7",
     "@svgr/webpack": "^8.1.0",
-    "@tsconfig/bun": "^1.0.0",
+    "@tsconfig/bun": "^1.0.7",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-web-links": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
-    "codemirror": "^6.0.0",
+    "codemirror": "^6.0.1",
+    "local-web-server": "^5.4.0",
     "lz-string": "^1.5.0",
-    "next": "^14.2.0",
-    "nextra": "^2.13.0",
-    "nextra-theme-docs": "^2.13.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "serve": "^14.2.0",
+    "next": "^15.1.7",
+    "nextra": "^4.2.11",
+    "nextra-theme-docs": "^4.2.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsargp": "workspace:*",
-    "typedoc": "^0.25.0",
-    "xterm-readline": "^1.1.0"
+    "typedoc": "^0.27.7",
+    "xterm-readline": "^1.1.2"
   },
   "scripts": {
     "prepublishOnly": "bun run dist",
     "dev": "next",
     "dist": "typedoc && next build",
-    "serve": "ln -snf \"`pwd`/dist\" dist/tsargp && serve dist"
+    "serve": "ln -snf \"`pwd`/dist\" dist/tsargp && ws -d dist"
   }
 }

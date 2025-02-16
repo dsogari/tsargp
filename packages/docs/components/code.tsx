@@ -1,7 +1,9 @@
+'use client';
+
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import React, { createRef } from 'react';
+import React, { createRef, type JSX } from 'react';
 import {
   compressToEncodedURIComponent as compress,
   decompressFromEncodedURIComponent as decompress,
@@ -38,7 +40,7 @@ export default function Code(props: Props): JSX.Element {
     if (anchorRef.current) {
       const url = window.location.origin + window.location.pathname + '#' + getHash();
       const query = `?labels=bug&template=bug-report.yml&playground=${encodeURIComponent(url)}`;
-      const href = `https://github.com/trulysimple/tsargp/issues/new${query}`;
+      const href = `https://github.com/dsogari/tsargp/issues/new${query}`;
       anchorRef.current.setAttribute('href', href);
     }
   };

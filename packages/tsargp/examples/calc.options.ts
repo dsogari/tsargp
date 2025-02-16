@@ -1,4 +1,5 @@
 import type { Options, OptionValues } from 'tsargp';
+import { AnsiFormatter } from 'tsargp';
 
 /**
  * The option definitions for a multi-argument operation.
@@ -8,10 +9,11 @@ const multiOpts = {
    * A numbers option that receives unlimited positional arguments.
    */
   numbers: {
-    type: 'numbers',
+    type: 'array',
     preferredName: 'numbers',
-    desc: 'The numbers to operate on.',
+    synopsis: 'The numbers to operate on.',
     default: [],
+    parse: Number,
     positional: true,
     group: 'Arguments:',
   },
@@ -42,9 +44,9 @@ const addOpts = {
   add: {
     type: 'command',
     names: ['add'],
-    desc: 'A command that adds multiple numbers.',
+    synopsis: 'A command that adds multiple numbers.',
     options: (): Options => ({ ...multiOpts, ...mainOpts }),
-    exec({ param }): number {
+    parse(param): number {
       const vals = param as OptionValues<typeof multiOpts & typeof mainOpts>;
       const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? 0;
       return vals.numbers.reduce((acc, val) => acc + val, other);
@@ -62,9 +64,9 @@ const subOpts = {
   sub: {
     type: 'command',
     names: ['sub'],
-    desc: 'A command that subtracts two numbers.',
+    synopsis: 'A command that subtracts two numbers.',
     options: (): Options => ({ ...binaryOpts, ...mainOpts }),
-    exec({ param }): number {
+    parse(param): number {
       const vals = param as OptionValues<typeof binaryOpts & typeof mainOpts>;
       const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? NaN;
       const [a, b] = vals.numbers;
@@ -83,9 +85,9 @@ const multOpts = {
   mult: {
     type: 'command',
     names: ['mult'],
-    desc: 'A command that multiplies multiple numbers.',
+    synopsis: 'A command that multiplies multiple numbers.',
     options: (): Options => ({ ...multiOpts, ...mainOpts }),
-    exec({ param }): number {
+    parse(param): number {
       const vals = param as OptionValues<typeof multiOpts & typeof mainOpts>;
       const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? 1;
       return vals.numbers.reduce((acc, val) => acc * val, other);
@@ -103,9 +105,9 @@ const divOpts = {
   div: {
     type: 'command',
     names: ['div'],
-    desc: 'A command that divides two numbers.',
+    synopsis: 'A command that divides two numbers.',
     options: (): Options => ({ ...binaryOpts, ...mainOpts }),
-    exec({ param }): number {
+    parse(param): number {
       const vals = param as OptionValues<typeof binaryOpts & typeof mainOpts>;
       const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? NaN;
       const [a, b] = vals.numbers;
@@ -124,7 +126,8 @@ const mainOpts = {
   help: {
     type: 'help',
     names: ['help'],
-    desc: 'Prints this help message.',
+    synopsis: 'Prints this help message.',
+    formats: { ansi: AnsiFormatter },
   },
   ...addOpts,
   ...subOpts,

@@ -1,0 +1,220 @@
+---
+title: Commands - Guides - Docs
+---
+
+import dynamic from 'next/dynamic';
+import { Callout, Tabs } from 'nextra/components';
+
+export const Calc = dynamic(() => import('@components/calc'), { ssr: false });
+
+# Commands
+
+In this guide, we will be creating a command-line interface for an example application that performs
+mathematical operations on its arguments.
+
+## Basic features
+
+Our application is named `calc` and performs the following operations:
+
+- `add` - adds multiple numbers (defaults to `0{:ts}` if no number)
+- `sub` - subtracts two numbers (defaults to `NaN{:ts}` if less than two numbers)
+- `mult` - multiplies multiple numbers (defaults to `1{:ts}` if no number)
+- `div` - divides two numbers (defaults to `NaN{:ts}` if less than two numbers)
+
+## Advanced features
+
+In addition to the basic operations, our application is capable of combining operations in a
+tail-recursive manner. For example, the following expression could be invoked:
+
+```sh
+calc add 1 sub 2 mult 3 div 4 2
+```
+
+And would be evaluated as `1 + (2 - (3 * (4 / 2))){:ts}`, which equals -3.
+
+## Option definitions
+
+In this section we are going to define the command-line options for our application. The first thing
+we need is to import the necessary library types:
+
+```ts
+import type { Options, OptionValues } from 'tsargp';
+```
+
+### Reusable definitions
+
+Let's define a reusable option definition for the parameters of a multi-argument operation. It has
+an [array] option that receives (unlimited) positional arguments:
+
+```ts /preferredName/ /default/ /positional/ /group/
+const multiOpts = {
+  numbers: {
+    type: 'array',
+    preferredName: 'numbers',
+    synopsis: 'The numbers to operate on.',
+    default: [],
+    parse: Number,
+    positional: true,
+    group: 'Arguments',
+  },
+} as const satisfies Options;
+```
+
+Since this option accepts [positional] arguments, we do not want to give it a name. However, we give
+it a [preferred name] that will be displayed in error messages, as well as a separate [group] for it
+to be displayed in the help message. This option is optional and [defaults] to an empty array.
+
+Now let's define a similar option for the parameters of a dual-argument operation. It has the same
+definition as above, with additional constraints: it is [required] and accepts [at most] two values.
+
+```ts /limit/ /required/
+const binaryOpts = {
+  numbers: {
+    ...multiOpts.numbers,
+    limit: 2,
+    required: true,
+    default: undefined, // override this setting
+  },
+} as const satisfies Options;
+```
+
+### Operation definitions
+
+With this in place, we can define each one of the basic operations, as follows:
+
+<Tabs items={['add', 'sub', 'mult', 'div']}>
+  <Tabs.Tab>
+    ```ts {6,8} /mainOpts/
+    const addOpts = {
+      add: {
+        type: 'command',
+        names: ['add'],
+        synopsis: 'A command that adds multiple numbers.',
+        options: (): Options => ({ ...multiOpts, ...mainOpts }),
+        parse(param): number {
+          const vals = param as OptionValues<typeof multiOpts & typeof mainOpts>;
+          const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? 0;
+          return vals.numbers.reduce((acc, val) => acc + val, other);
+        },
+      },
+    } as const satisfies Options;
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```ts {6,8} /mainOpts/
+    const subOpts = {
+      sub: {
+        type: 'command',
+        names: ['sub'],
+        synopsis: 'A command that subtracts two numbers.',
+        options: (): Options => ({ ...binaryOpts, ...mainOpts }),
+        parse(param): number {
+          const vals = param as OptionValues<typeof binaryOpts & typeof mainOpts>;
+          const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? NaN;
+          const [a, b] = vals.numbers;
+          return a === undefined ? NaN : b === undefined ? a - other : a - b;
+        },
+      },
+    } as const satisfies Options;
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```ts {6,8} /mainOpts/
+    const multOpts = {
+      mult: {
+        type: 'command',
+        names: ['mult'],
+        synopsis: 'A command that multiplies multiple numbers.',
+        options: (): Options => ({ ...multiOpts, ...mainOpts }),
+        parse(param): number {
+          const vals = param as OptionValues<typeof multiOpts & typeof mainOpts>;
+          const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? 1;
+          return vals.numbers.reduce((acc, val) => acc * val, other);
+        },
+      },
+    } as const satisfies Options;
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```ts {6,8} /mainOpts/
+    const divOpts = {
+      div: {
+        type: 'command',
+        names: ['div'],
+        synopsis: 'A command that divides two numbers.',
+        options: (): Options => ({ ...binaryOpts, ...mainOpts }),
+        parse(param): number {
+          const vals = param as OptionValues<typeof binaryOpts & typeof mainOpts>;
+          const other = vals.add ?? vals.sub ?? vals.mult ?? vals.div ?? NaN;
+          const [a, b] = vals.numbers;
+          return a === undefined ? NaN : b === undefined ? a / other : a / b;
+        },
+      },
+    } as const satisfies Options;
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+Notice how we use an [options callback] to provide the option definitions for each command. This is
+necessary because JavaScript does not allow us to reference the containing object from one of its
+members, before its initialization. (The `mainOpts` variable will be defined later, and the above
+definitions will be embedded in it.)
+
+Inside the [command callback], we perform a typecast to access the values parsed for the command.
+This is necessary because the library does not know the concrete type of our option values when it
+calls the callback (the callback type cannot be defined in terms of a generic type parameter). So it
+must pass an _opaque_ reference to them.
+
+From those values, we select the value resulting from the next operation (if any), falling back to
+a default if this was the last operation. We then return the accumulated result of the operations
+performed so far in the stack (except if, in the case of `sub` and `mult`, two arguments are
+provided before a recursive call, then the result of that call is ignored).
+
+<Callout type="info">
+  In TypeScript, it's necessary to specify the return type of both the `options` and `exec` callback
+  attributes. Otherwise, the compiler will not be able to resolve the type of the containing object.
+</Callout>
+
+### Main definitions
+
+Finally, we can define our main command-line options:
+
+```ts
+const mainOpts = {
+  help: {
+    type: 'help',
+    names: ['help'],
+    synopsis: 'Prints this help message.',
+  },
+  ...addOpts,
+  ...subOpts,
+  ...multOpts,
+  ...divOpts,
+} as const satisfies Options;
+```
+
+## Trying it out
+
+<Calc height={17} />
+
+List of commands to try:
+
+- `calc help` - should print the main help message
+- `calc <op> help` - should print the help message of the `<op>` command
+- `calc` - should print `NaN{:ts}`
+- `calc add` - should print `0{:ts}`
+- `calc mult` - should print `1{:ts}`
+- `calc sub` or `calc div` - should print an error message
+- `calc sub 1` or `calc div 1` - should print `NaN{:ts}`
+- `calc sub 1 2 3` or `calc div 1 2 3` - should print an error message
+- `calc add 1 sub 2 mult 3 div 4 2` - this is the aforementioned example that gives -3
+
+[array]: ../library/options#array-valued-option
+[preferred name]: ../library/options#names--preferred-name
+[defaults]: ../library/options#default-value
+[positional]: ../library/options#positional--marker
+[group]: ../library/options#group--hide
+[required]: ../library/options#always-required
+[at most]: ../library/options#count-limit
+[options callback]: ../library/options#command-options--callback
+[command callback]: ../library/options#command-callback

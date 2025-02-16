@@ -2,11 +2,11 @@
 
 **tsargp** is a command-line argument parsing library that helps you write clean code.
 
-Get started with the [documentation](https://trulysimple.dev/tsargp/docs).
+Get started with the [documentation](https://dsogari.github.io/tsargp/docs).
 
 ## Demo
 
-Test it [online](https://trulysimple.dev/tsargp/demo) or install it locally:
+Test it [online](https://dsogari.github.io/tsargp/demo) or install it locally:
 
 ```sh
 npm i -g tsargp && complete -C tsargp tsargp
@@ -22,7 +22,7 @@ See the [source](examples/demo.options.ts).
 
 ## Usage
 
-Define your command-line options (we recommend placing them in a separate file):
+Define your command-line options:
 
 ```ts
 // <your_cli_name>.options.ts
@@ -42,7 +42,6 @@ import options from './<your_cli_name>.options.js';
 
 try {
   const parser = new ArgumentParser(options);
-  await parser.validate(); // validate the option definitions (you can skip this in production)
   const values = await parser.parse(); // use this to get the options' values
   // await parser.parseInto(myValues); // use this to fill an existing object or class instance
 } catch (err) {
@@ -53,6 +52,22 @@ try {
     console.log(`${err}`); // help message, version or completion words
   }
 }
+```
+
+Validate them in your test script:
+
+```ts
+// <your_cli_name>.spec.ts
+import { OptionValidator } from 'tsargp';
+import options from './<your_cli_name>.options.js';
+
+describe('<your_cli_name>', () => {
+  it('should have valid options', async () => {
+    const validator = new OptionValidator(options);
+    const { warning } = await validator.validate();
+    expect(warning).toBeUndefined(); // or check warnings that are important to your application
+  });
+});
 ```
 
 Optionally, enable word completion:
@@ -67,5 +82,5 @@ complete -o default -C <path_to_main_script> <your_cli_name>
 curl -fsSL https://bun.sh/install | bash
 bun install   # install dependencies
 bun test      # run unit tests
-npm publish   # publish to npm registry
+bun publish   # publish to npm registry
 ```

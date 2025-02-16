@@ -1,162 +1,133 @@
 //--------------------------------------------------------------------------------------------------
-// Exports - NOTE: some enumerations are abbreviated for ease of use in client code.
+// Exports
 //--------------------------------------------------------------------------------------------------
 export { ControlSequence as cs, TypeFace as tf, ForegroundColor as fg, BackgroundColor as bg };
 
 //--------------------------------------------------------------------------------------------------
-// Constants - NOTE: please add new enumerators at the _end_ of the enumeration.
+// Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * The kind of items that can be thrown as error messages.
+ * The kind of error/warning raised by the parser.
  */
-export const enum ErrorItem {
+export const enum ParsingError {
   /**
-   * Raised by the parser when an option name is not found, with possible option name suggestions.
+   * Error raised when an option name is not found, with possible name suggestions.
    */
   unknownOption,
   /**
-   * Raised by the parser when an option requirement is not satisfied.
+   * Error raised when an option's forward requirement is not satisfied.
    */
   unsatisfiedRequirement,
   /**
-   * Raised by the parser when an option that is always required was not specified.
+   * Error raised when an option that is always required was not specified.
    */
   missingRequiredOption,
   /**
-   * Raised by the parser when an option parameter is expected but was not specified.
+   * Error raised when an option is specified with the wrong number of parameters.
    */
-  missingParameter,
+  mismatchedParamCount,
   /**
-   * Raised by the parser when it fails to find a "package.json" file when resolving the version.
+   * Error raised when it fails to find a "package.json" file when resolving the package version.
    */
   missingPackageJson,
   /**
-   * Raised by the parser when either a niladic option or a positional marker is specified with an
-   * inline parameter.
+   * Error raised when an option is specified with an inline parameter, despite it being disallowed.
    */
   disallowedInlineParameter,
   /**
-   * Raised by the validator when a positional option has an empty positional marker.
+   * Error raised when an option parameter fails to satisfy a choice constraint.
    */
-  emptyPositionalMarker,
+  choiceConstraintViolation,
   /**
-   * Raised by the validator when a non-positional option has no name.
-   */
-  unnamedOption,
-  /**
-   * Raised by the validator when an option has an invalid name.
-   */
-  invalidOptionName,
-  /**
-   * Raised by the validator when a version option has an empty version string.
-   */
-  invalidVersionDefinition,
-  /**
-   * Raised by the validator when an option references itself in a requirement.
-   */
-  invalidSelfRequirement,
-  /**
-   * Raised by the validator when an option references an unknown option in a requirement.
-   */
-  unknownRequiredOption,
-  /**
-   * Raised by the validator when an option references either a non-valued or an unknown-valued
-   * option in a requirement.
-   */
-  invalidRequiredOption,
-  /**
-   * Raised by the validator when an option uses a nullish value in a requirement referencing an
-   * option that is either always required or has a default value.
-   */
-  invalidRequiredValue,
-  /**
-   * Raised by the validator when an option uses a value of incompatible data type in a requirement.
-   */
-  incompatibleRequiredValue,
-  /**
-   * Raised by the validator when either an enumeration constraint or the truth and falsity names
-   * have zero length.
-   */
-  emptyEnumsDefinition,
-  /**
-   * Raised by the validator when there are two identical option names.
-   */
-  duplicateOptionName,
-  /**
-   * Raised by the validator when there are two or more positional options.
-   */
-  duplicatePositionalOption,
-  /**
-   * Raised by the validator when either an enumeration constraint or the truth and falsity names
-   * have duplicate values.
-   */
-  duplicateEnumValue,
-  /**
-   * Raised by both the parser and validator when a value fails to satisfy either an enumeration
-   * constraint or the truth and falsity names.
-   */
-  enumsConstraintViolation,
-  /**
-   * Raised by both the parser and validator when a value fails to satisfy a string regex constraint.
+   * Error raised when an option parameter fails to satisfy a regex constraint.
    */
   regexConstraintViolation,
   /**
-   * Raised by both the parser and validator when a value fails to satisfy a number range constraint.
-   */
-  rangeConstraintViolation,
-  /**
-   * Raised by both the parser and validator when a value fails to satisfy an array limit constraint.
+   * Error raised when an option value fails to satisfy a count limit constraint.
    */
   limitConstraintViolation,
   /**
-   * Warning produced by the parser when a deprecated option is specified on the command-line.
+   * Warning produced when a deprecated option is specified on the command-line.
    */
   deprecatedOption,
   /**
-   * Raised by the parser when an option's conditional requirement is not satisfied.
+   * Error raised when an option's conditional requirement is not satisfied.
    */
   unsatisfiedCondRequirement,
   /**
-   * Raised by the validator when there are two identical cluster letters.
-   */
-  duplicateClusterLetter,
-  /**
-   * Raised by the parser when either a variadic option or a command option is specified in the
-   * middle of a cluster argument.
+   * Error raised when either a variadic option or a command option is specified in the middle of a
+   * cluster argument.
    */
   invalidClusterOption,
   /**
-   * Raised by the validator when an option has an invalid cluster letter.
+   * Error raised when an option is specified with no inline parameter, despite it being required.
+   */
+  missingInlineParameter,
+}
+
+/**
+ * The kind of error/warning raised by the validator.
+ */
+export const enum ValidationError {
+  /**
+   * Error raised when an option has an invalid name.
+   */
+  invalidOptionName,
+  /**
+   * Error raised when an option references itself in a requirement.
+   */
+  invalidSelfRequirement,
+  /**
+   * Error raised when an option references an unknown option in a requirement.
+   */
+  unknownRequiredOption,
+  /**
+   * Error raised when an option references a non-valued option in a requirement.
+   */
+  invalidRequiredOption,
+  /**
+   * Error raised when an option uses a nullish value in a requirement referencing an option that is
+   * either always required or has a default value.
+   */
+  invalidRequiredValue,
+  /**
+   * Error raised when there are two identical option names.
+   */
+  duplicateOptionName,
+  /**
+   * Error raised when there are two or more positional options.
+   */
+  duplicatePositionalOption,
+  /**
+   * Error raised produced when a choices constraint has a duplicate value.
+   */
+  duplicateChoiceValue,
+  /**
+   * Error raised when there are two identical cluster letters.
+   */
+  duplicateClusterLetter,
+  /**
+   * Error raised when an option has an invalid cluster letter.
    */
   invalidClusterLetter,
   /**
-   * Warning produced by the validator when an option name is too similar to other names.
+   * Warning produced when an option name is too similar to other names.
    */
   tooSimilarOptionNames,
   /**
-   * Warning produced by the validator when a name slot contains names with different naming
-   * conventions.
+   * Warning produced when a name slot contains names with different naming conventions.
    */
   mixedNamingConvention,
   /**
-   * Raised by the validator when a number-valued option has an invalid numeric range.
-   */
-  invalidNumericRange,
-  /**
-   * Raised by the validator when a function option has an invalid parameter count.
+   * Error raised when a function option has an invalid parameter count.
    */
   invalidParamCount,
   /**
-   * Warning produced by the validator when a variadic option declares cluster letters.
+   * Warning produced when a variadic option declares cluster letters.
    */
   variadicWithClusterLetter,
   /**
-   * Raised by the parser when an option is specified without an inline parameter, despite it being
-   * required.
-   */
-  missingInlineParameter,
-  /**
-   * Raised by the validator when a variadic option declares an inline constraint.
+   * Raised when a variadic option declares an inline constraint.
    */
   invalidInlineConstraint,
 }
@@ -168,95 +139,75 @@ export const enum HelpItem {
   /**
    * The option's synopsis.
    */
-  desc,
+  synopsis,
   /**
-   * The negation names of a flag option, if any.
-   */
-  negationNames,
-  /**
-   * The element delimiter of an array-valued option, if enabled.
+   * The parameter delimiter of a non-niladic option.
    */
   separator,
   /**
-   * Reports the parameter count of a variadic or polyadic option.
+   * The parameter count of a variadic or polyadic option.
    */
   paramCount,
   /**
-   * Reports if an option accepts positional arguments.
+   * Whether the option accepts positional arguments.
    */
   positional,
   /**
-   * Reports if an array-valued option can be specified multiple times.
+   * Whether an array-valued option can be specified multiple times.
    */
   append,
   /**
-   * Reports if string parameters will be trimmed (have leading and trailing whitespace removed).
+   * The option's parameter choices.
    */
-  trim,
+  choices,
   /**
-   * The kind of case-conversion applied to string parameters, if enabled.
-   */
-  case,
-  /**
-   * The kind of math conversion applied to number parameters, if enabled.
-   */
-  conv,
-  /**
-   * Either the enumerated values or the truth and falsity names that the option accepts, if any.
-   */
-  enums,
-  /**
-   * The regular expression that string parameters should match, if enabled.
+   * The regular expression that parameters should match.
    */
   regex,
   /**
-   * The numeric range that number parameters should be within, if enabled.
-   */
-  range,
-  /**
-   * Reports if duplicate elements will be removed from an array-valued option value.
+   * Whether duplicate elements will be removed from an array-valued option value.
    */
   unique,
   /**
-   * The element count limit of an array-valued option, if enabled.
+   * The element count limit of an array-valued option.
    */
   limit,
   /**
-   * The option's requirements, if any.
+   * The option's forward requirements.
    */
   requires,
   /**
-   * Reports if the option is always required.
+   * Whether the option is always required.
    */
   required,
   /**
-   * The option's default value, if any.
+   * The option's default value.
    */
   default,
   /**
-   * The option's deprecation notice, if any.
+   * The option's deprecation notice.
    */
   deprecated,
   /**
-   * The external resource reference, if any.
+   * The option's external resource hyperlink.
    */
   link,
   /**
-   * The option's environment variable, if any.
+   * Whether the option accepts data from standard input.
    */
-  envVar,
+  stdin,
   /**
-   * The option's conditional requirements, if any.
+   * The option's environment data sources.
+   */
+  sources,
+  /**
+   * The option's conditional requirements.
    */
   requiredIf,
   /**
-   * The option's cluster letters, if any.
+   * The option's cluster letters.
    */
-  clusterLetters,
-  /**
-   * The option's fallback value, if any.
-   */
-  fallback,
+  cluster,
   /**
    * Whether a help option uses the next argument as the name of a nested command.
    */
@@ -270,13 +221,18 @@ export const enum HelpItem {
    */
   useFilter,
   /**
-   * The option's treatment of inline parameters, if enabled.
+   * The option's treatment of inline parameters.
    */
   inline,
+  /**
+   * The available help formats of a help option.
+   */
+  formats,
 }
 
 /**
  * The kind of connective words used in option requirements.
+ * Inline styles and line breaks are not supported in connective words.
  */
 export const enum ConnectiveWord {
   /**
@@ -312,17 +268,53 @@ export const enum ConnectiveWord {
    */
   optionSep,
   /**
-   * The word used to connect two string values in succession.
-   */
-  stringSep,
-  /**
-   * The word used to connect two number values in succession.
-   */
-  numberSep,
-  /**
    * The quote character used to enclose a string value.
    */
   stringQuote,
+  /**
+   * The word used to connect two array elements in succession.
+   */
+  arraySep,
+  /**
+   * The bracket character used to open an array value.
+   */
+  arrayOpen,
+  /**
+   * The bracket character used to close an array value.
+   */
+  arrayClose,
+  /**
+   * The word used to connect two object entries in succession.
+   */
+  objectSep,
+  /**
+   * The bracket character used to open an object value.
+   */
+  objectOpen,
+  /**
+   * The bracket character used to close an object value.
+   */
+  objectClose,
+  /**
+   * The word used to connect an object key with its value.
+   */
+  valueSep,
+  /**
+   * The bracket character used to open an unknown value.
+   */
+  valueOpen,
+  /**
+   * The bracket character used to close an unknown value.
+   */
+  valueClose,
+  /**
+   * The bracket character used to open an expression.
+   */
+  exprOpen,
+  /**
+   * The bracket character used to close an expression.
+   */
+  exprClose,
 }
 
 /**

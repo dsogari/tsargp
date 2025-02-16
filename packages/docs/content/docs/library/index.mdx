@@ -1,0 +1,20 @@
+---
+title: Library
+sidebarTitle: Library
+asIndexPage: true
+---
+
+# Library
+
+import { Cards } from 'nextra/components';
+import { BrushIcon, SwitchIcon, SpinnerIcon, WordWrapIcon, CheckIcon } from '@components/icons';
+
+The library is composed of five basic components:
+
+<Cards>
+  <Cards.Card icon={<SwitchIcon />} title="Options" href="/docs/library/options" />
+  <Cards.Card icon={<SpinnerIcon />} title="Parser" href="/docs/library/parser" />
+  <Cards.Card icon={<CheckIcon />} title="Validator" href="/docs/library/validator" />
+  <Cards.Card icon={<WordWrapIcon />} title="Formatter" href="/docs/library/formatter" />
+  <Cards.Card icon={<BrushIcon />} title="Styles" href="/docs/library/styles" />
+</Cards>

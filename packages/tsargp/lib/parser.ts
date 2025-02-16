@@ -1,44 +1,50 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { HelpSections } from './formatter.js';
+import type { FormattingFlags, MessageConfig } from './styles.js';
 import type {
+  HelpSections,
   Options,
+  OptionInfo,
   OptionValues,
   OpaqueOption,
-  OpaqueOptions,
   OpaqueOptionValues,
+  Range,
   Requires,
   RequiresEntry,
   ResolveCallback,
-  DefaultCallback,
   RequiresCallback,
 } from './options.js';
-import type { Range } from './utils.js';
-import type {
-  OptionInfo,
-  ValidatorConfig,
-  ValidationFlags,
-  ValidationResult,
-} from './validator.js';
+import type { Args, PartialWithDepth } from './utils.js';
 
-import { ConnectiveWord, ErrorItem } from './enums.js';
-import { createFormatter, isHelpFormat } from './formatter.js';
-import { isOpt, getParamCount, visitRequirements } from './options.js';
-import { format, HelpMessage, WarnMessage, TextMessage, TerminalString } from './styles.js';
+import { ConnectiveWord, ParsingError } from './enums.js';
 import {
-  areEqual,
+  fmt,
+  cfg,
+  ErrorFormatter,
+  WarnMessage,
+  HelpMessage,
+  TextMessage,
+  TerminalString,
+} from './styles.js';
+import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
+import {
+  getCmdLine,
   findSimilar,
-  getArgs,
-  isTrue,
-  max,
-  findValue,
   getEnv,
+  getCompIndex,
   getEntries,
+  getSymbol,
+  isReadonlyArray,
   getKeys,
+  isArray,
+  findValue,
+  getArgs,
+  readFile,
+  areEqual,
+  getValues,
   mergeValues,
 } from './utils.js';
-import { OptionValidator, defaultConfig } from './validator.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -51,9 +57,52 @@ const defaultSections: HelpSections = [
   { type: 'groups', title: 'Options:' },
 ];
 
+/**
+ * The default configuration used by the parser.
+ */
+const defaultConfig: ParseConfig = {
+  ...cfg,
+  phrases: {
+    [ParsingError.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
+    [ParsingError.unsatisfiedRequirement]: 'Option #0 requires #1.',
+    [ParsingError.missingRequiredOption]: 'Option #0 is required.',
+    [ParsingError.mismatchedParamCount]:
+      'Wrong number of parameters to option #0: requires (exactly|at least|at most|between) #1.',
+    [ParsingError.missingPackageJson]: 'Could not find a "package.json" file.',
+    [ParsingError.disallowedInlineParameter]:
+      '(Option|Positional marker) #0 does not accept inline parameters.',
+    [ParsingError.choiceConstraintViolation]:
+      'Invalid parameter to #0: #1. Value must be one of: #2.',
+    [ParsingError.regexConstraintViolation]:
+      'Invalid parameter to #0: #1. Value must match the regex #2.',
+    [ParsingError.limitConstraintViolation]:
+      'Option #0 has too many values: #1. Should have at most #2.',
+    [ParsingError.deprecatedOption]:
+      'Option #0 is deprecated and may be removed in future releases.',
+    [ParsingError.unsatisfiedCondRequirement]: 'Option #0 is required if #1.',
+    [ParsingError.invalidClusterOption]: 'Option letter #0 must be the last in a cluster.',
+    [ParsingError.missingInlineParameter]: 'Option #0 requires an inline parameter.',
+  },
+};
+
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
+/**
+ * The configuration for error/warning messages.
+ */
+export type ParseConfig = MessageConfig & {
+  /**
+   * The parse error/warning phrases.
+   */
+  readonly phrases: Readonly<Record<ParsingError, string>>;
+};
+
+/**
+ * A partial parser configuration.
+ */
+export type ParserConfig = PartialWithDepth<ParseConfig>;
+
 /**
  * The parsing flags.
  */
@@ -95,7 +144,8 @@ export type CommandLine = string | Array<string>;
  * Information about the current parsing context.
  */
 type ParseContext = [
-  validator: OptionValidator,
+  registry: OptionRegistry,
+  formatter: ErrorFormatter<ParsingError>,
   values: OpaqueOptionValues,
   args: Array<string>,
   specifiedKeys: Set<string>,
@@ -138,26 +188,17 @@ type RequireItemFn<T> = (
  * @template T The type of the option definitions
  */
 export class ArgumentParser<T extends Options = Options> {
-  private readonly validator: OptionValidator;
+  private readonly registry: OptionRegistry;
+  private readonly formatter: ErrorFormatter<ParsingError>;
 
   /**
    * Creates an argument parser based on a set of option definitions.
    * @param options The option definitions
-   * @param config The validator configuration
+   * @param config The parse configuration
    */
-  constructor(options: T, config: ValidatorConfig = {}) {
-    const concreteConfig = mergeValues(defaultConfig, config);
-    this.validator = new OptionValidator(options as OpaqueOptions, concreteConfig);
-  }
-
-  /**
-   * Validates the option definitions.
-   * This should only be called during development and testing, but skipped in production.
-   * @param flags The validation flags
-   * @returns The validation result
-   */
-  validate(flags?: ValidationFlags): Promise<ValidationResult> {
-    return this.validator.validate(flags);
+  constructor(options: T, config: ParserConfig = {}) {
+    this.registry = new OptionRegistry(options);
+    this.formatter = new ErrorFormatter(mergeValues(defaultConfig, config));
   }
 
   /**
@@ -181,15 +222,14 @@ export class ArgumentParser<T extends Options = Options> {
    */
   async parseInto(
     values: OptionValues<T>,
-    cmdLine = getEnv('COMP_LINE') ?? getEnv('BUFFER') ?? process?.argv.slice(2) ?? [],
+    cmdLine = getCmdLine(),
     flags?: ParsingFlags,
   ): Promise<ParsingResult> {
-    const compIndex =
-      flags?.compIndex ??
-      (Number(getEnv('COMP_POINT') ?? getEnv('CURSOR')) || getEnv('BUFFER')?.length);
+    const compIndex = flags?.compIndex ?? getCompIndex();
     const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
     const context = createContext(
-      this.validator,
+      this.registry,
+      this.formatter,
       values,
       args,
       !!compIndex,
@@ -197,7 +237,7 @@ export class ArgumentParser<T extends Options = Options> {
       flags?.clusterPrefix,
     );
     await parseArgs(context);
-    const warning = context[5];
+    const warning = context[6];
     return warning.length ? { warning } : {};
   }
 }
@@ -207,7 +247,8 @@ export class ArgumentParser<T extends Options = Options> {
 //--------------------------------------------------------------------------------------------------
 /**
  * Initializes the command-line arguments for parsing.
- * @param validator The option validator
+ * @param registry The option registry
+ * @param formatter The error formatter
  * @param values The option values
  * @param args The command-line arguments
  * @param completing True if performing completion
@@ -216,24 +257,35 @@ export class ArgumentParser<T extends Options = Options> {
  * @returns The parsing context
  */
 function createContext(
-  validator: OptionValidator,
+  registry: OptionRegistry,
+  formatter: ErrorFormatter<ParsingError>,
   values: OpaqueOptionValues,
   args: Array<string>,
   completing: boolean,
-  progName = process?.argv[1].split(/[\\/]/).at(-1),
+  progName = process?.argv[1]?.split(/[\\/]/).at(-1),
   clusterPrefix?: string,
 ): ParseContext {
   if (!completing && progName && process?.title) {
     process.title += ' ' + progName;
   }
-  for (const [key, option] of getEntries(validator.options)) {
-    if (!(key in values) && (!isOpt.msg(option) || option.saveMessage)) {
+  for (const [key, option] of getEntries(registry.options)) {
+    if (!(key in values) && (!isMessage(option.type) || option.saveMessage)) {
       values[key] = undefined;
     }
   }
   const specifiedKeys = new Set<string>();
   const warning = new WarnMessage();
-  return [validator, values, args, specifiedKeys, completing, warning, progName, clusterPrefix];
+  return [
+    registry,
+    formatter,
+    values,
+    args,
+    specifiedKeys,
+    completing,
+    warning,
+    progName,
+    clusterPrefix,
+  ];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -249,16 +301,16 @@ function parseCluster(context: ParseContext, index: number): boolean {
   /** @ignore */
   function getOpt(letter: string): [string, OpaqueOption, string?] {
     const key = letters.get(letter) ?? '';
-    const option = validator.options[key];
-    const name = option.names?.find((name): name is string => !!name);
+    const option = registry.options[key];
+    const name = option.names?.find((name): name is string => name !== null);
     return [key, option, name];
   }
-  const [validator, , args, , completing, , , prefix] = context;
+  const [registry, formatter, , args, , completing, , , prefix] = context;
   const cluster = args[index++];
   if (prefix === undefined || !cluster.startsWith(prefix) || cluster.length === prefix.length) {
     return false;
   }
-  const letters = validator.letters;
+  const letters = registry.letters;
   const rest = cluster.slice(prefix.length);
   const unknownIndex = [...rest].findIndex((letter) => !letters.has(letter));
   if (unknownIndex === 0) {
@@ -266,7 +318,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
   }
   if (unknownIndex > 0) {
     const name = getOpt(rest[0])[2];
-    args.splice(index, 0, (name ? name + '=' : '') + rest.slice(1));
+    args.splice(index, 0, (name !== undefined ? name + '=' : '') + rest.slice(1));
     return true; // treat it as an inline parameter
   }
   for (let j = 0; j < rest.length && (!completing || index < args.length); ++j) {
@@ -274,9 +326,9 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
     if (j < rest.length - 1 && (option.type === 'command' || min < max)) {
-      throw validator.error(ErrorItem.invalidClusterOption, { o: letter });
+      throw formatter.error(ParsingError.invalidClusterOption, {}, letter);
     }
-    if (name) {
+    if (name !== undefined) {
       args.splice(index++, 0, name);
     }
     index += min;
@@ -289,33 +341,31 @@ function parseCluster(context: ParseContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParseContext) {
-  const [validator, values, args, specifiedKeys, completing, warning] = context;
+  const [registry, formatter, values, args, specifiedKeys, completing, warning] = context;
   let prev: ParseEntry = [-1];
   let paramCount: Range = [0, 0];
-  let positional = false;
-  let checkRequirements = true;
+  let suggestNames = false;
   for (let i = 0, k = 0; i < args.length; i = prev[0]) {
     const next = findNext(context, prev);
     const [j, info, value, comp, marker, isNew] = next;
     if (isNew || !info) {
       if (prev[1]) {
         // process the previous sequence
-        const breakLoop = await handleNonNiladic(context, prev[1], i, args.slice(k, j));
+        const breakLoop = await tryParseParams(context, prev[1], i, args.slice(k, j));
         if (breakLoop) {
-          checkRequirements = false;
-          break; // finished
+          return; // skip requirements
         }
       }
       if (!info) {
         break; // finished
       }
       prev = next;
-      positional = info === validator.positional; // don't use option.positional for this check
-      const [key, name, option] = info;
+      const positional = info === registry.positional; // don't use option.positional for this check
+      const [key, option, name] = info;
       paramCount = getParamCount(option);
       const [min, max] = paramCount;
       const hasValue = value !== undefined;
-      if (marker || (!positional && (max !== 1 || option.inline === false))) {
+      if (!max || marker || (!positional && option.inline === false)) {
         if (comp) {
           throw new TextMessage();
         }
@@ -326,20 +376,20 @@ async function parseArgs(context: ParseContext) {
             prev[4] = false;
             continue;
           }
-          const [alt, name2] = marker ? [1, info[3]] : [0, name];
-          throw validator.error(ErrorItem.disallowedInlineParameter, { o: name2 }, { alt });
+          const [alt, name2] = marker ? [1, `${option.positional}`] : [0, name];
+          throw formatter.error(ParsingError.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
-      } else if (min && !hasValue && option.inline === 'always') {
+      } else if (min && !hasValue && option.inline) {
         if (completing) {
           // ignore required inline parameters while completing
           prev[1] = undefined;
           continue;
         }
-        throw validator.error(ErrorItem.missingInlineParameter, { o: name });
+        throw formatter.error(ParsingError.missingInlineParameter, {}, getSymbol(name));
       }
       if (!completing && !specifiedKeys.has(key)) {
-        if (option.deprecated) {
-          warning.push(validator.format(ErrorItem.deprecatedOption, { o: name }));
+        if (option.deprecated !== undefined) {
+          warning.push(formatter.create(ParsingError.deprecatedOption, {}, getSymbol(name)));
         }
         specifiedKeys.add(key);
       }
@@ -347,8 +397,7 @@ async function parseArgs(context: ParseContext) {
         // comp === false
         const [breakLoop, skipCount] = await handleNiladic(context, info, j, args.slice(j + 1));
         if (breakLoop) {
-          checkRequirements = false;
-          break; // finished
+          return; // skip requirements
         }
         prev[0] += skipCount;
         prev[1] = undefined;
@@ -360,16 +409,16 @@ async function parseArgs(context: ParseContext) {
           k = hasValue ? j : j + 1;
         } else {
           // option name with inline parameter
-          const breakLoop = await handleNonNiladic(context, info, j, [value]);
+          const breakLoop = await tryParseParams(context, info, j, [value]);
           if (breakLoop) {
-            checkRequirements = false;
-            break; // finished
+            return; // skip requirements
           }
           prev[1] = undefined;
         }
         continue; // fetch more
       }
       // perform completion of first positional or inline parameter
+      suggestNames = positional;
       k = j;
     }
     if (!info) {
@@ -377,14 +426,12 @@ async function parseArgs(context: ParseContext) {
     }
     // comp === true
     const words = await completeParameter(values, info, i, args.slice(k, j), value);
-    if (!marker && ((j === k && positional) || j - k >= paramCount[0])) {
-      words.push(...completeName(validator, value));
+    if (!marker && (suggestNames || (j > i && j - k >= paramCount[0]))) {
+      words.push(...completeName(registry, value));
     }
     throw new TextMessage(...words);
   }
-  if (checkRequirements) {
-    await checkRequired(context);
-  }
+  await checkRequired(context);
 }
 
 /**
@@ -395,23 +442,23 @@ async function parseArgs(context: ParseContext) {
  * @returns The new parse entry
  */
 function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
-  const [validator, , args, , completing] = context;
+  const [registry, , , args, , completing] = context;
   const [index, info, prevVal, , marker] = prev;
   const inc = prevVal !== undefined ? 1 : 0;
-  const positional = validator.positional;
-  const [min, max] = info ? getParamCount(info[2]) : [0, 0];
+  const positional = registry.positional;
+  const [min, max] = info ? getParamCount(info[1]) : [0, 0];
   for (let i = index + 1; i < args.length; ++i) {
     const arg = args[i];
     const comp = completing && i + 1 === args.length;
     if (!info || (!marker && i - index + inc > min)) {
       const [name, value] = arg.split(/=(.*)/, 2);
-      const key = validator.names.get(name);
+      const key = registry.names.get(name);
       if (key) {
         if (comp && value === undefined) {
           throw new TextMessage(name);
         }
-        const marker = name === positional?.[3];
-        const info = marker ? positional : ([key, name, validator.options[key]] as OptionInfo);
+        const marker = name === positional?.[1].positional;
+        const info: OptionInfo = marker ? positional : [key, registry.options[key], name];
         return [i, info, value, comp, marker, true];
       }
       if (parseCluster(context, i)) {
@@ -423,12 +470,12 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
       if (!info || i - index + inc > max) {
         if (!positional) {
           if (comp) {
-            throw new TextMessage(...completeName(validator, arg));
+            throw new TextMessage(...completeName(registry, arg));
           }
           if (completing) {
             continue; // ignore unknown options during completion
           }
-          reportUnknownName(validator, name);
+          reportUnknownName(context, name);
         }
         return [i, positional, arg, comp, false, true];
       }
@@ -442,24 +489,30 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
 
 /**
  * Reports an error of unknown option name.
- * @param validator The option validator
+ * @param context The parsing context
  * @param name The unknown option name
  */
-function reportUnknownName(validator: OptionValidator, name: string): never {
-  const similar = findSimilar(name, validator.names.keys(), 0.6);
-  const [args, alt] = similar.length ? [{ o1: name, o2: similar }, 1] : [{ o: name }, 0];
-  const sep = validator.config.connectives[ConnectiveWord.optionSep];
-  throw validator.error(ErrorItem.unknownOption, args, { alt, sep });
+function reportUnknownName(context: ParseContext, name: string): never {
+  const [registry, formatter] = context;
+  const similar = findSimilar(name, registry.names.keys(), 0.6);
+  const alt = similar.length ? 1 : 0;
+  const sep = formatter.config.connectives[ConnectiveWord.optionSep];
+  throw formatter.error(
+    ParsingError.unknownOption,
+    { alt, sep, open: '', close: '' },
+    getSymbol(name),
+    similar.map(getSymbol),
+  );
 }
 
 /**
  * Completes an option name.
- * @param validator The option validator
+ * @param registry The option registry
  * @param prefix The name prefix, if any
  * @returns The completion words
  */
-function completeName(validator: OptionValidator, prefix?: string): Array<string> {
-  const names = [...validator.names.keys()];
+function completeName(registry: OptionRegistry, prefix?: string): Array<string> {
+  const names = [...registry.names.keys()];
   return prefix ? names.filter((name) => name.startsWith(prefix)) : names;
 }
 
@@ -468,7 +521,7 @@ function completeName(validator: OptionValidator, prefix?: string): Array<string
  * @param values The option values
  * @param info The option information
  * @param index The starting index of the argument sequence
- * @param param The preceding parameters, if any
+ * @param prev The preceding parameters, if any
  * @param comp The word being completed
  * @returns The completion words
  */
@@ -476,23 +529,22 @@ async function completeParameter(
   values: OpaqueOptionValues,
   info: OptionInfo,
   index: number,
-  param: Array<string>,
+  prev: Array<string>,
   comp = '',
 ): Promise<Array<string>> {
-  const [, name, option] = info;
+  const [, option, name] = info;
   let words: Array<string>;
   if (option.complete) {
     try {
       // do not destructure `complete`, because the callback might need to use `this`
-      words = await option.complete({ values, index, name, param, comp });
-    } catch (err) {
+      words = await option.complete(comp, { values, index, name, prev });
+    } catch (ignoreErr) {
       // do not propagate errors during completion
       words = [];
     }
   } else {
-    words = isOpt.bool(option)
-      ? [...(option.truthNames ?? []), ...(option.falsityNames ?? [])]
-      : option.enums?.map((val) => `${val}`) ?? [];
+    const choices = option.choices;
+    words = isReadonlyArray<string>(choices) ? choices.slice() : choices ? getKeys(choices) : [];
     if (comp) {
       words = words.filter((word) => word.startsWith(comp));
     }
@@ -501,144 +553,164 @@ async function completeParameter(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Value handling
+// Parameter handling
 //--------------------------------------------------------------------------------------------------
 /**
- * Parses the value(s) of the option parameter(s).
- * @param context The parsing context
- * @param info The option information
- * @param index The starting index of the argument sequence
- * @param params The option parameter(s)
- * @returns A promise that must be awaited before continuing
- */
-async function parseParam(
-  context: ParseContext,
-  info: OptionInfo,
-  index: number,
-  params: Array<string>,
-) {
-  /** @ignore */
-  function norm<T>(val: T) {
-    return validator.normalize(option, name, val);
-  }
-  /** @ignore */
-  function bool(str: string): boolean {
-    const result = isTrue(str, option);
-    if (result === undefined) {
-      const names = [...(option.truthNames ?? []), ...(option.falsityNames ?? [])];
-      const args = { o: name, s1: str, s2: names };
-      const sep = validator.config.connectives[ConnectiveWord.stringSep];
-      throw validator.error(ErrorItem.enumsConstraintViolation, args, { alt: 0, sep });
-    }
-    return result;
-  }
-  const [key, name, option] = info;
-  if (!params.length) {
-    return setValue(context, key, option, 'fallback');
-  }
-  const [validator, values, , , comp] = context;
-  const convertFn: (val: string) => unknown = isOpt.bool(option)
-    ? bool
-    : isOpt.str(option)
-      ? (str: string) => str
-      : Number;
-  const lastParam = params[params.length - 1];
-  let value;
-  if (isOpt.arr(option)) {
-    const separator = option.separator;
-    const param = separator ? lastParam.split(separator) : params;
-    // do not destructure `parse`, because the callback might need to use `this`
-    if (option.parse) {
-      const seq = { values, index, name, param, comp };
-      value = ((await option.parse(seq)) as Array<unknown>).map(norm);
-    } else {
-      value = option.append ? (values[key] as Array<unknown>) ?? [] : [];
-      value.push(...param.map(convertFn).map(norm));
-    }
-  } else {
-    const seq = { values, index, name, param: lastParam, comp };
-    value = option.parse ? await option.parse(seq) : convertFn(lastParam);
-  }
-  values[key] = norm(value);
-}
-
-/**
- * Sets the normalized value of an option.
- * @param context The parsing context
- * @param key The option key
- * @param option The option definition
- * @param prop The option property whose value is to be set
- */
-async function setValue(
-  context: ParseContext,
-  key: string,
-  option: OpaqueOption,
-  prop: 'default' | 'fallback',
-) {
-  /** @ignore */
-  function norm<T>(val: T) {
-    return validator.normalize(option, key, val);
-  }
-  const [validator, values] = context;
-  if (option[prop] === undefined) {
-    values[key] = undefined;
-    return;
-  }
-  // do not destructure `prop`, because the callback might need to use `this`
-  const resolved =
-    typeof option[prop] === 'function'
-      ? await (option[prop] as DefaultCallback<unknown>)(values)
-      : option[prop];
-  values[key] =
-    isOpt.ukn(option) || isOpt.bool(option)
-      ? resolved
-      : isOpt.arr(option)
-        ? norm((resolved as Array<unknown>).map(norm))
-        : norm(resolved);
-}
-
-//--------------------------------------------------------------------------------------------------
-// Option handling
-//--------------------------------------------------------------------------------------------------
-/**
- * Handles a non-niladic option.
+ * Handles a non-niladic option, ignoring parsing errors when performing word completion.
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
  * @param params The option parameters, if any
  * @returns True if the parsing loop should be broken
  */
-async function handleNonNiladic(
+async function tryParseParams(
   context: ParseContext,
   info: OptionInfo,
   index: number,
   params: Array<string>,
 ): Promise<boolean> {
-  const [, name, option] = info;
-  // max is not needed here because either:
-  // - the parser would have failed to find an option that starts a new sequence at max + 1; or
-  // - it would have reached the end of the arguments before max + 1
-  if (params.length < getParamCount(option)[0]) {
-    throw context[0].error(ErrorItem.missingParameter, { o: name });
-  }
-  if (option.type === 'function') {
-    // since we know this is a function option, we're deliberately reusing the niladic handling,
-    // with params as the "rest", and ignoring the skip count
-    const [breakLoop] = await handleNiladic(context, info, index, params);
-    return breakLoop;
-  }
   try {
     // use await here instead of return, in order to catch errors
-    await parseParam(context, info, index, params);
+    const [breakLoop] = await parseParams(context, info, index, params);
+    return breakLoop;
   } catch (err) {
-    // do not propagate errors during completion
-    if (!context[4]) {
+    // do not propagate parsing errors during completion
+    if (!context[5]) {
       throw err;
     }
+    return false;
   }
-  return false;
 }
 
+/**
+ * Handles a non-niladic option.
+ * @param context The parsing context
+ * @param info The option information
+ * @param index The starting index of the argument sequence
+ * @param params The option parameter(s)
+ * @returns [True if the parsing loop should be broken, number of additional processed arguments]
+ */
+async function parseParams(
+  context: ParseContext,
+  info: OptionInfo,
+  index: number,
+  params: Array<string>,
+): Promise<[boolean, number]> {
+  /** @ignore */
+  function error(kind: ParsingError, flags: FormattingFlags, ...args: Args) {
+    return formatter.error(kind, flags, getSymbol(name), ...args);
+  }
+  /** @ignore */
+  function parse(param: string): unknown {
+    // do not destructure `parse`, because the callback might need to use `this`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return rec && param in rec ? rec[param] : (option.parse?.(param as any, seq) ?? param);
+  }
+  const [, formatter, values, , , comp] = context;
+  const [key, option, name] = info;
+  const breakLoop = !!option.break && !comp;
+  // if index is NaN, we are in the middle of requirements checking
+  if (index >= 0 && breakLoop) {
+    await checkRequired(context);
+  }
+  const format = formatter.format.bind(formatter);
+  const seq = { values, index, name, comp, format };
+  if (option.type === 'flag') {
+    // do not destructure `parse`, because the callback might need to use `this`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    values[key] = option.parse ? await option.parse(params as any, seq) : true;
+    const skipCount = Math.max(0, option.skipCount ?? 0);
+    return [breakLoop, skipCount];
+  }
+  const separator = option.separator;
+  if (separator) {
+    params = params.flatMap((param) => param.split(separator));
+  }
+  if (index >= 0) {
+    const [min, max] = getParamCount(option);
+    if (params.length < min || params.length > max) {
+      // this may happen when the sequence comes from either the positional marker or environment data
+      // comp === false, otherwise completion would have taken place by now
+      const [alt, val] =
+        min === max ? [0, min] : !min ? [2, max] : isFinite(max) ? [3, [min, max]] : [1, min];
+      const sep = formatter.config.connectives[ConnectiveWord.and];
+      const flags = { alt, sep, mergePrev: false };
+      throw error(ParsingError.mismatchedParamCount, flags, val);
+    }
+  }
+  if (option.type === 'function') {
+    // do not destructure `parse`, because the callback might need to use `this`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    values[key] = option.parse ? await option.parse(params as any, seq) : null;
+    return [breakLoop, 0];
+  }
+  const regex = option.regex;
+  if (regex) {
+    const mismatch = params.find((param) => !param.match(regex));
+    if (mismatch) {
+      throw error(ParsingError.regexConstraintViolation, {}, mismatch, regex);
+    }
+  }
+  const choices = option.choices;
+  const [keys, rec] = isReadonlyArray<string>(choices)
+    ? [choices]
+    : [option.parse ? undefined : choices && getKeys(choices), choices];
+  if (keys) {
+    const mismatch = params.find((param) => !keys.includes(param));
+    if (mismatch) {
+      throw error(ParsingError.choiceConstraintViolation, { open: '', close: '' }, mismatch, keys);
+    }
+  }
+  if (option.type === 'single') {
+    values[key] = await parse(params[0]);
+  } else {
+    const prev = (option.append && (values[key] as Array<unknown>)) ?? [];
+    // do not use `map` with `Promise.all`, because the promises need to be chained
+    for (const param of params) {
+      prev.push(await parse(param));
+    }
+    values[key] = normalizeArray(formatter, option, name, prev);
+  }
+  return [breakLoop, 0];
+}
+
+/**
+ * Normalizes the value of an array-valued option and checks the validity of its element count.
+ * @template T The type of the array element
+ * @param formatter The error formatter
+ * @param option The option definition
+ * @param name The option name
+ * @param value The option value
+ * @returns The normalized array
+ * @throws On value not satisfying the specified limit constraint
+ */
+function normalizeArray<T>(
+  formatter: ErrorFormatter<ParsingError>,
+  option: OpaqueOption,
+  name: string,
+  value: Array<T>,
+): Array<T> {
+  if (option.unique) {
+    const unique = new Set(value);
+    value.length = 0; // reuse the same array
+    value.push(...unique);
+  }
+  const limit = option.limit;
+  if (limit !== undefined && value.length > limit) {
+    throw formatter.error(
+      ParsingError.limitConstraintViolation,
+      {},
+      getSymbol(name),
+      value.length,
+      limit,
+    );
+  }
+  return value;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Niladic option handling
+//--------------------------------------------------------------------------------------------------
 /**
  * Handles a niladic option.
  * @param context The parsing context
@@ -653,66 +725,34 @@ async function handleNiladic(
   index: number,
   rest: Array<string>,
 ): Promise<[boolean, number]> {
-  const [, values, , , comp] = context;
-  const [key, name, option] = info;
-  switch (option.type) {
-    case 'flag': {
-      values[key] = !option.negationNames?.includes(name);
-      return [false, 0];
-    }
-    case 'function': {
-      const breakLoop = !!option.break && !comp;
-      if (breakLoop) {
-        await checkRequired(context);
-      }
-      const skipCount = await handleFunction(context, info, index, rest);
-      return [breakLoop, skipCount];
-    }
-    case 'command': {
-      if (!comp) {
-        await checkRequired(context);
-      }
-      await handleCommand(context, info, index, rest);
-      return [true, 0];
-    }
-    default: {
+  const comp = context[5];
+  switch (info[1].type) {
+    case 'help':
+    case 'version':
       // skip message-valued options during completion
       if (!comp) {
         await handleMessage(context, info, rest);
       }
       return [!comp, 0];
-    }
-  }
-}
-
-/**
- * Handles a function option.
- * @param context The parsing context
- * @param info The option information
- * @param index The starting index of the argument sequence
- * @param param The remaining command-line arguments
- * @returns The number of additional processed arguments
- */
-async function handleFunction(
-  context: ParseContext,
-  info: OptionInfo,
-  index: number,
-  param: Array<string>,
-): Promise<number> {
-  const [key, name, option] = info;
-  if (option.exec) {
-    const [, values, , , comp] = context;
-    try {
-      // do not destructure `exec`, because the callback might need to use `this`
-      values[key] = await option.exec({ values, index, name, param, comp });
-    } catch (err) {
-      // do not propagate common errors during completion
-      if (!comp || err instanceof TextMessage) {
-        throw err;
+    case 'command':
+      if (!comp) {
+        await checkRequired(context);
       }
-    }
+      await handleCommand(context, info, index, rest);
+      return [true, 0];
+    default:
+      // flag option: reuse non-niladic handling
+      try {
+        // use await here instead of return, in order to catch errors
+        return await parseParams(context, info, index, rest);
+      } catch (err) {
+        // do not propagate parsing errors during completion
+        if (!comp || err instanceof TextMessage) {
+          throw err;
+        }
+        return [false, 0];
+      }
   }
-  return max(0, option.skipCount ?? 0);
 }
 
 /**
@@ -729,20 +769,33 @@ async function handleCommand(
   index: number,
   rest: Array<string>,
 ) {
-  const [validator, values, , , comp, warning] = context;
-  const [key, name, option] = info;
+  const [, formatter, values, , , comp, warning] = context;
+  const [key, option, name] = info;
   // do not destructure `options`, because the callback might need to use `this`
   const cmdOptions =
-    typeof option.options === 'function' ? await option.options() : option.options ?? {};
-  const cmdValidator = new OptionValidator(cmdOptions as OpaqueOptions, validator.config);
+    typeof option.options === 'function' ? await option.options() : (option.options ?? {});
+  const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const cmdContext = createContext(cmdValidator, param, rest, comp, name, option.clusterPrefix);
+  const cmdContext = createContext(
+    cmdRegistry,
+    formatter,
+    param,
+    rest,
+    comp,
+    name,
+    option.clusterPrefix,
+  );
   await parseArgs(cmdContext);
-  warning.push(...cmdContext[5]);
+  warning.push(...cmdContext[6]);
   // comp === false, otherwise completion will have taken place by now
-  if (option.exec) {
-    // do not destructure `exec`, because the callback might need to use `this`
-    values[key] = await option.exec({ values, index, name, param });
+  if (option.parse) {
+    const format = formatter.format.bind(formatter);
+    const seq = { values, index, name, format };
+    // do not destructure `parse`, because the callback might need to use `this`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    values[key] = await option.parse(param as any, seq as any);
+  } else {
+    values[key] = param;
   }
 }
 
@@ -754,14 +807,14 @@ async function handleCommand(
  * @throws The help or version message
  */
 async function handleMessage(context: ParseContext, info: OptionInfo, rest: Array<string>) {
-  const [validator, values] = context;
-  const [key, , option] = info;
+  const [, formatter, values] = context;
+  const [key, option] = info;
   const message =
     option.type === 'help'
       ? await handleHelp(context, option, rest)
       : option.resolve
-        ? await handleVersion(validator, option.resolve)
-        : option.version ?? '';
+        ? await handleVersion(formatter, option.resolve)
+        : (option.version ?? '');
   if (option.saveMessage) {
     values[key] = message;
   } else {
@@ -781,67 +834,69 @@ async function handleHelp(
   option: OpaqueOption,
   rest: Array<string>,
 ): Promise<HelpMessage> {
-  let [validator, , , , , , progName] = context;
+  let registry = context[0];
+  const [, formatter, , , , , , progName] = context;
   if (option.useNested && rest.length) {
     const cmdOpt = findValue(
-      validator.options,
+      registry.options,
       (opt) => opt.type === 'command' && !!opt.names?.includes(rest[0]),
     );
     if (cmdOpt) {
       if (cmdOpt.options) {
         // do not destructure `options`, because the callback might need to use `this`
-        const resolved = (
-          typeof cmdOpt.options === 'function' ? await cmdOpt.options() : cmdOpt.options
-        ) as OpaqueOptions;
+        const resolved =
+          typeof cmdOpt.options === 'function' ? await cmdOpt.options() : cmdOpt.options;
         const helpOpt = findValue(resolved, (opt) => opt.type === 'help');
         if (helpOpt) {
-          validator = new OptionValidator(resolved, validator.config);
+          registry = new OptionRegistry(resolved);
           option = helpOpt;
           rest.splice(0, 1); // only if the command has help; otherwise, it may be an option filter
         }
       }
     }
   }
-  let format;
-  if (option.useFormat && rest.length && isHelpFormat(rest[0])) {
-    format = rest[0];
-    rest.splice(0, 1); // only if the format is recognized; otherwise, it may be an option filter
+  const formats = option.formats;
+  if (formats) {
+    let format;
+    if (option.useFormat && rest.length && rest[0] in formats) {
+      format = rest[0];
+      rest.splice(0, 1); // only if the format is recognized; otherwise, it may be an option filter
+    }
+    const helpConfig = option.config ?? {};
+    if (option.useFilter) {
+      helpConfig.filter = rest;
+    }
+    const formatterClass = format ? formats[format] : getValues(formats)[0];
+    if (formatterClass) {
+      const config = { ...formatter.config, phrases: {}, ...helpConfig };
+      const helpFormatter = new formatterClass(registry.options, config);
+      return helpFormatter.sections(option.sections ?? defaultSections, progName);
+    }
   }
-  const config = option.config ?? {};
-  if (option.useFilter) {
-    config.filter = rest;
-  }
-  const formatter = createFormatter(validator, config, format);
-  const sections = option.sections ?? defaultSections;
-  return formatter.sections(sections, progName);
+  return new TextMessage(); // fallback to an empty message
 }
 
 /**
  * Resolve a package version using a module-resolve function.
- * @param validator The option validator
+ * @param formatter The error formatter
  * @param resolve The resolve callback
  * @returns The version string
  */
 async function handleVersion(
-  validator: OptionValidator,
+  formatter: ErrorFormatter<ParsingError>,
   resolve: ResolveCallback,
 ): Promise<string> {
-  const { promises } = await import('fs');
   for (
     let path = './package.json', resolved = resolve(path), lastResolved;
     resolved !== lastResolved;
     lastResolved = resolved, path = '../' + path, resolved = resolve(path)
   ) {
-    try {
-      const data = await promises.readFile(new URL(resolved));
-      return JSON.parse(data.toString()).version;
-    } catch (err) {
-      if ((err as ErrnoException).code !== 'ENOENT') {
-        throw err;
-      }
+    const data = await readFile(new URL(resolved));
+    if (data !== undefined) {
+      return JSON.parse(data).version;
     }
   }
-  throw validator.error(ErrorItem.missingPackageJson);
+  throw formatter.error(ParsingError.missingPackageJson);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -855,7 +910,7 @@ async function handleVersion(
 async function checkRequired(context: ParseContext) {
   const keys = getKeys(context[0].options);
   // we may need to serialize the following call
-  await Promise.all(keys.map((key) => checkEnvVarAndDefaultValue(context, key)));
+  await Promise.all(keys.map((key) => checkDefaultValue(context, key)));
   await Promise.all(keys.map((key) => checkRequiredOption(context, key)));
 }
 
@@ -865,33 +920,34 @@ async function checkRequired(context: ParseContext) {
  * @param key The option key
  * @returns A promise that must be awaited before continuing
  */
-async function checkEnvVarAndDefaultValue(context: ParseContext, key: string) {
-  const [validator, , , specifiedKeys] = context;
+async function checkDefaultValue(context: ParseContext, key: string) {
+  const [registry, formatter, values, , specifiedKeys] = context;
   if (specifiedKeys.has(key)) {
     return;
   }
-  const option = validator.options[key];
-  const envVar = option.envVar;
-  if (envVar) {
-    const value = getEnv(envVar);
-    if (value !== undefined) {
-      if (option.type === 'flag') {
-        // don't parse the flag value, for consistency with the semantics of the command-line
-        context[1][key] = true;
-      } else {
-        const handleFn = option.type === 'function' ? handleFunction : parseParam;
-        await handleFn(context, [key, envVar, option], NaN, [value]);
-      }
+  const option = registry.options[key];
+  const names: Array<0 | string | URL> = option.stdin ? [0] : [];
+  names.push(...(option.sources ?? []));
+  for (const name of names) {
+    const param = typeof name === 'string' ? getEnv(name) : await readFile(name);
+    if (param !== undefined) {
+      await parseParams(context, [key, option, `${name}`], NaN, [param]);
       specifiedKeys.add(key);
       return;
     }
   }
+  const name = option.preferredName ?? '';
   if (option.required) {
-    const name = option.preferredName ?? '';
-    throw validator.error(ErrorItem.missingRequiredOption, { o: name });
+    throw formatter.error(ParsingError.missingRequiredOption, {}, getSymbol(name));
   }
   if ('default' in option) {
-    return setValue(context, key, option, 'default'); // sets undefined as well
+    // do not destructure `default`, because the callback might need to use `this`
+    const value =
+      typeof option.default === 'function' ? await option.default(values) : option.default;
+    values[key] =
+      option.type === 'array' && isArray(value)
+        ? normalizeArray(formatter, option, name, value)
+        : value;
   }
 }
 
@@ -905,8 +961,8 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   function check(requires: Requires, negate: boolean, invert: boolean) {
     return checkRequires(context, option, requires, error, negate, invert);
   }
-  const [validator, , , specifiedKeys] = context;
-  const option = validator.options[key];
+  const [registry, formatter, , , specifiedKeys] = context;
+  const option = registry.options[key];
   const specified = specifiedKeys.has(key);
   const requires = option.requires;
   const requiredIf = option.requiredIf;
@@ -917,9 +973,9 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   ) {
     const name = option.preferredName ?? '';
     const kind = specified
-      ? ErrorItem.unsatisfiedRequirement
-      : ErrorItem.unsatisfiedCondRequirement;
-    throw validator.error(kind, { o: name, p: error });
+      ? ParsingError.unsatisfiedRequirement
+      : ParsingError.unsatisfiedCondRequirement;
+    throw formatter.error(kind, {}, getSymbol(name), error);
   }
 }
 
@@ -975,48 +1031,33 @@ function checkRequiresEntry(
   negate: boolean,
   invert: boolean,
 ): boolean {
-  /** @ignore */
-  function norm<T>(val: T) {
-    return validator.normalize(option, name, val);
-  }
-  const [validator, values, , specifiedKeys] = context;
-  const [key, value] = entry;
+  const [registry, formatter, values, , specifiedKeys] = context;
+  const [key, expected] = entry;
   const actual = values[key];
-  const option = validator.options[key];
+  const option = registry.options[key];
   const specified = specifiedKeys.has(key) || actual !== undefined; // consider default values
-  const required = value !== null;
-  if (isOpt.msg(option) || isOpt.ukn(option) || !specified || !required || value === undefined) {
+  const required = expected !== null;
+  const name = option.preferredName ?? '';
+  const { config } = formatter;
+  const { connectives } = config;
+  if (!specified || !required || expected === undefined) {
     if ((specified === required) !== negate) {
       return true;
     }
-    const { styles, connectives } = validator.config;
     if (specified !== invert) {
       error.word(connectives[ConnectiveWord.no]);
     }
-    format.o(option.preferredName ?? '', styles, error);
+    fmt.m(Symbol.for(name), config, error);
     return false;
   }
-  const spec = isOpt.bool(option) ? 'b' : isOpt.str(option) ? 's' : 'n';
-  const name = option.preferredName ?? '';
-  const array = Array.isArray(value);
-  let expected;
-  if (array) {
-    expected = norm(value.map(norm));
-    if (areEqual(actual as ReadonlyArray<unknown>, expected, option.unique) !== negate) {
-      return true;
-    }
-  } else {
-    expected = norm(value);
-    if ((actual === expected) !== negate) {
-      return true;
-    }
+  if (areEqual(actual, expected) !== negate) {
+    return true;
   }
-  const { styles, connectives } = validator.config;
   const connective =
     negate !== invert ? connectives[ConnectiveWord.notEquals] : connectives[ConnectiveWord.equals];
-  const phrase = array ? `[%${spec}]` : `%${spec}`;
-  format.o(name, styles, error);
-  error.word(connective).format(styles, phrase, { [spec]: expected });
+  fmt.m(Symbol.for(name), config, error);
+  error.word(connective);
+  fmt.v(expected, config, error, {});
   return false;
 }
 
@@ -1042,10 +1083,10 @@ async function checkRequireItems<T>(
   invert: boolean,
   and: boolean,
 ): Promise<boolean> {
-  const connectives = context[0].config.connectives;
+  const connectives = context[1].config.connectives;
   const connective = invert ? connectives[ConnectiveWord.and] : connectives[ConnectiveWord.or];
   if (!and && items.length > 1) {
-    error.open('(');
+    error.open(connectives[ConnectiveWord.exprOpen]);
   }
   let first = true;
   for (const item of items) {
@@ -1063,7 +1104,7 @@ async function checkRequireItems<T>(
     return true;
   }
   if (items.length > 1) {
-    error.close(')');
+    error.close(connectives[ConnectiveWord.exprClose]);
   }
   return false;
 }
@@ -1086,14 +1127,14 @@ async function checkRequiresCallback(
   negate: boolean,
   invert: boolean,
 ): Promise<boolean> {
-  const [validator, values] = context;
+  const [, formatter, values] = context;
   const result = await callback.bind(option)(values);
   if (result === negate) {
-    const { styles, connectives } = validator.config;
+    const { config } = formatter;
     if (negate !== invert) {
-      error.word(connectives[ConnectiveWord.not]);
+      error.word(config.connectives[ConnectiveWord.not]);
     }
-    format.v(callback, styles, error);
+    fmt.v(callback, config, error, {});
     return false;
   }
   return true;

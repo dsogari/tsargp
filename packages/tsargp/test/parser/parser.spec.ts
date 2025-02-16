@@ -1,72 +1,85 @@
-import { describe, expect, it, vi } from 'vitest';
-import { type Options, ArgumentParser, OptionValues } from '../../lib';
-import '../utils.spec'; // initialize globals
+import { describe, expect, it, jest } from 'bun:test';
+import { ErrorMessage } from '../../lib/styles';
+import { type Options, OptionValues } from '../../lib/options';
+import { ArgumentParser } from '../../lib/parser';
+import { AnsiFormatter, JsonFormatter } from '../../lib/formatter';
+
+process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('ArgumentParser', () => {
-  describe('validate', () => {
-    it('should validate', async () => {
-      await expect(new ArgumentParser({}).validate()).resolves.toEqual({});
-    });
-  });
-
   describe('parse', () => {
-    it('should handle no arguments', async () => {
-      await expect(new ArgumentParser({}).parse('')).resolves.toEqual({});
-      await expect(new ArgumentParser({}).parse([])).resolves.toEqual({});
+    it('handle zero arguments', () => {
+      expect(new ArgumentParser({}).parse()).resolves.toEqual({});
+      expect(new ArgumentParser({}).parse('')).resolves.toEqual({});
+      expect(new ArgumentParser({}).parse([])).resolves.toEqual({});
     });
 
-    it('should throw an error on unknown option name specified in arguments', async () => {
+    it('throw an error on unknown option', () => {
       const options = {
-        boolean1: {
-          type: 'boolean',
-          names: ['--boolean1'],
+        flag1: {
+          type: 'flag',
+          names: ['--flag1'],
         },
-        boolean2: {
-          type: 'boolean',
-          names: ['--boolean2'],
+        flag2: {
+          type: 'flag',
+          names: ['--flag2'],
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['boo'])).rejects.toThrow(`Unknown option boo.`);
-      await expect(parser.parse(['bool'])).rejects.toThrow(
-        `Unknown option bool. Similar names are: --boolean1, --boolean2.`,
+      expect(parser.parse(['fla'])).rejects.toThrow(`Unknown option fla.`);
+      expect(parser.parse(['flag'])).rejects.toThrow(
+        `Unknown option flag. Similar names are: --flag1, --flag2.`,
       );
-      await expect(parser.parse(['bool-ean'])).rejects.toThrow(
-        `Unknown option bool-ean. Similar names are: --boolean1, --boolean2.`,
+      expect(parser.parse(['flags'])).rejects.toThrow(
+        `Unknown option flags. Similar names are: --flag1, --flag2.`,
       );
     });
 
-    it('should throw an error when a required option is not specified', async () => {
+    it('throw an error on required option not specified', () => {
       const options = {
-        required: {
-          type: 'boolean',
-          names: ['-b'],
+        flag: {
+          type: 'flag',
           required: true,
           preferredName: 'preferred',
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse([])).rejects.toThrow(`Option preferred is required.`);
+      expect(parser.parse([])).rejects.toThrow(`Option preferred is required.`);
     });
 
-    describe('help', () => {
-      it('should save a help message when a help option asks so', async () => {
+    describe('parsing a help option', () => {
+      it('throw an empty message when there are no formats', () => {
         const options = {
           help: {
             type: 'help',
             names: ['-h'],
             sections: [{ type: 'groups' }],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(/^$/);
+      });
+
+      it('save the help message when the option explicitly asks so', () => {
+        const options = {
+          help: {
+            type: 'help',
+            names: ['-h'],
+            formats: { ansi: AnsiFormatter },
+            sections: [{ type: 'groups' }],
             saveMessage: true,
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ help: undefined });
-        await expect(parser.parse(['-h'])).resolves.toEqual({
-          help: expect.objectContaining({ message: expect.stringMatching(/^ {2}-h$/) }),
+        expect(parser.parse([])).resolves.toEqual({ help: undefined });
+        expect(parser.parse(['-h'])).resolves.toEqual({
+          help: expect.objectContaining({
+            message: expect.stringMatching(`  -h    Available formats are {'ansi'}.`),
+          }),
         });
       });
 
-      it('should throw a help message with default settings', async () => {
+      it('throw a help message with default settings', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -76,21 +89,24 @@ describe('ArgumentParser', () => {
           help: {
             type: 'help',
             names: ['-h'],
+            synopsis: 'the help option',
+            formats: { ansi: AnsiFormatter },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.not.toHaveProperty('help');
-        await expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(
-          `Usage:\n\n  prog [-f] [-h]\n\nArgs:\n\n  -f\n\nOptions:\n\n  -h`,
+        expect(parser.parse([])).resolves.not.toHaveProperty('help');
+        expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(
+          `Usage:\n\n  prog [-f] [-h]\n\nArgs:\n\n  -f\n\nOptions:\n\n  -h    the help option`,
         );
       });
 
-      it('should throw a help message with usage and custom indentation', async () => {
+      it('throw a help message with usage and custom indentation', () => {
         const options = {
           help: {
             type: 'help',
             names: ['-h'],
             group: 'group  heading',
+            formats: { ansi: AnsiFormatter },
             sections: [
               { type: 'usage', title: 'usage  heading' },
               { type: 'groups', noWrap: true },
@@ -99,13 +115,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.not.toHaveProperty('help');
-        await expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(
+        expect(parser.parse([])).resolves.not.toHaveProperty('help');
+        expect(parser.parse(['-h'], { progName: 'prog' })).rejects.toThrow(
           `usage heading\n\nprog [-h]\n\ngroup  heading\n\n-h`,
         );
       });
 
-      it('should throw a help message with a JSON format', async () => {
+      it('throw a help message with a JSON format', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -114,17 +130,18 @@ describe('ArgumentParser', () => {
           help: {
             type: 'help',
             names: ['-h'],
+            formats: { ansi: AnsiFormatter, json: JsonFormatter },
             useFormat: true,
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-h', 'json'])).rejects.toThrow(
+        expect(parser.parse(['-h', 'json'])).rejects.toThrow(
           `[{"type":"flag","names":["-f","--flag"],"preferredName":"-f"},` +
-            `{"type":"help","names":["-h"],"useFormat":true,"preferredName":"-h"}]`,
+            `{"type":"help","names":["-h"],"formats":{},"useFormat":true,"preferredName":"-h"}]`,
         );
       });
 
-      it('should throw a help message with filtered options', async () => {
+      it('throw a help message with filtered options', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -132,30 +149,32 @@ describe('ArgumentParser', () => {
           },
           flag2: {
             type: 'flag',
-            desc: 'A flag option',
+            synopsis: 'A flag option',
           },
-          boolean: {
-            type: 'boolean',
-            names: ['-b', '--boolean'],
+          single: {
+            type: 'single',
+            names: ['-s', '--single'],
           },
           help: {
             type: 'help',
             names: ['-h'],
+            formats: { ansi: AnsiFormatter },
             sections: [{ type: 'groups' }],
             useFilter: true,
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-h', '-F', '-B'])).rejects.toThrow(
-          `  -f, --flag\n  -b, --boolean  <boolean>`,
+        expect(parser.parse(['-h', '-F', '-S'])).rejects.toThrow(
+          `  -f, --flag\n  -s, --single  <param>`,
         );
       });
 
-      it('should throw the help message of a nested command with filter and async options callback', async () => {
+      it('throw the help message of a nested command with option filter', () => {
         const options = {
           help: {
             type: 'help',
             names: ['-h'],
+            formats: { ansi: AnsiFormatter },
             sections: [{ type: 'groups' }],
             useNested: true,
             useFilter: true,
@@ -173,7 +192,8 @@ describe('ArgumentParser', () => {
           command2: {
             type: 'command',
             names: ['cmd2'],
-            options: async () => ({
+            options: () => ({
+              // test asynchronous
               flag: {
                 type: 'flag',
                 names: ['-f'],
@@ -181,6 +201,7 @@ describe('ArgumentParser', () => {
               help: {
                 type: 'help',
                 names: ['-h'],
+                formats: { ansi: AnsiFormatter },
                 sections: [{ type: 'groups' }],
                 useFilter: true,
               },
@@ -188,15 +209,15 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-h', '-h'])).rejects.toThrow('  -h');
-        await expect(parser.parse(['-h', 'cmd1'])).rejects.toThrow('  cmd1  ...');
-        await expect(parser.parse(['-h', 'cmd2'])).rejects.toThrow('  -f\n  -h');
-        await expect(parser.parse(['-h', 'cmd2', '-f'])).rejects.toThrow('  -f');
+        expect(parser.parse(['-h', '-h'])).rejects.toThrow('  -h');
+        expect(parser.parse(['-h', 'cmd1'])).rejects.toThrow('  cmd1  ...');
+        expect(parser.parse(['-h', 'cmd2'])).rejects.toThrow('  -f\n  -h');
+        expect(parser.parse(['-h', 'cmd2', '-f'])).rejects.toThrow('  -f');
       });
     });
 
-    describe('version', () => {
-      it('should save a version message when a version option asks so', async () => {
+    describe('parsing a version option', () => {
+      it('save the version message when the option explicitly asks so', () => {
         const options = {
           version: {
             type: 'version',
@@ -206,11 +227,11 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ version: undefined });
-        await expect(parser.parse(['-v'])).resolves.toEqual({ version: '0.1.0' });
+        expect(parser.parse([])).resolves.toEqual({ version: undefined });
+        expect(parser.parse(['-v'])).resolves.toEqual({ version: '0.1.0' });
       });
 
-      it('should throw a version message on a version option with fixed version', async () => {
+      it('throw a version message with fixed version', () => {
         const options = {
           version: {
             type: 'version',
@@ -219,23 +240,23 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.not.toHaveProperty('version');
-        await expect(parser.parse(['-v'])).rejects.toThrow(/^0.1.0$/);
+        expect(parser.parse([])).resolves.not.toHaveProperty('version');
+        expect(parser.parse(['-v'])).rejects.toThrow(/^0.1.0$/);
       });
 
-      it('should throw a version message on a version option with a resolve function', async () => {
+      it('throw a version message with a resolve function', () => {
         const options = {
           version: {
             type: 'version',
             names: ['-v'],
-            resolve: (str) => `file://${import.meta.dirname}/${str}`,
+            resolve: (str) => `file://${import.meta.dirname}/../data/${str}`,
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-v'])).rejects.toThrow(/^0.1.0$/);
+        expect(parser.parse(['-v'])).rejects.toThrow(/^0.1.0$/);
       });
 
-      it('should throw an error on a version option that cannot resolve a package.json file', async () => {
+      it('throw an error when a package.json file cannot be found', () => {
         const options = {
           version: {
             type: 'version',
@@ -244,227 +265,208 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-v'])).rejects.toThrow(`Could not find a "package.json" file.`);
+        expect(parser.parse(['-v'])).rejects.toThrow(`Could not find a "package.json" file.`);
       });
     });
 
-    describe('function', () => {
-      it('should handle a function option with an asynchronous callback', async () => {
+    describe('parsing a flag option', () => {
+      it('handle an asynchronous callback', () => {
         const options = {
-          function: {
-            type: 'function',
+          flag: {
+            type: 'flag',
             names: ['-f'],
-            exec: async () => 'abc',
+            parse: () => 'abc',
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f'])).resolves.toEqual({ function: 'abc' });
+        expect(parser.parse(['-f'])).resolves.toEqual({ flag: 'abc' });
       });
 
-      it('should handle a function option with an asynchronous callback that throws', async () => {
+      it('handle an asynchronous callback that throws', () => {
         const options = {
-          function: {
-            type: 'function',
+          flag: {
+            type: 'flag',
             names: ['-f'],
-            async exec() {
-              throw 'abc';
+            async parse(_, { format }) {
+              throw new ErrorMessage(format(this.type)); // test `this`
             },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f'])).rejects.toThrow('abc');
+        expect(parser.parse(['-f'])).rejects.toThrow('flag');
       });
 
-      it('should skip a certain number of remaining arguments', async () => {
+      it('handle a negation name', () => {
         const options = {
           flag: {
             type: 'flag',
+            names: ['-f', '-no-f'],
+            parse: (_, { name }) => name !== '-no-f',
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-f'])).resolves.toEqual({ flag: true });
+        expect(parser.parse(['-no-f'])).resolves.toEqual({ flag: false });
+      });
+
+      it('skip a certain number of remaining arguments', () => {
+        const options = {
+          flag1: {
+            type: 'flag',
             names: ['-f1'],
           },
-          function: {
-            type: 'function',
+          flag2: {
+            type: 'flag',
             names: ['-f2'],
-            exec() {
+            parse() {
               this.skipCount = 1; // test `this`
             },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f2', 'skipped', '-f1'])).resolves.toEqual({
-          flag: true,
-          function: undefined,
+        expect(parser.parse(['-f2', 'skipped', '-f1'])).resolves.toEqual({
+          flag1: true,
+          flag2: undefined,
         });
       });
 
-      it('should not skip any argument when the skip count is negative', async () => {
+      it('avoid skipping arguments when the skip count is negative', () => {
         const options = {
-          flag: {
+          flag1: {
             type: 'flag',
             names: ['-f1'],
           },
-          function: {
-            type: 'function',
+          flag2: {
+            type: 'flag',
             names: ['-f2'],
-            exec() {
+            parse() {
               this.skipCount = -1; // test `this`
             },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f2', 'arg', '-f1'])).rejects.toThrow('Unknown option arg.');
+        expect(parser.parse(['-f2', 'arg', '-f1'])).rejects.toThrow('Unknown option arg.');
       });
 
-      it('should handle a function option', async () => {
+      it('replace the option value with the result of the parse callback', () => {
         const options = {
-          function: {
-            type: 'function',
+          flag: {
+            type: 'flag',
             names: ['-f'],
-            exec: vi.fn().mockImplementation(() => 'abc'),
+            parse: jest.fn((param) => param),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ function: undefined });
-        expect(options.function.exec).not.toHaveBeenCalled();
-        await expect(parser.parse(['-f'])).resolves.toEqual({ function: 'abc' });
-        expect(options.function.exec).toHaveBeenCalledWith({
-          // should have been { function: undefined } at the time of call
-          values: { function: 'abc' },
+        expect(parser.parse([])).resolves.toEqual({ flag: undefined });
+        expect(options.flag.parse).not.toHaveBeenCalled();
+        expect(parser.parse(['-f'])).resolves.toEqual({ flag: [] });
+        expect(options.flag.parse).toHaveBeenCalledWith([], {
+          values: { flag: [] }, // should have been { flag: undefined } at the time of call
           index: 0,
           name: '-f',
-          param: [],
           comp: false,
+          format: expect.anything(),
         });
-        options.function.exec.mockClear();
-        await expect(parser.parse(['-f', '-f'])).resolves.toEqual({ function: 'abc' });
-        expect(options.function.exec).toHaveBeenCalledWith({
-          // should have been { function: undefined } at the time of call
-          values: { function: 'abc' },
+        options.flag.parse.mockClear();
+        expect(parser.parse(['-f', '-f'])).resolves.toEqual({ flag: [] });
+        expect(options.flag.parse).toHaveBeenCalledWith(['-f'], {
+          values: { flag: [] }, // should have been { flag: undefined } at the time of call
           index: 0,
           name: '-f',
-          param: ['-f'],
           comp: false,
+          format: expect.anything(),
         });
-        expect(options.function.exec).toHaveBeenCalledTimes(2);
+        expect(options.flag.parse).toHaveBeenCalledTimes(2);
       });
 
-      it('should handle a function option that throws', async () => {
+      it('break the parsing loop when the option explicitly asks so', () => {
         const options = {
-          function: {
-            type: 'function',
-            names: ['-f'],
-            exec: vi.fn().mockImplementation(() => {
-              throw 'abc';
-            }),
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f'])).rejects.toThrow('abc');
-        expect(options.function.exec).toHaveBeenCalled();
-      });
-
-      it('should break the parsing loop when a function option explicitly asks so', async () => {
-        const options = {
-          function1: {
-            type: 'function',
+          flag1: {
+            type: 'flag',
             names: ['-f1'],
-            exec: vi.fn().mockImplementation(() => 'abc'),
+            parse: jest.fn(() => 'abc'),
             break: true,
           },
-          function2: {
-            type: 'function',
+          flag2: {
+            type: 'flag',
             names: ['-f2'],
-            exec: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1', '-f2'])).resolves.toEqual({
-          function1: 'abc',
-          function2: undefined,
+        expect(parser.parse(['-f1', '-f2'])).resolves.toEqual({
+          flag1: 'abc',
+          flag2: undefined,
         });
-        expect(options.function1.exec).toHaveBeenCalled();
-        expect(options.function2.exec).not.toHaveBeenCalled();
+        expect(options.flag1.parse).toHaveBeenCalled();
+        expect(options.flag2.parse).not.toHaveBeenCalled();
       });
 
-      it('should set specified values during parsing', async () => {
+      it('expose parsed values to the parse callback', () => {
         const options = {
-          function: {
-            type: 'function',
+          flag1: {
+            type: 'flag',
             names: ['-f1'],
-            exec({ values }) {
-              expect((values as OptionValues<typeof options>).flag).toBeTruthy();
+            parse(_, { values }) {
+              expect((values as OptionValues<typeof options>).flag2).toBeTruthy();
             },
           },
-          flag: {
+          flag2: {
             type: 'flag',
             names: ['-f2'],
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f2', '-f1'])).resolves.toEqual({
-          function: undefined,
-          flag: true,
+        expect(parser.parse(['-f2', '-f1'])).resolves.toEqual({
+          flag1: undefined,
+          flag2: true,
         });
       });
     });
 
-    describe('command', () => {
-      it('should handle a command option with an asynchronous callback', async () => {
+    describe('parsing a command option', () => {
+      it('handle a an asynchronous callback', () => {
         const options = {
           command: {
             type: 'command',
             names: ['-c'],
-            exec: async () => 'abc',
+            parse: () => 'abc',
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c'])).resolves.toEqual({ command: 'abc' });
+        expect(parser.parse(['-c'])).resolves.toEqual({ command: 'abc' });
       });
 
-      it('should handle a command option with an asynchronous callback that throws', async () => {
+      it('handle an asynchronous callback that throws', () => {
         const options = {
           command: {
             type: 'command',
             names: ['-c'],
-            async exec() {
-              throw this.type; // test `this`
+            async parse(_, { format }) {
+              throw new ErrorMessage(format(this.type)); // test `this`
             },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c'])).rejects.toThrow('command');
+        expect(parser.parse(['-c'])).rejects.toThrow('command');
       });
 
-      it('should handle a command option', async () => {
+      it('set the option value with the result of the parse callback', () => {
         const options = {
           command: {
             type: 'command',
             names: ['-c'],
-            exec: vi.fn().mockImplementation(() => 'abc'),
+            parse: jest.fn(() => 'abc'),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ command: undefined });
-        expect(options.command.exec).not.toHaveBeenCalled();
-        await expect(parser.parse(['-c'])).resolves.toEqual({ command: 'abc' });
-        expect(options.command.exec).toHaveBeenCalled();
+        expect(parser.parse([])).resolves.toEqual({ command: undefined });
+        expect(options.command.parse).not.toHaveBeenCalled();
+        expect(parser.parse(['-c'])).resolves.toEqual({ command: 'abc' });
+        expect(options.command.parse).toHaveBeenCalled();
       });
 
-      it('should handle a command option that throws', async () => {
-        const options = {
-          command: {
-            type: 'command',
-            names: ['-c'],
-            exec: vi.fn().mockImplementation(() => {
-              throw 'abc';
-            }),
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c'])).rejects.toThrow('abc');
-        expect(options.command.exec).toHaveBeenCalled();
-      });
-
-      it('should handle a command option with options', async () => {
+      it('handle nested option definitions', () => {
         const options = {
           command: {
             type: 'command',
@@ -475,56 +477,56 @@ describe('ArgumentParser', () => {
                 names: ['-f'],
               },
             },
-            exec: vi.fn().mockImplementation(({ param }) => param),
+            parse: jest.fn((param) => param),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c'])).resolves.toEqual({ command: { flag: undefined } });
-        expect(options.command.exec).toHaveBeenCalledWith({
-          // should have been { command: undefined } at the time of call
-          values: { command: { flag: undefined } },
-          index: 0,
-          name: '-c',
-          param: { flag: undefined },
-        });
-        options.command.exec.mockClear();
-        await expect(parser.parse(['-c', '-f'])).resolves.toEqual({ command: { flag: true } });
-        expect(options.command.exec).toHaveBeenCalledWith({
-          // should have been { command: undefined } at the time of call
-          values: { command: { flag: true } },
-          index: 0,
-          name: '-c',
-          param: { flag: true },
-        });
+        expect(parser.parse(['-c'])).resolves.toEqual({ command: { flag: undefined } });
+        expect(options.command.parse).toHaveBeenCalledWith(
+          { flag: undefined },
+          {
+            // should have been { command: undefined } at the time of call
+            values: { command: { flag: undefined } },
+            index: 0,
+            name: '-c',
+            format: expect.anything(),
+          },
+        );
+        options.command.parse.mockClear();
+        expect(parser.parse(['-c', '-f'])).resolves.toEqual({ command: { flag: true } });
+        expect(options.command.parse).toHaveBeenCalledWith(
+          { flag: true },
+          {
+            // should have been { command: undefined } at the time of call
+            values: { command: { flag: true } },
+            index: 0,
+            name: '-c',
+            format: expect.anything(),
+          },
+        );
       });
 
-      it('should handle a command option with an options callback', async () => {
+      it('handle an options callback', () => {
         const options = {
           command: {
             type: 'command',
             names: ['-c'],
-            options: vi.fn().mockImplementation(() => ({
-              flag: {
-                type: 'flag',
-                names: ['-f'],
-              },
-            })),
-            exec: vi.fn().mockImplementation(() => 'abc'),
+            options: jest.fn(
+              (): Options => ({
+                flag: {
+                  type: 'flag',
+                  names: ['-f'],
+                },
+              }),
+            ),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c', '-f'])).resolves.toEqual({ command: 'abc' });
+        expect(parser.parse(['-c', '-f'])).resolves.toEqual({ command: { flag: true } });
         expect(options.command.options).toHaveBeenCalled();
-        expect(options.command.exec).toHaveBeenCalledWith({
-          // should have been { command: undefined } at the time of call
-          values: { command: 'abc' },
-          index: 0,
-          name: '-c',
-          param: { flag: true },
-        });
       });
 
-      it('should handle a command option with an async options callback', async () => {
+      it('handle an async options callback', () => {
         const options = {
           command: {
             type: 'command',
@@ -537,14 +539,258 @@ describe('ArgumentParser', () => {
                 },
               };
             },
-            exec: ({ param }) => param,
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c', '-c'])).resolves.toEqual({ command: { flag: true } });
+        expect(parser.parse(['-c', '-c'])).resolves.toEqual({ command: { flag: true } });
       });
 
-      it('should handle a command option with options with async callbacks', async () => {
+      it('handle nested option definitions with asynchronous callbacks', () => {
+        const options = {
+          command: {
+            type: 'command',
+            names: ['-c'],
+            options: {
+              flag1: {
+                type: 'flag',
+                names: ['-f1'],
+                default: () => true,
+              },
+              flag2: {
+                type: 'flag',
+                names: ['-f2'],
+                parse: () => true,
+              },
+            },
+            parse(param) {
+              expect(param).toEqual({ flag1: true, flag2: true });
+              return param;
+            },
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-c', '-f2'])).resolves.toEqual({
+          command: { flag1: true, flag2: true },
+        });
+      });
+    });
+
+    describe('parsing a single-valued option', () => {
+      it('throw an error on missing parameter', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-s'])).rejects.toThrow(
+          `Wrong number of parameters to option -s: requires exactly 1.`,
+        );
+      });
+
+      it('replace the option value with the parameter', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse([])).resolves.toEqual({ single: undefined });
+        expect(parser.parse(['-s', ''])).resolves.toEqual({ single: '' });
+        expect(parser.parse(['-s', '0', '-s', '1'])).resolves.toEqual({ single: '1' });
+      });
+
+      it('replace the option value with the result of the parse callback', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+            parse: Number,
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-s', ''])).resolves.toEqual({ single: 0 });
+        expect(parser.parse(['-s', '0', '-s', '1'])).resolves.toEqual({ single: 1 });
+      });
+    });
+
+    describe('parsing an array-valued option', () => {
+      it('accept zero parameters', () => {
+        const options = {
+          array: {
+            type: 'array',
+            names: ['-a'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-a'])).resolves.toEqual({ array: [] });
+      });
+
+      it('replace the option value with the parameters', () => {
+        const options = {
+          array: {
+            type: 'array',
+            names: ['-a'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse([])).resolves.toEqual({ array: undefined });
+        expect(parser.parse(['-a', ''])).resolves.toEqual({ array: [''] });
+        expect(parser.parse(['-a', '0', '-a', '1'])).resolves.toEqual({ array: ['1'] });
+      });
+
+      it('replace the option value with the result of the parse callback', () => {
+        const options = {
+          array: {
+            type: 'array',
+            names: ['-a'],
+            parse: Number,
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-a', ''])).resolves.toEqual({ array: [0] });
+        expect(parser.parse(['-a', '0', '-a', '1'])).resolves.toEqual({ array: [1] });
+      });
+
+      it('split parameters with a delimiter', () => {
+        const options = {
+          array: {
+            type: 'array',
+            names: ['-a'],
+            separator: ',',
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-a', '1,2'])).resolves.toEqual({ array: ['1', '2'] });
+        expect(parser.parse(['-a', '1,2', '-a'])).resolves.toEqual({ array: [] });
+      });
+
+      it('append values when the option explicitly asks so', () => {
+        const options = {
+          array: {
+            type: 'array',
+            names: ['-a'],
+            append: true,
+            separator: ',',
+            parse: Number,
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-a', '0', '-a', '1'])).resolves.toEqual({ array: [0, 1] });
+        expect(parser.parse(['-a', '0,1', '-a', '2,3'])).resolves.toEqual({
+          array: [0, 1, 2, 3],
+        });
+      });
+    });
+
+    describe('parsing a function option', () => {
+      it('accept zero parameters', () => {
+        const options = {
+          function: {
+            type: 'function',
+            names: ['-f'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-f'])).resolves.toEqual({ function: null });
+      });
+    });
+  });
+
+  describe('parseInto', () => {
+    describe('passing a class instance with previous values', () => {
+      it('handle an option with no default value', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        } as const satisfies Options;
+        const values = new (class {
+          flag: true | undefined = true;
+        })();
+        const parser = new ArgumentParser(options);
+        parser.parseInto(values, []);
+        expect(values).toEqual({ flag: true });
+      });
+
+      it('handle an option with a default value', async () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            default: () => true,
+          },
+        } as const satisfies Options;
+        const values = new (class {
+          flag = false;
+        })();
+        const parser = new ArgumentParser(options);
+        await parser.parseInto(values, []);
+        expect(values).toEqual({ flag: true });
+      });
+
+      it('handle an option with a default value of undefined', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            default: undefined,
+          },
+        } as const satisfies Options;
+        const values = new (class {
+          flag: true | undefined = true;
+        })();
+        const parser = new ArgumentParser(options);
+        parser.parseInto(values, []);
+        expect(values).toEqual({ flag: undefined });
+      });
+    });
+
+    describe('a deprecated option is specified', () => {
+      it('report a warning', async () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            deprecated: '',
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        const values = { flag: undefined };
+        const { warning } = await parser.parseInto(values, ['-f', '-f']);
+        expect(warning).toHaveLength(1);
+        expect(warning?.message).toEqual(
+          `Option -f is deprecated and may be removed in future releases.\n`,
+        );
+      });
+
+      it('report multiple warnings', async () => {
+        const options = {
+          flag1: {
+            type: 'flag',
+            names: ['-f1'],
+            deprecated: '',
+          },
+          flag2: {
+            type: 'flag',
+            names: ['-f2'],
+            deprecated: '',
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        const values = { flag1: undefined, flag2: undefined };
+        const { warning } = await parser.parseInto(values, ['-f1', '-f2']);
+        expect(warning).toHaveLength(2);
+        expect(warning?.message).toEqual(
+          `Option -f1 is deprecated and may be removed in future releases.\n` +
+            `Option -f2 is deprecated and may be removed in future releases.\n`,
+        );
+      });
+
+      it('report a warning from a nested command', async () => {
         const options = {
           command: {
             type: 'command',
@@ -553,441 +799,19 @@ describe('ArgumentParser', () => {
               flag: {
                 type: 'flag',
                 names: ['-f'],
-                default: async () => true,
-              },
-              boolean: {
-                type: 'boolean',
-                names: ['-b'],
-                parse: async () => true,
+                deprecated: '',
               },
             },
-            exec({ param }) {
-              expect(param).toEqual({ flag: true, boolean: true });
-              return param;
-            },
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-c', '-b', '1'])).resolves.toEqual({
-          command: { flag: true, boolean: true },
-        });
-      });
-    });
-
-    describe('flag', () => {
-      it('should handle a flag option with negation names', async () => {
-        const options = {
-          flag: {
-            type: 'flag',
-            names: ['-f'],
-            negationNames: ['-no-f'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ flag: undefined });
-        await expect(parser.parse(['-f'])).resolves.toEqual({ flag: true });
-        await expect(parser.parse(['-no-f'])).resolves.toEqual({ flag: false });
-      });
-    });
-
-    describe('boolean', () => {
-      it('should throw an error on boolean option with missing parameter', async () => {
-        const options = {
-          boolean: {
-            type: 'boolean',
-            names: ['-b'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-b'])).rejects.toThrow(`Missing parameter to -b.`);
-      });
-
-      it('should handle a boolean option', async () => {
-        const options = {
-          boolean: {
-            type: 'boolean',
-            names: ['-b', '--boolean'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ boolean: undefined });
-        await expect(parser.parse(['-b', ' +0.0 '])).resolves.toEqual({ boolean: false });
-        await expect(parser.parse(['-b', ' 1 '])).resolves.toEqual({ boolean: true });
-        await expect(parser.parse(['--boolean', ''])).resolves.toEqual({ boolean: false });
-        await expect(parser.parse(['-b=1', '-b=0'])).resolves.toEqual({ boolean: false });
-        await expect(parser.parse(['-b', '1', '-b', '0'])).resolves.toEqual({ boolean: false });
-      });
-
-      it('should handle a boolean option with truth names', async () => {
-        const options = {
-          boolean: {
-            type: 'boolean',
-            names: ['-b'],
-            truthNames: ['true'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-b', ' abc '])).resolves.toEqual({ boolean: false });
-        await expect(parser.parse(['-b', ' True '])).resolves.toEqual({ boolean: true });
-      });
-
-      it('should handle a boolean option with falsity names', async () => {
-        const options = {
-          boolean: {
-            type: 'boolean',
-            names: ['-b'],
-            falsityNames: ['false'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-b', ' False '])).resolves.toEqual({ boolean: false });
-        await expect(parser.parse(['-b', ' abc '])).resolves.toEqual({ boolean: true });
-      });
-
-      it('should handle a boolean option with truth and falsity names', async () => {
-        const options = {
-          boolean: {
-            type: 'boolean',
-            names: ['-b'],
-            truthNames: ['true'],
-            falsityNames: ['false'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-b', ' False '])).resolves.toEqual({ boolean: false });
-        await expect(parser.parse(['-b', ' True '])).resolves.toEqual({ boolean: true });
-      });
-
-      it('should throw an error on invalid parameter to boolean option with case-sensitive truth and falsity names', async () => {
-        const options = {
-          boolean: {
-            type: 'boolean',
-            names: ['-b'],
-            truthNames: ['true'],
-            falsityNames: ['false'],
-            caseSensitive: true,
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-b', 'False'])).rejects.toThrow(
-          `Invalid parameter to -b: 'False'. Possible values are {'true', 'false'}.`,
-        );
-        await expect(parser.parse(['-b', 'True'])).rejects.toThrow(
-          `Invalid parameter to -b: 'True'. Possible values are {'true', 'false'}.`,
+        const values = { command: undefined };
+        const { warning } = await parser.parseInto(values, ['-c', '-f']);
+        expect(warning).toHaveLength(1);
+        expect(warning?.message).toEqual(
+          `Option -f is deprecated and may be removed in future releases.\n`,
         );
       });
-    });
-
-    describe('string', () => {
-      it('should throw an error on string option with missing parameter', async () => {
-        const options = {
-          string: {
-            type: 'string',
-            names: ['-s'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-s'])).rejects.toThrow(`Missing parameter to -s.`);
-      });
-
-      it('should handle a string option', async () => {
-        const options = {
-          string: {
-            type: 'string',
-            names: ['-s', '--string'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ string: undefined });
-        await expect(parser.parse(['-s', '123'])).resolves.toEqual({ string: '123' });
-        await expect(parser.parse(['--string', ''])).resolves.toEqual({ string: '' });
-        await expect(parser.parse(['-s=1', '-s==2'])).resolves.toEqual({ string: '=2' });
-        await expect(parser.parse(['-s', '1', '-s', '2'])).resolves.toEqual({ string: '2' });
-      });
-    });
-
-    describe('number', () => {
-      it('should throw an error on number option with missing parameter', async () => {
-        const options = {
-          number: {
-            type: 'number',
-            names: ['-n'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-n'])).rejects.toThrow(`Missing parameter to -n.`);
-      });
-
-      it('should handle a number option', async () => {
-        const options = {
-          number: {
-            type: 'number',
-            names: ['-n', '--number'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ number: undefined });
-        await expect(parser.parse(['-n', '123'])).resolves.toEqual({ number: 123 });
-        await expect(parser.parse(['--number', ''])).resolves.toEqual({ number: 0 });
-        await expect(parser.parse(['-n=1', '-n==2'])).resolves.toEqual({ number: NaN });
-        await expect(parser.parse(['-n', '1', '-n', '2'])).resolves.toEqual({ number: 2 });
-      });
-    });
-
-    describe('strings', () => {
-      it('should throw an error on variadic strings option with missing parameter', async () => {
-        const options = {
-          strings: {
-            type: 'strings',
-            names: ['-ss'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-ss'])).rejects.toThrow(`Missing parameter to -ss.`);
-      });
-
-      it('should throw an error on delimited strings option with missing parameter', async () => {
-        const options = {
-          strings: {
-            type: 'strings',
-            names: ['-ss'],
-            separator: ',',
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-ss'])).rejects.toThrow(`Missing parameter to -ss.`);
-      });
-
-      it('should handle a strings option that can be specified multiple times', async () => {
-        const options = {
-          strings: {
-            type: 'strings',
-            names: ['-ss', '--strings'],
-            append: true,
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ strings: undefined });
-        await expect(parser.parse(['-ss', '123', '456'])).resolves.toEqual({
-          strings: ['123', '456'],
-        });
-        await expect(parser.parse(['--strings', '', '   '])).resolves.toEqual({
-          strings: ['', '   '],
-        });
-        await expect(parser.parse(['-ss', 'a', 'b', '-ss', 'c', 'd'])).resolves.toEqual({
-          strings: ['a', 'b', 'c', 'd'],
-        });
-      });
-
-      it('should handle a strings option specified with multiple parameters', async () => {
-        const options = {
-          strings: {
-            type: 'strings',
-            names: ['-ss'],
-          },
-          flag: {
-            type: 'flag',
-            names: ['-f'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-ss', 'one', 'two'])).resolves.toEqual({
-          strings: ['one', 'two'],
-          flag: undefined,
-        });
-        await expect(parser.parse(['-ss', 'one', 'two', '-f'])).resolves.toEqual({
-          strings: ['one', 'two'],
-          flag: true,
-        });
-        await expect(parser.parse(['-ss', 'one', 'two', '-ss', 'one=two', 'one'])).resolves.toEqual(
-          {
-            strings: ['one=two', 'one'],
-            flag: undefined,
-          },
-        );
-      });
-    });
-
-    describe('numbers', () => {
-      it('should throw an error on variadic numbers option with missing parameter', async () => {
-        const options = {
-          numbers: {
-            type: 'numbers',
-            names: ['-ns'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-ns'])).rejects.toThrow(`Missing parameter to -ns.`);
-      });
-
-      it('should throw an error on delimited numbers option with missing parameter', async () => {
-        const options = {
-          numbers: {
-            type: 'numbers',
-            names: ['-ns'],
-            separator: ',',
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-ns'])).rejects.toThrow(`Missing parameter to -ns.`);
-      });
-
-      it('should handle a numbers option that can be specified multiple times', async () => {
-        const options = {
-          numbers: {
-            type: 'numbers',
-            names: ['-ns', '--numbers'],
-            append: true,
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toEqual({ numbers: undefined });
-        await expect(parser.parse(['-ns', '456', ' 123 '])).resolves.toEqual({
-          numbers: [456, 123],
-        });
-        await expect(parser.parse(['--numbers', '', '   '])).resolves.toEqual({ numbers: [0, 0] });
-        await expect(parser.parse(['-ns', '5', '-ns', '6', '7'])).resolves.toEqual({
-          numbers: [5, 6, 7],
-        });
-      });
-
-      it('should handle a numbers option specified with multiple parameters', async () => {
-        const options = {
-          numbers: {
-            type: 'numbers',
-            names: ['-ns'],
-          },
-          flag: {
-            type: 'flag',
-            names: ['-f'],
-          },
-        } as const satisfies Options;
-        const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-ns', '1', '2'])).resolves.toEqual({
-          numbers: [1, 2],
-          flag: undefined,
-        });
-        await expect(parser.parse(['-ns', '1', '2', '-f'])).resolves.toEqual({
-          numbers: [1, 2],
-          flag: true,
-        });
-        await expect(parser.parse(['-ns', '1', '2', '-ns', '2', '1'])).resolves.toEqual({
-          numbers: [2, 1],
-          flag: undefined,
-        });
-      });
-    });
-  });
-
-  describe('parseInto', () => {
-    it('should handle a class instance with previous values and no default', async () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-        },
-      } as const satisfies Options;
-      const values = new (class {
-        flag = false;
-      })();
-      const parser = new ArgumentParser(options);
-      await parser.parseInto(values, []);
-      expect(values).toEqual({ flag: false });
-    });
-
-    it('should handle a class instance with previous values and a default', async () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-          default: true,
-        },
-      } as const satisfies Options;
-      const values = new (class {
-        flag = false;
-      })();
-      const parser = new ArgumentParser(options);
-      await parser.parseInto(values, []);
-      expect(values).toEqual({ flag: true });
-    });
-
-    it('should handle a class instance with previous values and a default of undefined', async () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-          default: undefined,
-        },
-      } as const satisfies Options;
-      const values = new (class {
-        flag = false;
-      })();
-      const parser = new ArgumentParser(options);
-      await parser.parseInto(values, []);
-      expect(values).toEqual({ flag: undefined });
-    });
-
-    it('should output a warning on a deprecated option', async () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-          deprecated: 'yes',
-        },
-      } as const satisfies Options;
-      const parser = new ArgumentParser(options);
-      const values = { flag: undefined };
-      const { warning } = await parser.parseInto(values, ['-f', '-f']);
-      expect(warning).toHaveLength(1);
-      expect(warning?.message).toEqual(
-        `Option -f is deprecated and may be removed in future releases.\n`,
-      );
-    });
-
-    it('should output a warning on multiple deprecated options', async () => {
-      const options = {
-        flag1: {
-          type: 'flag',
-          names: ['-f1'],
-          deprecated: 'yes',
-        },
-        flag2: {
-          type: 'flag',
-          names: ['-f2'],
-          deprecated: 'yes',
-        },
-      } as const satisfies Options;
-      const parser = new ArgumentParser(options);
-      const values = { flag1: undefined, flag2: undefined };
-      const { warning } = await parser.parseInto(values, ['-f1', '-f2']);
-      expect(warning).toHaveLength(2);
-      expect(warning?.message).toEqual(
-        `Option -f1 is deprecated and may be removed in future releases.\n` +
-          `Option -f2 is deprecated and may be removed in future releases.\n`,
-      );
-    });
-
-    it('should output a warning on a deprecated option from a nested command', async () => {
-      const options = {
-        command: {
-          type: 'command',
-          names: ['-c'],
-          options: {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-              deprecated: 'yes',
-            },
-          },
-        },
-      } as const satisfies Options;
-      const parser = new ArgumentParser(options);
-      const values = { command: undefined };
-      const { warning } = await parser.parseInto(values, ['-c', '-f']);
-      expect(warning).toHaveLength(1);
-      expect(warning?.message).toEqual(
-        `Option -f is deprecated and may be removed in future releases.\n`,
-      );
     });
   });
 });

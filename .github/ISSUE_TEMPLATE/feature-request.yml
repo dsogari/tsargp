@@ -37,5 +37,5 @@ body:
       options:
         - label: This feature would _not_ require a new run-time dependency.
           required: true
-        - label: This feature would agree with the rest of our [Design Goals](https://github.com/trulysimple/tsargp/wiki/Design-Goals).
+        - label: This feature would agree with the rest of our [Design Goals](https://github.com/dsogari/tsargp/wiki/Design-Goals).
           required: true

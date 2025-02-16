@@ -1,10 +1,9 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
     "outDir": "../dist/examples",
-    "removeComments": true
-    // "isolatedModules": true, // when setting this, import enums from 'tsargp/enums'
+    "declarationMap": true,
+    "composite": true
   },
   "references": [{ "path": "../lib" }]
 }

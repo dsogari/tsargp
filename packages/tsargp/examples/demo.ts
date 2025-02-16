@@ -8,7 +8,6 @@ import options from './demo.options.js';
 interface Values {
   help: never;
   version: never;
-  helpCmd: undefined;
   flag: boolean | undefined;
   hello: number | undefined;
   boolean: boolean;

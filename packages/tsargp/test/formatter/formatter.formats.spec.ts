@@ -1,51 +1,54 @@
-import { describe, expect, it } from 'vitest';
-import type { Options, FormatterConfig, HelpSections } from '../../lib';
-import { OptionValidator, style, tf, HelpItem } from '../../lib';
-import { JsonFormatter, CsvFormatter, MdFormatter } from '../../lib';
-import '../utils.spec'; // initialize globals
+import { describe, expect, it } from 'bun:test';
+import type { Options, HelpSections, PartialFormatterConfig } from '../../lib/options';
+import { JsonFormatter, CsvFormatter, MdFormatter } from '../../lib/formatter';
+import { style } from '../../lib/styles';
+import { HelpItem, tf } from '../../lib/enums';
+
+process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('JsonFormatter', () => {
   describe('format', () => {
-    it('should handle zero options', () => {
-      const formatter = new JsonFormatter(new OptionValidator({}));
+    it('handle zero options', () => {
+      const formatter = new JsonFormatter({});
       expect(formatter.format().message).toEqual('[]');
     });
 
-    it('should handle a flag option with a group and a default callback', () => {
+    it('handle a flag option with a group and a default callback', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['-f', '--flag'],
+          names: ['-f'],
           group: 'group',
-          default: () => true,
+          default: () => true, // JSON.stringify does not render functions
         },
       } as const satisfies Options;
-      const formatter = new JsonFormatter(new OptionValidator(options));
-      const expected = `[{"type":"flag","names":["-f","--flag"],"group":"group","preferredName":"-f"}]`;
+      const formatter = new JsonFormatter(options);
+      const expected = `[{"type":"flag","names":["-f"],"group":"group"}]`;
       expect(formatter.format('group').message).toEqual(expected);
       expect(formatter.format('group').message).toEqual(expected); // <<-- keep this
     });
   });
 
   describe('sections', () => {
-    it('should handle help sections', () => {
+    it('handle various options', () => {
       const options = {
-        string: {
-          type: 'string',
-          names: ['-s'],
-        },
         flag: {
           type: 'flag',
           names: ['-f'],
           group: 'group',
+          default: () => true,
+        },
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
         },
       } as const satisfies Options;
-      const config: FormatterConfig = { items: [HelpItem.desc, HelpItem.default] };
-      const formatter = new JsonFormatter(new OptionValidator(options), config);
+      const config: PartialFormatterConfig = { items: [HelpItem.synopsis, HelpItem.default] };
+      const formatter = new JsonFormatter(options, config);
       const sections: HelpSections = [{ type: 'groups' }];
       const expected =
-        `[{"type":"string","names":["-s"],"preferredName":"-s"},` +
-        `{"type":"flag","names":["-f"],"group":"group","preferredName":"-f"}]`;
+        `[{"type":"flag","names":["-f"],"group":"group"},` +
+        `{"type":"single","names":["-s","--single"]}]`;
       expect(formatter.sections(sections).message).toEqual(expected);
       expect(formatter.sections(sections).message).toEqual(expected); // <<-- keep this
     });
@@ -54,48 +57,48 @@ describe('JsonFormatter', () => {
 
 describe('CsvFormatter', () => {
   describe('format', () => {
-    it('should handle zero options', () => {
-      const formatter = new CsvFormatter(new OptionValidator({}));
+    it('handle zero options', () => {
+      const formatter = new CsvFormatter({});
       expect(formatter.format().message).toEqual('');
     });
 
-    it('should handle a number option with a group and a default callback', () => {
+    it('handle a single-valued option with a group and a default callback', () => {
       const options = {
-        number: {
-          type: 'number',
-          names: ['-n', '--number'],
-          desc: style(tf.clear) + 'A\n  number\t  option',
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
+          synopsis: style(tf.clear) + 'A\n  number\t  option',
           group: 'group',
           default: () => 1,
         },
       } as const satisfies Options;
-      const config: FormatterConfig = { items: [HelpItem.desc, HelpItem.default] };
-      const formatter = new CsvFormatter(new OptionValidator(options), config);
+      const config: PartialFormatterConfig = { items: [HelpItem.synopsis, HelpItem.default] };
+      const formatter = new CsvFormatter(options, config);
       const expected =
-        `type\tgroup\tnames\tdesc\tdefault\n` +
-        `number\tgroup\t-n,--number\tA number option\t() => 1`;
+        `type\tgroup\tnames\tsynopsis\tdefault\n` +
+        `single\tgroup\t-s,--single\tA number option\t() => 1`;
       expect(formatter.format('group').message).toEqual(expected);
       expect(formatter.format('group').message).toEqual(expected); // <<-- keep this
     });
   });
 
   describe('sections', () => {
-    it('should handle help sections', () => {
+    it('handle help sections', () => {
       const options = {
-        string: {
-          type: 'string',
-          names: ['-s'],
-        },
         flag: {
           type: 'flag',
           names: ['-f'],
           group: 'group',
         },
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
+        },
       } as const satisfies Options;
-      const config: FormatterConfig = { items: [HelpItem.desc] };
-      const formatter = new CsvFormatter(new OptionValidator(options), config);
+      const config: PartialFormatterConfig = { items: [HelpItem.synopsis] };
+      const formatter = new CsvFormatter(options, config);
       const sections: HelpSections = [{ type: 'groups' }];
-      const expected = `type\tgroup\tnames\tdesc\n` + `string\t\t-s\t\n` + `flag\tgroup\t-f\t`;
+      const expected = `type\tgroup\tnames\tsynopsis\nflag\tgroup\t-f\t\nsingle\t\t-s,--single\t`;
       expect(formatter.sections(sections).message).toEqual(expected);
       expect(formatter.sections(sections).message).toEqual(expected); // <<-- keep this
     });
@@ -104,56 +107,56 @@ describe('CsvFormatter', () => {
 
 describe('MdFormatter', () => {
   describe('format', () => {
-    it('should handle zero options', () => {
-      const formatter = new MdFormatter(new OptionValidator({}));
+    it('handle zero options', () => {
+      const formatter = new MdFormatter({});
       expect(formatter.format().message).toEqual('');
     });
 
-    it('should handle a number option with a group and a default callback', () => {
+    it('handle a number option with a group and a default callback', () => {
       const options = {
-        number: {
-          type: 'number',
-          names: ['-n', '--number'],
-          desc: style(tf.clear) + 'A\n  number\t  option',
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
+          synopsis: style(tf.clear) + 'A\n  number\t  option',
           group: 'group',
           default: () => 1,
         },
       } as const satisfies Options;
-      const config: FormatterConfig = { items: [HelpItem.desc, HelpItem.default] };
-      const formatter = new MdFormatter(new OptionValidator(options), config);
+      const config: PartialFormatterConfig = { items: [HelpItem.synopsis, HelpItem.default] };
+      const formatter = new MdFormatter(options, config);
       const expected =
-        `| type | names | desc | default |\n` +
-        `| ---- | ----- | ---- | ------- |\n` +
-        `| number | -n,--number | A number option | () => 1 |`;
+        `| type | names | synopsis | default |\n` +
+        `| ---- | ----- | -------- | ------- |\n` +
+        `| single | -s,--single | A number option | () => 1 |`;
       expect(formatter.format('group').message).toEqual(expected);
       expect(formatter.format('group').message).toEqual(expected); // <<-- keep this
     });
   });
 
   describe('sections', () => {
-    it('should handle help sections', () => {
+    it('handle help sections', () => {
       const options = {
-        string: {
-          type: 'string',
-          names: ['-s'],
-        },
         flag: {
           type: 'flag',
           names: ['-f'],
+        },
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
           group: 'group',
         },
       } as const satisfies Options;
-      const config: FormatterConfig = { items: [HelpItem.desc] };
-      const formatter = new MdFormatter(new OptionValidator(options), config);
+      const config: PartialFormatterConfig = { items: [HelpItem.synopsis] };
+      const formatter = new MdFormatter(options, config);
       const sections: HelpSections = [{ type: 'groups' }];
       const expected =
-        `| type | names | desc |\n` +
-        `| ---- | ----- | ---- |\n` +
-        `| string | -s |  |\n\n` +
+        `| type | names | synopsis |\n` +
+        `| ---- | ----- | -------- |\n` +
+        `| flag | -f |  |\n\n` +
         `## group\n\n` +
-        `| type | names | desc |\n` +
-        `| ---- | ----- | ---- |\n` +
-        `| flag | -f |  |`;
+        `| type | names | synopsis |\n` +
+        `| ---- | ----- | -------- |\n` +
+        `| single | -s,--single |  |`;
       expect(formatter.sections(sections).message).toEqual(expected);
       expect(formatter.sections(sections).message).toEqual(expected); // <<-- keep this
     });

@@ -1,5 +1,5 @@
 import type { Options, OptionValues } from 'tsargp';
-import { fg, style, req, tf, fg8 } from 'tsargp';
+import { AnsiFormatter, fg, style, req, tf, fg8 } from 'tsargp';
 
 /**
  * The hello option definitions.
@@ -9,10 +9,11 @@ const helloOpts = {
    * A strings option that receives positional arguments for the hello command.
    */
   strings: {
-    type: 'strings',
+    type: 'array',
     default: ['world'],
     positional: true,
     group: 'Arguments:',
+    stdin: true,
   },
   /**
    * A help option that throws the help message of the hello command.
@@ -20,7 +21,8 @@ const helloOpts = {
   help: {
     type: 'help',
     names: ['-h', '--help'],
-    desc: 'The help option for the hello command. Prints this help message.',
+    synopsis: 'The help option for the hello command. Prints this help message.',
+    formats: { ansi: AnsiFormatter },
     config: {
       param: { align: 'merge' },
       descr: { indent: -10 },
@@ -34,9 +36,9 @@ const helloOpts = {
   hello: {
     type: 'command',
     names: ['hello'],
-    desc: 'A recursive command option. Logs the arguments passed after it.',
+    synopsis: 'A recursive command option. Logs the arguments passed after it.',
     options: (): Options => helloOpts,
-    exec({ param }): number {
+    parse(param): number {
       const vals = param as OptionValues<typeof helloOpts>;
       const calls = vals.hello ?? 0;
       console.log(`[tail call #${calls}]`, ...vals.strings);
@@ -55,7 +57,8 @@ export default {
   help: {
     type: 'help',
     names: ['-h', '--help'],
-    desc: 'A help option. Prints this help message.',
+    synopsis: 'A help option. Prints this help message.',
+    formats: { ansi: AnsiFormatter },
     sections: [
       {
         type: 'text',
@@ -90,9 +93,9 @@ export default {
       {
         type: 'text',
         text: `MIT License.
-Copyright (c) 2024 ${style(tf.bold, tf.italic)}TrulySimple${style(tf.clear)}
+Copyright (c) 2024-2025 ${style(tf.bold, tf.italic)}Diego Sogari${style(tf.clear)}
 
-Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issues`,
+Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
         noWrap: true,
       },
     ],
@@ -106,7 +109,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issu
   version: {
     type: 'version',
     names: ['-v', '--version'],
-    desc: 'A version option. Prints the package version.',
+    synopsis: 'A version option. Prints the package version.',
     resolve: import.meta.resolve,
   },
   /**
@@ -114,10 +117,12 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issu
    */
   flag: {
     type: 'flag',
-    names: ['-f', '--flag'],
-    negationNames: ['--no-flag'],
-    desc: 'A flag option.',
+    names: ['-f', '--no-flag'],
+    synopsis: 'A flag option.',
     deprecated: 'some reason',
+    parse(_, { name }) {
+      return name !== this.names?.[1];
+    },
     styles: {
       names: style(tf.clear, tf.inverse, fg8(138)),
       descr: style(tf.clear, tf.italic, tf.crossedOut),
@@ -131,55 +136,55 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issu
    * A boolean option that has inline styles and requirements.
    */
   boolean: {
-    type: 'boolean',
+    type: 'single',
     names: ['-b', '--boolean'],
-    desc: `A boolean option
+    synopsis: `A boolean option
     with:
     * a paragraph
     - ${style(tf.underlined, fg8(223))}inline styles${style(fg.default, tf.notUnderlined)}
     1. and a list
     
     `,
+    sources: ['BOOLEAN'],
+    choices: { yes: true, no: false },
     default: false,
-    truthNames: ['yes'],
-    falsityNames: ['no'],
-    requires: req.all('stringEnum', req.one({ strings: ['a', 'b'] }, req.not({ numbers: [3, 4] }))),
+    requires: req.one('stringEnum', req.all({ strings: ['a', 'b'] }, req.not({ numbers: [1, 2] }))),
   },
   /**
    * A string option that has a regex constraint.
    */
   stringRegex: {
-    type: 'string',
+    type: 'single',
     names: ['-s', '--stringRegex'],
-    desc: 'A string option.',
+    synopsis: 'A string option.',
     group: 'String options:',
     regex: /^\d+$/,
     default: '123456789',
     paramName: 'my str',
-    clusterLetters: 's',
+    cluster: 's',
   },
   /**
    * A number option that has a range constraint.
    */
   numberRange: {
-    type: 'number',
+    type: 'single',
     names: ['-n', '--numberRange'],
-    desc: 'A number option.',
+    synopsis: 'A number option.',
     group: 'Number options:',
-    range: [-Infinity, 0],
+    parse: Number,
     default: -1.23,
     paramName: 'my num',
-    clusterLetters: 'n',
+    cluster: 'n',
   },
   /**
    * A string option that has an enumeration constraint.
    */
   stringEnum: {
-    type: 'string',
+    type: 'single',
     names: ['-se', '--stringEnum'],
-    desc: 'A string option.',
+    synopsis: 'A string option.',
     group: 'String options:',
-    enums: ['one', 'two'],
+    choices: ['one', 'two'],
     example: 'one',
     inline: false,
   },
@@ -187,11 +192,12 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issu
    * A number option that has an enumeration constraint.
    */
   numberEnum: {
-    type: 'number',
+    type: 'single',
     names: ['-ne', '--numberEnum'],
-    desc: 'A number option.',
+    synopsis: 'A number option.',
     group: 'Number options:',
-    enums: [1, 2],
+    choices: ['1', '2'],
+    parse: Number,
     example: 1,
     inline: 'always',
   },
@@ -199,34 +205,31 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issu
    * A delimited strings option whose values are trimmed and converted to uppercase.
    */
   strings: {
-    type: 'strings',
+    type: 'array',
     names: ['-ss', '--strings'],
-    desc: 'A strings option.',
+    synopsis: 'A strings option.',
     group: 'String options:',
     default: ['one'],
-    fallback: ['two'],
     separator: ',',
-    trim: true,
-    case: 'upper',
   },
   /**
    * A variadic numbers option whose values are rounded to the nearest integer.
    */
   numbers: {
-    type: 'numbers',
+    type: 'array',
     names: ['-ns', '--numbers'],
-    desc: 'A numbers option.',
+    synopsis: 'A numbers option.',
     group: 'Number options:',
+    parse: Number,
     default: [1, 2],
-    conv: 'round',
   },
   /**
    * A variadic strings option that accepts positional arguments, but no more than 3 values.
    */
   stringsLimit: {
-    type: 'strings',
-    names: ['', '--stringsLimit'],
-    desc: 'A strings option.',
+    type: 'array',
+    names: [null, '--stringsLimit'],
+    synopsis: 'A strings option.',
     group: 'String options:',
     example: ['one'],
     positional: '--',
@@ -236,11 +239,12 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issu
    * A delimited numbers option whose values are unique and can be specified multiple times.
    */
   numbersUnique: {
-    type: 'numbers',
-    names: ['', '--numbersUnique'],
-    desc: 'A numbers option.',
+    type: 'array',
+    names: [null, '--numbersUnique'],
+    synopsis: 'A numbers option.',
     group: 'Number options:',
     example: [1, 2],
+    parse: Number,
     separator: ',',
     append: true,
     unique: true,

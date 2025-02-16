@@ -1,16 +1,63 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { Alias, Concrete, Enumerate, URL, ValuesOf } from './utils.js';
-import { cs, tf, fg, bg, ConnectiveWord } from './enums.js';
-import { getEnv, max, regexps, selectAlternative } from './utils.js';
+import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
+
+import { ConnectiveWord, cs, fg, bg, tf } from './enums.js';
+import {
+  getEntries,
+  isArray,
+  max,
+  omitStyles,
+  regex,
+  selectAlternative,
+  streamWidth,
+} from './utils.js';
 
 export { sequence as seq, sgr as style, foreground as fg8, background as bg8, underline as ul8 };
-export { underlineStyle as ul, formatFunctions as format };
+export { underlineStyle as ul, formatFunctions as fmt, defaultConfig as cfg };
 
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
+/**
+ * The default message configuration.
+ */
+const defaultConfig: MessageConfig = {
+  styles: {
+    boolean: sgr(fg.blue),
+    string: sgr(fg.green),
+    number: sgr(fg.yellow),
+    regex: sgr(fg.red),
+    symbol: sgr(fg.magenta),
+    value: sgr(fg.brightBlack),
+    url: sgr(fg.cyan),
+    text: '',
+  },
+  connectives: {
+    [ConnectiveWord.and]: 'and',
+    [ConnectiveWord.or]: 'or',
+    [ConnectiveWord.not]: 'not',
+    [ConnectiveWord.no]: 'no',
+    [ConnectiveWord.equals]: '==',
+    [ConnectiveWord.notEquals]: '!=',
+    [ConnectiveWord.optionAlt]: '|',
+    [ConnectiveWord.optionSep]: ',',
+    [ConnectiveWord.stringQuote]: `'`,
+    [ConnectiveWord.arraySep]: ',',
+    [ConnectiveWord.arrayOpen]: '[',
+    [ConnectiveWord.arrayClose]: ']',
+    [ConnectiveWord.objectSep]: ',',
+    [ConnectiveWord.objectOpen]: '{',
+    [ConnectiveWord.objectClose]: '}',
+    [ConnectiveWord.valueSep]: ':',
+    [ConnectiveWord.valueOpen]: '<',
+    [ConnectiveWord.valueClose]: '>',
+    [ConnectiveWord.exprOpen]: '(',
+    [ConnectiveWord.exprClose]: ')',
+  },
+} as const;
+
 /**
  * A predefined underline style.
  */
@@ -42,108 +89,317 @@ const underlineStyle = {
 } as const satisfies Record<string, [4, number]>;
 
 /**
+ * A map of data type to formatting function key.
+ */
+const typeMapping: Record<string, string> = {
+  boolean: 'b',
+  string: 's',
+  symbol: 'm',
+  number: 'n',
+  bigint: 'n',
+  object: 'o',
+} as const;
+
+/**
  * The formatting functions.
- * @internal
  */
 const formatFunctions = {
   /**
    * The formatting function for boolean values.
    * @param value The boolean value
-   * @param styles The format styles
+   * @param config The message configuration
    * @param result The resulting string
    */
-  b(value: boolean, styles, result) {
-    result.style(styles.boolean, `${value}`, styles.current ?? styles.text);
+  b(value: boolean, config, result) {
+    result.style = config.styles.boolean;
+    result.word(`${value}`);
   },
   /**
    * The formatting function for string values.
    * @param value The string value
-   * @param styles The format styles
+   * @param config The message configuration
    * @param result The resulting string
-   * @param flags The formatting flags
    */
-  s(value: string, styles, result, flags) {
-    const quote = flags.connectives?.[ConnectiveWord.stringQuote] ?? `'`;
-    result.style(styles.string, `${quote}${value}${quote}`, styles.current ?? styles.text);
+  s(value: string, config, result) {
+    const quote = config.connectives?.[ConnectiveWord.stringQuote] ?? '';
+    result.style = config.styles.string;
+    result.word(`${quote}${value}${quote}`);
   },
   /**
    * The formatting function for number values.
    * @param value The number value
-   * @param styles The format styles
+   * @param config The message configuration
    * @param result The resulting string
    */
-  n(value: number, styles, result) {
-    result.style(styles.number, `${value}`, styles.current ?? styles.text);
+  n(value: number, config, result) {
+    result.style = config.styles.number;
+    result.word(`${value}`);
   },
   /**
    * The formatting function for regular expressions.
    * @param value The regular expression
-   * @param styles The format styles
+   * @param config The message configuration
    * @param result The resulting string
    */
-  r(value: RegExp, styles, result) {
-    result.style(styles.regex, `${value}`, styles.current ?? styles.text);
+  r(value: RegExp, config, result) {
+    result.style = config.styles.regex;
+    result.word(`${value}`);
   },
   /**
-   * The formatting function for option names.
-   * @param name The option name
-   * @param styles The format styles
+   * The formatting function for symbols.
+   * @param value The symbol value
+   * @param config The message configuration
    * @param result The resulting string
    */
-  o(name: string, styles, result) {
-    result.style(styles.option, name, styles.current ?? styles.text);
-  },
-  /**
-   * The formatting function for unknown values.
-   * @param value The unknown value
-   * @param styles The format styles
-   * @param result The resulting string
-   */
-  v(value: unknown, styles, result) {
-    result.style(styles.value, `<${value}>`, styles.current ?? styles.text);
+  m(value: symbol, config, result) {
+    result.style = config.styles.symbol;
+    result.word(Symbol.keyFor(value) ?? '');
   },
   /**
    * The formatting function for URLs.
    * @param url The URL object
-   * @param styles The format styles
+   * @param config The message configuration
    * @param result The resulting string
    */
-  u(url: URL, styles, result) {
-    result.style(styles.url, url.href, styles.current ?? styles.text);
-  },
-  /**
-   * The formatting function for general text.
-   * @param text The text to be split
-   * @param _styles The format styles
-   * @param result The resulting string
-   */
-  t(text: string, _styles, result) {
-    result.split(text);
+  u(url: URL, config, result) {
+    result.style = config.styles.url;
+    result.word(url.href);
   },
   /**
    * The formatting function for terminal strings.
    * @param str The terminal string
-   * @param _styles The format styles
+   * @param _config The message configuration
    * @param result The resulting string
    */
-  p(str: TerminalString, _styles, result) {
+  t(str: TerminalString, _config, result) {
     result.other(str);
   },
   /**
    * The formatting function for custom format callbacks.
+   * This is used internally and should not be exposed in the API.
    * @param arg The format argument
-   * @param _styles The format styles
+   * @param _config The message configuration
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  c(arg: unknown, _styles, result, flags) {
+  c(arg: unknown, _config, result, flags) {
     flags.custom?.bind(result)(arg);
+  },
+  /**
+   * The formatting function for array values.
+   * A custom format callback may be used for array elements.
+   * @param value The array value
+   * @param config The message configuration
+   * @param result The resulting string
+   * @param flags The formatting flags
+   */
+  a(value: Array<unknown>, config, result, flags) {
+    const connectives = config.connectives;
+    const sep = flags.sep ?? connectives?.[ConnectiveWord.arraySep] ?? '';
+    const open = flags.open ?? connectives?.[ConnectiveWord.arrayOpen] ?? '';
+    const close = flags.close ?? connectives?.[ConnectiveWord.arrayClose] ?? '';
+    result.open(open);
+    value.forEach((val, i) => {
+      const spec = flags.custom ? 'c' : 'v';
+      this[spec](val, config, result, flags);
+      if (sep && i < value.length - 1) {
+        result.merge = flags.mergePrev ?? true;
+        result.word(sep);
+        result.merge = flags.mergeNext ?? false;
+      }
+    });
+    result.close(close);
+  },
+  /**
+   * The formatting function for object values.
+   * Assumes that the object is not null.
+   * @param value The object value
+   * @param config The message configuration
+   * @param result The resulting string
+   * @param flags The formatting flags
+   */
+  o(value: object, config, result, flags) {
+    const connectives = config.connectives;
+    const valueSep = connectives?.[ConnectiveWord.valueSep] ?? '';
+    const newFlags: FormattingFlags = {
+      ...flags,
+      sep: flags.sep ?? connectives?.[ConnectiveWord.objectSep] ?? '',
+      open: flags.open ?? connectives?.[ConnectiveWord.objectOpen] ?? '',
+      close: flags.close ?? connectives?.[ConnectiveWord.objectClose] ?? '',
+      custom: (entry) => {
+        const [key, val] = entry as [string, unknown];
+        if (key.match(regex.id)) {
+          result.word(key);
+        } else {
+          this['s'](key, config, result, flags);
+        }
+        result.close(valueSep);
+        this['v'](val, config, result, flags);
+      },
+    };
+    const entries = getEntries(value as Record<string, unknown>);
+    this['a'](entries, config, result, newFlags);
+  },
+  /**
+   * The formatting function for unknown values.
+   * @param value The unknown value
+   * @param config The message configuration
+   * @param result The resulting string
+   * @param flags The formatting flags
+   */
+  v(value: unknown, config, result, flags) {
+    const spec =
+      value instanceof URL
+        ? 'u'
+        : value instanceof RegExp
+          ? 'r'
+          : value instanceof TerminalString
+            ? 't'
+            : isArray(value)
+              ? 'a'
+              : typeMapping[typeof value];
+    if (spec && value !== null) {
+      this[spec](value, config, result, flags);
+    } else {
+      const connectives = config.connectives;
+      const open = connectives?.[ConnectiveWord.valueOpen] ?? '';
+      const close = connectives?.[ConnectiveWord.valueClose] ?? '';
+      result.seq(config.styles.value);
+      result.merge = true;
+      result.open(open).split(`${value}`).close(close);
+      if (config.styles.value) {
+        result.merge = true;
+        result.clear();
+        result.merge = true;
+        result.seq(result.defStyle); // TODO: optimize this
+      }
+    }
   },
 } as const satisfies FormatFunctions;
 
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
+/**
+ * A help message.
+ */
+export type HelpMessage = AnsiMessage | JsonMessage | TextMessage;
+
+/**
+ * A message that can be printed on a terminal.
+ */
+export type Message = ErrorMessage | WarnMessage | HelpMessage;
+
+/**
+ * A callback that processes a format specifier when splitting text.
+ * @param this The terminal string to append to
+ * @param arg The format specifier or argument
+ */
+export type FormatCallback<T = string> = (this: TerminalString, arg: T) => void;
+
+/**
+ * The formatting flags.
+ */
+export type FormattingFlags = {
+  /**
+   * The phrase alternative, if any.
+   */
+  readonly alt?: number;
+  /**
+   * An element delimiter for array and object values.
+   * Overrides {@link ConnectiveWord.arraySep} and {@link ConnectiveWord.objectSep} from
+   * {@link MessageConfig.connectives}.
+   */
+  readonly sep?: string;
+  /**
+   * An opening delimiter for array and object values.
+   * Overrides {@link ConnectiveWord.arrayOpen} and {@link ConnectiveWord.objectOpen} from
+   * {@link MessageConfig.connectives}.
+   */
+  readonly open?: string;
+  /**
+   * A closing delimiter for array and object values.
+   * Overrides {@link ConnectiveWord.arrayClose} and {@link ConnectiveWord.objectClose} from
+   * {@link MessageConfig.connectives}.
+   */
+  readonly close?: string;
+  /**
+   * Whether the separator should be merged with the previous value. (Defaults to true)
+   */
+  readonly mergePrev?: boolean;
+  /**
+   * Whether the separator should be merged with the next value. (Defaults to false)
+   */
+  readonly mergeNext?: boolean;
+  /**
+   * A custom callback to format arguments.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly custom?: FormatCallback<any>;
+};
+/**
+ * A set of styles for error/warning/help messages.
+ */
+export type MessageStyles = {
+  /**
+   * The style of boolean values.
+   */
+  readonly boolean: Style;
+  /**
+   * The style of string values.
+   */
+  readonly string: Style;
+  /**
+   * The style of number values.
+   */
+  readonly number: Style;
+  /**
+   * The style of regular expressions.
+   */
+  readonly regex: Style;
+  /**
+   * The style of symbols (e.g., option names).
+   */
+  readonly symbol: Style;
+  /**
+   * The style of unknown values.
+   */
+  readonly value: Style;
+  /**
+   * The style of URLs.
+   */
+  readonly url: Style;
+  /**
+   * The style of general text.
+   */
+  readonly text: Style;
+};
+
+/**
+ * The configuration for messages.
+ */
+export type MessageConfig = {
+  /**
+   * The messages styles.
+   */
+  readonly styles: MessageStyles;
+  /**
+   * The connective words.
+   */
+  readonly connectives: Readonly<Record<ConnectiveWord, string>>;
+};
+
+/**
+ * The configuration for messages with custom phrases.
+ * @template T The type of phrase identifier
+ */
+export type WithPhrases<T extends number> = {
+  /**
+   * The message phrases.
+   */
+  readonly phrases: Readonly<Record<T, string>>;
+};
+
 /**
  * A control sequence introducer.
  * @template P The type of the sequence parameter
@@ -191,122 +447,20 @@ export type UlStyle = ValuesOf<typeof underlineStyle>;
  */
 export type StyleAttr = tf | fg | bg | FgColor | BgColor | UlColor | UlStyle;
 
-/**
- * A callback that processes a format specifier when splitting text.
- * @param this The terminal string to append to
- * @param arg The format specifier or argument
- */
-export type FormatCallback<T = string> = (this: TerminalString, arg: T) => void;
-
-/**
- * A set of formatting arguments.
- */
-export type FormatArgs = Record<string, unknown>;
-
-/**
- * A help message.
- */
-export type HelpMessage = AnsiMessage | JsonMessage | TextMessage;
-
-/**
- * A message that can be printed on a terminal.
- */
-export type Message = ErrorMessage | WarnMessage | HelpMessage;
-
-/**
- * A set of styles for terminal messages.
- */
-export type MessageStyles = {
-  /**
-   * The style of boolean values.
-   */
-  readonly boolean?: Style;
-  /**
-   * The style of string values.
-   */
-  readonly string?: Style;
-  /**
-   * The style of number values.
-   */
-  readonly number?: Style;
-  /**
-   * The style of regular expressions.
-   */
-  readonly regex?: Style;
-  /**
-   * The style of option names.
-   */
-  readonly option?: Style;
-  /**
-   * The style of unknown values.
-   */
-  readonly value?: Style;
-  /**
-   * The style of URLs.
-   */
-  readonly url?: Style;
-  /**
-   * The style of general text.
-   */
-  readonly text?: Style;
-};
-
-/**
- * A concrete version of the format styles.
- */
-export type FormatStyles = Concrete<MessageStyles> & {
-  /**
-   * The current style in use.
-   */
-  current?: Style;
-};
-
-/**
- * The formatting flags.
- */
-export type FormattingFlags = {
-  /**
-   * The phrase alternative, if any.
-   */
-  readonly alt?: number;
-  /**
-   * An element separator for array values.
-   */
-  readonly sep?: string;
-  /**
-   * Whether the separator should be merged with the previous value. (Defaults to true)
-   */
-  readonly mergePrev?: boolean;
-  /**
-   * Whether the separator should be merged with the next value. (Defaults to false)
-   */
-  readonly mergeNext?: boolean;
-  /**
-   * A custom callback to format arguments.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly custom?: FormatCallback<any>;
-  /**
-   * The connective words.
-   */
-  readonly connectives?: ConnectiveWords;
-};
-
-/**
- * The connective words.
- */
-export type ConnectiveWords = Readonly<Record<ConnectiveWord, string>>;
-
 //--------------------------------------------------------------------------------------------------
 // Internal types
 //--------------------------------------------------------------------------------------------------
 /**
  * A formatting function.
+ * @param value The value to be formatted
+ * @param config The message configuration
+ * @param result The resulting string
+ * @param flags The formatting flags
  */
 type FormatFunction = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
-  styles: FormatStyles,
+  config: MessageConfig,
   result: TerminalString,
   flags: FormattingFlags,
 ) => void;
@@ -333,9 +487,9 @@ type TerminalContext = [
    */
   merge: boolean,
   /**
-   * True if the string should be right-aligned to the terminal width.
+   * The style to apply to the next string.
    */
-  rightAlign: boolean,
+  style: Style,
 ];
 
 //--------------------------------------------------------------------------------------------------
@@ -348,7 +502,13 @@ export class TerminalString {
   /**
    * The terminal string context.
    */
-  private readonly context: TerminalContext;
+  private readonly context: TerminalContext = [[], [], false, ''];
+
+  /**
+   * Whether to merge the first internal string to the last internal string of another terminal
+   * string.
+   */
+  private mergeFirst = false;
 
   /**
    * @returns The list of internal strings
@@ -372,18 +532,35 @@ export class TerminalString {
   }
 
   /**
+   * Sets a flag to merge the next word with the last word.
+   * @param merge The flag value
+   */
+  set merge(merge: boolean) {
+    this.context[2] = merge;
+  }
+
+  /**
+   * Sets a style to apply to the next word.
+   * @param style The style
+   */
+  set style(style: Style) {
+    this.context[3] = style;
+  }
+
+  /**
    * Creates a terminal string.
    * @param indent The starting column for this string (negative values are replaced by zero)
    * @param breaks The initial number of line feeds (non-positive values are ignored)
-   * @param rightAlign True if the string should be right-aligned to the terminal width
+   * @param righty True if the string should be right-aligned to the terminal width
+   * @param defStyle The default style to use
    */
   constructor(
     public indent = 0,
     breaks = 0,
-    rightAlign = false,
+    public righty = false,
+    public defStyle: Style = '',
   ) {
-    this.context = [[], [], false, rightAlign];
-    this.break(breaks);
+    this.break(breaks).seq(defStyle);
   }
 
   /**
@@ -408,20 +585,16 @@ export class TerminalString {
    * @returns The terminal string instance
    */
   other(other: TerminalString): this {
-    const [strings, lengths, merge] = other.context;
-    for (let i = 0; i < strings.length; ++i) {
-      this.add(strings[i], lengths[i]);
+    if (other.count) {
+      const [otherStrings, otherLengths, otherMerge] = other.context;
+      this.context[2] ||= other.mergeFirst;
+      const [str, ...restStr] = otherStrings;
+      const [len, ...restLen] = otherLengths;
+      const [strings, lengths] = this.add(str, len).context;
+      strings.push(...restStr);
+      lengths.push(...restLen);
+      this.merge = otherMerge;
     }
-    return this.setMerge(merge);
-  }
-
-  /**
-   * Sets a flag to merge the next word to the last word.
-   * @param merge The flag value (defaults to true)
-   * @returns The terminal string instance
-   */
-  setMerge(merge = true): this {
-    this.context[2] = merge;
     return this;
   }
 
@@ -437,7 +610,7 @@ export class TerminalString {
       strings[pos] = word + strings[pos];
       lengths[pos] += word.length;
     } else if (word) {
-      this.word(word).setMerge();
+      this.word(word).merge = true;
     }
     return this;
   }
@@ -448,18 +621,11 @@ export class TerminalString {
    * @returns The terminal string instance
    */
   close(word: string): this {
-    return this.setMerge().word(word);
-  }
-
-  /**
-   * Appends a word with surrounding styles.
-   * @param begin The starting style
-   * @param word The word to be appended
-   * @param end The ending style (optional)
-   * @returns The terminal string instance
-   */
-  style(begin: Style, word: string, end: Style = ''): this {
-    return this.add(begin + word + end, word.length);
+    if (word) {
+      this.merge = true;
+      this.word(word);
+    }
+    return this;
   }
 
   /**
@@ -507,17 +673,20 @@ export class TerminalString {
    */
   add(text: string, length: number): this {
     if (text) {
-      const [strings, lengths, merge] = this.context;
-      const count = strings.length;
-      if (count && merge) {
-        strings[count - 1] += text;
-        lengths[count - 1] += length;
+      const [strings, lengths, merge, curStyle] = this.context;
+      let index = 0;
+      if (!strings.length) {
+        this.mergeFirst = merge;
       } else {
-        strings.push(text);
-        lengths.push(length);
+        index = strings.length - (merge ? 1 : 0);
       }
+      const revert = curStyle ? sgr(tf.clear) + this.defStyle : '';
+      strings[index] = (strings[index] ?? '') + curStyle + text + revert;
+      lengths[index] = (lengths[index] ?? 0) + length;
     }
-    return this.setMerge(false);
+    this.merge = false;
+    this.style = '';
+    return this;
   }
 
   /**
@@ -527,7 +696,7 @@ export class TerminalString {
    * @returns The terminal string instance
    */
   split(text: string, format?: FormatCallback): this {
-    const paragraphs = text.split(regexps.para);
+    const paragraphs = text.split(regex.para);
     paragraphs.forEach((para, i) => {
       splitParagraph(this, para, format);
       if (i < paragraphs.length - 1) {
@@ -535,20 +704,6 @@ export class TerminalString {
       }
     });
     return this;
-  }
-
-  /**
-   * Formats a set of arguments.
-   * @param styles The format styles
-   * @param phrase The custom phrase
-   * @param args The format arguments
-   * @param flags The formatting flags
-   * @returns The terminal string instance
-   */
-  format(styles: FormatStyles, phrase: string, args?: FormatArgs, flags?: FormattingFlags): this {
-    const formatFn = args && formatArgs(styles, args, flags);
-    const alternative = flags?.alt !== undefined ? selectAlternative(phrase, flags.alt) : phrase;
-    return this.split(alternative, formatFn);
   }
 
   /**
@@ -577,8 +732,8 @@ export class TerminalString {
     width = max(0, width);
     let start = max(0, this.indent);
 
-    const [strings, lengths, , rightAlign] = this.context;
-    const needToAlign = width && rightAlign;
+    const [strings, lengths] = this.context;
+    const needToAlign = width && this.righty;
     const largestFits = !width || width >= start + Math.max(...lengths);
     if (!largestFits) {
       start = 0; // wrap to the first column instead
@@ -631,7 +786,7 @@ export class TerminalString {
         continue;
       }
       if (!emitStyles) {
-        str = str.replace(regexps.style, '');
+        str = str.replace(regex.sgr, '');
       }
       if (column === start) {
         result.push(str);
@@ -647,6 +802,27 @@ export class TerminalString {
     }
     align();
     return column;
+  }
+
+  /**
+   * Formats a text from a custom phrase with a set of arguments.
+   * @param config The message configuration
+   * @param phrase The message phrase
+   * @param flags The formatting flags
+   * @param args The message arguments
+   * @returns The terminal string instance
+   */
+  format(config: MessageConfig, phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
+    const formatFn: FormatCallback | undefined =
+      args &&
+      function (spec) {
+        const index = Number(spec.slice(1));
+        if (index >= 0 && index < args.length) {
+          formatFunctions.v(args[index], config, this, flags);
+        }
+      };
+    const alternative = flags.alt !== undefined ? selectAlternative(phrase, flags.alt) : phrase;
+    return this.split(alternative, formatFn);
   }
 }
 
@@ -771,6 +947,56 @@ export class TextMessage extends Array<string> {
   }
 }
 
+/**
+ * Implements formatting of error and warning messages.
+ * @template T The type of phrase identifier
+ */
+export class ErrorFormatter<T extends number> {
+  /**
+   * Creates an error formatter.
+   * @param config The message configuration
+   */
+  constructor(readonly config: MessageConfig & WithPhrases<T>) {}
+
+  /**
+   * Creates a formatted error message.
+   * @param kind The message kind
+   * @param flags The formatting flags
+   * @param args The message arguments
+   * @returns The formatted error
+   */
+  error(kind: T, flags?: FormattingFlags, ...args: Args): ErrorMessage {
+    return new ErrorMessage(this.create(kind, flags, ...args));
+  }
+
+  /**
+   * Creates a formatted message.
+   * The message always ends with a single line break.
+   * @template T The type of phrase identifier
+   * @param kind The message kind
+   * @param flags The formatting flags
+   * @param args The message arguments
+   * @returns The formatted message
+   */
+  create(kind: T, flags?: FormattingFlags, ...args: Args): TerminalString {
+    return this.format(this.config.phrases[kind], flags, ...args);
+  }
+
+  /**
+   * Creates a formatted message.
+   * The message always ends with a single line break.
+   * @param phrase The message phrase
+   * @param flags The formatting flags
+   * @param args The message arguments
+   * @returns The formatted message
+   */
+  format(phrase: string, flags?: FormattingFlags, ...args: Args): TerminalString {
+    return new TerminalString(0, 0, false, this.config.styles.text)
+      .format(this.config, phrase, flags, ...args)
+      .break();
+  }
+}
+
 //--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
@@ -782,7 +1008,7 @@ export class TextMessage extends Array<string> {
  */
 function splitParagraph(result: TerminalString, para: string, format?: FormatCallback) {
   const count = result.count;
-  para.split(regexps.item).forEach((item, i) => {
+  para.split(regex.item).forEach((item, i) => {
     if (i % 2 === 0) {
       splitItem(result, item, format);
     } else {
@@ -802,80 +1028,27 @@ function splitParagraph(result: TerminalString, para: string, format?: FormatCal
  */
 function splitItem(result: TerminalString, item: string, format?: FormatCallback) {
   const boundFormat = format?.bind(result);
-  const words = item.split(regexps.word);
+  const words = item.split(regex.word);
   for (const word of words) {
     if (!word) {
       continue;
     }
     if (boundFormat) {
-      const parts = word.split(regexps.spec);
+      const parts = word.split(regex.spec);
       if (parts.length > 1) {
         result.open(parts[0]);
         for (let i = 1; i < parts.length; i += 2) {
           boundFormat(parts[i]);
-          result.close(parts[i + 1]).setMerge();
+          result.close(parts[i + 1]).merge = true;
         }
-        result.setMerge(false);
+        result.merge = false;
         continue;
       }
     }
-    const styles = word.match(regexps.style) ?? [];
+    const styles = word.match(regex.sgr) ?? [];
     const length = styles.reduce((acc, str) => acc + str.length, 0);
     result.add(word, word.length - length);
   }
-}
-
-/**
- * Creates a formatting callback from a set of styles and arguments.
- * @param styles The format styles
- * @param args The format arguments
- * @param flags The formatting flags
- * @returns The formatting callback
- */
-function formatArgs(
-  styles: FormatStyles,
-  args: FormatArgs,
-  flags: FormattingFlags = {},
-): FormatCallback {
-  return function (this: TerminalString, spec: string) {
-    const arg = spec.slice(1);
-    const fmt = arg[0];
-    if (fmt in formatFunctions && arg in args) {
-      const value = args[arg];
-      const formatFn = (formatFunctions as FormatFunctions)[fmt];
-      if (Array.isArray(value)) {
-        value.forEach((val, i) => {
-          formatFn(val, styles, this, flags);
-          if (flags?.sep && i < value.length - 1) {
-            this.setMerge(flags.mergePrev)
-              .word(flags.sep)
-              .setMerge(flags.mergeNext ?? false);
-          }
-        });
-      } else {
-        formatFn(value, styles, this, flags);
-      }
-    }
-  };
-}
-
-/**
- * Gets the terminal width of a process stream.
- * @param stream The name of the stream
- * @returns The terminal width (in number of columns)
- */
-function streamWidth(stream: 'stdout' | 'stderr'): number {
-  const forceWidth = getEnv('FORCE_WIDTH');
-  return forceWidth ? Number(forceWidth) : process?.[stream]?.columns;
-}
-
-/**
- * @param width The terminal width (in number of columns)
- * @returns True if styles should be omitted from terminal strings
- * @see https://clig.dev/#output
- */
-function omitStyles(width: number): boolean {
-  return !getEnv('FORCE_COLOR') && (!width || !!getEnv('NO_COLOR') || getEnv('TERM') === 'dumb');
 }
 
 /**

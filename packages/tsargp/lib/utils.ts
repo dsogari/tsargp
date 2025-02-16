@@ -1,16 +1,93 @@
 //--------------------------------------------------------------------------------------------------
-// Imports
+// Types
 //--------------------------------------------------------------------------------------------------
-import type { URL as _URL } from 'url';
+/**
+ * A helper type to enumerate numbers.
+ * @template N The last enumerated number
+ * @template A The helper array
+ */
+export type Enumerate<N extends number, A extends Array<number> = []> = A['length'] extends N
+  ? A[number]
+  : Enumerate<N, [...A, A['length']]>;
+
+/**
+ * A helper type to add optionality to types and their properties.
+ * @template T The source type
+ * @template N The maximum recursion depth
+ * @template A The helper array
+ */
+export type PartialWithDepth<
+  T,
+  N extends number = 1,
+  A extends Array<number> = [],
+> = A['length'] extends N ? Partial<T> : { [K in keyof T]?: PartialWithDepth<T[K], N, [...A, 1]> };
+
+/**
+ * A helper type to alias another type while eliding type resolution in IntelliSense.
+ * @template T The type to be aliased
+ */
+export type Alias<T> = T extends T ? T : T;
+
+/**
+ * A helper type to resolve types in IntelliSense.
+ * @template T The type to be resolved
+ */
+export type Resolve<T> = T & unknown;
+
+/**
+ * A helper type to get a union of the values of all properties from a type.
+ * @template T The source type
+ */
+export type ValuesOf<T> = T[keyof T];
+
+/**
+ * A helper type to get a union of a type with its promise.
+ * @template T The source type
+ */
+export type Promissory<T> = T | Promise<T>;
+
+/**
+ * A generic array of arguments to be used in rest parameters.
+ */
+export type Args = ReadonlyArray<unknown>;
+
+/**
+ * A naming rule to match a name.
+ * @param name The original name
+ * @param lower The lower-cased name
+ * @param upper The upper-cased name
+ * @returns True if the name was matched
+ */
+export type NamingRule = (name: string, lower: string, upper: string) => boolean;
+
+/**
+ * A set of naming rules.
+ */
+export type NamingRuleSet = Readonly<Record<string, NamingRule>>;
+
+/**
+ * A collection of naming rulesets.
+ */
+export type NamingRules = Readonly<Record<string, NamingRuleSet>>;
+
+/**
+ * The result of matching names against naming rules.
+ * It includes the first match in each ruleset.
+ * Please do not use {@link Record} here.
+ */
+export type NamingMatch<T extends NamingRules> = Resolve<{
+  -readonly [key1 in keyof T]: {
+    -readonly [key2 in keyof T[key1]]?: string;
+  };
+}>;
 
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * A collection of regular expressions used by the library.
- * @internal
+ * A collection of regular expressions.
  */
-export const regexps = {
+export const regex = {
   /**
    * A regular expression to split paragraphs.
    */
@@ -26,123 +103,38 @@ export const regexps = {
   /**
    * A regular expression to match format specifiers.
    */
-  spec: /(%[a-z][0-9]?)/,
+  spec: /(#\d+)/,
   /**
    * A regular expression to match SGR sequences.
    */
   // eslint-disable-next-line no-control-regex
-  style: /(?:\x1b\[[\d;]+m)+/g,
+  sgr: /(?:\x1b\[[\d;]+m)+/g,
   /**
-   * A regular expression to match `RegExp` special characters.
+   * A regular expression to match JavaScript identifiers.
    */
-  regex: /[\\^$.*+?()[\]{}|]/g,
+  id: /^[a-zA-Z_]\w*$/,
   /**
    * A regular expression to match punctuation characters.
    */
   punct: /\p{P}/gu,
   /**
-   * A regular expression to match whitespace characters.
+   * A regular expression to match `RegExp` special characters.
    */
-  space: /\s+/g,
+  regex: /[\\^$.*+?()[\]{}|]/g,
+  /**
+   * A regular expression to match invalid option names.
+   */
+  name: /[\s=]/,
+  /**
+   * A regular expression to match whitespace.
+   */
+  ws: /\s+/g,
 } as const satisfies Record<string, RegExp>;
 
 /**
- * A stateless version of {@link regexps.regex}.
+ * A stateless version of {@link regex.regex}.
  */
-const regexSymbol = RegExp(regexps.regex.source);
-
-//--------------------------------------------------------------------------------------------------
-// Types
-//--------------------------------------------------------------------------------------------------
-/**
- * A helper type to alias another type while eliding type resolution in IntelliSense.
- * @template T The type to be aliased
- */
-export type Alias<T> = T extends T ? T : T;
-
-/**
- * A helper type to resolve types in IntelliSense.
- * @template T The type to be resolved
- */
-export type Resolve<T> = T & unknown;
-
-/**
- * A helper type to enumerate numbers.
- * @template N The last enumerated number
- * @template A The type of the helper array
- */
-export type Enumerate<N extends number, A extends Array<number> = []> = A['length'] extends N
-  ? A[number]
-  : Enumerate<N, [...A, A['length']]>;
-
-/**
- * A helper type to remove optionality from types and properties.
- * @template T The source type
- * @template N The maximum recursion depth
- * @template A The type of the helper array
- */
-export type Concrete<T, N extends number = 1, A extends Array<number> = []> = A['length'] extends N
-  ? Required<T>
-  : { [K in keyof T]-?: Concrete<T[K], N, [...A, 1]> };
-
-/**
- * A helper type to get the keys of a type depending on a value constraint.
- * @template T The source type
- * @template V The value type
- */
-export type KeyHaving<T, V> = keyof { [K in keyof T as T[K] extends V ? K : never]: never };
-
-/**
- * A helper type to get a union of the values of all properties from a type.
- * @template T The source type
- */
-export type ValuesOf<T> = T[keyof T];
-
-/**
- * For some reason the global definition of `URL` has issues with static methods.
- */
-export interface URL extends _URL {}
-
-/**
- * A naming rule to match a name.
- * @param name The original name
- * @param lower The lower-cased name
- * @param upper The upper-cased name
- * @returns True if the name was matched
- * @internal
- */
-export type NamingRule = (name: string, lower: string, upper: string) => boolean;
-
-/**
- * A set of naming rules.
- * @internal
- */
-export type NamingRuleSet = Readonly<Record<string, NamingRule>>;
-
-/**
- * A collection of naming rulesets.
- * @internal
- */
-export type NamingRules = Readonly<Record<string, NamingRuleSet>>;
-
-/**
- * The result of matching names against naming rules.
- * It includes the first match in each ruleset.
- * Please do not use {@link Record} here.
- * @internal
- */
-export type NamingMatch<T extends NamingRules> = Resolve<{
-  -readonly [key1 in keyof T]: {
-    -readonly [key2 in keyof T[key1]]: string;
-  };
-}>;
-
-/**
- * A (closed) numeric range.
- *
- * In a valid range, the minimum should be strictly less than the maximum.
- */
-export type Range = [min: number, max: number];
+const regexSymbol = RegExp(regex.regex.source);
 
 //--------------------------------------------------------------------------------------------------
 // Functions
@@ -152,7 +144,6 @@ export type Range = [min: number, max: number];
  * @param line The command line, including the command name
  * @param compIndex The completion index, if any (should be non-negative)
  * @returns The list of arguments, up to the completion index
- * @internal
  */
 export function getArgs(line: string, compIndex = NaN): Array<string> {
   /** @ignore */
@@ -207,39 +198,58 @@ export function getArgs(line: string, compIndex = NaN): Array<string> {
 }
 
 /**
- * Compares two arrays for equality.
- * @template T The type of the array element
- * @param actual The specified value
- * @param expected The required value
- * @param unique True if array elements should be considered in any order, ignoring duplicates
- * @returns True if the arrays are equal
- * @internal
+ * Reads data from a file, if available. Does not block to wait for new data.
+ * @param file The file path, descriptor or URL
+ * @returns The file data, if any
  */
-export function areEqual<T>(
-  actual: ReadonlyArray<T>,
-  expected: ReadonlyArray<T>,
-  unique = false,
-): boolean {
-  if (unique) {
-    const set = new Set(expected);
-    for (const val of actual) {
-      if (!set.delete(val)) {
-        return false;
-      }
-    }
-    if (set.size > 0) {
-      return false;
-    }
-  } else if (actual.length !== expected.length) {
-    return false;
-  } else {
-    for (let i = 0; i < actual.length; ++i) {
-      if (actual[i] !== expected[i]) {
-        return false;
+export async function readFile(file: string | number | URL): Promise<string | undefined> {
+  if (file || !process?.stdin?.isTTY) {
+    try {
+      const { readFileSync } = await import('fs');
+      return readFileSync?.(file).toString();
+    } catch (err) {
+      const code = (err as ErrnoException).code ?? '';
+      if (!['ENOENT', 'EAGAIN'].includes(code)) {
+        throw err;
       }
     }
   }
-  return true;
+}
+/**
+ * Compares two arbitrary values for deep equality.
+ * @param actual The specified value
+ * @param expected The required value
+ * @returns True if the values are equal
+ */
+export function areEqual(actual: unknown, expected: unknown): boolean {
+  if (actual === expected) {
+    return true;
+  }
+  const type = typeof actual;
+  if (type === typeof expected && type !== 'function') {
+    const array1 = isArray(actual);
+    const array2 = isArray(expected);
+    if (array1 && array2) {
+      return (
+        actual.length === expected.length && !actual.find((val, i) => !areEqual(val, expected[i]))
+      );
+    }
+    if (!array1 && !array2 && actual && expected && type === 'object') {
+      const keys1 = getKeys(actual);
+      const keys2 = getKeys(expected);
+      return (
+        keys1.length === keys2.length &&
+        !keys1.find(
+          (key) =>
+            !areEqual(
+              (actual as Record<string, unknown>)[key],
+              (expected as Record<string, unknown>)[key],
+            ),
+        )
+      );
+    }
+  }
+  return false;
 }
 
 /**
@@ -297,7 +307,6 @@ function matchingCharacters(S: string, T: string): number {
  * @param T The target string
  * @returns The similarity between the two strings
  * @see https://www.wikiwand.com/en/Gestalt_pattern_matching
- * @internal
  */
 export function gestaltSimilarity(S: string, T: string): number {
   return (2 * matchingCharacters(S, T)) / (S.length + T.length);
@@ -317,7 +326,7 @@ export function findSimilar(
 ): Array<string> {
   /** @ignore */
   function norm(name: string) {
-    return name.replace(regexps.punct, '').toLowerCase();
+    return name.replace(regex.punct, '').toLowerCase();
   }
   const result: Array<[string, number]> = [];
   const search = norm(needle);
@@ -334,11 +343,58 @@ export function findSimilar(
 }
 
 /**
+ * Matches names against naming rules.
+ * @param names The list of names
+ * @param rulesets The sets of rules
+ * @returns The matching result
+ */
+export function matchNamingRules<T extends NamingRules>(
+  names: Iterable<string>,
+  rulesets: T,
+): NamingMatch<T> {
+  const result: Record<string, Record<string, string>> = {};
+  for (const key in rulesets) {
+    result[key] = {};
+  }
+  for (const name of names) {
+    const lower = name.toLowerCase();
+    const upper = name.toUpperCase();
+    for (const [setId, ruleset] of getEntries(rulesets)) {
+      const matches = result[setId];
+      for (const ruleId in ruleset) {
+        if (!(ruleId in matches) && ruleset[ruleId](name, lower, upper)) {
+          matches[ruleId] = name;
+        }
+      }
+    }
+  }
+  return result as NamingMatch<T>;
+}
+
+/**
+ * Gets an adjacency list from a set of requirements.
+ * @param requires The map of option keys to required options
+ * @returns The adjacency list
+ */
+export function getRequiredBy(
+  requires: Readonly<Record<string, string>>,
+): Record<string, Array<string>> {
+  const result: Record<string, Array<string>> = {};
+  for (const [key, required] of getEntries(requires)) {
+    if (required in result) {
+      result[required].push(key);
+    } else {
+      result[required] = [key];
+    }
+  }
+  return result;
+}
+
+/**
  * Select a phrase alternative
  * @param phrase The phrase string
  * @param alt The alternative number
  * @returns The phrase alternatives
- * @internal
  */
 export function selectAlternative(phrase: string, alt = 0): string {
   const groups: Array<[number, number]> = [];
@@ -376,105 +432,23 @@ export function selectAlternative(phrase: string, alt = 0): string {
 }
 
 /**
- * Converts a string to boolean.
- * @param str The string value
- * @param flags The conversion flags
- * @param flags.truthNames The names of the truth value
- * @param flags.falsityNames The names of the falsity value
- * @param flags.caseSensitive Whether names are case-sensitive
- * @returns True if the string evaluates to true; undefined if it cannot be converted
- * @internal
+ * Merges the first-level properties of a source object with those of a template object.
+ * @param template The template object
+ * @param source The source object
+ * @returns The result object
  */
-export function isTrue(
-  str: string,
-  flags: {
-    truthNames?: ReadonlyArray<string>;
-    falsityNames?: ReadonlyArray<string>;
-    caseSensitive?: boolean;
-  } = {},
-): boolean | undefined {
-  /** @ignore */
-  function match(names: ReadonlyArray<string>): boolean {
-    return !!str.match(RegExp(`^${combineRegExp(names)}$`, regexFlags));
+export function mergeValues<T extends Record<string, unknown>>(
+  template: T,
+  source: PartialWithDepth<T>,
+): T {
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of getEntries(template)) {
+    result[key] =
+      Array.isArray(val) || typeof val !== 'object'
+        ? (source[key] ?? val)
+        : { ...val, ...(source[key] as object) };
   }
-  str = str.trim();
-  const { truthNames, falsityNames, caseSensitive } = flags;
-  const regexFlags = caseSensitive ? '' : 'i';
-  if (truthNames && match(truthNames)) {
-    return true;
-  }
-  if (falsityNames && match(falsityNames)) {
-    return false;
-  }
-  return truthNames
-    ? falsityNames
-      ? undefined
-      : false
-    : falsityNames
-      ? true
-      : !(Number(str) === 0); // consider NaN true
-}
-
-/**
- * Matches names against naming rules.
- * @param names The list of names
- * @param rulesets The sets of rules
- * @returns The matching result
- * @internal
- */
-export function matchNamingRules<T extends NamingRules>(
-  names: Iterable<string>,
-  rulesets: T,
-): NamingMatch<T> {
-  const result: Record<string, Record<string, string>> = {};
-  for (const key in rulesets) {
-    result[key] = {};
-  }
-  for (const name of names) {
-    const lower = name.toLowerCase();
-    const upper = name.toUpperCase();
-    for (const [setId, ruleset] of getEntries(rulesets)) {
-      const matches = result[setId];
-      for (const ruleId in ruleset) {
-        if (!(ruleId in matches) && ruleset[ruleId](name, lower, upper)) {
-          matches[ruleId] = name;
-        }
-      }
-    }
-  }
-  return result as NamingMatch<T>;
-}
-
-/**
- * Gets the maximum of two numbers.
- * @param a The first operand
- * @param b The second operand
- * @returns The maximum of the two
- * @internal
- */
-export function max(a: number, b: number): number {
-  return a > b ? a : b;
-}
-
-/**
- * Escapes the `RegExp` special characters.
- * @param str The string to be escaped
- * @returns The escaped string
- * @see https://docs-lodash.com/v4/escape-reg-exp/
- * @internal
- */
-export function escapeRegExp(str: string): string {
-  return str && regexSymbol.test(str) ? str.replace(regexps.regex, '\\$&') : str;
-}
-
-/**
- * Combines multiple patterns into a single pattern that matches any of them.
- * @param patterns The pattern strings
- * @returns The combined pattern
- * @internal
- */
-export function combineRegExp(patterns: ReadonlyArray<string>): string {
-  return `(${patterns.map(escapeRegExp).join('|')})`;
+  return result as T;
 }
 
 /**
@@ -482,10 +456,9 @@ export function combineRegExp(patterns: ReadonlyArray<string>): string {
  * @param rec The record-like object to search in
  * @param pred The predicate function
  * @returns The first value matching the predicate
- * @internal
  */
 export function findValue<T>(rec: Record<string, T>, pred: (val: T) => boolean): T | undefined {
-  for (const val of getValues(rec)) {
+  for (const val of Object.values(rec)) {
     if (pred(val)) {
       return val;
     }
@@ -493,62 +466,117 @@ export function findValue<T>(rec: Record<string, T>, pred: (val: T) => boolean):
 }
 
 /**
+ * Gets the maximum of two numbers.
+ * @param a The first operand
+ * @param b The second operand
+ * @returns The maximum of the two
+ */
+export function max(a: number, b: number): number {
+  return a > b ? a : b;
+}
+
+/**
  * Gets the value of an environment variable.
  * @param name The variable name
  * @returns The variable value, if it exists; else undefined
- * @internal
  */
 export function getEnv(name: string): string | undefined {
   return process?.env[name];
 }
 
 /**
- * Gets a list of entries from an object.
- * @param rec The record-like object
- * @returns The list of object entries
- * @internal
+ * Gets a symbol for a string.
+ * @param key The string key
+ * @returns The symbol
  */
-export function getEntries<T>(rec: Readonly<Record<string, T>>): Array<[string, T]> {
-  return Object.entries(rec);
-}
-
-/**
- * Gets a list of values from an object.
- * @param rec The record-like object
- * @returns The list of object values
- * @internal
- */
-export function getValues<T>(rec: Readonly<Record<string, T>>): Array<T> {
-  return Object.values(rec);
+export function getSymbol(key: string): symbol {
+  return Symbol.for(key);
 }
 
 /**
  * Gets a list of keys from an object.
  * @param rec The record-like object
  * @returns The list of object keys
- * @internal
  */
 export function getKeys(rec: object): Array<string> {
   return Object.keys(rec);
 }
 
 /**
- * Merges the first-level properties of a source object with those of a template object.
- * @param template The template object
- * @param source The source object
- * @returns The result object
- * @internal
+ * Gets a list of values from an object.
+ * @param rec The record-like object
+ * @returns The list of object values
  */
-export function mergeValues<T extends Record<string, unknown>>(
-  template: T,
-  source: Record<string, unknown>,
-): T {
-  const result: Record<string, unknown> = {};
-  for (const [key, val] of getEntries(template)) {
-    result[key] =
-      Array.isArray(val) || typeof val !== 'object'
-        ? source[key] ?? val
-        : { ...val, ...(source[key] as object) };
-  }
-  return result as T;
+export function getValues<T>(rec: Readonly<Record<string, T>>): Array<T> {
+  return Object.values(rec);
+}
+
+/**
+ * Gets a list of entries from an object.
+ * @param rec The record-like object
+ * @returns The list of object entries
+ */
+export function getEntries<T>(rec: Readonly<Record<string, T>>): Array<[string, T]> {
+  return Object.entries(rec);
+}
+
+/**
+ * Checks if a value is an array.
+ * @param value The value
+ * @returns True if the value is an array
+ */
+export function isArray<T = unknown>(value: unknown): value is Array<T> {
+  return Array.isArray(value);
+}
+
+/**
+ * Checks if a value is an array.
+ * @param value The value
+ * @returns True if the value is an array
+ */
+export function isReadonlyArray<T = unknown>(value: unknown): value is ReadonlyArray<T> {
+  return Array.isArray(value);
+}
+
+/**
+ * Escapes the `RegExp` special characters.
+ * @param str The string to be escaped
+ * @returns The escaped string
+ * @see https://docs-lodash.com/v4/escape-reg-exp/
+ */
+export function escapeRegExp(str: string): string {
+  return str && regexSymbol.test(str) ? str.replace(regex.regex, '\\$&') : str;
+}
+
+/**
+ * Gets the terminal width of a process stream.
+ * @param stream The name of the stream
+ * @returns The terminal width (in number of columns)
+ */
+export function streamWidth(stream: 'stdout' | 'stderr'): number | undefined {
+  const forceWidth = getEnv('FORCE_WIDTH');
+  return forceWidth ? Number(forceWidth) : process?.[stream]?.columns;
+}
+
+/**
+ * @param width The terminal width (in number of columns)
+ * @returns True if styles should be omitted from terminal strings
+ * @see https://clig.dev/#output
+ */
+export function omitStyles(width: number): boolean {
+  return !getEnv('FORCE_COLOR') && (!width || !!getEnv('NO_COLOR') || getEnv('TERM') === 'dumb');
+}
+
+/**
+ * @returns The default value of the command line
+ */
+export function getCmdLine(): string | Array<string> {
+  return getEnv('COMP_LINE') ?? getEnv('BUFFER') ?? process?.argv.slice(2) ?? [];
+}
+
+/**
+ * @returns The default value of the completion index
+ */
+export function getCompIndex(): number | undefined {
+  return Number(getEnv('COMP_POINT') ?? getEnv('CURSOR')) || getEnv('BUFFER')?.length;
 }
