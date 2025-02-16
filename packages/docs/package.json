@@ -1,12 +1,9 @@
 {
-  "name": "@tsargp/tsargp-docs",
+  "name": "@tsargp/docs",
   "version": "1.0.0",
   "description": "Documentation for tsargp",
   "homepage": "https://dsogari.github.io/tsargp/docs",
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "keywords": [
     "docs"
   ],

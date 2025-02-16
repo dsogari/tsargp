@@ -82,5 +82,5 @@ complete -o default -C <path_to_main_script> <your_cli_name>
 curl -fsSL https://bun.sh/install | bash
 bun install   # install dependencies
 bun test      # run unit tests
-npm publish   # publish to npm registry
+bun publish   # publish to npm registry
 ```

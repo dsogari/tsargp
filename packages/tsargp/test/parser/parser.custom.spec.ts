@@ -56,7 +56,7 @@ describe('ArgumentParser', () => {
       expect(options.single.parse).toHaveBeenCalledTimes(2);
     });
 
-    it('handle an array-valued option with hronous parse callback', () => {
+    it('handle an array-valued option with a parse callback', () => {
       const options = {
         array: {
           type: 'array',

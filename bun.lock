@@ -19,7 +19,7 @@
       },
     },
     "packages/docs": {
-      "name": "@tsargp/tsargp-docs",
+      "name": "@tsargp/docs",
       "version": "1.0.0",
       "devDependencies": {
         "@codemirror/lang-javascript": "^6.2.3",
@@ -694,7 +694,7 @@
 
     "@trysound/sax": ["@trysound/sax@0.2.0", "", {}, "sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA=="],
 
-    "@tsargp/tsargp-docs": ["@tsargp/tsargp-docs@workspace:packages/docs"],
+    "@tsargp/docs": ["@tsargp/docs@workspace:packages/docs"],
 
     "@tsconfig/bun": ["@tsconfig/bun@1.0.7", "", {}, "sha512-udGrGJBNQdXGVulehc1aWT73wkR9wdaGBtB6yL70RJsqwW/yJhIg6ZbRlPOfIUiFNrnBuYLBi9CSmMKfDC7dvA=="],
 

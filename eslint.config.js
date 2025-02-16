@@ -8,8 +8,6 @@ export default tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.recommended,
   jsdoc.configs['flat/recommended-typescript-error'],
-  mdx.flat,
-  cspell.recommended,
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -22,10 +20,18 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.mdx'],
+    ...mdx.flat,
     rules: {
+      ...mdx.flat.rules,
       'jsdoc/require-jsdoc': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
+    ...cspell.recommended,
+    rules: {
+      ...cspell.recommended.rules,
+      '@cspell/spellchecker': ['error', {}],
     },
   },
   {
