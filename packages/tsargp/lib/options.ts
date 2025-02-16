@@ -2,7 +2,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { HelpMessage, ErrorFormatter, MessageConfig, Style } from './styles.js';
-import type { PartialWithDepth, Promissory, Resolve, URL } from './utils.js';
+import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { HelpItem } from './enums.js';
 import { getEntries } from './utils.js';
@@ -1189,7 +1189,6 @@ export function visitRequirements<T>(
  * @param _options The option definitions
  * @returns The option values
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
   return {} as OptionValues<T>;
 }

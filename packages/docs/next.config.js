@@ -3,25 +3,35 @@ import { PHASE_PRODUCTION_BUILD } from 'next/constants.js';
 
 // eslint-disable-next-line jsdoc/check-tag-names
 /** @type {import('nextra').NextraConfig} */
-const nextraConfig = {
-  theme: 'nextra-theme-docs',
-  themeConfig: './theme.config.jsx',
-};
+const nextraConfig = {};
 const withNextra = nextra(nextraConfig);
 
 // eslint-disable-next-line jsdoc/check-tag-names
 /** @type {import('next').NextConfig} */
 const baseConfig = {
-  swcMinify: false,
   webpack(config) {
-    const allowedSvgRegex = /components\/icons\/.+\.svg$/;
+    const allowedSvgRegex = /\.svg$/i;
     const fileLoaderRule = config.module.rules.find((rule) => rule.test?.test?.('.svg'));
+    config.module.rules.push(
+      {
+        // Reapply the existing rule, but only for svg imports ending in ?url
+        ...fileLoaderRule,
+        test: allowedSvgRegex,
+        resourceQuery: /url/, // *.svg?url
+      },
+      {
+        // Convert all other *.svg imports to React components
+        test: allowedSvgRegex,
+        issuer: fileLoaderRule.issuer,
+        resourceQuery: { not: [...fileLoaderRule.resourceQuery.not, /url/] }, // exclude if *.svg?url
+        use: ['@svgr/webpack'],
+      },
+    );
     fileLoaderRule.exclude = allowedSvgRegex;
-    config.module.rules.push({
-      test: allowedSvgRegex,
-      use: ['@svgr/webpack'],
-    });
     return config;
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 

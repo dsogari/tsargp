@@ -1,7 +1,9 @@
+'use client';
+
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import React from 'react';
+import React, { type JSX } from 'react';
 import { ArgumentParser, ErrorMessage, AnsiMessage } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { calc as options } from 'tsargp/examples';
@@ -19,7 +21,7 @@ class CalcCommand extends Command {
   override async run(line: string, compIndex?: number) {
     try {
       const values = await this.parser.parse(line, { compIndex });
-      const result = values['add'] ?? values['sub'] ?? values['mult'] ?? values['div'] ?? NaN;
+      const result = values.add ?? values.sub ?? values.mult ?? values.div ?? NaN;
       this.println(`${result}`);
     } catch (err) {
       if (err instanceof ErrorMessage) {

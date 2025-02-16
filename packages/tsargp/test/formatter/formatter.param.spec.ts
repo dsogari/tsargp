@@ -1,12 +1,12 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../lib/options';
 import { AnsiFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
-  on('format', () => {
-    should('handle a single-valued option with required inline parameter', () => {
+  describe('format', () => {
+    it('handle a single-valued option with required inline parameter', () => {
       const options = {
         single: {
           type: 'single',
@@ -18,7 +18,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  =<param>  Requires inline parameters.\n`);
     });
 
-    should('handle a single-valued option with disallowed inline parameter', () => {
+    it('handle a single-valued option with disallowed inline parameter', () => {
       const options = {
         single: {
           type: 'single',
@@ -30,7 +30,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <param>  Disallows inline parameters.\n`);
     });
 
-    should('handle an array-valued option with required inline parameter', () => {
+    it('handle an array-valued option with required inline parameter', () => {
       const options = {
         array: {
           type: 'array',
@@ -45,7 +45,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle a function option with an optional parameter required to be inline', () => {
+    it('handle a function option with an optional parameter required to be inline', () => {
       const options = {
         function: {
           type: 'function',
@@ -58,7 +58,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  [=<param>]  Requires inline parameters.\n`);
     });
 
-    should('handle a function option with a single parameter', () => {
+    it('handle a function option with a single parameter', () => {
       const options = {
         function: {
           type: 'function',
@@ -70,7 +70,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  <param>\n`);
     });
 
-    should('handle a function option with an optional parameter', () => {
+    it('handle a function option with an optional parameter', () => {
       const options = {
         function: {
           type: 'function',
@@ -82,7 +82,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  [<param>]\n`);
     });
 
-    should('handle a function option with an exact parameter count', () => {
+    it('handle a function option with an exact parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -94,7 +94,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  <param>...  Accepts 2 parameters.\n`);
     });
 
-    should('handle a function option with a range parameter count', () => {
+    it('handle a function option with a range parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -106,7 +106,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  <param>...  Accepts between 1 and 2 parameters.\n`);
     });
 
-    should('handle a function option with a minimum parameter count (1)', () => {
+    it('handle a function option with a minimum parameter count (1)', () => {
       const options = {
         function: {
           type: 'function',
@@ -118,7 +118,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  <param>...  Accepts multiple parameters.\n`);
     });
 
-    should('handle a function option with a minimum parameter count (2)', () => {
+    it('handle a function option with a minimum parameter count (2)', () => {
       const options = {
         function: {
           type: 'function',
@@ -130,7 +130,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  <param>...  Accepts at least 2 parameters.\n`);
     });
 
-    should('handle a function option with a maximum parameter count', () => {
+    it('handle a function option with a maximum parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -142,7 +142,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts at most 2 parameters.\n`);
     });
 
-    should('handle a function option with unlimited parameter count', () => {
+    it('handle a function option with unlimited parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -154,7 +154,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
     });
 
-    should('handle a single-valued option with a parameter name', () => {
+    it('handle a single-valued option with a parameter name', () => {
       const options = {
         single: {
           type: 'single',
@@ -166,7 +166,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <my_param>\n`);
     });
 
-    should('handle a single-valued option with a parameter name with angle brackets', () => {
+    it('handle a single-valued option with a parameter name with angle brackets', () => {
       const options = {
         single: {
           type: 'single',
@@ -178,7 +178,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <token>=<value>\n`);
     });
 
-    should('handle a single-valued option with a boolean example value', () => {
+    it('handle a single-valued option with a boolean example value', () => {
       const options = {
         single: {
           type: 'single',
@@ -190,7 +190,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  true\n`);
     });
 
-    should('handle a single-valued option with a string example value', () => {
+    it('handle a single-valued option with a string example value', () => {
       const options = {
         single: {
           type: 'single',
@@ -202,7 +202,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  '123'\n`);
     });
 
-    should('handle a single-valued option with a number example value', () => {
+    it('handle a single-valued option with a number example value', () => {
       const options = {
         single: {
           type: 'single',
@@ -214,7 +214,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  123\n`);
     });
 
-    should('handle an array-valued option with a boolean array example value', () => {
+    it('handle an array-valued option with a boolean array example value', () => {
       const options = {
         array: {
           type: 'array',
@@ -226,7 +226,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -a  true false...  Accepts multiple parameters.\n`);
     });
 
-    should('handle an array-valued option with a string array example value', () => {
+    it('handle an array-valued option with a string array example value', () => {
       const options = {
         array: {
           type: 'array',
@@ -238,7 +238,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -a  'one' 'two'...  Accepts multiple parameters.\n`);
     });
 
-    should('handle an array-valued option with a number array example value', () => {
+    it('handle an array-valued option with a number array example value', () => {
       const options = {
         array: {
           type: 'array',
@@ -250,7 +250,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -a  1 2...  Accepts multiple parameters.\n`);
     });
 
-    should('handle an array-valued option with an example value required to be inline', () => {
+    it('handle an array-valued option with an example value required to be inline', () => {
       const options = {
         array: {
           type: 'array',
@@ -266,7 +266,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle an array-valued option with an example value delimited with a string', () => {
+    it('handle an array-valued option with an example value delimited with a string', () => {
       const options = {
         array: {
           type: 'array',
@@ -281,7 +281,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle an array-valued option with an example value delimited with a regex', () => {
+    it('handle an array-valued option with an example value delimited with a regex', () => {
       const options = {
         array: {
           type: 'array',

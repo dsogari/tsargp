@@ -1,7 +1,9 @@
+'use client';
+
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import React from 'react';
+import React, { type JSX } from 'react';
 import { ArgumentParser, ErrorMessage, AnsiMessage, valuesFor } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { demo as options } from 'tsargp/examples';

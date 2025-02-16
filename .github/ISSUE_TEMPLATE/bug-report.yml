@@ -37,7 +37,7 @@ body:
     attributes:
       label: Playground link
       description: A link to a playground sample which shows this behavior. (Click "Share URL")
-      placeholder: https://trulysimple.dev/tsargp/play#E4UwLgrsB2AEDeBfA3EA...
+      placeholder: https://dsogari.github.io/tsargp/play#E4UwLgrsB2AEDeBfA3EA...
   - type: textarea
     id: code
     attributes:

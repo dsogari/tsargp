@@ -5,6 +5,8 @@
   "dictionaries": ["typescript"],
   "words": ["overlined", "niladic", "polyadic", "satisfiability"],
   "ignoreWords": [
+    "Diego",
+    "Sogari",
     "tsargp",
     "nextra",
     "nushell",
@@ -24,15 +26,7 @@
     "rulesets"
   ],
   "ignoreRegExpList": ["gh-username", "ga-measurement-id"],
-  "ignorePaths": [
-    "*.lockb",
-    "*.json",
-    "*.txt",
-    ".git",
-    ".prettierignore",
-    "CODEOWNERS",
-    "*.{js,ts,jsx,tsx}"
-  ],
+  "ignorePaths": ["*.lock", "*.json", "*.txt", ".git", ".prettierignore", "*.{js,ts,jsx,tsx}"],
   "useGitignore": true,
   "enableGlobDot": true,
   "patterns": [

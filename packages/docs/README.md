@@ -4,7 +4,7 @@ Documentation for [tsargp](https://www.npmjs.com/package/tsargp).
 
 ## Usage
 
-Serve docs from `node_modules/@trulysimple/tsargp-docs/dist` with an HTTP server.
+Serve docs from `node_modules/@tsargp/tsargp-docs/dist` with an HTTP server.
 
 ## Build
 

@@ -1,9 +1,0 @@
-{
-  "mode": "pre",
-  "tag": "next",
-  "initialVersions": {
-    "@trulysimple/tsargp-docs": "0.4.6",
-    "tsargp": "0.8.0"
-  },
-  "changesets": []
-}

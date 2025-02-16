@@ -93,9 +93,9 @@ export default {
       {
         type: 'text',
         text: `MIT License.
-Copyright (c) 2024 ${style(tf.bold, tf.italic)}TrulySimple${style(tf.clear)}
+Copyright (c) 2024-2025 ${style(tf.bold, tf.italic)}Diego Sogari${style(tf.clear)}
 
-Report a bug: ${style(fg.brightBlack)}https://github.com/trulysimple/tsargp/issues`,
+Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
         noWrap: true,
       },
     ],

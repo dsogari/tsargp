@@ -1,20 +1,20 @@
-import { describe, describe as on, describe as when, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
 import { type ParsingFlags, ArgumentParser } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('ArgumentParser', () => {
-  on('parse', () => {
+  describe('parse', () => {
     const flags: ParsingFlags = { clusterPrefix: '' };
 
-    should('throw an error on unrecognized cluster argument', async () => {
+    it('throw an error on unrecognized cluster argument', () => {
       const parser = new ArgumentParser({});
-      await expect(parser.parse(['-'], flags)).rejects.toThrow(`Unknown option -.`);
-      await expect(parser.parse(['-x'], flags)).rejects.toThrow(`Unknown option -x.`);
+      expect(parser.parse(['-'], flags)).rejects.toThrow(`Unknown option -.`);
+      expect(parser.parse(['-x'], flags)).rejects.toThrow(`Unknown option -x.`);
     });
 
-    should('parse a cluster argument with empty cluster prefix', async () => {
+    it('parse a cluster argument with empty cluster prefix', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -23,11 +23,11 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['f'], flags)).resolves.toEqual({ flag: true });
+      expect(parser.parse(['f'], flags)).resolves.toEqual({ flag: true });
     });
 
-    when('a cluster argument is specified', () => {
-      should('parse a flag option', async () => {
+    describe('a cluster argument is specified', () => {
+      it('parse a flag option', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -36,11 +36,11 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['f'], flags)).resolves.toEqual({ flag: true });
-        await expect(parser.parse(['ff'], flags)).resolves.toEqual({ flag: true });
+        expect(parser.parse(['f'], flags)).resolves.toEqual({ flag: true });
+        expect(parser.parse(['ff'], flags)).resolves.toEqual({ flag: true });
       });
 
-      should('parse a single-valued option', async () => {
+      it('parse a single-valued option', () => {
         const options = {
           single: {
             type: 'single',
@@ -49,11 +49,11 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['s', '1'], flags)).resolves.toEqual({ single: '1' });
-        await expect(parser.parse(['ss', '1', '2'], flags)).resolves.toEqual({ single: '2' });
+        expect(parser.parse(['s', '1'], flags)).resolves.toEqual({ single: '1' });
+        expect(parser.parse(['ss', '1', '2'], flags)).resolves.toEqual({ single: '2' });
       });
 
-      should('parse an array-valued option', async () => {
+      it('parse an array-valued option', () => {
         const options = {
           array: {
             type: 'array',
@@ -62,10 +62,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['a', '1', '2'], flags)).resolves.toEqual({ array: ['1', '2'] });
+        expect(parser.parse(['a', '1', '2'], flags)).resolves.toEqual({ array: ['1', '2'] });
       });
 
-      should('parse a variadic function option', async () => {
+      it('parse a variadic function option', () => {
         const options = {
           function: {
             type: 'function',
@@ -74,10 +74,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['f'], flags)).resolves.toEqual({ function: null });
+        expect(parser.parse(['f'], flags)).resolves.toEqual({ function: null });
       });
 
-      should('parse a polyadic function option', async () => {
+      it('parse a polyadic function option', () => {
         const options = {
           function: {
             type: 'function',
@@ -87,13 +87,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['f', '1', '2'], flags)).resolves.toEqual({ function: null });
-        await expect(parser.parse(['ff', '1', '2', '3', '4'], flags)).resolves.toEqual({
+        expect(parser.parse(['f', '1', '2'], flags)).resolves.toEqual({ function: null });
+        expect(parser.parse(['ff', '1', '2', '3', '4'], flags)).resolves.toEqual({
           function: null,
         });
       });
 
-      should('parse a command option', async () => {
+      it('parse a command option', () => {
         const options = {
           command: {
             type: 'command',
@@ -102,12 +102,12 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['c'], flags)).resolves.toEqual({ command: {} });
+        expect(parser.parse(['c'], flags)).resolves.toEqual({ command: {} });
       });
     });
 
-    when('a variadic option is specified in middle of a cluster argument', () => {
-      should('throw an error on array-valued option', async () => {
+    describe('a variadic option is specified in middle of a cluster argument', () => {
+      it('throw an error on array-valued option', () => {
         const options = {
           array: {
             type: 'array',
@@ -116,12 +116,12 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['aa'], flags)).rejects.toThrow(
+        expect(parser.parse(['aa'], flags)).rejects.toThrow(
           `Option letter 'a' must be the last in a cluster.`,
         );
       });
 
-      should('throw an error on variadic function option', async () => {
+      it('throw an error on variadic function option', () => {
         const options = {
           function: {
             type: 'function',
@@ -130,12 +130,12 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['ff'], flags)).rejects.toThrow(
+        expect(parser.parse(['ff'], flags)).rejects.toThrow(
           `Option letter 'f' must be the last in a cluster.`,
         );
       });
 
-      should('throw an error on command option', async () => {
+      it('throw an error on command option', () => {
         const options = {
           command: {
             type: 'command',
@@ -144,13 +144,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['cc'], flags)).rejects.toThrow(
+        expect(parser.parse(['cc'], flags)).rejects.toThrow(
           `Option letter 'c' must be the last in a cluster.`,
         );
       });
     });
 
-    should('parse a nameless positional option in a cluster argument', async () => {
+    it('parse a nameless positional option in a cluster argument', () => {
       const options = {
         single1: {
           type: 'single',
@@ -164,25 +164,25 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['s1'], flags)).resolves.toEqual({
+      expect(parser.parse(['s1'], flags)).resolves.toEqual({
         single1: '1',
         single2: undefined,
       });
-      await expect(parser.parse(['s', '1'], flags)).resolves.toEqual({
+      expect(parser.parse(['s', '1'], flags)).resolves.toEqual({
         single1: '1',
         single2: undefined,
       });
-      await expect(parser.parse(['sS', '1', '2'], flags)).resolves.toEqual({
+      expect(parser.parse(['sS', '1', '2'], flags)).resolves.toEqual({
         single1: '1',
         single2: '2',
       });
-      await expect(parser.parse(['Ss', '1', '2'], flags)).resolves.toEqual({
+      expect(parser.parse(['Ss', '1', '2'], flags)).resolves.toEqual({
         single1: '2',
         single2: '1',
       });
     });
 
-    should('parse options in a cluster argument for a nested command', async () => {
+    it('parse options in a cluster argument for a nested command', () => {
       const options = {
         command: {
           type: 'command',
@@ -209,7 +209,7 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['c', 'fsa', '1', '2', '3'], flags)).resolves.toEqual({
+      expect(parser.parse(['c', 'fsa', '1', '2', '3'], flags)).resolves.toEqual({
         command: {
           flag: true,
           single: '1',

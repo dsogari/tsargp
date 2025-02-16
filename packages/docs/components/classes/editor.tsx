@@ -1,7 +1,9 @@
+'use client';
+
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import React, { Component, createRef } from 'react';
+import React, { Component, createRef, type JSX } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 

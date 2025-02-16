@@ -1,12 +1,12 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
 import { OptionValidator } from '../../lib/validator';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('OptionValidator', () => {
-  on('validate', () => {
-    should('accept an option with empty positional marker', async () => {
+  describe('validate', () => {
+    it('accept an option with empty positional marker', () => {
       const options = {
         single: {
           type: 'single',
@@ -14,10 +14,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).resolves.toMatchObject({});
+      expect(validator.validate()).resolves.toMatchObject({});
     });
 
-    should('accept a version option with empty version', async () => {
+    it('accept a version option with empty version', () => {
       const options = {
         version: {
           type: 'version',
@@ -25,10 +25,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).resolves.toMatchObject({});
+      expect(validator.validate()).resolves.toMatchObject({});
     });
 
-    should('accept a version option with empty choices', async () => {
+    it('accept a version option with empty choices', () => {
       const options = {
         single: {
           type: 'single',
@@ -36,10 +36,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).resolves.toMatchObject({});
+      expect(validator.validate()).resolves.toMatchObject({});
     });
 
-    should('accept an option with empty cluster letters', async () => {
+    it('accept an option with empty cluster letters', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -47,10 +47,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).resolves.toMatchObject({});
+      expect(validator.validate()).resolves.toMatchObject({});
     });
 
-    should('throw an error on duplicate positional option', async () => {
+    it('throw an error on duplicate positional option', () => {
       const options = {
         single1: {
           type: 'single',
@@ -62,12 +62,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Duplicate positional option single2: previous was single1.`,
       );
     });
 
-    should('validate nested command options recursively', async () => {
+    it('validate nested command options recursively', () => {
       const options = {
         cmd1: {
           type: 'command',
@@ -80,12 +80,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option cmd1.cmd2.flag has invalid name ' '.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option cmd1.cmd2.flag has invalid name ' '.`);
     });
 
-    should('avoid circular references while evaluating nested command options', async () => {
+    it('avoid circular references while evaluating nested command options', () => {
       const options = {
         command: {
           type: 'command',
@@ -98,7 +96,7 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).resolves.toMatchObject({});
+      expect(validator.validate()).resolves.toMatchObject({});
     });
   });
 });

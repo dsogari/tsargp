@@ -1,4 +1,4 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections, PartialFormatterConfig } from '../../lib/options';
 import { JsonFormatter, CsvFormatter, MdFormatter } from '../../lib/formatter';
 import { style } from '../../lib/styles';
@@ -7,13 +7,13 @@ import { HelpItem, tf } from '../../lib/enums';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('JsonFormatter', () => {
-  on('format', () => {
-    should('handle zero options', () => {
+  describe('format', () => {
+    it('handle zero options', () => {
       const formatter = new JsonFormatter({});
       expect(formatter.format().message).toEqual('[]');
     });
 
-    should('handle a flag option with a group and a default callback', () => {
+    it('handle a flag option with a group and a default callback', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -29,8 +29,8 @@ describe('JsonFormatter', () => {
     });
   });
 
-  on('sections', () => {
-    should('handle various options', () => {
+  describe('sections', () => {
+    it('handle various options', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -56,13 +56,13 @@ describe('JsonFormatter', () => {
 });
 
 describe('CsvFormatter', () => {
-  on('format', () => {
-    should('handle zero options', () => {
+  describe('format', () => {
+    it('handle zero options', () => {
       const formatter = new CsvFormatter({});
       expect(formatter.format().message).toEqual('');
     });
 
-    should('handle a single-valued option with a group and a default callback', () => {
+    it('handle a single-valued option with a group and a default callback', () => {
       const options = {
         single: {
           type: 'single',
@@ -82,8 +82,8 @@ describe('CsvFormatter', () => {
     });
   });
 
-  on('sections', () => {
-    should('handle help sections', () => {
+  describe('sections', () => {
+    it('handle help sections', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -106,13 +106,13 @@ describe('CsvFormatter', () => {
 });
 
 describe('MdFormatter', () => {
-  on('format', () => {
-    should('handle zero options', () => {
+  describe('format', () => {
+    it('handle zero options', () => {
       const formatter = new MdFormatter({});
       expect(formatter.format().message).toEqual('');
     });
 
-    should('handle a number option with a group and a default callback', () => {
+    it('handle a number option with a group and a default callback', () => {
       const options = {
         single: {
           type: 'single',
@@ -133,8 +133,8 @@ describe('MdFormatter', () => {
     });
   });
 
-  on('sections', () => {
-    should('handle help sections', () => {
+  describe('sections', () => {
+    it('handle help sections', () => {
       const options = {
         flag: {
           type: 'flag',

@@ -1,4 +1,4 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import type { Options, PartialFormatterConfig } from '../../lib/options';
 import { tf, ConnectiveWord } from '../../lib/enums';
 import { AnsiFormatter } from '../../lib/formatter';
@@ -7,8 +7,8 @@ import { style } from '../../lib/styles';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
-  on('format', () => {
-    should('handle an option with no names or description', () => {
+  describe('format', () => {
+    it('handle an option with no names or description', () => {
       const options = {
         flag: { type: 'flag' },
       } as const satisfies Options;
@@ -16,7 +16,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('\n');
     });
 
-    should('handle an option with empty names array', () => {
+    it('handle an option with empty names array', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -27,7 +27,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('\n');
     });
 
-    should('handle an option with no description', () => {
+    it('handle an option with no description', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -38,7 +38,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -f\n');
     });
 
-    should('handle an option with custom styles', () => {
+    it('handle an option with custom styles', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -66,7 +66,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle an option with inline styles in the description', () => {
+    it('handle an option with inline styles in the description', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -88,7 +88,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle an option with paragraphs in the description', () => {
+    it('handle an option with paragraphs in the description', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -105,7 +105,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle an option with lists in the description', () => {
+    it('handle an option with lists in the description', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -122,7 +122,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('hide an option from the help message when it asks so', () => {
+    it('hide an option from the help message when it asks so', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -135,7 +135,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('');
     });
 
-    should('not break columns in the help message when configured with negative values', () => {
+    it('not break columns in the help message when configured with negative values', () => {
       const options = {
         single: {
           type: 'single',
@@ -152,7 +152,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -s  <param>  A boolean option\n');
     });
 
-    should('break columns in the help message when configured with positive indentation', () => {
+    it('break columns in the help message when configured with positive indentation', () => {
       const options = {
         single: {
           type: 'single',
@@ -169,7 +169,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toMatch(/^\n {2}-s\n {6}<param>\n {15}A boolean option\n$/);
     });
 
-    should('break columns in the help message when configured with absolute indentation', () => {
+    it('break columns in the help message when configured with absolute indentation', () => {
       const options = {
         single: {
           type: 'single',
@@ -186,7 +186,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toMatch(`\n  -s\n  <param>\n  A boolean option\n`);
     });
 
-    should('break columns in the help message when configured with negative indentation', () => {
+    it('break columns in the help message when configured with negative indentation', () => {
       const options = {
         single: {
           type: 'single',
@@ -203,7 +203,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toMatch(/^\n-s\n <param>\n {7}A boolean option\n$/);
     });
 
-    should('hide the option names from the help message when configured to do so', () => {
+    it('hide the option names from the help message when configured to do so', () => {
       const options = {
         single: {
           type: 'single',
@@ -216,7 +216,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('    <param>  A boolean option\n');
     });
 
-    should('hide the option parameter from the help message when configured to do so', () => {
+    it('hide the option parameter from the help message when configured to do so', () => {
       const options = {
         single: {
           type: 'single',
@@ -229,7 +229,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -s    A boolean option\n');
     });
 
-    should('hide the option description from the help message when configured to do so', () => {
+    it('hide the option description from the help message when configured to do so', () => {
       const options = {
         single: {
           type: 'single',
@@ -242,7 +242,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -s  <param>\n');
     });
 
-    should('align option names to the left boundary without separator', () => {
+    it('align option names to the left boundary without separator', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -265,7 +265,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('align option names to the left boundary with a separator', () => {
+    it('align option names to the left boundary with a separator', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -281,7 +281,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -f, --flag\n  --flag2\n');
     });
 
-    should('align option names to the right boundary', () => {
+    it('align option names to the right boundary', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -297,7 +297,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -f, --flag\n     --flag2\n');
     });
 
-    should('align option names within slots without separator', () => {
+    it('align option names within slots without separator', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -316,7 +316,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -f         --flag\n     --flag2\n');
     });
 
-    should('align option names within slots with a separator', () => {
+    it('align option names within slots with a separator', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -332,7 +332,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual('  -f           --flag\n      --flag2\n');
     });
 
-    should('align option parameters to the right boundary', () => {
+    it('align option parameters to the right boundary', () => {
       const options = {
         single1: {
           type: 'single',
@@ -350,7 +350,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s1  'abcde'\n  -s2     'ab'\n`);
     });
 
-    should('align option descriptions to the right boundary', () => {
+    it('align option descriptions to the right boundary', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -363,7 +363,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap(14, false)).toEqual('  -f    A flag\n        option\n');
     });
 
-    should('merge option parameters with option names', () => {
+    it('merge option parameters with option names', () => {
       const options = {
         single1: {
           type: 'single',
@@ -388,7 +388,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s1 <param>\n  <param>\n  -s3=<param>\n  -a[=<param>]\n`);
     });
 
-    should('merge option descriptions with option parameters', () => {
+    it('merge option descriptions with option parameters', () => {
       const options = {
         single: {
           type: 'single',
@@ -406,7 +406,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <param> A boolean option\n  -f  A flag option\n`);
     });
 
-    should('merge option descriptions with option parameters and option names', () => {
+    it('merge option descriptions with option parameters and option names', () => {
       const options = {
         single1: {
           type: 'single',

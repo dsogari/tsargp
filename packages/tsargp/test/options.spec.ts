@@ -1,14 +1,14 @@
-import { describe, describe as on, describe as when, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options, OptionRegistry, valuesFor } from '../lib/options';
 
 describe('OptionRegistry', () => {
-  on('constructor', () => {
-    should('handle zero options', () => {
+  describe('constructor', () => {
+    it('handle zero options', () => {
       expect(() => new OptionRegistry({})).not.toThrow();
     });
 
-    when('registering option names', () => {
-      should('ignore null values', () => {
+    describe('registering option names', () => {
+      it('ignore null values', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -21,7 +21,7 @@ describe('OptionRegistry', () => {
         expect(options.flag).toHaveProperty('preferredName', '-f');
       });
 
-      should('include the positional marker', () => {
+      it('include the positional marker', () => {
         const options = {
           single: {
             type: 'single',
@@ -36,8 +36,8 @@ describe('OptionRegistry', () => {
       });
     });
 
-    when('registering cluster letters', () => {
-      should('register each letter', () => {
+    describe('registering cluster letters', () => {
+      it('register each letter', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -54,7 +54,7 @@ describe('OptionRegistry', () => {
 });
 
 describe('valuesFor', () => {
-  should('return an empty object', () => {
+  it('return an empty object', () => {
     expect(valuesFor({})).toEqual({});
   });
 });

@@ -1,17 +1,17 @@
-import { describe, describe as on, describe as when, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections } from '../../lib/options';
 import { AnsiFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
-  on('sections', () => {
-    should('handle no sections', () => {
+  describe('sections', () => {
+    it('handle no sections', () => {
       const message = new AnsiFormatter({}).sections([]);
       expect(message.wrap()).toEqual('');
     });
 
-    should('avoid splitting and wrapping section texts when explicitly asked', () => {
+    it('avoid splitting and wrapping section texts when explicitly asked', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -29,82 +29,82 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    when('rendering a text section', () => {
-      should('skip a section with no content', () => {
+    describe('rendering a text section', () => {
+      it('skip a section with no content', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'text' }];
         expect(formatter.sections(sections).wrap()).toEqual('');
       });
 
-      should('render the section content', () => {
+      it('render the section content', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'text', text: 'text' }];
         expect(formatter.sections(sections).wrap()).toEqual('text');
       });
 
-      should('indent the section content', () => {
+      it('indent the section content', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'text', text: 'text', indent: 2 }];
         expect(formatter.sections(sections).wrap()).toEqual('  text');
       });
 
-      should('break the section content', () => {
+      it('break the section content', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'text', text: 'text', breaks: 1 }];
         expect(formatter.sections(sections).wrap()).toEqual('\ntext');
       });
 
-      should('render the section heading, but avoid indenting it', () => {
+      it('render the section heading, but avoid indenting it', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'text', title: 'title', indent: 2 }];
         expect(formatter.sections(sections).wrap()).toEqual('title');
       });
 
-      should('break the section heading', () => {
+      it('break the section heading', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'text', title: 'title', breaks: 1 }];
         expect(formatter.sections(sections).wrap()).toEqual('\ntitle');
       });
     });
 
-    when('rendering a usage section', () => {
-      should('skip a section with no content', () => {
+    describe('rendering a usage section', () => {
+      it('skip a section with no content', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections).wrap()).toEqual('');
       });
 
-      should('render the program name', () => {
+      it('render the program name', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections, 'prog').wrap()).toEqual('prog');
       });
 
-      should('indent the program name', () => {
+      it('indent the program name', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'usage', indent: 2 }];
         expect(formatter.sections(sections, 'prog').wrap()).toEqual('  prog');
       });
 
-      should('break the program name', () => {
+      it('break the program name', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'usage', breaks: 1 }];
         expect(formatter.sections(sections, 'prog').wrap()).toEqual('\nprog');
       });
 
-      should('render the section heading, but avoid indenting it', () => {
+      it('render the section heading, but avoid indenting it', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'usage', title: 'title', indent: 2 }];
         expect(formatter.sections(sections).wrap()).toEqual('title');
       });
 
-      should('break the section heading', () => {
+      it('break the section heading', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'usage', title: 'title', breaks: 1 }];
         expect(formatter.sections(sections).wrap()).toEqual('\ntitle');
       });
 
-      should('render a flag option', () => {
+      it('render a flag option', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -121,7 +121,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('[-f1] (-f2|--flag)');
       });
 
-      should('render a single-valued option', () => {
+      it('render a single-valued option', () => {
         const options = {
           single1: {
             type: 'single',
@@ -151,7 +151,7 @@ describe('AnsiFormatter', () => {
         );
       });
 
-      should('render an array-valued option', () => {
+      it('render an array-valued option', () => {
         const options = {
           array1: {
             type: 'array',
@@ -181,7 +181,7 @@ describe('AnsiFormatter', () => {
         );
       });
 
-      should('include and exclude an option', () => {
+      it('include and exclude an option', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -203,7 +203,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(sections4).wrap()).toEqual('[-f2] [-f1]');
       });
 
-      should('group options according to an adjacency list', () => {
+      it('group options according to an adjacency list', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -275,7 +275,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(case12).wrap()).toEqual('[[[-f3] -f1] -f2]');
       });
 
-      should('group options according to an adjacency list, with an always required option', () => {
+      it('group options according to an adjacency list, with an always required option', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -349,14 +349,14 @@ describe('AnsiFormatter', () => {
       });
     });
 
-    when('rendering a groups section', () => {
-      should('skip a section with no content', () => {
+    describe('rendering a groups section', () => {
+      it('skip a section with no content', () => {
         const formatter = new AnsiFormatter({});
         const sections: HelpSections = [{ type: 'groups' }];
         expect(formatter.sections(sections).wrap()).toEqual('');
       });
 
-      should('render the default group', () => {
+      it('render the default group', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -368,7 +368,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('  -f');
       });
 
-      should('render the default group with a custom heading', () => {
+      it('render the default group with a custom heading', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -380,7 +380,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('title\n\n  -f');
       });
 
-      should('break the default group', () => {
+      it('break the default group', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -392,7 +392,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('\n  -f');
       });
 
-      should('break the default group heading', () => {
+      it('break the default group heading', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -404,7 +404,7 @@ describe('AnsiFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('\ntitle\n\n  -f');
       });
 
-      should('include and exclude an group', () => {
+      it('include and exclude an group', () => {
         const options = {
           flag1: {
             type: 'flag',

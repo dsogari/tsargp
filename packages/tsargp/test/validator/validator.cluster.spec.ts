@@ -1,12 +1,12 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
 import { OptionValidator } from '../../lib/validator';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('OptionValidator', () => {
-  on('validate', () => {
-    should('throw an error on option with invalid cluster letter (space)', async () => {
+  describe('validate', () => {
+    it('throw an error on option with invalid cluster letter (space)', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -14,12 +14,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option flag has invalid cluster letter ' '.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option flag has invalid cluster letter ' '.`);
     });
 
-    should('throw an error on option with invalid cluster letter (equals sign)', async () => {
+    it('throw an error on option with invalid cluster letter (equals sign)', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -27,12 +25,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option flag has invalid cluster letter '='.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option flag has invalid cluster letter '='.`);
     });
 
-    should('throw an error on duplicate cluster letter in the same option', async () => {
+    it('throw an error on duplicate cluster letter in the same option', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -40,12 +36,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option flag has duplicate cluster letter 'a'.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option flag has duplicate cluster letter 'a'.`);
     });
 
-    should('throw an error on duplicate cluster letter across different options', async () => {
+    it('throw an error on duplicate cluster letter across different options', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -57,12 +51,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option flag2 has duplicate cluster letter 'f'.`,
       );
     });
 
-    should('return a warning on variadic function option with cluster letter', async () => {
+    it('return a warning on variadic function option with cluster letter', async () => {
       const options = {
         function: {
           type: 'function',
@@ -78,7 +72,7 @@ describe('OptionValidator', () => {
       );
     });
 
-    should('return a warning on array-valued option with cluster letter', async () => {
+    it('return a warning on array-valued option with cluster letter', async () => {
       const options = {
         array: {
           type: 'array',

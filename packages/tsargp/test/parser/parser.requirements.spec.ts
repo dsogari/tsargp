@@ -1,12 +1,12 @@
-import { describe, describe as on, describe as when, expect, it as should, vi } from 'vitest';
+import { describe, expect, it, jest } from 'bun:test';
 import { type Options, req } from '../../lib/options';
 import { ArgumentParser } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('ArgumentParser', () => {
-  on('parse', () => {
-    should('throw an error when a required option with no name is not specified', async () => {
+  describe('parse', () => {
+    it('throw an error when a required option with no name is not specified', () => {
       const options = {
         single: {
           type: 'single',
@@ -15,10 +15,10 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse([])).rejects.toThrow(`Option is required.`);
+      expect(parser.parse([])).rejects.toThrow(`Option is required.`);
     });
 
-    should('accept a forward requirement with req.all with zero items', async () => {
+    it('accept a forward requirement with req.all with zero items', () => {
       const options = {
         requires: {
           type: 'flag',
@@ -27,10 +27,10 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['-f'])).resolves.toEqual({ requires: true });
+      expect(parser.parse(['-f'])).resolves.toEqual({ requires: true });
     });
 
-    should('accept a conditional requirement with req.one with zero items', async () => {
+    it('accept a conditional requirement with req.one with zero items', () => {
       const options = {
         requires: {
           type: 'flag',
@@ -39,10 +39,10 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse([])).resolves.toEqual({ requires: undefined });
+      expect(parser.parse([])).resolves.toEqual({ requires: undefined });
     });
 
-    should('evaluate the required value of an option that has a default value', async () => {
+    it('evaluate the required value of an option that has a default value', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -56,10 +56,10 @@ describe('ArgumentParser', () => {
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['-f1'])).resolves.toEqual({ flag1: true, flag2: true });
+      expect(parser.parse(['-f1'])).resolves.toEqual({ flag1: true, flag2: true });
     });
 
-    should('evaluate the required value of an option that has a parse callback', async () => {
+    it('evaluate the required value of an option that has a parse callback', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -69,18 +69,16 @@ describe('ArgumentParser', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          parse: async (param) => param,
+          parse: (param) => param,
         },
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
-      await expect(parser.parse(['-f', '-s', '0'])).rejects.toThrow(
-        `Option -f requires -s == '1'.`,
-      );
-      await expect(parser.parse(['-f', '-s', '1'])).resolves.toEqual({ flag: true, single: '1' });
+      expect(parser.parse(['-f', '-s', '0'])).rejects.toThrow(`Option -f requires -s == '1'.`);
+      expect(parser.parse(['-f', '-s', '1'])).resolves.toEqual({ flag: true, single: '1' });
     });
 
-    when('an option is required to be present', () => {
-      should('throw an error on option absent, using an option key', async () => {
+    describe('an option is required to be present', () => {
+      it('throw an error on option absent, using an option key', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -93,10 +91,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1'])).rejects.toThrow(`Option -f1 requires -f2.`);
+        expect(parser.parse(['-f1'])).rejects.toThrow(`Option -f1 requires -f2.`);
       });
 
-      should('throw an error on option absent, using a required undefined value', async () => {
+      it('throw an error on option absent, using a required undefined value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -109,10 +107,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1'])).rejects.toThrow(`Option -f1 requires -f2.`);
+        expect(parser.parse(['-f1'])).rejects.toThrow(`Option -f1 requires -f2.`);
       });
 
-      should('throw an error on option absent, using a negated null value', async () => {
+      it('throw an error on option absent, using a negated null value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -125,12 +123,12 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1'])).rejects.toThrow(`Option -f1 requires -f2.`);
+        expect(parser.parse(['-f1'])).rejects.toThrow(`Option -f1 requires -f2.`);
       });
     });
 
-    when('an option is required to be absent', () => {
-      should('throw an error on option present, using a negated option key', async () => {
+    describe('an option is required to be absent', () => {
+      it('throw an error on option present, using a negated option key', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -141,15 +139,15 @@ describe('ArgumentParser', () => {
             type: 'flag',
             names: ['-f2'],
             break: true, // test early requirements checking
-            parse: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(`Option -f1 requires no -f2.`);
+        expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(`Option -f1 requires no -f2.`);
         expect(options.flag2.parse).not.toHaveBeenCalled();
       });
 
-      should('throw an error on option present, using a required null value', async () => {
+      it('throw an error on option present, using a required null value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -160,15 +158,15 @@ describe('ArgumentParser', () => {
             type: 'flag',
             names: ['-f2'],
             break: true, // test early requirements checking
-            parse: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(`Option -f1 requires no -f2.`);
+        expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(`Option -f1 requires no -f2.`);
         expect(options.flag2.parse).not.toHaveBeenCalled();
       });
 
-      should('throw an error on option present, using a negated undefined value', async () => {
+      it('throw an error on option present, using a negated undefined value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -179,17 +177,17 @@ describe('ArgumentParser', () => {
             type: 'flag',
             names: ['-f2'],
             break: true, // test early requirements checking
-            parse: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(`Option -f1 requires no -f2.`);
+        expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(`Option -f1 requires no -f2.`);
         expect(options.flag2.parse).not.toHaveBeenCalled();
       });
     });
 
-    when('a forward requirement is specified', () => {
-      should('throw an error on req.one with zero items', async () => {
+    describe('a forward requirement is specified', () => {
+      it('throw an error on req.one with zero items', () => {
         const options = {
           requires: {
             type: 'flag',
@@ -198,10 +196,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f'])).rejects.toThrow(`Option -f requires.`);
+        expect(parser.parse(['-f'])).rejects.toThrow(`Option -f requires.`);
       });
 
-      should('throw an error on requirement not satisfied with req.not', async () => {
+      it('throw an error on requirement not satisfied with req.not', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -215,17 +213,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f', '0'])).resolves.toMatchObject({});
-        await expect(parser.parse(['0', '-f'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f', '1'])).rejects.toThrow(
-          `Option -f requires preferred != '1'.`,
-        );
-        await expect(parser.parse(['1', '-f'])).rejects.toThrow(
-          `Option -f requires preferred != '1'.`,
-        );
+        expect(parser.parse(['-f', '0'])).resolves.toMatchObject({});
+        expect(parser.parse(['0', '-f'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f', '1'])).rejects.toThrow(`Option -f requires preferred != '1'.`);
+        expect(parser.parse(['1', '-f'])).rejects.toThrow(`Option -f requires preferred != '1'.`);
       });
 
-      should('throw an error on requirement not satisfied with req.all', async () => {
+      it('throw an error on requirement not satisfied with req.all', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -243,13 +237,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['1'])).rejects.toThrow(`Option preferred requires -f1.`);
-        await expect(parser.parse(['-f1', '1'])).rejects.toThrow(`Option preferred requires -f2.`);
-        await expect(parser.parse(['-f2', '1'])).rejects.toThrow(`Option preferred requires -f1.`);
-        await expect(parser.parse(['-f1', '-f2', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['1'])).rejects.toThrow(`Option preferred requires -f1.`);
+        expect(parser.parse(['-f1', '1'])).rejects.toThrow(`Option preferred requires -f2.`);
+        expect(parser.parse(['-f2', '1'])).rejects.toThrow(`Option preferred requires -f1.`);
+        expect(parser.parse(['-f1', '-f2', '1'])).resolves.toMatchObject({});
       });
 
-      should('throw an error on requirement not satisfied with req.one', async () => {
+      it('throw an error on requirement not satisfied with req.one', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -267,93 +261,83 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['1'])).rejects.toThrow(
-          `Option preferred requires (-f1 or -f2).`,
-        );
-        await expect(parser.parse(['-f1', '1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f2', '1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1', '-f2', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['1'])).rejects.toThrow(`Option preferred requires (-f1 or -f2).`);
+        expect(parser.parse(['-f1', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f2', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1', '-f2', '1'])).resolves.toMatchObject({});
       });
 
-      should(
-        'throw an error on requirement not satisfied with required arbitrary value',
-        async () => {
-          const options = {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-              requires: {
-                single: { a: 1, b: [2] },
-                array: ['a', 2, { b: 'c' }],
-              },
+      it('throw an error on requirement not satisfied with required arbitrary value', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requires: {
+              single: { a: 1, b: [2] },
+              array: ['a', 2, { b: 'c' }],
             },
-            single: {
-              type: 'single',
-              names: ['-s'],
-              parse: (param) => JSON.parse(param),
-            },
-            array: {
-              type: 'array',
-              names: ['-a'],
-              parse: (param) => JSON.parse(param),
-            },
-          } as const satisfies Options;
-          const parser = new ArgumentParser(options);
-          await expect(parser.parse(['-f'])).rejects.toThrow(`Option -f requires -s.`);
-          await expect(parser.parse(['-f', '-s', '{"a": 1, "b": [1]}'])).rejects.toThrow(
-            `Option -f requires -s == {a: 1, b: [2]}.`,
-          );
-          await expect(parser.parse(['-f', '-s', '{"a": 1, "b": [2]}'])).rejects.toThrow(
-            `Option -f requires -a.`,
-          );
-          await expect(
-            parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
-          ).rejects.toThrow(`Option -f requires -a == ['a', 2, {b: 'c'}].`);
-          await expect(
-            parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
-          ).resolves.toMatchObject({});
-        },
-      );
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            parse: (param) => JSON.parse(param),
+          },
+          array: {
+            type: 'array',
+            names: ['-a'],
+            parse: (param) => JSON.parse(param),
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-f'])).rejects.toThrow(`Option -f requires -s.`);
+        expect(parser.parse(['-f', '-s', '{"a": 1, "b": [1]}'])).rejects.toThrow(
+          `Option -f requires -s == {a: 1, b: [2]}.`,
+        );
+        expect(parser.parse(['-f', '-s', '{"a": 1, "b": [2]}'])).rejects.toThrow(
+          `Option -f requires -a.`,
+        );
+        expect(
+          parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
+        ).rejects.toThrow(`Option -f requires -a == ['a', 2, {b: 'c'}].`);
+        expect(
+          parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
+        ).resolves.toMatchObject({});
+      });
 
-      should(
-        'throw an error on requirement not satisfied with negated arbitrary value',
-        async () => {
-          const options = {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-              requires: req.not({
-                single: { a: 1, b: [2] },
-                array: ['a', 2, { b: 'c' }],
-              }),
-            },
-            single: {
-              type: 'single',
-              names: ['-s'],
-              parse: (param) => JSON.parse(param),
-            },
-            array: {
-              type: 'array',
-              names: ['-a'],
-              parse: (param) => JSON.parse(param),
-            },
-          } as const satisfies Options;
-          const parser = new ArgumentParser(options);
-          await expect(parser.parse(['-f'])).resolves.toMatchObject({});
-          await expect(parser.parse(['-f', '-s', '{"a": 1, "b": [1]}'])).resolves.toMatchObject({});
-          await expect(parser.parse(['-f', '-s', '{"a": 1, "b": [2]}'])).resolves.toMatchObject({});
-          await expect(
-            parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
-          ).resolves.toMatchObject({});
-          await expect(
-            parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
-          ).rejects.toThrow(
-            `Option -f requires (-s != {a: 1, b: [2]} or -a != ['a', 2, {b: 'c'}]).`,
-          );
-        },
-      );
+      it('throw an error on requirement not satisfied with negated arbitrary value', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requires: req.not({
+              single: { a: 1, b: [2] },
+              array: ['a', 2, { b: 'c' }],
+            }),
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            parse: (param) => JSON.parse(param),
+          },
+          array: {
+            type: 'array',
+            names: ['-a'],
+            parse: (param) => JSON.parse(param),
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-f'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f', '-s', '{"a": 1, "b": [1]}'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f', '-s', '{"a": 1, "b": [2]}'])).resolves.toMatchObject({});
+        expect(
+          parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
+        ).resolves.toMatchObject({});
+        expect(
+          parser.parse(['-f', '-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
+        ).rejects.toThrow(`Option -f requires (-s != {a: 1, b: [2]} or -a != ['a', 2, {b: 'c'}]).`);
+      });
 
-      should('throw an error on requirement not satisfied with a callback', async () => {
+      it('throw an error on requirement not satisfied with a callback', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -374,17 +358,13 @@ describe('ArgumentParser', () => {
         } as const satisfies Options;
         options.boolean.requires.toString = () => 'fcn';
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1', '1'])).rejects.toThrow(
-          `Option preferred requires <fcn>.`,
-        );
-        await expect(parser.parse(['-f2', '1'])).rejects.toThrow(
-          `Option preferred requires <fcn>.`,
-        );
-        await expect(parser.parse(['-f1', '-f2', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1', '1'])).rejects.toThrow(`Option preferred requires <fcn>.`);
+        expect(parser.parse(['-f2', '1'])).rejects.toThrow(`Option preferred requires <fcn>.`);
+        expect(parser.parse(['-f1', '-f2', '1'])).resolves.toMatchObject({});
       });
 
-      should('throw an error on requirement not satisfied with a negated callback', async () => {
+      it('throw an error on requirement not satisfied with a negated callback', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -403,17 +383,17 @@ describe('ArgumentParser', () => {
         } as const satisfies Options;
         options.boolean.requires.item.toString = () => 'fcn';
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['1'])).rejects.toThrow(`Option preferred requires not <fcn>.`);
-        await expect(parser.parse(['-f1', '1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f2', '1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1', '-f2', '1'])).rejects.toThrow(
+        expect(parser.parse(['1'])).rejects.toThrow(`Option preferred requires not <fcn>.`);
+        expect(parser.parse(['-f1', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f2', '1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1', '-f2', '1'])).rejects.toThrow(
           `Option preferred requires not <fcn>.`,
         );
       });
     });
 
-    when('an option is required if another is present', () => {
-      should('throw an error on option absent, using an option key', async () => {
+    describe('an option is required if another is present', () => {
+      it('throw an error on option absent, using an option key', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -424,15 +404,15 @@ describe('ArgumentParser', () => {
             type: 'flag',
             names: ['-f2'],
             break: true, // test early requirements checking
-            parse: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f2'])).rejects.toThrow(`Option -f1 is required if -f2.`);
+        expect(parser.parse(['-f2'])).rejects.toThrow(`Option -f1 is required if -f2.`);
         expect(options.flag2.parse).not.toHaveBeenCalled();
       });
 
-      should('throw an error on option absent, using a required undefined value', async () => {
+      it('throw an error on option absent, using a required undefined value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -443,15 +423,15 @@ describe('ArgumentParser', () => {
             type: 'flag',
             names: ['-f2'],
             break: true, // test early requirements checking
-            parse: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f2'])).rejects.toThrow(`Option -f1 is required if -f2.`);
+        expect(parser.parse(['-f2'])).rejects.toThrow(`Option -f1 is required if -f2.`);
         expect(options.flag2.parse).not.toHaveBeenCalled();
       });
 
-      should('throw an error on option absent, using a negated null value', async () => {
+      it('throw an error on option absent, using a negated null value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -462,17 +442,17 @@ describe('ArgumentParser', () => {
             type: 'function',
             names: ['-f2'],
             break: true, // test early requirements checking
-            parse: vi.fn(),
+            parse: jest.fn(),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['-f2'])).rejects.toThrow(`Option -f1 is required if -f2.`);
+        expect(parser.parse(['-f2'])).rejects.toThrow(`Option -f1 is required if -f2.`);
         expect(options.flag2.parse).not.toHaveBeenCalled();
       });
     });
 
-    when('an option is required if another is absent', () => {
-      should('throw an error on option present, using a negated option key', async () => {
+    describe('an option is required if another is absent', () => {
+      it('throw an error on option present, using a negated option key', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -485,10 +465,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).rejects.toThrow(`Option -f1 is required if no -f2.`);
+        expect(parser.parse([])).rejects.toThrow(`Option -f1 is required if no -f2.`);
       });
 
-      should('throw an error on option present, using a required null value', async () => {
+      it('throw an error on option present, using a required null value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -501,10 +481,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).rejects.toThrow(`Option -f1 is required if no -f2.`);
+        expect(parser.parse([])).rejects.toThrow(`Option -f1 is required if no -f2.`);
       });
 
-      should('throw an error on option present, using a negated undefined value', async () => {
+      it('throw an error on option present, using a negated undefined value', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -517,12 +497,12 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).rejects.toThrow(`Option -f1 is required if no -f2.`);
+        expect(parser.parse([])).rejects.toThrow(`Option -f1 is required if no -f2.`);
       });
     });
 
-    when('a conditional requirement is specified', () => {
-      should('throw an error on req.all with zero items', async () => {
+    describe('a conditional requirement is specified', () => {
+      it('throw an error on req.all with zero items', () => {
         const options = {
           requires: {
             type: 'flag',
@@ -531,10 +511,10 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).rejects.toThrow(`Option -f is required if.`);
+        expect(parser.parse([])).rejects.toThrow(`Option -f is required if.`);
       });
 
-      should('throw an error on requirement not satisfied with req.not', async () => {
+      it('throw an error on requirement not satisfied with req.not', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -548,14 +528,12 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).rejects.toThrow(`Option -f is required if no preferred.`);
-        await expect(parser.parse(['0'])).rejects.toThrow(
-          `Option -f is required if preferred != '1'.`,
-        );
-        await expect(parser.parse(['1'])).resolves.toMatchObject({});
+        expect(parser.parse([])).rejects.toThrow(`Option -f is required if no preferred.`);
+        expect(parser.parse(['0'])).rejects.toThrow(`Option -f is required if preferred != '1'.`);
+        expect(parser.parse(['1'])).resolves.toMatchObject({});
       });
 
-      should('throw an error on requirement not satisfied with req.all', async () => {
+      it('throw an error on requirement not satisfied with req.all', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -573,15 +551,15 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f2'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(
+        expect(parser.parse([])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f2'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(
           `Option preferred is required if (-f1 and -f2).`,
         );
       });
 
-      should('throw an error on requirement not satisfied with req.one', async () => {
+      it('throw an error on requirement not satisfied with req.one', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -599,93 +577,87 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1'])).rejects.toThrow(`Option preferred is required if -f1.`);
-        await expect(parser.parse(['-f2'])).rejects.toThrow(`Option preferred is required if -f2.`);
-        await expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(
+        expect(parser.parse([])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1'])).rejects.toThrow(`Option preferred is required if -f1.`);
+        expect(parser.parse(['-f2'])).rejects.toThrow(`Option preferred is required if -f2.`);
+        expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(
           `Option preferred is required if -f1.`,
         );
       });
 
-      should(
-        'throw an error on requirement not satisfied with required arbitrary value',
-        async () => {
-          const options = {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-              requiredIf: {
-                single: { a: 1, b: [2] },
-                array: ['a', 2, { b: 'c' }],
-              },
+      it('throw an error on requirement not satisfied with required arbitrary value', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requiredIf: {
+              single: { a: 1, b: [2] },
+              array: ['a', 2, { b: 'c' }],
             },
-            single: {
-              type: 'single',
-              names: ['-s'],
-              parse: (param) => JSON.parse(param),
-            },
-            array: {
-              type: 'array',
-              names: ['-a'],
-              parse: (param) => JSON.parse(param),
-            },
-          } as const satisfies Options;
-          const parser = new ArgumentParser(options);
-          await expect(parser.parse([])).resolves.toMatchObject({});
-          await expect(parser.parse(['-s', '{"a": 1, "b": [1]}'])).resolves.toMatchObject({});
-          await expect(parser.parse(['-s', '{"a": 1, "b": [2]}'])).resolves.toMatchObject({});
-          await expect(
-            parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
-          ).resolves.toMatchObject({});
-          await expect(
-            parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
-          ).rejects.toThrow(
-            `Option -f is required if (-s == {a: 1, b: [2]} and -a == ['a', 2, {b: 'c'}]).`,
-          );
-        },
-      );
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            parse: (param) => JSON.parse(param),
+          },
+          array: {
+            type: 'array',
+            names: ['-a'],
+            parse: (param) => JSON.parse(param),
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse([])).resolves.toMatchObject({});
+        expect(parser.parse(['-s', '{"a": 1, "b": [1]}'])).resolves.toMatchObject({});
+        expect(parser.parse(['-s', '{"a": 1, "b": [2]}'])).resolves.toMatchObject({});
+        expect(
+          parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
+        ).resolves.toMatchObject({});
+        expect(
+          parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
+        ).rejects.toThrow(
+          `Option -f is required if (-s == {a: 1, b: [2]} and -a == ['a', 2, {b: 'c'}]).`,
+        );
+      });
 
-      should(
-        'throw an error on requirement not satisfied with negated arbitrary value',
-        async () => {
-          const options = {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-              requiredIf: req.not({
-                single: { a: 1, b: [2] },
-                array: ['a', 2, { b: 'c' }],
-              }),
-            },
-            single: {
-              type: 'single',
-              names: ['-s'],
-              parse: (param) => JSON.parse(param),
-            },
-            array: {
-              type: 'array',
-              names: ['-a'],
-              parse: (param) => JSON.parse(param),
-            },
-          } as const satisfies Options;
-          const parser = new ArgumentParser(options);
-          await expect(parser.parse([])).rejects.toThrow(`Option -f is required if no -s.`);
-          await expect(parser.parse(['-s', '{"a": 1, "b": [1]}'])).rejects.toThrow(
-            `Option -f is required if -s != {a: 1, b: [2]}.`,
-          );
-          await expect(parser.parse(['-s', '{"a": 1, "b": [2]}'])).rejects.toThrow(
-            `Option -f is required if no -a.`,
-          );
-          await expect(
-            parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
-          ).rejects.toThrow(`Option -f is required if -a != ['a', 2, {b: 'c'}].`);
-          await expect(
-            parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
-          ).resolves.toMatchObject({});
-        },
-      );
+      it('throw an error on requirement not satisfied with negated arbitrary value', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            requiredIf: req.not({
+              single: { a: 1, b: [2] },
+              array: ['a', 2, { b: 'c' }],
+            }),
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+            parse: (param) => JSON.parse(param),
+          },
+          array: {
+            type: 'array',
+            names: ['-a'],
+            parse: (param) => JSON.parse(param),
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse([])).rejects.toThrow(`Option -f is required if no -s.`);
+        expect(parser.parse(['-s', '{"a": 1, "b": [1]}'])).rejects.toThrow(
+          `Option -f is required if -s != {a: 1, b: [2]}.`,
+        );
+        expect(parser.parse(['-s', '{"a": 1, "b": [2]}'])).rejects.toThrow(
+          `Option -f is required if no -a.`,
+        );
+        expect(
+          parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "d"}']),
+        ).rejects.toThrow(`Option -f is required if -a != ['a', 2, {b: 'c'}].`);
+        expect(
+          parser.parse(['-s', '{"a": 1, "b": [2]}', '-a', '"a"', '2', '{"b": "c"}']),
+        ).resolves.toMatchObject({});
+      });
 
-      should('throw an error on requirement not satisfied with a callback', async () => {
+      it('throw an error on requirement not satisfied with a callback', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -706,15 +678,15 @@ describe('ArgumentParser', () => {
         } as const satisfies Options;
         options.boolean.requiredIf.toString = () => 'fcn';
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).rejects.toThrow(`Option preferred is required if <fcn>.`);
-        await expect(parser.parse(['-f1'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f2'])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(
+        expect(parser.parse([])).rejects.toThrow(`Option preferred is required if <fcn>.`);
+        expect(parser.parse(['-f1'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f2'])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1', '-f2'])).rejects.toThrow(
           `Option preferred is required if <fcn>.`,
         );
       });
 
-      should('throw an error on requirement not satisfied with a negated callback', async () => {
+      it('throw an error on requirement not satisfied with a negated callback', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -733,14 +705,10 @@ describe('ArgumentParser', () => {
         } as const satisfies Options;
         options.boolean.requiredIf.item.toString = () => 'fcn';
         const parser = new ArgumentParser(options);
-        await expect(parser.parse([])).resolves.toMatchObject({});
-        await expect(parser.parse(['-f1'])).rejects.toThrow(
-          `Option preferred is required if not <fcn>.`,
-        );
-        await expect(parser.parse(['-f2'])).rejects.toThrow(
-          `Option preferred is required if not <fcn>.`,
-        );
-        await expect(parser.parse(['-f1', '-f2'])).resolves.toMatchObject({});
+        expect(parser.parse([])).resolves.toMatchObject({});
+        expect(parser.parse(['-f1'])).rejects.toThrow(`Option preferred is required if not <fcn>.`);
+        expect(parser.parse(['-f2'])).rejects.toThrow(`Option preferred is required if not <fcn>.`);
+        expect(parser.parse(['-f1', '-f2'])).resolves.toMatchObject({});
       });
     });
   });

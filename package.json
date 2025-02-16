@@ -2,29 +2,25 @@
   "name": "monorepo",
   "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
   "private": true,
   "workspaces": [
     "packages/tsargp",
     "packages/docs"
   ],
   "devDependencies": {
-    "@changesets/changelog-github": "^0.5.0",
-    "@changesets/cli": "^2.27.9",
-    "@cspell/eslint-plugin": "^8.16.0",
-    "@next/eslint-plugin-next": "^14.2.18",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "cspell": "^8.16.0",
-    "eslint": "^9.15.0",
+    "@cspell/eslint-plugin": "^8.17.3",
+    "cspell": "^8.17.3",
+    "eslint": "^9.20.1",
+    "eslint-config-next": "^15.1.7",
     "eslint-plugin-jsdoc": "^48.11.0",
     "eslint-plugin-mdx": "^3.1.5",
-    "eslint-plugin-react": "^7.37.2",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10",
-    "prettier": "^3.3.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.1",
     "publint": "^0.2.12",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0"
   },
   "scripts": {
     "prepare": "husky"

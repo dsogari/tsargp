@@ -1,12 +1,12 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../lib/options';
 import { AnsiFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
-  on('format', () => {
-    should('handle a single-valued option with a regex constraint', () => {
+  describe('format', () => {
+    it('handle a single-valued option with a regex constraint', () => {
       const options = {
         single: {
           type: 'single',
@@ -18,7 +18,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <param>  Values must match the regex /\\d+/s.\n`);
     });
 
-    should('handle a single-valued option with a choices array constraint', () => {
+    it('handle a single-valued option with a choices array constraint', () => {
       const options = {
         single: {
           type: 'single',
@@ -30,7 +30,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <param>  Values must be one of {'one', 'two'}.\n`);
     });
 
-    should('handle a single-valued option with a choices record constraint', () => {
+    it('handle a single-valued option with a choices record constraint', () => {
       const options = {
         single: {
           type: 'single',
@@ -42,7 +42,7 @@ describe('AnsiFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <param>  Values must be one of {'one'}.\n`);
     });
 
-    should('handle an array-valued option with a limit constraint', () => {
+    it('handle an array-valued option with a limit constraint', () => {
       const options = {
         array: {
           type: 'array',
@@ -56,7 +56,7 @@ describe('AnsiFormatter', () => {
       );
     });
 
-    should('handle an array-valued option with a unique constraint', () => {
+    it('handle an array-valued option with a unique constraint', () => {
       const options = {
         array: {
           type: 'array',

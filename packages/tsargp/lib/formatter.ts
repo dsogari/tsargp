@@ -625,7 +625,7 @@ function formatGroups<T>(
 ) {
   const { filter, exclude } = section;
   const allNames = getKeys(groups);
-  const names = exclude ? allNames : filter ?? allNames;
+  const names = exclude ? allNames : (filter ?? allNames);
   const excludeNames = new Set(exclude && filter);
   for (const name of names) {
     if (name in groups && !excludeNames.has(name)) {
@@ -735,7 +735,8 @@ function formatNames(
   nameWidths: Array<number> | number,
 ): Array<TerminalString> {
   const [, config] = context;
-  let { indent, breaks, align, hidden } = config.names;
+  let { indent, breaks } = config.names;
+  const { align, hidden } = config.names;
   if (hidden || !option.names) {
     return [];
   }
@@ -994,7 +995,7 @@ function formatUsage(
   const requiredKeys = new Set(required);
   const requiredBy = requires && getRequiredBy(requires);
   const allKeys = getKeys(options);
-  const keys = exclude ? allKeys : filter?.filter((key) => key in options) ?? allKeys;
+  const keys = exclude ? allKeys : (filter?.filter((key) => key in options) ?? allKeys);
   const count = result.count;
   for (const key of keys) {
     formatUsageOption(context, key, result, visited, requiredKeys, requires, requiredBy);

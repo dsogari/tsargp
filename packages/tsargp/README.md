@@ -2,11 +2,11 @@
 
 **tsargp** is a command-line argument parsing library that helps you write clean code.
 
-Get started with the [documentation](https://trulysimple.dev/tsargp/docs).
+Get started with the [documentation](https://dsogari.github.io/tsargp/docs).
 
 ## Demo
 
-Test it [online](https://trulysimple.dev/tsargp/demo) or install it locally:
+Test it [online](https://dsogari.github.io/tsargp/demo) or install it locally:
 
 ```sh
 npm i -g tsargp && complete -C tsargp tsargp

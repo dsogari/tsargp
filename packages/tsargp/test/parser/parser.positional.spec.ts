@@ -1,13 +1,13 @@
-import { describe, describe as on, describe as when, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
 import { ArgumentParser } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('ArgumentParser', () => {
-  on('parse', () => {
-    when('parameters are specified as positional arguments', () => {
-      should('handle a single-valued option', async () => {
+  describe('parse', () => {
+    describe('parameters are specified as positional arguments', () => {
+      it('handle a single-valued option', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -19,13 +19,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['0', '1'])).resolves.toEqual({ flag: undefined, single: '1' });
-        await expect(parser.parse(['-f', '0', '1'])).resolves.toEqual({ flag: true, single: '1' });
-        await expect(parser.parse(['0', '-f', '1'])).resolves.toEqual({ flag: true, single: '1' });
-        await expect(parser.parse(['0', '1', '-f'])).resolves.toEqual({ flag: true, single: '1' });
+        expect(parser.parse(['0', '1'])).resolves.toEqual({ flag: undefined, single: '1' });
+        expect(parser.parse(['-f', '0', '1'])).resolves.toEqual({ flag: true, single: '1' });
+        expect(parser.parse(['0', '-f', '1'])).resolves.toEqual({ flag: true, single: '1' });
+        expect(parser.parse(['0', '1', '-f'])).resolves.toEqual({ flag: true, single: '1' });
       });
 
-      should('handle an array-valued option', async () => {
+      it('handle an array-valued option', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -37,25 +37,25 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['0', '1'])).resolves.toEqual({
+        expect(parser.parse(['0', '1'])).resolves.toEqual({
           flag: undefined,
           array: ['0', '1'],
         });
-        await expect(parser.parse(['-f', '0', '1'])).resolves.toEqual({
+        expect(parser.parse(['-f', '0', '1'])).resolves.toEqual({
           flag: true,
           array: ['0', '1'],
         });
-        await expect(parser.parse(['0', '-f', '1'])).resolves.toEqual({
+        expect(parser.parse(['0', '-f', '1'])).resolves.toEqual({
           flag: true,
           array: ['1'],
         });
-        await expect(parser.parse(['0', '1', '-f'])).resolves.toEqual({
+        expect(parser.parse(['0', '1', '-f'])).resolves.toEqual({
           flag: true,
           array: ['0', '1'],
         });
       });
 
-      should('handle a polyadic function option', async () => {
+      it('handle a polyadic function option', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -70,33 +70,33 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['0'])).rejects.toThrow(
+        expect(parser.parse(['0'])).rejects.toThrow(
           'Wrong number of parameters to option preferred: requires exactly 2.',
         );
-        await expect(parser.parse(['0', '1', '2'])).rejects.toThrow(
+        expect(parser.parse(['0', '1', '2'])).rejects.toThrow(
           'Wrong number of parameters to option preferred: requires exactly 2.',
         );
-        await expect(parser.parse(['0', '-f'])).resolves.toEqual({
+        expect(parser.parse(['0', '-f'])).resolves.toEqual({
           flag: undefined,
           function: ['0', '-f'],
         });
-        await expect(parser.parse(['-f', '0', '1'])).resolves.toEqual({
+        expect(parser.parse(['-f', '0', '1'])).resolves.toEqual({
           flag: true,
           function: ['0', '1'],
         });
-        await expect(parser.parse(['0', '1', '-f'])).resolves.toEqual({
+        expect(parser.parse(['0', '1', '-f'])).resolves.toEqual({
           flag: true,
           function: ['0', '1'],
         });
-        await expect(parser.parse(['0', '1', '2', '3'])).resolves.toEqual({
+        expect(parser.parse(['0', '1', '2', '3'])).resolves.toEqual({
           flag: undefined,
           function: ['2', '3'],
         });
       });
     });
 
-    when('parameters are specified after a positional marker', () => {
-      should('throw an error on wrong number of parameters to single-valued option', async () => {
+    describe('parameters are specified after a positional marker', () => {
+      it('throw an error on wrong number of parameters to single-valued option', () => {
         const options = {
           single: {
             type: 'single',
@@ -106,15 +106,15 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['--'])).rejects.toThrow(
+        expect(parser.parse(['--'])).rejects.toThrow(
           `Wrong number of parameters to option preferred: requires exactly 1.`,
         );
-        await expect(parser.parse(['--', '1', '2'])).rejects.toThrow(
+        expect(parser.parse(['--', '1', '2'])).rejects.toThrow(
           `Wrong number of parameters to option preferred: requires exactly 1.`,
         );
       });
 
-      should('throw an error on missing parameter to polyadic function option ', async () => {
+      it('throw an error on missing parameter to polyadic function option ', () => {
         const options = {
           function: {
             type: 'function',
@@ -125,15 +125,15 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['--'])).rejects.toThrow(
+        expect(parser.parse(['--'])).rejects.toThrow(
           `Wrong number of parameters to option preferred: requires exactly 2.`,
         );
-        await expect(parser.parse(['--', '1', '2', '3'])).rejects.toThrow(
+        expect(parser.parse(['--', '1', '2', '3'])).rejects.toThrow(
           `Wrong number of parameters to option preferred: requires exactly 2.`,
         );
       });
 
-      should('handle a single-valued option', async () => {
+      it('handle a single-valued option', () => {
         const options = {
           single: {
             type: 'single',
@@ -142,17 +142,15 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['--', '-s'])).resolves.toEqual({
-          flag: undefined,
+        expect(parser.parse(['--', '-s'])).resolves.toEqual({
           single: '-s',
         });
-        await expect(parser.parse(['0', '--', '-s'])).resolves.toEqual({
-          flag: undefined,
+        expect(parser.parse(['0', '--', '-s'])).resolves.toEqual({
           single: '-s',
         });
       });
 
-      should('handle an array-valued option', async () => {
+      it('handle an array-valued option', () => {
         const options = {
           array: {
             type: 'array',
@@ -161,16 +159,13 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
-        await expect(parser.parse(['--'])).resolves.toEqual({
-          flag: undefined,
+        expect(parser.parse(['--'])).resolves.toEqual({
           array: [],
         });
-        await expect(parser.parse(['--', '0', '-a'])).resolves.toEqual({
-          flag: undefined,
+        expect(parser.parse(['--', '0', '-a'])).resolves.toEqual({
           array: ['0', '-a'],
         });
-        await expect(parser.parse(['0', '--', '-a'])).resolves.toEqual({
-          flag: undefined,
+        expect(parser.parse(['0', '--', '-a'])).resolves.toEqual({
           array: ['-a'],
         });
       });

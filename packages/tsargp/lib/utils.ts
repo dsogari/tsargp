@@ -1,16 +1,6 @@
 //--------------------------------------------------------------------------------------------------
-// Imports
-//--------------------------------------------------------------------------------------------------
-import type { URL as _URL } from 'url';
-
-//--------------------------------------------------------------------------------------------------
 // Types
 //--------------------------------------------------------------------------------------------------
-/**
- * For some reason the global definition of `URL` has issues with static methods.
- */
-export interface URL extends _URL {}
-
 /**
  * A helper type to enumerate numbers.
  * @template N The last enumerated number
@@ -87,7 +77,7 @@ export type NamingRules = Readonly<Record<string, NamingRuleSet>>;
  */
 export type NamingMatch<T extends NamingRules> = Resolve<{
   -readonly [key1 in keyof T]: {
-    -readonly [key2 in keyof T[key1]]: string;
+    -readonly [key2 in keyof T[key1]]?: string;
   };
 }>;
 
@@ -455,7 +445,7 @@ export function mergeValues<T extends Record<string, unknown>>(
   for (const [key, val] of getEntries(template)) {
     result[key] =
       Array.isArray(val) || typeof val !== 'object'
-        ? source[key] ?? val
+        ? (source[key] ?? val)
         : { ...val, ...(source[key] as object) };
   }
   return result as T;
@@ -563,7 +553,7 @@ export function escapeRegExp(str: string): string {
  * @param stream The name of the stream
  * @returns The terminal width (in number of columns)
  */
-export function streamWidth(stream: 'stdout' | 'stderr'): number {
+export function streamWidth(stream: 'stdout' | 'stderr'): number | undefined {
   const forceWidth = getEnv('FORCE_WIDTH');
   return forceWidth ? Number(forceWidth) : process?.[stream]?.columns;
 }

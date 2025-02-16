@@ -1,13 +1,13 @@
-import { describe, describe as on, describe as when, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options, OptionRegistry, req } from '../../lib/options';
 import { AnsiFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('AnsiFormatter', () => {
-  on('format', () => {
-    when('a forward requirement is specified', () => {
-      should('handle an option that requires the presence or absence of another', () => {
+  describe('format', () => {
+    describe('a forward requirement is specified', () => {
+      it('handle an option that requires the presence or absence of another', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -27,7 +27,7 @@ describe('AnsiFormatter', () => {
         );
       });
 
-      should('handle a requirement with specific values using expressions', () => {
+      it('handle a requirement with specific values using expressions', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -65,7 +65,7 @@ describe('AnsiFormatter', () => {
         );
       });
 
-      should('handle an option with a requirement callback', () => {
+      it('handle an option with a requirement callback', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -88,8 +88,8 @@ describe('AnsiFormatter', () => {
       });
     });
 
-    when('a conditional requirement is specified', () => {
-      should('handle an option that is required if another is present or absent', () => {
+    describe('a conditional requirement is specified', () => {
+      it('handle an option that is required if another is present or absent', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -109,7 +109,7 @@ describe('AnsiFormatter', () => {
         );
       });
 
-      should('handle a requirement with specific values using expressions', () => {
+      it('handle a requirement with specific values using expressions', () => {
         const options = {
           flag: {
             type: 'flag',
@@ -147,7 +147,7 @@ describe('AnsiFormatter', () => {
         );
       });
 
-      should('handle an option with a requirement callback', () => {
+      it('handle an option with a requirement callback', () => {
         const options = {
           flag: {
             type: 'flag',

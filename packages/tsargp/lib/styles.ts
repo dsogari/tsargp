@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { Alias, Args, Enumerate, ValuesOf, URL } from './utils.js';
+import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
 
 import { ConnectiveWord, cs, fg, bg, tf } from './enums.js';
 import {

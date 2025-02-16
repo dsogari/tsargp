@@ -1,12 +1,12 @@
-import { describe, describe as on, expect, it as should } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
 import { OptionValidator } from '../../lib/validator';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('OptionValidator', () => {
-  on('validate', () => {
-    should('throw an error on single-valued option with duplicate choice', async () => {
+  describe('validate', () => {
+    it('throw an error on single-valued option with duplicate choice', () => {
       const options = {
         single: {
           type: 'single',
@@ -14,12 +14,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option single has duplicate choice 'dup'.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option single has duplicate choice 'dup'.`);
     });
 
-    should('throw an error on array-valued option with duplicate choice', async () => {
+    it('throw an error on array-valued option with duplicate choice', () => {
       const options = {
         array: {
           type: 'array',
@@ -27,12 +25,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option array has duplicate choice 'dup'.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option array has duplicate choice 'dup'.`);
     });
 
-    should('accept an array-valued option that disallows inline parameters', async () => {
+    it('accept an array-valued option that disallows inline parameters', () => {
       const options = {
         array: {
           type: 'array',
@@ -40,10 +36,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).resolves.toMatchObject({});
+      expect(validator.validate()).resolves.toMatchObject({});
     });
 
-    should('throw an error on array-valued option that requires inline parameters', async () => {
+    it('throw an error on array-valued option that requires inline parameters', () => {
       const options = {
         array: {
           type: 'array',
@@ -51,12 +47,10 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
-        `Option array has invalid inline constraint.`,
-      );
+      expect(validator.validate()).rejects.toThrow(`Option array has invalid inline constraint.`);
     });
 
-    should('throw an error on function option that requires inline parameters', async () => {
+    it('throw an error on function option that requires inline parameters', () => {
       const options = {
         function: {
           type: 'function',
@@ -65,12 +59,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option function has invalid inline constraint.`,
       );
     });
 
-    should('throw an error on function option with negative parameter count', async () => {
+    it('throw an error on function option with negative parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -78,12 +72,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option function has invalid parameter count -1.`,
       );
     });
 
-    should('throw an error on function option with zero parameter count', async () => {
+    it('throw an error on function option with zero parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -91,12 +85,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option function has invalid parameter count 0.`,
       );
     });
 
-    should('throw an error on function option with unitary parameter count', async () => {
+    it('throw an error on function option with unitary parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -104,12 +98,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option function has invalid parameter count 1.`,
       );
     });
 
-    should('throw an error on function option with invalid parameter count range', async () => {
+    it('throw an error on function option with invalid parameter count range', () => {
       const options = {
         function: {
           type: 'function',
@@ -117,12 +111,12 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option function has invalid parameter count [0, 0].`,
       );
     });
 
-    should('throw an error on function option with invalid minimum parameter count', async () => {
+    it('throw an error on function option with invalid minimum parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -130,7 +124,7 @@ describe('OptionValidator', () => {
         },
       } as const satisfies Options;
       const validator = new OptionValidator(options);
-      await expect(validator.validate()).rejects.toThrow(
+      expect(validator.validate()).rejects.toThrow(
         `Option function has invalid parameter count [-1, 1].`,
       );
     });

@@ -15,7 +15,7 @@ import type {
   ResolveCallback,
   RequiresCallback,
 } from './options.js';
-import type { Args, PartialWithDepth, URL } from './utils.js';
+import type { Args, PartialWithDepth } from './utils.js';
 
 import { ConnectiveWord, ParsingError } from './enums.js';
 import {
@@ -262,7 +262,7 @@ function createContext(
   values: OpaqueOptionValues,
   args: Array<string>,
   completing: boolean,
-  progName = process?.argv[1].split(/[\\/]/).at(-1),
+  progName = process?.argv[1]?.split(/[\\/]/).at(-1),
   clusterPrefix?: string,
 ): ParseContext {
   if (!completing && progName && process?.title) {
@@ -538,7 +538,7 @@ async function completeParameter(
     try {
       // do not destructure `complete`, because the callback might need to use `this`
       words = await option.complete(comp, { values, index, name, prev });
-    } catch (err) {
+    } catch (ignoreErr) {
       // do not propagate errors during completion
       words = [];
     }
@@ -604,7 +604,7 @@ async function parseParams(
   function parse(param: string): unknown {
     // do not destructure `parse`, because the callback might need to use `this`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return rec && param in rec ? rec[param] : option.parse?.(param as any, seq) ?? param;
+    return rec && param in rec ? rec[param] : (option.parse?.(param as any, seq) ?? param);
   }
   const [, formatter, values, , , comp] = context;
   const [key, option, name] = info;
@@ -773,7 +773,7 @@ async function handleCommand(
   const [key, option, name] = info;
   // do not destructure `options`, because the callback might need to use `this`
   const cmdOptions =
-    typeof option.options === 'function' ? await option.options() : option.options ?? {};
+    typeof option.options === 'function' ? await option.options() : (option.options ?? {});
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
   const cmdContext = createContext(
@@ -814,7 +814,7 @@ async function handleMessage(context: ParseContext, info: OptionInfo, rest: Arra
       ? await handleHelp(context, option, rest)
       : option.resolve
         ? await handleVersion(formatter, option.resolve)
-        : option.version ?? '';
+        : (option.version ?? '');
   if (option.saveMessage) {
     values[key] = message;
   } else {
@@ -834,7 +834,8 @@ async function handleHelp(
   option: OpaqueOption,
   rest: Array<string>,
 ): Promise<HelpMessage> {
-  let [registry, formatter, , , , , , progName] = context;
+  let registry = context[0];
+  const [, formatter, , , , , , progName] = context;
   if (option.useNested && rest.length) {
     const cmdOpt = findValue(
       registry.options,
@@ -867,7 +868,7 @@ async function handleHelp(
     }
     const formatterClass = format ? formats[format] : getValues(formats)[0];
     if (formatterClass) {
-      const config = { ...formatter.config, ...helpConfig };
+      const config = { ...formatter.config, phrases: {}, ...helpConfig };
       const helpFormatter = new formatterClass(registry.options, config);
       return helpFormatter.sections(option.sections ?? defaultSections, progName);
     }
