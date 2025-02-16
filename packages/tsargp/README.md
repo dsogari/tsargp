@@ -22,10 +22,17 @@ See the [source](examples/demo.options.ts).
 
 ## Usage
 
+Let's say your CLI name is `cli`. Then, your folder structure could look like this:
+
+- lib
+  - cli.ts
+  - cli.options.ts
+  - cli.options.spec.ts
+
 Define your command-line options:
 
 ```ts
-// <your_cli_name>.options.ts
+// cli.options.ts
 import { type Options, ... } from 'tsargp';
 
 export default {
@@ -38,7 +45,7 @@ Import them in your main script:
 ```ts
 #!/usr/bin/env node
 import { ArgumentParser } from 'tsargp';
-import options from './<your_cli_name>.options.js';
+import options from './cli.options.js';
 
 try {
   const parser = new ArgumentParser(options);
@@ -57,11 +64,10 @@ try {
 Validate them in your test script:
 
 ```ts
-// <your_cli_name>.spec.ts
 import { OptionValidator } from 'tsargp';
-import options from './<your_cli_name>.options.js';
+import options from './cli.options.js';
 
-describe('<your_cli_name>', () => {
+describe('cli', () => {
   it('should have valid options', async () => {
     const validator = new OptionValidator(options);
     const { warning } = await validator.validate();
@@ -70,10 +76,10 @@ describe('<your_cli_name>', () => {
 });
 ```
 
-Optionally, enable word completion:
+Optionally, enable word completion for your shell:
 
 ```sh
-complete -o default -C <path_to_main_script> <your_cli_name>
+complete -o default -C <path_to_main_script> cli
 ```
 
 ## Build

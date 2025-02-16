@@ -2,7 +2,7 @@
 title: Introduction - Docs
 ---
 
-import { Tabs } from 'nextra/components';
+import { FileTree, Tabs } from 'nextra/components';
 
 # Introduction
 
@@ -42,9 +42,19 @@ npm install tsargp
 
 ## Quick Start
 
+Let's say your CLI name is `cli`. Then, your folder structure could look like this:
+
+<FileTree>
+  <FileTree.Folder name="lib" defaultOpen>
+    <FileTree.File name="cli.ts" />
+    <FileTree.File name="cli.options.ts" />
+    <FileTree.File name="cli.options.spec.ts" />
+  </FileTree.Folder>
+</FileTree>
+
 Define your command-line options:
 
-```ts copy filename="<your_cli_name>.options.ts" /<your_cli_name>/
+```ts copy filename="cli.options.ts" /cli/
 import { type Options, ... } from 'tsargp';
 
 export default {
@@ -54,10 +64,10 @@ export default {
 
 Import them in your main script:
 
-```ts copy filename="<your_cli_name>.ts" {7,8} /<your_cli_name>/
+```ts copy filename="cli.ts" {3}
 #!/usr/bin/env node
 import { ArgumentParser } from 'tsargp';
-import options from './<your_cli_name>.options.js';
+import options from './cli.options.js';
 
 try {
   const parser = new ArgumentParser(options);
@@ -75,11 +85,11 @@ try {
 
 Validate them in your test script:
 
-```ts copy filename="<your_cli_name>.spec.ts" /<your_cli_name>/
+```ts copy filename="cli.options.spec.ts" {2}
 import { OptionValidator } from 'tsargp';
-import options from './<your_cli_name>.options.js';
+import options from './cli.options.js';
 
-describe('<your_cli_name>', () => {
+describe('cli', () => {
   it('should have valid options', async () => {
     const validator = new OptionValidator(options);
     const { warning } = await validator.validate();
@@ -88,17 +98,17 @@ describe('<your_cli_name>', () => {
 });
 ```
 
-Optionally, enable word completion:
+Optionally, enable word completion for your shell:
 
 <Tabs items={['Bash', 'PowerShell', 'Zsh', 'Fish', 'Nushell']}>
   <Tabs.Tab>
-    ```bash copy /<your_cli_name>/ /<path_to_main_script>/
-    complete -o default -C <path_to_main_script> <your_cli_name>
+    ```bash copy /cli/ /<path_to_main_script>/
+    complete -o default -C <path_to_main_script> cli
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```ps copy /<your_cli_name>/ /<path_to_main_script>/
-    Register-ArgumentCompleter -Native -CommandName <your_cli_name> -ScriptBlock {
+    ```ps copy /cli/ /<path_to_main_script>/
+    Register-ArgumentCompleter -Native -CommandName cli -ScriptBlock {
       param($word, $cmdLine, $cursorPos)
         $env:BUFFER="$cmdLine"; $env:CURSOR=$cursorPos
         <path_to_main_script>
@@ -107,20 +117,20 @@ Optionally, enable word completion:
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```zsh copy /<your_cli_name>/ /<path_to_main_script>/
-    compdef 'export BUFFER CURSOR; _values <your_cli_name> `<path_to_main_script>`' <your_cli_name>
+    ```zsh copy /cli/ /<path_to_main_script>/
+    compdef 'export BUFFER CURSOR; _values cli `<path_to_main_script>`' cli
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```fish copy /<your_cli_name>/ /<path_to_main_script>/
-    complete <your_cli_name> -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
+    ```fish copy /cli/ /<path_to_main_script>/
+    complete cli -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```nu copy /<your_cli_name>/ /<path_to_main_script>/
+    ```nu copy /cli/ /<path_to_main_script>/
     $env.config.completions.external.completer = {|spans|
       {
-        <your_cli_name>: {
+        cli: {
           with-env { BUFFER: ($spans | str join ' ') } { <path_to_main_script> } | lines
         }
       } | get $spans.0 | each { || do $in }

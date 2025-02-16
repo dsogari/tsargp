@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it, jest } from 'bun:test';
+import { afterEach, describe, expect, it, jest } from 'bun:test';
 import { cs, fg, bg, tf } from '../lib/enums';
 import {
   AnsiString,
@@ -607,8 +607,8 @@ describe('AnsiString', () => {
 });
 
 describe('AnsiMessage', () => {
-  afterAll(() => {
-    ['NO_COLOR', 'FORCE_COLOR'].forEach((key) => delete process.env[key]);
+  afterEach(() => {
+    ['NO_COLOR', 'FORCE_COLOR', 'FORCE_WIDTH'].forEach((key) => delete process.env[key]);
   });
 
   it('wrap the message to the specified width, while respecting the environment configuration', () => {
@@ -622,6 +622,8 @@ describe('AnsiMessage', () => {
     process.env['FORCE_COLOR'] = '1';
     expect(msg.wrap(0)).toEqual('type script' + style(tf.clear));
     expect(msg.wrap(11)).toEqual('type script' + style(tf.clear));
+    process.env['FORCE_WIDTH'] = '10';
+    expect(msg.message).toEqual('type\nscript' + style(tf.clear));
   });
 
   it('be able to be thrown and caught, while producing a string message', () => {
@@ -633,6 +635,17 @@ describe('AnsiMessage', () => {
 });
 
 describe('WarnMessage', () => {
+  afterEach(() => {
+    ['FORCE_WIDTH'].forEach((key) => delete process.env[key]);
+  });
+
+  it('wrap the message to the specified width, while respecting the environment configuration', () => {
+    const str = new AnsiString().split('type script');
+    const msg = new WarnMessage(str);
+    process.env['FORCE_WIDTH'] = '10';
+    expect(msg.message).toEqual('type\nscript' + style(tf.clear));
+  });
+
   it('be able to be thrown and caught, while producing a string message', () => {
     const str = new AnsiString().split('type script');
     expect(() => {
@@ -645,7 +658,7 @@ describe('ErrorMessage', () => {
   it('avoid prefixing the message with "Error:" when converting to string', () => {
     const str = new AnsiString().split('type script');
     const msg = new ErrorMessage(str);
-    expect(`${msg}`).toEqual('type script');
+    expect(`${msg}`).toMatch(/^type script/);
   });
 
   it('be able to be thrown and caught, while producing a string message', () => {

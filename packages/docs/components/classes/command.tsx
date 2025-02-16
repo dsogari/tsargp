@@ -133,13 +133,32 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
    */
   private onData(data: string) {
     switch (data.charCodeAt(0)) {
+      case 3:
+        this.onCopy();
+        break;
       case 9:
         this.onTab();
         break;
       case 22:
-        this.term.paste(this.state.selection);
+        this.onPaste();
         break;
     }
+  }
+
+  /**
+   * Fires when the user copies from the terminal.
+   */
+  private onCopy() {
+    if (this.state.selection) {
+      navigator.clipboard.writeText(this.state.selection);
+    }
+  }
+
+  /**
+   * Fires when the user pastes into the terminal.
+   */
+  private onPaste() {
+    navigator.clipboard.readText().then((data) => this.term.paste(data));
   }
 
   /**
@@ -161,7 +180,7 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
   }
 
   /**
-   * Fires when the user presses a key.
+   * Fires when the user selects text.
    */
   private onSelectionChange() {
     const selection = this.term.getSelection();
