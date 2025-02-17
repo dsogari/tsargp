@@ -20,27 +20,32 @@ tsargp hello ...  # test the hello command
 
 See the [source](examples/demo.options.ts).
 
-## Usage
+## Quick Start
 
-Let's say your CLI name is `cli`. Then, your folder structure could look like this:
+### Define folder structure
+
+By convention, we keep command-line options separate from the main script which uses them. Assuming your application name is `cli`, here's a possible folder structure for the related source code:
 
 - lib
-  - cli.ts
-  - cli.options.ts
   - cli.options.spec.ts
+  - cli.options.ts
+  - cli.ts
 
-Define your command-line options:
+### Define command-line options
+
+You should define the options and export them by default as a single object. Below is an example. In the documentation, you will learn about the different option types and their attributes.
 
 ```ts
-// cli.options.ts
 import { type Options, ... } from 'tsargp';
 
 export default {
-  // define the options' attributes...
+  // definitions go here...
 } as const satisfies Options;
 ```
 
-Import them in your main script:
+### Parse arguments in main script
+
+There are multiple ways to parse the command-line arguments. Below is an example. In the documentation, you will learn how to parse them into an existing object or class instance, specify parsing flags, and print warnings.
 
 ```ts
 #!/usr/bin/env node
@@ -48,9 +53,8 @@ import { ArgumentParser } from 'tsargp';
 import options from './cli.options.js';
 
 try {
-  const parser = new ArgumentParser(options);
-  const values = await parser.parse(); // use this to get the options' values
-  // await parser.parseInto(myValues); // use this to fill an existing object or class instance
+  const values = await new ArgumentParser(options).parse();
+  // do something with the options' values...
 } catch (err) {
   if (err instanceof Error) {
     console.error(`${err}`); // genuine errors
@@ -61,7 +65,9 @@ try {
 }
 ```
 
-Validate them in your test script:
+### Validate options in test script
+
+You should check the validity of command-line options during development, to avoid headaches for end users. The documentation also shows how to check for inconsistencies in option naming, among other things.
 
 ```ts
 import { OptionValidator } from 'tsargp';
@@ -69,14 +75,15 @@ import options from './cli.options.js';
 
 describe('cli', () => {
   it('should have valid options', async () => {
-    const validator = new OptionValidator(options);
-    const { warning } = await validator.validate();
+    const { warning } = await new OptionValidator(options).validate();
     expect(warning).toBeUndefined(); // or check warnings that are important to your application
   });
 });
 ```
 
-Optionally, enable word completion for your shell:
+### Enable word completion (optional)
+
+You can configure shell completion to use the main script as a source of completion words. This is handled automatically by the library. You just need to register it with the completion builtins.
 
 ```sh
 complete -o default -C <path_to_main_script> cli

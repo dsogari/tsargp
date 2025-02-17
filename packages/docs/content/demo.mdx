@@ -5,11 +5,16 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 <Demo />
 
-<Callout type="default">
-  You can select text from the terminal and paste it with `Ctrl`+`V`. Use the `Up` and `Down` arrow
-  keys to navigate the history. For a full experience, you may want to try it in a local bash: ```sh
-  copy npm i -g tsargp && complete -C tsargp tsargp ```
-</Callout>
+<details>
+  <summary>Disclaimer</summary>
+
+Terminal emulation has limited capabilities. Copy, paste, history, coloring, and completion work, but not as well as in a real shell. For a smoother experience, you may want to try the demo locally:
+
+```sh copy
+npm i -g tsargp && complete -C tsargp tsargp
+```
+
+</details>
 
 ## Try it out
 
@@ -61,8 +66,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 - check if values get overridden when a string option is specified repeatedly (e.g., `-s 1 -s 2`)
 - check if values get overridden when a number option is specified repeatedly (e.g., `-n -1 -n -2`)
 - check if values get overridden when an array-valued option is specified repeatedly (e.g., `one -- two`)
-- check if values get appended when an array-valued option is specified repeatedly (e.g.,
-  `--numbersUnique 1 --numbersUnique 2`)
+- check if values get appended when an array-valued option is specified repeatedly (e.g., `--numbersUnique 1 --numbersUnique 2`)
 
 ### Inline parameters
 
@@ -91,8 +95,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 ### Text wrapping
 
-With the browser console still open, slide the screen splitter until the terminal width changes,
-then run the help option again and:
+With the browser console still open, slide the screen splitter until the terminal width changes, then run the help option again and:
 
 - check if words in the options' descriptions get wrapped correctly
 - check if words in the usage section get wrapped correctly
