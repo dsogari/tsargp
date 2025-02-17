@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import { Callout } from 'nextra/components';
+import { Callout, Steps } from 'nextra/components';
 
 export const Play = dynamic(() => import('@components/play'), { ssr: false });
 export const Code = dynamic(() => import('@components/code'), { ssr: false });
@@ -8,14 +8,8 @@ export const initialDoc = `const {
   ArgumentParser, HelpItem, ParsingError, ValidationError, ConnectiveWord,
   req, tf, fg, bg, ul, style, fg8, bg8, ul8,
 } = tsargp;
-// Define your options here. Only plain JavaScript is allowed.
-return {
-  help: {
-    type: 'help',
-    names: ['-h', '--help'],
-    synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`,
-  },
-};`;
+
+return { // Define your options here. Only plain JavaScript is allowed. help: { type: 'help', names: ['-h', '--help'], synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`, }, };`;
 
 <Code callbacks={callbacks} initialDoc={initialDoc} />
 
@@ -28,8 +22,20 @@ return {
 
 <Play callbacks={callbacks} />
 
+<details>
+  <summary>Disclaimer</summary>
+
+Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
+
+```sh copy
+npm i -g tsargp && complete -C tsargp tsargp
+```
+
+</details>
+
 ## Things to try out
 
+<Steps>
 ### Validation errors
 
 - check if an error is reported for duplicate option names
@@ -41,3 +47,5 @@ return {
 - check if a warning is reported for option names too similar to each other (e.g. `-help1` and `-help2`)
 - check if a warning is reported for option names with mixed naming conventions (e.g. `-h` and `--b`)
 - check if a warning is reported for a variadic option with cluster letters
+
+</Steps>

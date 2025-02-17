@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import { Callout, Steps } from 'nextra/components';
+import { Steps } from 'nextra/components';
 
 export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
@@ -8,7 +8,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 <details>
   <summary>Disclaimer</summary>
 
-Terminal emulation has limited capabilities. Copy, paste, history, coloring, and completion work, but not as well as in a real shell. For a smoother experience, you may want to try the demo locally:
+Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
 
 ```sh copy
 npm i -g tsargp && complete -C tsargp tsargp
@@ -17,11 +17,6 @@ npm i -g tsargp && complete -C tsargp tsargp
 </details>
 
 ## Try it out
-
-<Callout type="default">
-  We recommend opening the browser console with `F12`, to see the messages logged by sub-commands,
-  as well as to play with text wrapping of help messages.
-</Callout>
 
 <Steps>
 ### Basic commands
@@ -50,23 +45,22 @@ npm i -g tsargp && complete -C tsargp tsargp
 ### Value constraints
 
 - check if a string parameter matches the required regex (e.g., try `-s A` and see that it fails)
-- check if a string parameter matches the required enums (e.g., try `-se A` and see that it fails)
+- check if a string parameter matches one the choices (e.g., try `-se A` and see that it fails)
 - check if a number parameter matches the required range (e.g., try `-n 1` and see that it fails)
-- check if a number parameter matches the required enums (e.g., try `-ne=0` and see that it fails)
+- check if a number parameter matches one the choices (e.g., try `-ne=0` and see that it fails)
+
+### Array constraints
+
 - check if the element count is limited to a certain amount (e.g., `-- a b c d`)
-
-### Value normalization
-
-- check if a string parameter gets normalized (e.g., `-ss abc` and see that it outputs `ABC`)
-- check if a number parameter gets normalized (e.g., `-ns 1.7` and see that it outputs `2`)
 - check if duplicate values get removed (e.g., `--numbersUnique 1,2,1,2`)
 
-### Value overwriting/appending
+### Value replacement
 
-- check if values get overridden when a string option is specified repeatedly (e.g., `-s 1 -s 2`)
-- check if values get overridden when a number option is specified repeatedly (e.g., `-n -1 -n -2`)
-- check if values get overridden when an array-valued option is specified repeatedly (e.g., `one -- two`)
-- check if values get appended when an array-valued option is specified repeatedly (e.g., `--numbersUnique 1 --numbersUnique 2`)
+When an option is specified more than once, the retained value is usually the last occurrence.
+
+- check if values get overridden for a single-valued option (e.g., `-s 1 -n 1 -s 2 -n 2`)
+- check if values get overridden for an array-valued option (e.g., `abc -- def`)
+- check if values get _appended_ for an array-valued option that is configured that way (e.g., `--numbersUnique 1 --numbersUnique 2`)
 
 ### Inline parameters
 
@@ -75,7 +69,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 - check if inline parameters are disallowed for an option (e.g., `-se=one`)
 - check if inline parameters are required for an option (e.g., `-ne 1`)
 
-### Option filters
+### Help option filters
 
 - check if the help option accepts option filters (e.g., `-h -b -ne`)
 - check if the help option accepts a nested command name (e.g., `-h hello`)
@@ -86,16 +80,18 @@ npm i -g tsargp && complete -C tsargp tsargp
 - check if the `-f` option can be specified without a parameter, and negated with `--no-flag`
 - check if the `-b` option can be specified in combination with required options
 
-### Nested commands
+### Subcommands
 
-- check if the `hello` sub-command prints its arguments on the console
-- check if the `hello` sub-command can have its own options (e.g., `hello -h`)
+Open the browser console with `F12`, to see the messages logged by the subcommand.
+
+- check if the `hello` subcommand prints its arguments on the console
+- check if the `hello` subcommand can have its own options (e.g., `hello -h`)
   - in this help message, see that a positional option can have no name
-- check if the `hello` sub-command can be specified recursively (e.g., `hello a hello b c hello`)
+- check if the `hello` subcommand can be specified recursively (e.g., `hello a hello b c hello`)
 
 ### Text wrapping
 
-With the browser console still open, slide the screen splitter until the terminal width changes, then run the help option again and:
+With the console panel open, slide the screen splitter until the terminal width changes, then run the help option.
 
 - check if words in the options' descriptions get wrapped correctly
 - check if words in the usage section get wrapped correctly
