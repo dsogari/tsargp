@@ -349,10 +349,10 @@ export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
 /**
  * A callback for custom parsing or custom completion.
  * @template P The parameter data type
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  * @template R The return type
  * @param param The option parameter(s)
- * @param info The sequence information
+ * @param info The argument sequence information
  * @returns The return value
  */
 export type CustomCallback<P, I, R> = (param: P, info: I) => R;
@@ -360,13 +360,13 @@ export type CustomCallback<P, I, R> = (param: P, info: I) => R;
 /**
  * A callback for custom parsing.
  * @template P The parameter data type
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type ParseCallback<P, I> = CustomCallback<P, I, unknown>;
 
 /**
  * A callback for custom completion.
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type CompleteCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
 
@@ -494,7 +494,7 @@ export type WithMessage = {
 /**
  * Defines attributes common to options that have values.
  * @template P The type of parse parameter
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type WithValue<P, I> = {
   /**
@@ -550,7 +550,7 @@ export type WithEnv = {
 
 /**
  * Defines attributes for options that may have parameters.
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type WithParam<I> = {
   /**

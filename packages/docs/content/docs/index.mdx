@@ -10,10 +10,10 @@ import { FileTree, Tabs, Steps } from 'nextra/components';
 
 ## Features
 
-| Usability            | Functionality          | Presentation            |
+| Usability-wise       | Functionality-wise     | Presentation-wise       |
 | -------------------- | ---------------------- | ----------------------- |
 | Zero-dependency      | Word completion        | Help message formatting |
-| Fully declarative    | Option validation      | Text wrapping/alignment |
+| Fully declarative    | Run-time validation    | Text wrapping/alignment |
 | Type-checked         | Option requirements    | Paragraphs and lists    |
 | Browser-compatible   | Name suggestions       | [SGR] colors and styles |
 | 30KB minified        | Subcommands            | Option grouping/hiding  |
@@ -24,17 +24,24 @@ import { FileTree, Tabs, Steps } from 'nextra/components';
 
 Why use this library when there are already many good argument parsers on npm?
 
-Its most distinctive feature is a _declarative_ API. Very few libraries on npm that we know of (at the time of writing) have this feature (worth mentioning [meow], [yargs] and [oclif]). Most others have either imperative or fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
+The most distinctive feature is the _declarative_-ness of its API. Very few libraries that we know of support this (at the time of writing, it's worth mentioning [meow], [yargs] and [oclif]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
 
-Furthermore, by using TypeScript, it ensures that the values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a choice mapping in its definition. Even JSDoc comments are preserved in IntelliSense!
+Moreover, by relying on TypeScript, it ensures that values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a choice constraint in its definition. Even JSDoc comments are preserved in IntelliSense!
 
 ## Installation
 
-<Tabs items={['npm', 'Bun', 'Yarn']}>
+<Tabs items={['npm', 'pnpm', 'Bun', 'Yarn']}>
   <Tabs.Tab>
 
     ```sh copy
     npm add tsargp
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+    ```sh copy
+    pnpm add tsargp
     ```
 
   </Tabs.Tab>
