@@ -27,7 +27,6 @@
   },
   "prettier": {
     "printWidth": 100,
-    "singleQuote": true,
-    "proseWrap": "never"
+    "singleQuote": true
   }
 }

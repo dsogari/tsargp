@@ -12,15 +12,15 @@ A command line interface can be composed of subcommands and options (also known 
 
 There are seven types of options, as summarized in the table below:
 
-| Type | Parameters | Attribute classes |
-| --- | --- | --- |
-| [help] | niladic | [basic], [message] |
-| [version] | niladic | [basic], [message] |
-| [command] | niladic[^1] | [basic], [value], |
-| [flag] | niladic | [basic], [value], [environment] |
-| [single] | positional, inline, monadic | [basic], [value], [environment], [parameter], [selection] |
-| [array] | positional, inline, variadic, delimited, appended | [basic], [value], [environment], [parameter], [selection] |
-| [function] | positional, inline, configurable | [basic], [value], [environment], [parameter] |
+| Type       | Parameters                                        | Attribute classes                                         |
+| ---------- | ------------------------------------------------- | --------------------------------------------------------- |
+| [help]     | niladic                                           | [basic], [message]                                        |
+| [version]  | niladic                                           | [basic], [message]                                        |
+| [command]  | niladic[^1]                                       | [basic], [value],                                         |
+| [flag]     | niladic                                           | [basic], [value], [environment]                           |
+| [single]   | positional, inline, monadic                       | [basic], [value], [environment], [parameter], [selection] |
+| [array]    | positional, inline, variadic, delimited, appended | [basic], [value], [environment], [parameter], [selection] |
+| [function] | positional, inline, configurable                  | [basic], [value], [environment], [parameter]              |
 
 The next sub-sections cover some concepts that may be used throughout this page.
 
