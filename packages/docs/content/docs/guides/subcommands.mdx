@@ -148,15 +148,15 @@ With this in place, we can define each one of the basic operations, as follows:
   </Tabs.Tab>
 </Tabs>
 
-Notice how we use an [options callback] to provide the option definitions for each command. This is necessary because JavaScript does not allow us to reference the containing object from one of its members, before its initialization. (The `mainOpts` variable will be defined later, and the above definitions will be embedded in it.)
+Notice how we use a [nested options callback] to provide the option definitions for each command. This is necessary because JavaScript does not allow us to reference the containing object from one of its members, before its initialization. (The `mainOpts` variable will be defined later, and the above definitions will be embedded in it.)
 
-Inside the [command callback], we perform a typecast to access the values parsed for the command. This is necessary because the library does not know the concrete type of our option values when it calls the callback (the callback type cannot be defined in terms of a generic type parameter). So it must pass an _opaque_ reference to them.
+Inside the [parse callback], we perform a typecast to access the values parsed for the command. This is necessary because the library does not know the concrete type of our option values when it calls the callback (and the callback type cannot be defined in terms of a generic type parameter). So it must pass an _opaque_ reference to them.
 
 From those values, we select the value resulting from the next operation (if any), falling back to a default if this was the last operation. We then return the accumulated result of the operations performed so far in the stack (except if, in the case of `sub` and `mult`, two arguments are provided before a recursive call, then the result of that call is ignored).
 
 <Callout type="info">
 
-In TypeScript, it's necessary to specify the return type of both the `options` and `exec` callback attributes. Otherwise, the compiler will not be able to resolve the type of the containing object.
+In this case, it is necessary to specify the return type of both callbacks. Otherwise, the compiler will not be able to resolve the type of the containing object.
 
 </Callout>
 
@@ -197,11 +197,11 @@ List of commands to try:
 {/* options references */}
 
 [array]: ../library/options#array-valued-option
-[preferred name]: ../library/options#names--preferred-name
+[preferred name]: ../library/options#preferred-name
 [defaults]: ../library/options#default-value
 [positional]: ../library/options#positional--marker
 [group]: ../library/options#group--hide
 [required]: ../library/options#always-required
-[at most]: ../library/options#count-limit
-[options callback]: ../library/options#command-options--callback
-[command callback]: ../library/options#command-callback
+[at most]: ../library/options#element-count-limit
+[nested options callback]: ../library/options#nested-options--callback
+[parse callback]: ../library/options#parse-callback

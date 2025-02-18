@@ -23,7 +23,7 @@ export default {
 } as const satisfies Options;
 ```
 
-You can increment it with an introduction, usage and footer:
+You can enhance it with an introduction, usage and footer:
 
 ```ts
 import { type Options, style, fg } from 'tsargp';
@@ -65,7 +65,7 @@ export default {
       param: { hidden: true }, // hide option parameter/examples
       items: [HelpItem.desc, HelpItem.required, HelpItem.deprecated],
       phrases: {
-        [HelpItem.desc]: '💡 %t', // option synopsis with emoji
+        [HelpItem.synopsis]: '💡 #0', // option synopsis with emoji
       },
     },
     styles: {
@@ -109,7 +109,7 @@ cli help cmd
 cli cmd --help
 ```
 
-To achieve this, we have to define a [command option]. We can start with the definitions for the subcommands' options:
+To achieve this, we have to define a [subcommand]. We can start with the option definitions for the subcommand:
 
 ```ts
 import type { Options } from 'tsargp';
@@ -129,7 +129,7 @@ const helpOpts = {
     choices: ['cmd1', 'cmd2'], // the names of subcommands
     preferredName: 'command name', // appears in error messages
     positional: true,
-    required: true, // error if called without a command name
+    required: true, // error if called without a subcommand name
   },
 } as const satisfies Options;
 ```
@@ -171,7 +171,7 @@ The `progName` configuration flag is set in order to avoid appending the script 
 
 <Callout type="info">
 
-Keep in mind that, when word completion is in effect, the command's [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [`compIndex`] flag for the delegated `parse` call.
+Keep in mind that, when word completion is in effect, the subcommand's [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [`compIndex`] flag for the delegated `parse` call.
 
 </Callout>
 
@@ -180,7 +180,8 @@ Keep in mind that, when word completion is in effect, the command's [parse callb
 [parameter choices]: ../library/options#parameter-choices
 [parse callback]: ../library/options#parse-callback
 [help option]: ../library/options#help-option
-[command option]: ../library/options#command-option
+[subcommand]: ../library/options#command-option
+[enable subcommand]: ../library/options#enable-subcommand
 
 {/* parser references */}
 
