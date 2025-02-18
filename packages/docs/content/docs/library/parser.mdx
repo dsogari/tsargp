@@ -10,7 +10,7 @@ The `ArgumentParser` component handles parsing of command-line arguments. It can
 
 ## Option values
 
-The result of argument parsing is an object whose properties are the option values, one for each of the option definitions given in the parser constructor. There are two ways to obtain these values, as explained below.
+The result of argument parsing is an object whose properties are the option values, one for each of the definitions given in the parser constructor. There are two ways to obtain these values, as explained below.
 
 ### Using a newly-created object
 
@@ -51,21 +51,21 @@ The parser can be configured via a `ParserConfig` object, which can be provided 
 
 ### Error phrases
 
-The `phrases` property specifies [custom phrases] to use for error and warning messages. Its properties are optional and are indexed by the `ParsingError` enumeration, which lists the kinds of errors and warnings that may be produced by the parser. They are summarized in the table below:
+The `phrases` property specifies custom phrases to use for error and warning messages. Its properties are optional and are indexed by the `ParsingError` enumeration, which lists the kinds of errors and warnings that may be produced by the parser. They are summarized in the table below:
 
 | Parsing error | Raised when | Default phrase | Format specifiers |
 | --- | --- | --- | --- |
 | `unknownOption` | An option name is not found, with possible name suggestions | `'Unknown option #0.(\| Similar names are: #1.)'{:ts}` | `#0` = the unknown option name; `#1` = the similar names |
-| `unsatisfiedRequirement` | An option's forward requirement is not satisfied | `'Option #0 requires #1.'{:ts}` | `#0` = the specified option name; `#1` = the option's requirements |
+| `unsatisfiedRequirement` | An option's forward requirement is not satisfied | `'Option #0 requires #1.'{:ts}` | `#0` = the specified option name; `#1` = the requirements |
 | `missingRequiredOption` | An option that is always required was not specified | `'Option #0 is required.'{:ts}` | `#0` = the option's preferred name |
-| `mismatchedParamCount` | An option is specified with the wrong number of parameters | `'Wrong number of parameters to option #0: requires (exactly\|at least\|at most\|between) #1.'{:ts}` | `#0` = the specified option name |
+| `mismatchedParamCount` | An option is specified with the wrong number of parameters | `'Wrong number of parameters to option #0: requires (exactly\|at least\|at most\|between) #1.'{:ts}` | `#0` = the specified option name; `#1` = the parameter count |
 | `missingPackageJson` | A "package.json" file could not be found when resolving the package version | `'Could not find a "package.json" file.'{:ts}` |  |
 | `disallowedInlineParameter` | An option is specified with an inline parameter, despite it being disallowed | `'(Option\|Positional marker) #0 does not accept inline parameters.'{:ts}` | `#0` = the specified option name or positional marker |
-| `choiceConstraintViolation` | An option parameter fails to satisfy a choice constraint | `'Invalid parameter to #0: #1. Value must be one of: #2.'{:ts}` | `#0` = the option's key or specified name; `#1` = the specified value; `#2` = the enum values or the truth and falsity names |
-| `regexConstraintViolation` | An option parameter fails to satisfy a regex constraint | `'Invalid parameter to #0: #1. Value must match the regex #2.'{:ts}` | `#0` = the option's key or specified name; `#1` = the specified value; `#2` = the regular expression |
-| `limitConstraintViolation` | An option value fails to satisfy a count limit constraint | `'Option #0 has too many values: #1. Should have at most #2.'{:ts}` | `#0` = the option's key or specified name; `#1` = the element count; `#2` = the count limit |
+| `choiceConstraintViolation` | An option parameter fails to satisfy a choice constraint | `'Invalid parameter to #0: #1. Value must be one of: #2.'{:ts}` | `#0` = the option's key or specified name; `#1` = the specified value; `#2` = the choices |
+| `regexConstraintViolation` | An option parameter fails to satisfy a regex constraint | `'Invalid parameter to #0: #1. Value must match the regex #2.'{:ts}` | `#0` = the option's key or specified name; `#1` = the specified value; `#2` = the regex |
+| `limitConstraintViolation` | An option value fails to satisfy a count limit constraint | `'Option #0 has too many values: #1. Should have at most #2.'{:ts}` | `#0` = the option's key or specified name; `#1` = the element count; `#2` = the limit |
 | `deprecatedOption` | A deprecated option is specified on the command-line | `'Option #0 is deprecated and may be removed in future releases.'{:ts}` | `#0` = the specified option name |
-| `unsatisfiedCondRequirement` | An option's conditional requirement is not satisfied | `'Option #0 is required if #1.'{:ts}` | `#0` = the specified option name; `#1` = the option's requirements |
+| `unsatisfiedCondRequirement` | An option's conditional requirement is not satisfied | `'Option #0 is required if #1.'{:ts}` | `#0` = the specified option name; `#1` = the requirements |
 | `invalidClusterOption` | Either a variadic option or a command option is specified in the middle of a cluster argument | `'Option letter #0 must be the last in a cluster.'{:ts}` | `#0` = the specified cluster letter |
 | `missingInlineParameter` | An option is specified with no inline parameter, despite it being required | `'Option #0 requires an inline parameter.'{:ts}` | `#0` = the specified option name |
 
@@ -85,7 +85,7 @@ The `progName` property is a custom name for the main command, which is used to 
 
 <Callout type="info">
 
-This flag is ignored when word completion is in effect.
+This flag is ignored when [word completion] is in effect.
 
 </Callout>
 
@@ -97,11 +97,11 @@ The `compIndex` property is the cursor position in a command line for which the 
 Number(process.env['COMP_POINT'] ?? process.env['CURSOR']) || process.env['BUFFER']?.length;
 ```
 
-When invoking the parsing methods with a raw command line, and this flag is set, the parser will know to perform word completion for the argument ending at this position.
+When invoking the parsing methods with a raw command line, and this flag is set, the parser will perform [word completion] for the argument ending at this position.
 
 ### Cluster prefix
 
-The `clusterPrefix` property specifies the prefix for cluster arguments. If set, then eligible arguments with this prefix may be considered a cluster. This must be used in conjunction with the [cluster letters] option attribute.
+The `clusterPrefix` property specifies the prefix for cluster arguments. If set, then eligible arguments starting with this prefix may be considered a cluster. This must be used in conjunction with the [cluster letters] attribute.
 
 <Callout type="info">
 
@@ -126,24 +126,24 @@ All of these can be asynchronous, in which case the parser awaits their resoluti
 
 Note that there is no synchronous version of the parsing procedure. This is a design choice: in order to support a fully synchronous `parse` method using the same code base, the parser would have to deal with returned promises in a way that would make it hard to maintain (remember the classic [callback hell]).
 
-Besides, the asynchronous version has the benefit of allowing us to perform some operations, such as [requirements checking], concurrently. This should not be a drawback for most applications, since argument parsing is usually done at the top-level of a module or script, where the `await{:ts}` directive is available.
+Besides, the asynchronous version has the benefit of allowing us to perform some operations, such as [requirements checking], concurrently. This should not be a drawback for most applications, since argument parsing is usually done at the top-level of a module or script, where the `await{:ts}` directive is readily available.
 
 ### Argument sequence
 
 An argument sequence is the occurrence of an option in the command line with possible parameters. The parser looks for option names or positional arguments once it finishes parsing the previous option, or if the latter is variadic.
 
-For example, if the option initiating a sequence is an array-valued option, the parser starts looking for new options as soon as it advances to the next argument, since that may be either an option parameter or the start of a new sequence. Supposing that it is a parameter, once the parser advances past this argument, it knows that the next one must be the start of a sequence.
+For example, if the option initiating a sequence is array-valued, the parser starts looking for a new option as soon as it advances to the next argument, since that may be either an option parameter or the start of a new sequence.
 
-The same algorithm works for function options with a variable [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name or not. Once the first parameter is saved, the parser resumes searching until 3 parameters are accumulated, at which point it _must_ find an option specification (even if it is a new occurrence of the same option).
+The same is true for function options with a variable [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name or not. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option (even if it is a new occurrence of the previous one).
 
 #### Sequence information
 
 The information gathered by the parser is saved in an object that is passed as parameter to some of the [custom callbacks]. It contains details about the current argument sequence in the parsing loop:
 
 - `values` - The previously parsed values. It has an opaque type that should be cast to `OptionValues<typeof your_options>{:ts}`.
-- `index` - The index of the occurrence of the option name, or of the first option parameter. It will be `NaN{:ts}` if the sequence comes from environment data.
-- `name` - The option name as specified on the command-line, or the environment data source. It will be the option's [preferred name] if the sequence comes from positional arguments, or the string `'0'{:ts}` if it comes from the standard input.
-- `comp` - True if performing word completion. Only available for the [parse callback], except that of a [subcommand].
+- `index` - The index of the occurrence of the option name, or of the first option parameter. It will be `NaN{:ts}` if the sequence comes from [environment] data.
+- `name` - The option name as specified on the command line, or the environment [data source]. It will be the option's [preferred name] if the sequence comes from positional arguments, or `'0'{:ts}` if it comes from the standard input.
+- `comp` - True if performing [word completion]. Only available for the [parse callback], except that of a [subcommand].
 - `prev` - The option parameters preceding the word being completed, if any. Only available to the [complete callback].
 - `format` - A utility function to create [ANSI strings] with a formatted message. Only available to the [parse callback].
 
@@ -160,11 +160,11 @@ The parser does not use the completion facilities, because it relies on the raw 
 
 When these variables are available, the parser enters into _completion_ mode: it truncates the command line at the cursor position and performs completion of the last argument.
 
-The result of completion is a list of words separated by line breaks, which should be printed on the terminal so that the completion builtins can perform the final completion step.
+The result of completion is a [text message], which should be printed on the terminal so that the completion builtins can perform the final completion step.
 
 <Callout type="info">
 
-The parser ignores any errors thrown by callbacks during completion. If an error is thrown by a completion callback, the default [completion message] (an empty list) will be thrown instead.
+The parser ignores any errors thrown by callbacks during completion. If an error is thrown by a completion callback, the default completion message (an empty list) will be thrown instead.
 
 </Callout>
 
@@ -176,7 +176,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If _comp_ is a known option name, that name is returned; else
    - If there is no positional option, the available option names are filtered by the prefix _comp_ and returned; else
    - _comp_ is treated as a parameter of the positional option; go to step 2
-2. _comp_ is the parameter of a non-niladic option, then either of the following is executed and its result is combined with that of step 3:
+2. Else, _comp_ is the parameter of a non-niladic option. Then, either of the following is executed and its result is combined with that of step 3:
    - If the option has a [complete callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
@@ -184,7 +184,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
-If all of the above results in an empty list, the default completion (usually file completion, if enabled in the builtin's configuration) will be attempted.
+If all of the above results in an empty list, the default completion (usually file completion, if enabled) will be attempted by the completion builtin.
 
 #### Altered parsing behavior
 
@@ -192,9 +192,9 @@ Since the completion builtins always expect a list of words as a result, the lib
 
 - parsing errors, such as unknown option names, are suppressed
 - message-valued options (help and version) are skipped
-- subcommands' [parse callback] do not get executed
+- [parse callback] of subcommands do not get executed
 - option requirements are not verified
-- cluster arguments are completed with the default completion (an empty list)
+- cluster arguments are completed with the default completion message
 
 <Callout type="default">
 
@@ -204,14 +204,14 @@ Other arguments are processed as usual, which means that a completion callback c
 
 ### Requirements checking
 
-When the parser evaluates option requirements, it compares an option's value against any value required by other options. Generally, this analysis is performed after all arguments have been parsed, but it may also be performed in two more situations:
+When the parser evaluates option requirements, it compares an option's value against any value required by other options. Generally, this analysis is performed after all arguments have been parsed, but it may be performed in two additional situations:
 
 - before calling the [parse callback] of an option that has [break loop] set
-- before calling a [command callback]
+- before handling a [subcommand]
 
 <Callout type="info">
 
-As has been mentioned, requirements are _not_ checked when word completion is in effect.
+As has been mentioned previously, requirements are _not_ checked when [word completion] is in effect.
 
 </Callout>
 
@@ -221,7 +221,7 @@ When the parser expects an option name and the current argument is not a valid o
 
 ### Inline parameters
 
-Option parameters may be passed on the command-line using the syntax `<name>=<param>`. As is the case with standalone parameters, inline parameters may contain any number of equal signs, and even start with one (e.g., `-opt==val` would be parsed as `'=val'{:ts}`).
+Option parameters may be passed on the command-line using the syntax `<name>=<param>`. As is the case with standalone parameters, inline parameters do not conflict with option names, and so they may contain equal signs. They may even start with one (e.g., `-opt==val` would be parsed as `'=val'{:ts}`).
 
 <Callout type="info">
 
@@ -233,7 +233,7 @@ Cluster arguments may also have inline parameters, but their syntax is different
 
 ### Process title
 
-The process title will be updated to reflect the current command being executed. This includes the main script and any subcommands. For example, if the command-line is:
+The process title will be updated to reflect the command being executed. This includes the main script and any subcommands. For example, if the command-line is:
 
 ```sh
 path/to/main/script.js -flag0 cmd1 -flag1 cmd2 args...
@@ -242,11 +242,11 @@ path/to/main/script.js -flag0 cmd1 -flag1 cmd2 args...
 The process title would be updated in the following way:
 
 1. `node` - the starting title, before any updates
-2. `node script.js` - the title at the beginning of the parsing loop
-3. `node script.js cmd1` - the title at the start of the `cmd1` command
-4. `node script.js cmd1 cmd2` - the title at the start of the `cmd2` command
+2. `node script.js` - at the beginning of the parsing loop
+3. `node script.js cmd1` - as soon as the `cmd1` subcommand is parsed
+4. `node script.js cmd1 cmd2` - as soon as the `cmd2` subcommand is parsed
 
-The title will remain unchanged after the parser returns. Other option names are not used, because they would pollute the output of process management utilities such as `ps`.
+The title will remain in the changed state after the parser returns. Other option names are not used, because they would pollute the output of process management utilities such as `ps`.
 
 {/* self references */}
 
@@ -265,20 +265,22 @@ The title will remain unchanged after the parser returns. Other option names are
 [break loop]: options#break-loop
 [cluster letters]: options#cluster-letters
 [cluster inline parameters]: options#inline-parameters
-[preferred name]: options#names--preferred-name
+[preferred name]: options#preferred-name
 [requirement callback]: options#requirement-callback
 [default callback]: options#default-callback
 [parse callback]: options#parse-callback
 [complete callback]: options#complete-callback
 [positional marker]: options#positional--marker
+[environment]: options#environment-attributes
+[data source]: options#data-sources
 
 {/* styles references */}
 
-[custom phrases]: styles#custom-phrases
 [message configuration]: styles#message-configuration
 [warning messages]: styles#warning-message
-[completion message]: styles#completion-message
+[text formatting]: styles#text-splitting
 [ANSI strings]: styles#ansi-strings
+[text message]: styles#text-message
 
 {/* formatter references */}
 
