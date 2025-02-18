@@ -49,11 +49,11 @@ This method returns a promise that resolves to a `ParsingResult` object containi
 
 The parser can be configured via a `ParserConfig` object, which can be provided as an additional parameter to the parser constructor. It contains the same properties as the [message configuration], as well as the property described below.
 
-### Error phrases
+### Custom phrases
 
 The `phrases` property specifies custom phrases to use for error and warning messages. Its properties are optional and are indexed by the `ParsingError` enumeration, which lists the kinds of errors and warnings that may be produced by the parser. They are summarized in the table below:
 
-| Parsing error | Raised when | Default phrase | Format specifiers |
+| Parsing error | Raised when | Default phrase | Placeholders |
 | --- | --- | --- | --- |
 | `unknownOption` | An option name is not found, with possible name suggestions | `'Unknown option #0.(\| Similar names are: #1.)'{:ts}` | `#0` = the unknown option name; `#1` = the similar names |
 | `unsatisfiedRequirement` | An option's forward requirement is not satisfied | `'Option #0 requires #1.'{:ts}` | `#0` = the specified option name; `#1` = the requirements |

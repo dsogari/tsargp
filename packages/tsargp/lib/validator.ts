@@ -282,7 +282,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
 }
 
 /**
- * Validates an option's requirements.
+ * Validates an option's attributes.
  * @param context The validation context
  * @param key The option key
  * @param option The option definition

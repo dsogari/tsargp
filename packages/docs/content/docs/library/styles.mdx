@@ -10,7 +10,7 @@ The `Style` type is a string literal consisting of Select Graphic Rendition ([SG
 
 ## Styling attributes
 
-The `style` function accepts a list of styling attributes and creates a `Style` that can be used in any part of the API that expects this type, or it can be embedded directly in text attributes, such as the [option synopsis], [deprecation notice], [help section] texts, [error phrases] and [help phrases].
+The `style` function accepts a list of styling attributes and creates a `Style` that can be used in any part of the API that expects this type. It can also be embedded directly in text attributes, such as the [option synopsis], [deprecation notice], [help section] texts and custom phrases.
 
 Styles are cumulative, i.e., they can be combined with previous styles depending on the kind of styling attribute. For instance, if the style of an option's description is `tf.bold{:ts}` and the style of number values is `fg.yellow{:ts}`, then any number value (except those embedded in text attributes) that appears in the option description will be rendered in bold intensity with yellow foreground color.
 
@@ -117,7 +117,7 @@ The `ul` constant holds the styles of underlined text:
 The `AnsiString` class is an internal component that handles the construction of strings that can be printed on a terminal. It has methods to split, append and wrap strings, with or without control sequences, and is used by the library in different places:
 
 - by both the [parser] and [validator], to create error and warning messages
-- by the [help formatter], to build help messages
+- by the [formatter], to build help messages
 
 The main logic implemented in this class is divided into _splitting_ and _wrapping_, as is explained in the next sections.
 
@@ -125,14 +125,21 @@ The main logic implemented in this class is divided into _splitting_ and _wrappi
 
 Text is split into paragraphs, list items and words using a combination of simple regular expressions. The features supported in text splitting are described below.
 
-#### Format specifiers
+#### Placeholders
 
-During splitting, format specifiers prefixed with a percent sign `%` may be extracted from the text and processed by a formatting callback. This is used by the library in different places:
+During splitting, numeric placeholders prefixed with a hashtag `#` may be extracted from the text and processed by a formatting callback. This is used by the library in different places:
 
-- by the both the [parser] and [validator], to produce error and warning messages based on configured [error phrases]
-- by the [help formatter], to assemble help items from configured [help phrases]
+- by the [parser], to produce error and warning messages based on configured [parser custom phrases]
+- by the [validator], to produce error and warning messages based on configured [validator custom phrases]
+- by the [formatter], to assemble help items from configured [formatter custom phrases]
 
-This particular feature is only available in _phrases_, not in text attributes of option definitions. Specifiers are meant to be replaced with a value (or values, in case of arrays). The available ones are:
+<Callout type="info">
+
+This particular feature is only available in _custom phrases_, not in text attributes of option definitions.
+
+</Callout>
+
+Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which internally is denoted by a single character. The available ones are:
 
 - `b` - a boolean value
 - `s` - a string value
@@ -145,7 +152,7 @@ This particular feature is only available in _phrases_, not in text attributes o
 - `o` - an object value
 - `v` - an unknown value (enclosed in angle brackets, like the [parameter column])
 
-If a phrase supports values, the specifier can be used to indicate where in the phrase to place the value. If a phrase has multiple alternatives (depending on the context), different texts may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`. Specifiers may also end with a single digit that represents a predefined value in an error message or help item.
+When a phrase includes placeholders, they indicate where in the phrase to place the corresponding value. If a phrase has multiple alternatives (depending on the context), different pieces of text may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`.
 
 #### Inline styles
 
@@ -319,19 +326,20 @@ The `connectives` property specifies connective words that are used to format so
 
 [parser]: parser
 [completion words]: parser#word-completion
+[parser custom phrases]: parser#custom-phrases
 
 {/* validator references */}
 
 [validator]: validator
-[error phrases]: validator#error-phrases
+[validator custom phrases]: validator#custom-phrases
 
 {/* formatter references */}
 
-[help formatter]: formatter
-[help phrases]: formatter#help-phrases
+[formatter]: formatter
 [help section]: formatter#help-sections
 [description column]: formatter#description-column
 [parameter column]: formatter#parameter-column
+[formatter custom phrases]: formatter#custom-phrases
 
 {/* styles references */}
 

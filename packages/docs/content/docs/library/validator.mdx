@@ -10,16 +10,16 @@ The `OptionValidator` component handles validation of option definitions. It can
 
 ## Option validation
 
-We use the term _validation_ to refer to the "sanity check" of option definitions. It is intended for use during development only, whereas in production it would impose an unnecessary performance penalty on your application. Validations behave like assertions: they assert that your program will work as expected when delivered to end-users.
+We use the term _validation_ to refer to the "sanity check" of option definitions. It is meant for use during development, whereas in production it would impose an unnecessary performance penalty on your application. In this sense, validations behave like assertions: they assert that your program will work as expected when delivered to end-users.
 
 To validate a set of option definitions, you must call the `validate` method on the validator instance. This method accepts a `ValidationFlags` argument with the following optional properties:
 
 - `noNamingIssues` - whether the validation procedure should skip detection of naming inconsistencies
-- `noRecurse` - whether the validation procedure should skip recursion into subcommands
+- `noRecurse` - whether the validation procedure should skip recursion into [nested options]
 
 It returns a promise that resolves to a `ValidationResult` object with the following properties:
 
-- `warning` - A compilation of warning messages that represent non-impeditive issues encountered in the option definitions. You may want to print it to see if they are important to your application.
+- `warning` - A compilation of warning messages that represent non-impeditive issues encountered in the option definitions. You may want to inspect it to see if they are important to your application.
 
 <Callout type="info">
 
@@ -29,7 +29,7 @@ This method is _asynchronous_, so you must use `await{:ts}` in order to resolve 
 
 ## Validation rules
 
-There are two kinds of validation performed by the validator: those that generate an error and those that generate a warning. They are listed below.
+There are two kinds of validation rules, depending on whether they generate an error or a warning. They are listed below.
 
 ### Validation errors
 
@@ -37,19 +37,19 @@ The following restrictions will raise an error on any option definition that fai
 
 - **Invalid option name** - An option name must not contain whitespace or the equals sign `'='{:ts}`, since this character can be used as option-parameter separator on the command-line. Any other Unicode character is allowed.
 - **Duplicate option name** - An option should not have duplicate names, and there cannot be two options with the same name.
-- **Invalid cluster letter** - A cluster letter must not contain whitespace. Any other Unicode character is allowed.
+- **Invalid cluster letter** - A cluster letter must not contain whitespace or the equals sign `'='{:ts}`. Any other Unicode character is allowed.
 - **Duplicate cluster letter** - An option should not have duplicate cluster letters, and there cannot be two options with the same letter.
-- **Duplicate choice value** - In a single- or array-valued option with [parameter choices], the choices must _not_ contain duplicate elements.
+- **Duplicate choice value** - In a single- or array-valued option with [parameter choices], the choices must _not_ contain duplicate values.
 - **Invalid parameter count** - In a function option with a range [parameter count], the minimum value should be strictly less than the maximum, but not less than zero.
 - **Option requiring itself** - An option must not declare a requirement that references itself.
 - **Unknown required option** - An option must not declare a requirement that references an _unknown_ option.
-- **Invalid required option** - An option must not declare a requirement that references either a non-valued option (help and version) or an unknown-valued option (function and command) in a requirement.
+- **Invalid required option** - An option must not declare a requirement that references a non-valued option (help or version) in a requirement.
 - **Invalid required value** - An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is nullish (`null{:ts}` or `undefined{:ts}`).
 - **Duplicate positional option** - Since positional arguments have no name, they must pertain to exactly one option. Hence, there cannot be _two_ options with the positional attribute in the same set of option definitions.
 
 <Callout type="info">
 
-`null{:ts}` values are ignored in option names, while the [positional marker] is included.
+`null{:ts}` values are ignored in name validation, whereas the [positional marker] is included.
 
 </Callout>
 
@@ -59,7 +59,7 @@ The validator does not validate the _satisfiability_ of option requirements, not
 
 The following restrictions will produce a warning that is returned by the validation procedure.
 
-- **Too similar names** - When two option names are very similar (e.g., if they differ by a single character in a five-character name), this may be a development mistake, or worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the same algorithm used by the parser in [name suggestions], just a little stricter.
+- **Too similar names** - When two option names are very similar (e.g., if they differ by a single character in a five-character name), this may be a development mistake, or worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the same algorithm employed by the parser in [name suggestions], only a little stricter to avoid false positives.
 - **Mixed naming convention** - When a [name slot] contains names with different naming conventions (e.g., all-uppercase vs all-lowercase, or single-dash vs double-dash), this may be a sign of code review negligence, or worse, it can make it hard for end-users to reason about your application. Thus, the validator tries to find names within a slot that contain mixed naming patterns.
 - **Variadic option with cluster letter** - A variadic option that declares [cluster letters] must always be the last option in a cluster argument. This includes [subcommand] options, array-valued options and function options with a variable [parameter count]. This might not be the intended behavior and if so, you should consider alternatives.
 
@@ -67,11 +67,11 @@ The following restrictions will produce a warning that is returned by the valida
 
 The validator can be configured via a `ValidatorConfig` object, which can be provided as an additional parameter to the validator constructor. It contains the same properties as the [message configuration], as well as the property described below.
 
-### Error phrases
+### Custom phrases
 
-The `phrases` property specifies [custom phrases] to use for error and warning messages. Its properties are optional and are indexed by the `ValidationError` enumeration, which lists the kinds of errors and warnings that may be produced by the validator. They are summarized in the table below:
+The `phrases` property specifies custom phrases to use for error and warning messages. Its properties are optional and are indexed by the `ValidationError` enumeration, which lists the kinds of errors and warnings that may be produced by the validator. They are summarized in the table below:
 
-| Validation error | Raised when | Default phrase | Format specifiers |
+| Validation error | Raised when | Default phrase | Placeholders |
 | --- | --- | --- | --- |
 | `invalidOptionName` | An option has an invalid name | `'Option #0 has invalid name #1.'{:ts}` | `#0` = the option's key; `#1` = the invalid name |
 | `invalidSelfRequirement` | An option references itself in a requirement | `'Option #0 requires itself.'{:ts}` | `#0` = the option's key |
@@ -99,13 +99,14 @@ Phrases are formatted according to [text formatting] rules.
 
 [^1]: This problem is known as [B-SAT], which is known to be [NP-complete] in the general case.
 
-[^2]: The command prefix is a series of option keys interspersed with periods, denoting the current [subcommand] in a hierarchical option definition. It starts as the empty string and is appended with a subcommand's key whenever one is encountered. This prefix also appears in other validation errors, prefixing an option's key in the `%o` specifier. Here's an example: `cmd1.cmd2.flag`.
+[^2]: The command prefix is a series of option keys interspersed with periods, denoting the current [subcommand] in a hierarchical option definition. It starts as the empty string and is appended with a subcommand's key whenever one is encountered. This prefix also appears in other validation errors, prefixing an option's key. Here's an example: `cmd1.cmd2.flag`.
 
 [value validation]: #value-validation
 
 {/* options references */}
 
 [subcommand]: options#command-option
+[nested options]: options#nested-options--callback
 [example value]: options#example-value
 [positional marker]: options#positional--marker
 [parameter choices]: options#parameter-choices

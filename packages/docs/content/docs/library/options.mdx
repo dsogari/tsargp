@@ -475,7 +475,7 @@ Niladic options do not expect any parameter on the command line.
 
 ### Help option
 
-The **help** option handles the formatting of help messages. Internally, it instantiates a [help formatter] with the provided configuration, obtains the formatted message and throws it. The application is responsible for catching this message and printing it in a terminal.
+The **help** option handles the formatting of help messages. Internally, it instantiates a help [formatter] with the provided configuration, obtains the formatted message and throws it. The application is responsible for catching this message and printing it in a terminal.
 
 <Callout type="info">
 
@@ -841,7 +841,7 @@ Note that the function option cannot have a [parameter separator], since it woul
 
 {/* formatter references */}
 
-[help formatter]: formatter
+[formatter]: formatter
 [output format]: formatter#output-format
 [help items]: formatter#help-items
 [help item]: formatter#help-items
