@@ -111,7 +111,7 @@ const defaultConfig: FormatterConfig = {
     [HelpItem.sources]: 'Reads environment data from #0.',
     [HelpItem.requiredIf]: 'Required if #0.',
     [HelpItem.cluster]: 'Can be clustered with #0.',
-    [HelpItem.useNested]: 'Uses the next argument as the name of a nested command.',
+    [HelpItem.useCommand]: 'Uses the next argument as the name of a subcommand.',
     [HelpItem.useFilter]: 'Uses the remaining arguments as option filter.',
     [HelpItem.inline]: '(Disallows|Requires) inline parameters.',
   },
@@ -133,7 +133,7 @@ const defaultConfig: FormatterConfig = {
     HelpItem.required,
     HelpItem.requiredIf,
     HelpItem.default,
-    HelpItem.useNested,
+    HelpItem.useCommand,
     HelpItem.useFilter,
     HelpItem.deprecated,
     HelpItem.link,
@@ -339,11 +339,11 @@ const helpFunctions = [
     }
   },
   /**
-   * Formats a help option's useNested to be included in the description.
+   * Formats a help option's useCommand to be included in the description.
    * @ignore
    */
   (option, phrase, _, result) => {
-    if (option.useNested) {
+    if (option.useCommand) {
       result.split(phrase);
     }
   },

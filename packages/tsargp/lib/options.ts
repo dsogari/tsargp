@@ -609,10 +609,10 @@ export type WithHelp = {
    */
   readonly sections?: HelpSections;
   /**
-   * Whether to use the next argument as the name of a nested command.
+   * Whether to use the next argument as the name of a subcommand.
    * Has precedence over {@link WithHelp.useFilter}.
    */
-  readonly useNested?: true;
+  readonly useCommand?: true;
   /**
    * Whether to use the remaining arguments as option filter.
    */

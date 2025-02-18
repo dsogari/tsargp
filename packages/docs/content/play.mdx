@@ -3,19 +3,33 @@ import { Callout, Steps } from 'nextra/components';
 
 export const Play = dynamic(() => import('@components/play'), { ssr: false });
 export const Code = dynamic(() => import('@components/code'), { ssr: false });
-export const callbacks = {};
+
+{/* prettier-ignore-start */}
+
 export const initialDoc = `const {
   ArgumentParser, HelpItem, ParsingError, ValidationError, ConnectiveWord,
   req, tf, fg, bg, ul, style, fg8, bg8, ul8,
 } = tsargp;
 
-return { // Define your options here. Only plain JavaScript is allowed. help: { type: 'help', names: ['-h', '--help'], synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`, }, };`;
+return {
+  // Define your options here. Only plain JavaScript is allowed.
+  help: {
+    type: 'help',
+    names: ['-h', '--help'],
+    synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`,
+  },
+};`;
+
+{/* prettier-ignore-end */}
+
+export const callbacks = {}; // will hold the editor callbacks
 
 <Code callbacks={callbacks} initialDoc={initialDoc} />
 
 <Callout type="default">
-  Call `init` once to validate the option definitions. After that, you can `play` with your options.
-  (Word completion will be available as well.)
+
+Call `init` once to validate the option definitions. After that, you can `play` with your options. (Word completion will be available as well.)
+
 </Callout>
 
 ---

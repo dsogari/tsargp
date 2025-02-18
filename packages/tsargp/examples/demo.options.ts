@@ -95,7 +95,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
         noWrap: true,
       },
     ],
-    useNested: true,
+    useCommand: true,
     useFilter: true,
   },
   /**

@@ -209,9 +209,9 @@ export const enum HelpItem {
    */
   cluster,
   /**
-   * Whether a help option uses the next argument as the name of a nested command.
+   * Whether a help option uses the next argument as the name of a subcommand.
    */
-  useNested,
+  useCommand,
   /**
    * Whether a help option uses the remaining arguments as option filter.
    */

@@ -6,14 +6,11 @@ import { Callout } from 'nextra/components';
 
 # Formatter
 
-The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set
-of option _definitions_ and provide methods to render help messages in ANSI format.
+The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set of option _definitions_ and provide methods to render help messages in ANSI format.
 
 ## Help message
 
-Internally, the help message consists of [ANSI strings] that may contain control/escape sequences
-and are meant to be printed in a terminal. Visually, it can be divided into the following pieces of
-content:
+Internally, the help message consists of [ANSI strings] that may contain control/escape sequences and are meant to be printed in a terminal. Visually, it can be divided into the following pieces of content:
 
 - section - a group of text lines, like the section of a document
 - entry - the lines corresponding to an option definition
@@ -25,38 +22,28 @@ There are two main ways of obtaining help messages, as described below.
 
 ### Grouped help
 
-The `format` method returns the help message of an option group. It accepts a single optional
-parameter: the name of the group. If not provided, the _default_ group is used, which corresponds to
-the set of options that did not explicitly declare a [group] in their definition.
+The `format` method returns the help message of an option group. It accepts a single optional parameter: the name of the group. If not provided, the _default_ group is used, which corresponds to the set of options that did not explicitly declare a [group] in their definition.
 
 ### Sectioned help
 
-The `sections` method returns a help message that includes [help sections], as will be explained
-later in this page. It accepts two parameters:
+The `sections` method returns a help message that includes [help sections], as will be explained later in this page. It accepts two parameters:
 
 - `sections` - a list of `HelpSection`s to include in the help message
 - `progName` - an optional program name to display in usage sections
 
 ## Help entries
 
-Each option definition results in a help entry being included under its respective group in the help
-message. An entry is divided into "columns" (not to be confused with terminal columns), each
-containing a piece of information, as described below.
+Each option definition results in a help entry being included under its respective group in the help message. An entry is divided into "columns" (not to be confused with terminal columns), each containing a piece of information, as described below.
 
 ### Names column
 
-This column contains the options' names separated by commas. The names are listed in the same order
-as was specified in the [names] attribute.
+This column contains the options' names separated by commas. The names are listed in the same order as was specified in the [names] attribute.
 
 #### Name slots
 
-Depending on the column's [alignment] configuration, each option name may reserve a "slot" in the
-respective position in this column. The length of a name slot will be the length of the largest name
-in that slot, among all options. Empty strings or `null{:ts}`s can be specified in order to skip a
-slot.
+Depending on the column's [alignment] configuration, each option name may reserve a "slot" in the respective position in this column. The length of a name slot will be the length of the largest name in that slot, among all options. Empty strings or `null{:ts}`s can be specified in order to skip a slot.
 
-For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `''{:ts}` and `'--flag'{:ts}`, the
-resulting entry might be formatted as:
+For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `''{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as:
 
 ```
 -f, -ff      --flag
@@ -66,16 +53,14 @@ Note how the empty string produced whitespace between its neighbors, and the com
 
 ### Parameter column
 
-This column contains either the option's `type`, the [example value] or the [parameter name]. It is
-rendered in the following way:
+This column contains either the option's `type`, the [example value] or the [parameter name]. It is rendered in the following way:
 
 - if the option:
   - is [niladic], it is omitted
   - contains an example value, this value is used
   - is a command option, it is rendered with a standalone ellipsis `'...'{:ts}`
   - is a function option, `type` is replaced by the word `param`
-  - does not have a parameter name containing an opening angle bracket `'<'{:ts}`, it is enclosed in
-    angle brackets `'<>'{:ts}`
+  - does not have a parameter name containing an opening angle bracket `'<'{:ts}`, it is enclosed in angle brackets `'<>'{:ts}`
   - requires [inline parameters], it is prefixed with an equals sign `'='{:ts}`
   - accepts more than one parameter, it is suffixed with an ellipsis `'...'{:ts}`
   - can be specified without parameters, it is enclosed in square brackets `'[]'{:ts}`
@@ -84,13 +69,11 @@ The result might be something like `=<param>` or `[<param>...]`.
 
 ### Description column
 
-The last column contains the option description and is composed of [help items], which are explained
-later in this page.
+The last column contains the option description and is composed of [help items], which are explained later in this page.
 
 ## Help sections
 
-Sections are a convenient way to organize the help content. There are three kinds of help sections:
-text, usage and groups. They are explained below.
+Sections are a convenient way to organize the help content. There are three kinds of help sections: text, usage and groups. They are explained below.
 
 ### Common properties
 
@@ -98,25 +81,24 @@ All help sections share a set of properties:
 
 - `title` - the section heading or the default option group heading (defaults to none)
 - `style` - the style of the section heading or option group headings (defaults to `tf.bold{:ts}`)
-- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the
-  first section, else `2{:ts}`)
+- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, else `2{:ts}`)
 - `noWrap` - true to disable wrapping of provided texts (defaults to `false{:ts}`)
 
 <Callout type="info">
-  When `noWrap` is set, inline styles may still be used in text properties, but the latter will
-  _not_ be formatted according to the [text formatting] rules.
+
+When `noWrap` is set, inline styles may still be used in text properties, but the latter will _not_ be formatted according to the [text formatting] rules.
+
 </Callout>
 
 <Callout type="info">
-  All headings are separated from their content by _two_ line feeds, unless extra spacing is
-  provided in heading texts. For the sake of simplicity, there is no way to configure this behavior.
+
+All headings are separated from their content by _two_ line feeds, unless extra spacing is provided in heading texts. For the sake of simplicity, there is no way to configure this behavior.
+
 </Callout>
 
 ### Text section
 
-A text section can be used to write many kinds of content, such as an introductory text, CLI usage
-instructions, afterword, copyright notice or external references. In addition to the [common
-properties], it has the following properties:
+A text section can be used to write many kinds of content, such as an introductory text, CLI usage instructions, afterword, copyright notice or external references. In addition to the [common properties], it has the following properties:
 
 - `text` - the section content
 - `indent` - the level of indentation of the section content (defaults to `0{:ts}`)
@@ -154,15 +136,14 @@ In addition to the [common properties], a usage section has the following proper
 - `comment` - a commentary to append to the usage (defaults to none)
 
 <Callout type="default">
-  The filter can be used to create multiple usages of the same command, with different options. In
-  the case of an inclusion filter, options are listed in the same order specified in the filter.
+
+The filter can be used to create multiple usages of the same command, with different options. In the case of an inclusion filter, options are listed in the same order specified in the filter.
+
 </Callout>
 
 #### Option dependencies
 
-The `requires` property is equivalent to an adjacency list, except that each source option can only
-reference a single target. Mutually dependent options are supported. The following table lists some
-examples that illustrate how this works. Suppose we have options A, B and C. Then:
+The `requires` property is equivalent to an adjacency list, except that each source option can only reference a single target. Mutually dependent options are supported. The following table lists some examples that illustrate how this works. Suppose we have options A, B and C. Then:
 
 | Dependencies                       | Usage         | If C is always required |
 | ---------------------------------- | ------------- | ----------------------- |
@@ -173,54 +154,43 @@ examples that illustrate how this works. Suppose we have options A, B and C. The
 | A requires B; C requires A         | `[[A [C]] B]` | `A C B`                 |
 
 <Callout type="info">
-  Mutual exclusivity and multi-targeting are _not_ supported. For that purpose, you have to create
-  different usages. (The reason is that this is difficult to implement. We sincerely apologize.)
+
+Mutual exclusivity and multi-targeting are _not_ supported. For that purpose, you have to create different usages. (The reason is that this is difficult to implement. We sincerely apologize.)
+
 </Callout>
 
 ### Groups section
 
-A groups section is a collection of option groups and their help entries. In addition to the [common
-properties], it has the following properties:
+A groups section is a collection of option groups and their help entries. In addition to the [common properties], it has the following properties:
 
 - `filter` - a list of group names to include or exclude (defaults to including all groups)
 - `exclude` - whether the filter should exclude (defaults to `false{:ts}`)
 
 <Callout type="default">
-  In the case of an inclusion filter, groups are listed in the same order specified in the filter.
+
+In the case of an inclusion filter, groups are listed in the same order specified in the filter.
+
 </Callout>
 
 ## Formatter configuration
 
-The formatter can be configured via a `PartialFormatterConfig` object, which can be provided as an
-additional parameter to the formatter constructor. It contains the same properties as the [message
-configuration], as well as the properties described below.
+The formatter can be configured via a `PartialFormatterConfig` object, which can be provided as an additional parameter to the formatter constructor. It contains the same properties as the [message configuration], as well as the properties described below.
 
 ### Help columns
 
-The `names`, `param` and `descr` properties specify settings that can be used to customize the
-format of all help entries, for each [help column]. They are objects with the following optional
-properties:
+The `names`, `param` and `descr` properties specify settings that can be used to customize the format of all help entries, for each [help column]. They are objects with the following optional properties:
 
-- `align` - text alignment for the column (may be one of `'left'{:ts}` or `'right'{:ts}`, defaults
-  to `'left'{:ts}`)
-- `indent` - level of indentation for the column (non-negative if `absolute` is `true{:ts}`,
-  defaults to `2{:ts}`)
+- `align` - text alignment for the column (may be one of `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
+- `indent` - level of indentation for the column (non-negative if `absolute` is `true{:ts}`, defaults to `2{:ts}`)
 - `breaks` - number of line breaks to insert before each entry in the column (defaults to `0{:ts}`)
 - `hidden` - whether the column should be hidden (defaults to `false{:ts}`)
-- `absolute` - whether the indentation level should be relative to the beginning of the line instead
-  of the end of the previous column (not available for the names column, defaults to `false{:ts}`)
+- `absolute` - whether the indentation level should be relative to the beginning of the line instead of the end of the previous column (not available for the names column, defaults to `false{:ts}`)
 
-The `names.align` property supports an additional value `'slot'{:ts}`, which means that each name
-receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots]
-for more information.
+The `names.align` property supports an additional value `'slot'{:ts}`, which means that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information.
 
-The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which
-instructs the formatter to merge the contents of the column with the previous one. This is useful,
-for instance, if you want option parameters to be inlined with option names. When using this value,
-the `indent` and `breaks` properties are ignored.
+The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which instructs the formatter to merge the contents of the column with the previous one. This is useful, for instance, if you want option parameters to be inlined with option names. When using this value, the `indent` and `breaks` properties are ignored.
 
-An example can better illustrate the effect of some of these settings. Suppose we have the following
-configuration:
+An example can better illustrate the effect of some of these settings. Suppose we have the following configuration:
 
 ```ts
 {
@@ -258,61 +228,61 @@ The following is an extract of a help message produced with these settings:
 
 ### Help phrases
 
-The `phrases` property specifies the phrases to be used for each kind of help item. Its properties
-are optional and are indexed by the `HelpItem` enumeration, which lists the kinds of help items.
-They are summarized in the table below:
+The `phrases` property specifies the phrases to be used for each kind of help item. Its properties are optional and are indexed by the `HelpItem` enumeration, which lists the kinds of help items. They are summarized in the table below:
 
-| Help item    | Description                                                                  | Default phrase                                                                   | Format specifiers              |
-| ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------ |
-| `synopsis`   | The option's synopsis                                                        | `'#0'{:ts}`                                                                      | `#0` = the option's synopsis   |
-| `cluster`    | The option's cluster letters                                                 | `'Can be clustered with #0.'{:ts}`                                               | `#0` = the cluster letters     |
-| `separator`  | The parameter delimiter of a non-niladic option                              | `'Values can be delimited with #0.'{:ts}`                                        | `#0` = the parameter separator |
-| `paramCount` | The parameter count of a variadic or polyadic option                         | `'Accepts (multiple\|#0\|at most #0\|at least #0\|between #0) parameters.'{:ts}` | `#0` = the parameter count     |
-| `positional` | Whether the option accepts positional arguments                              | `'Accepts positional arguments(\| that may be preceded by #0).'{:ts}`            | `#0` = the positional marker   |
-| `inline`     | The option's treatment of inline parameters                                  | `'(Disallows\|Requires) inline parameters.'{:ts}`                                |                                |
-| `append`     | Whether an array-valued option can be specified multiple times               | `'Can be specified multiple times.'{:ts}`                                        |                                |
-| `choices`    | The option's parameter choices                                               | `'Values must be one of #0.'{:ts}`                                               | `#0` = the parameter choices   |
-| `regex`      | The regular expression that parameters should match                          | `'Values must match the regex #0.'{:ts}`                                         | `#0` = the regular expression  |
-| `unique`     | Whether duplicate elements will be removed from an array-valued option value | `'Duplicate values will be removed.'{:ts}`                                       |                                |
-| `limit`      | The element count limit of an array-valued option                            | `'Element count is limited to #0.'{:ts}`                                         | `#0` = the count limit         |
-| `stdin`      | Whether the option accepts data from standard input                          | `'Reads data from standard input.'{:ts}`                                         |                                |
-| `sources`    | The option's environment data sources                                        | `'Reads environment data from #0.'{:ts}`                                         | `#0` = the data sources        |
-| `requires`   | The option's forward requirements                                            | `'Requires #0.'{:ts}`                                                            | `#0` = the requirements        |
-| `required`   | Whether the option is always required                                        | `'Always required.'{:ts}`                                                        |                                |
-| `requiredIf` | The option's conditional requirements                                        | `'Required if #0.'{:ts}`                                                         | `#0` = the requirements        |
-| `default`    | The option's default value                                                   | `'Defaults to #0.'{:ts}`                                                         | `#0` = the default value       |
-| `useNested`  | Whether a help option uses the next argument as the name of a nested command | `'Uses the next argument as the name of a nested command.'{:ts}`                 |                                |
-| `useFilter`  | Whether a help option uses the remaining arguments as option filter          | `'Uses the remaining arguments as option filter.'{:ts}`                          |                                |
-| `deprecated` | The option's deprecation notice                                              | `'Deprecated for #0.'{:ts}`                                                      | `#0` = the deprecation notice  |
-| `link`       | The option's external resource hyperlink                                     | `'Refer to #0 for details.'{:ts}`                                                | `#0` = the hyperlink           |
+| Help item | Description | Default phrase | Format specifiers |
+| --- | --- | --- | --- |
+| `synopsis` | The option's synopsis | `'#0'{:ts}` | `#0` = the option's synopsis |
+| `cluster` | The option's cluster letters | `'Can be clustered with #0.'{:ts}` | `#0` = the cluster letters |
+| `separator` | The parameter delimiter of a non-niladic option | `'Values can be delimited with #0.'{:ts}` | `#0` = the parameter separator |
+| `paramCount` | The parameter count of a variadic or polyadic option | `'Accepts (multiple\|#0\|at most #0\|at least #0\|between #0) parameters.'{:ts}` | `#0` = the parameter count |
+| `positional` | Whether the option accepts positional arguments | `'Accepts positional arguments(\| that may be preceded by #0).'{:ts}` | `#0` = the positional marker |
+| `inline` | The option's treatment of inline parameters | `'(Disallows\|Requires) inline parameters.'{:ts}` |  |
+| `append` | Whether an array-valued option can be specified multiple times | `'Can be specified multiple times.'{:ts}` |  |
+| `choices` | The option's parameter choices | `'Values must be one of #0.'{:ts}` | `#0` = the parameter choices |
+| `regex` | The regular expression that parameters should match | `'Values must match the regex #0.'{:ts}` | `#0` = the regular expression |
+| `unique` | Whether duplicate elements will be removed from an array-valued option value | `'Duplicate values will be removed.'{:ts}` |  |
+| `limit` | The element count limit of an array-valued option | `'Element count is limited to #0.'{:ts}` | `#0` = the count limit |
+| `stdin` | Whether the option accepts data from standard input | `'Reads data from standard input.'{:ts}` |  |
+| `sources` | The option's environment data sources | `'Reads environment data from #0.'{:ts}` | `#0` = the data sources |
+| `requires` | The option's forward requirements | `'Requires #0.'{:ts}` | `#0` = the requirements |
+| `required` | Whether the option is always required | `'Always required.'{:ts}` |  |
+| `requiredIf` | The option's conditional requirements | `'Required if #0.'{:ts}` | `#0` = the requirements |
+| `default` | The option's default value | `'Defaults to #0.'{:ts}` | `#0` = the default value |
+| `useCommand` | Whether a help option uses the next argument as the name of a subcommand | `'Uses the next argument as the name of a subcommand.'{:ts}` |  |
+| `useFilter` | Whether a help option uses the remaining arguments as option filter | `'Uses the remaining arguments as option filter.'{:ts}` |  |
+| `deprecated` | The option's deprecation notice | `'Deprecated for #0.'{:ts}` | `#0` = the deprecation notice |
+| `link` | The option's external resource hyperlink | `'Refer to #0 for details.'{:ts}` | `#0` = the hyperlink |
 
-<Callout type="info">Phrases are formatted according to [text formatting] rules.</Callout>
+<Callout type="info">
+
+Phrases are formatted according to [text formatting] rules.
+
+</Callout>
 
 ### Help items
 
-The `items` property specifies the kinds of help items that should be displayed in option
-descriptions, and in which order. It is an array whose values can be one of the enumerators from
-`HelpItem`. The default is to print all items in the order listed in the [help phrases] table.
+The `items` property specifies the kinds of help items that should be displayed in option descriptions, and in which order. It is an array whose values can be one of the enumerators from `HelpItem`. The default is to print all items in the order listed in the [help phrases] table.
 
 <Callout type="default">
-  You might want to use this to limit the amount of information in the help message.
+
+You might want to use this to limit the amount of information in the help message.
+
 </Callout>
 
 ### Option filter
 
-The `filter` property specifies a list of patterns to select the options that will be rendered in
-the help message. The filter matches options' names, synopsis and environment variable names. If
-multiple patterns are provided, any matched one will suffice to include an option in the message.
+The `filter` property specifies a list of patterns to select the options that will be rendered in the help message. The filter matches options' names, synopsis and environment variable names. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
 <Callout type="default">
-  This is inherently different from what a text search utility like `grep` would produce. The
-  formatter will render the _whole_ help entry of options matching the given patterns, not just the
-  matching lines.
+
+This is inherently different from what a text search utility like `grep` would produce. The formatter will render the _whole_ help entry of options matching the given patterns, not just the matching lines.
+
 </Callout>
 
-[^1]:
-    _polyadic_ means that the option accepts more than one parameter, but the parameter count is
-    not variable
+{/* self references */}
+
+[^1]: _polyadic_ means that the option accepts more than one parameter, but the parameter count is not variable
 
 [help sections]: #help-sections
 [help column]: #help-entries
@@ -323,6 +293,7 @@ multiple patterns are provided, any matched one will suffice to include an optio
 [common properties]: #common-properties
 
 {/* options references */}
+
 [group]: options#group--hide
 [names]: options#names--preferred-name
 [example value]: options#example-value
@@ -330,9 +301,11 @@ multiple patterns are provided, any matched one will suffice to include an optio
 [niladic]: options#niladic-options
 
 {/* parser references */}
+
 [inline parameters]: parser#inline-parameters
 
 {/* styles references */}
+
 [ANSI strings]: styles#ansi-strings
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration

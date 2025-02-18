@@ -95,7 +95,7 @@ export type ValidationFlags = {
    */
   readonly noNamingIssues?: boolean;
   /**
-   * Whether the validation procedure should skip recursion into nested commands.
+   * Whether the validation procedure should skip recursion into subcommands.
    */
   readonly noRecurse?: boolean;
 };

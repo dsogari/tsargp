@@ -6,13 +6,11 @@ import { Callout } from 'nextra/components';
 
 # Help
 
-In this guide, we will be creating a command-line interface that provides different help mechanisms
-for end-users.
+In this guide, we will be creating a command-line interface that provides different help mechanisms for end-users.
 
 ## Help option
 
-The most straightforward way to provide help for your CLI is by declaring a [help option]. In its
-simplest form, it has the following definition:
+The most straightforward way to provide help for your CLI is by declaring a [help option]. In its simplest form, it has the following definition:
 
 ```ts
 import { type Options } from 'tsargp';
@@ -79,6 +77,8 @@ export default {
 
 Which, when invoked with `--help`, would render something like:
 
+{/* cSpell:disable */}
+
 ```ansi
 A command-line interface for <purpose>.
 
@@ -92,27 +92,24 @@ cli [[95m--help[0m]
 Refer to [90m<website>[39m for support.
 ```
 
+{/* cSpell:enable */}
+
 ## Help command
 
 <Callout type="default">
-  Since this guide was first written, the [enable nested command] attribute has been introduced. It
-  supersedes help commands and offers a more convenient way to achieve what is described below.
-  However, if you need [parameter choices] for the available command names, then what follows might
-  still be relevant.
+
+Since this guide was first written, the [enable subcommand] attribute has been introduced. It supersedes help commands and offers a more convenient way to achieve what is described below. However, if you need [parameter choices] for the available command names, then what follows might still be relevant.
+
 </Callout>
 
-Another way to offer help is by defining a "help" command. This method still uses the help option
-from the previous example, but increments it by providing a new syntax to obtain help for _nested_
-commands. For example, to present help for a nested command called `cmd`, the following invocations
-would be equivalent:
+Another way to offer help is by defining a "help" command. This method still uses the help option from the previous example, but increments it by providing a new syntax to obtain help for _subcommands_. For example, to present help for a subcommand called `cmd`, the following invocations would be equivalent:
 
 ```sh
 cli help cmd
 cli cmd --help
 ```
 
-To achieve this, we have to define a [command option]. We can start with the definitions for the
-nested commands' options:
+To achieve this, we have to define a [command option]. We can start with the definitions for the subcommands' options:
 
 ```ts
 import type { Options } from 'tsargp';
@@ -128,8 +125,8 @@ const cmd2Opts = {
 const helpOpts = {
   name: {
     type: 'single',
-    synopsis: 'The name of the nested command.',
-    choices: ['cmd1', 'cmd2'], // the names of nested commands
+    synopsis: 'The name of the subcommand.',
+    choices: ['cmd1', 'cmd2'], // the names of subcommands
     preferredName: 'command name', // appears in error messages
     positional: true,
     required: true, // error if called without a command name
@@ -158,7 +155,7 @@ export default {
   help: {
     type: 'command',
     names: ['help'],
-    synopsis: 'Prints the help message of a nested command.',
+    synopsis: 'Prints the help message of a subcommand.',
     options: helpOpts,
     async parse(param) {
       const vals = param as OptionValues<typeof helpOpts>;
@@ -170,18 +167,21 @@ export default {
 } as const satisfies Options;
 ```
 
-The `progName` configuration flag is set in order to avoid appending the script name twice to the
-process title.
+The `progName` configuration flag is set in order to avoid appending the script name twice to the process title.
 
 <Callout type="info">
-  Keep in mind that, when word completion is in effect, the command's [parse callback] will _not_ be
-  executed. Conversely, if it _is_ executed, you need not worry about the [`compIndex`] flag for the
-  delegated `parse` call.
+
+Keep in mind that, when word completion is in effect, the command's [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [`compIndex`] flag for the delegated `parse` call.
+
 </Callout>
+
+{/* options references */}
 
 [parameter choices]: ../library/options#parameter-choices
 [parse callback]: ../library/options#parse-callback
 [help option]: ../library/options#help-option
 [command option]: ../library/options#command-option
-[nested options callback]: ../library/options#nested-options--callback
+
+{/* parser references */}
+
 [`compIndex`]: ../library/parser#completion-index

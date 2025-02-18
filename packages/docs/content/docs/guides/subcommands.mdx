@@ -1,5 +1,5 @@
 ---
-title: Commands - Guides - Docs
+title: Subcommands - Guides - Docs
 ---
 
 import dynamic from 'next/dynamic';
@@ -7,10 +7,9 @@ import { Callout, Tabs } from 'nextra/components';
 
 export const Calc = dynamic(() => import('@components/calc'), { ssr: false });
 
-# Commands
+# Subcommands
 
-In this guide, we will be creating a command-line interface for an example application that performs
-mathematical operations on its arguments.
+In this guide, we will be creating a command-line interface for an example application that performs mathematical operations on its arguments.
 
 ## Basic features
 
@@ -23,8 +22,7 @@ Our application is named `calc` and performs the following operations:
 
 ## Advanced features
 
-In addition to the basic operations, our application is capable of combining operations in a
-tail-recursive manner. For example, the following expression could be invoked:
+In addition to the basic operations, our application is capable of combining operations in a tail-recursive manner. For example, the following expression could be invoked:
 
 ```sh
 calc add 1 sub 2 mult 3 div 4 2
@@ -34,8 +32,7 @@ And would be evaluated as `1 + (2 - (3 * (4 / 2))){:ts}`, which equals -3.
 
 ## Option definitions
 
-In this section we are going to define the command-line options for our application. The first thing
-we need is to import the necessary library types:
+In this section we are going to define the command-line options for our application. The first thing we need is to import the necessary library types:
 
 ```ts
 import type { Options, OptionValues } from 'tsargp';
@@ -43,8 +40,7 @@ import type { Options, OptionValues } from 'tsargp';
 
 ### Reusable definitions
 
-Let's define a reusable option definition for the parameters of a multi-argument operation. It has
-an [array] option that receives (unlimited) positional arguments:
+Let's define a reusable option definition for the parameters of a multi-argument operation. It has an [array] option that receives (unlimited) positional arguments:
 
 ```ts /preferredName/ /default/ /positional/ /group/
 const multiOpts = {
@@ -60,12 +56,9 @@ const multiOpts = {
 } as const satisfies Options;
 ```
 
-Since this option accepts [positional] arguments, we do not want to give it a name. However, we give
-it a [preferred name] that will be displayed in error messages, as well as a separate [group] for it
-to be displayed in the help message. This option is optional and [defaults] to an empty array.
+Since this option accepts [positional] arguments, we do not want to give it a name. However, we give it a [preferred name] that will be displayed in error messages, as well as a separate [group] for it to be displayed in the help message. This option is optional and [defaults] to an empty array.
 
-Now let's define a similar option for the parameters of a dual-argument operation. It has the same
-definition as above, with additional constraints: it is [required] and accepts [at most] two values.
+Now let's define a similar option for the parameters of a dual-argument operation. It has the same definition as above, with additional constraints: it is [required] and accepts [at most] two values.
 
 ```ts /limit/ /required/
 const binaryOpts = {
@@ -155,24 +148,16 @@ With this in place, we can define each one of the basic operations, as follows:
   </Tabs.Tab>
 </Tabs>
 
-Notice how we use an [options callback] to provide the option definitions for each command. This is
-necessary because JavaScript does not allow us to reference the containing object from one of its
-members, before its initialization. (The `mainOpts` variable will be defined later, and the above
-definitions will be embedded in it.)
+Notice how we use an [options callback] to provide the option definitions for each command. This is necessary because JavaScript does not allow us to reference the containing object from one of its members, before its initialization. (The `mainOpts` variable will be defined later, and the above definitions will be embedded in it.)
 
-Inside the [command callback], we perform a typecast to access the values parsed for the command.
-This is necessary because the library does not know the concrete type of our option values when it
-calls the callback (the callback type cannot be defined in terms of a generic type parameter). So it
-must pass an _opaque_ reference to them.
+Inside the [command callback], we perform a typecast to access the values parsed for the command. This is necessary because the library does not know the concrete type of our option values when it calls the callback (the callback type cannot be defined in terms of a generic type parameter). So it must pass an _opaque_ reference to them.
 
-From those values, we select the value resulting from the next operation (if any), falling back to
-a default if this was the last operation. We then return the accumulated result of the operations
-performed so far in the stack (except if, in the case of `sub` and `mult`, two arguments are
-provided before a recursive call, then the result of that call is ignored).
+From those values, we select the value resulting from the next operation (if any), falling back to a default if this was the last operation. We then return the accumulated result of the operations performed so far in the stack (except if, in the case of `sub` and `mult`, two arguments are provided before a recursive call, then the result of that call is ignored).
 
 <Callout type="info">
-  In TypeScript, it's necessary to specify the return type of both the `options` and `exec` callback
-  attributes. Otherwise, the compiler will not be able to resolve the type of the containing object.
+
+In TypeScript, it's necessary to specify the return type of both the `options` and `exec` callback attributes. Otherwise, the compiler will not be able to resolve the type of the containing object.
+
 </Callout>
 
 ### Main definitions
@@ -208,6 +193,8 @@ List of commands to try:
 - `calc sub 1` or `calc div 1` - should print `NaN{:ts}`
 - `calc sub 1 2 3` or `calc div 1 2 3` - should print an error message
 - `calc add 1 sub 2 mult 3 div 4 2` - this is the aforementioned example that gives -3
+
+{/* options references */}
 
 [array]: ../library/options#array-valued-option
 [preferred name]: ../library/options#names--preferred-name

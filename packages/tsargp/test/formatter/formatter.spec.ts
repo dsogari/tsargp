@@ -68,14 +68,14 @@ describe('HelpFormatter', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          useNested: true,
+          useCommand: true,
           useFilter: true,
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
         `  -h    ` +
-          `Uses the next argument as the name of a nested command. ` +
+          `Uses the next argument as the name of a subcommand. ` +
           `Uses the remaining arguments as option filter.\n`,
       );
     });

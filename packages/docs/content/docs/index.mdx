@@ -16,7 +16,7 @@ import { FileTree, Tabs, Steps } from 'nextra/components';
 | Fully declarative    | Option validation      | Text wrapping/alignment |
 | Type-checked         | Option requirements    | Paragraphs and lists    |
 | Browser-compatible   | Name suggestions       | [SGR] colors and styles |
-| 30KB minified        | Nested commands        | Option grouping/hiding  |
+| 30KB minified        | Subcommands            | Option grouping/hiding  |
 | ESM-native           | Asynchronous callbacks | Help sections/usage     |
 | Online documentation | GNU's _short-options_  |                         |
 
@@ -31,23 +31,26 @@ Furthermore, by using TypeScript, it ensures that the values resulting from argu
 ## Installation
 
 <Tabs items={['npm', 'Bun', 'Yarn']}>
-  {/* prettier-ignore */}
   <Tabs.Tab>
+
     ```sh copy
     npm add tsargp
     ```
+
   </Tabs.Tab>
-  {/* prettier-ignore */}
   <Tabs.Tab>
+
     ```sh copy
     bun add tsargp
     ```
+
   </Tabs.Tab>
-  {/* prettier-ignore */}
   <Tabs.Tab>
+
     ```sh copy
     yarn add tsargp
     ```
+
   </Tabs.Tab>
 </Tabs>
 
@@ -161,6 +164,8 @@ You can configure shell completion to use the main script as a source of complet
 </Tabs>
 
 </Steps>
+
+{/* external references */}
 
 [SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [meow]: https://www.npmjs.com/package/meow

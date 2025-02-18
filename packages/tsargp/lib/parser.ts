@@ -836,7 +836,7 @@ async function handleHelp(
 ): Promise<AnsiMessage> {
   const [, formatter, , , , , , progName] = context;
   let registry = context[0];
-  if (rest.length && option.useNested) {
+  if (rest.length && option.useCommand) {
     const cmdOpt = findValue(
       registry.options,
       (opt) => opt.type === 'command' && !!opt.names?.includes(rest[0]),

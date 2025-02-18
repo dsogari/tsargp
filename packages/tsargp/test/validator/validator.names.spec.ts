@@ -77,7 +77,7 @@ describe('OptionValidator', () => {
       expect(validator.validate()).rejects.toThrow(`Option single has duplicate name 'dup'.`);
     });
 
-    it('return a warning on mixed naming conventions in a nested command', async () => {
+    it('return a warning on mixed naming conventions in a subcommand', async () => {
       const options = {
         command: {
           type: 'command',
@@ -107,7 +107,7 @@ describe('OptionValidator', () => {
       );
     });
 
-    it('return a warning on option name too similar to other names in a nested command', async () => {
+    it('return a warning on option name too similar to other names in a subcommand', async () => {
       const options = {
         command: {
           type: 'command',

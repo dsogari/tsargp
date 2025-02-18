@@ -132,13 +132,13 @@ describe('ArgumentParser', () => {
         );
       });
 
-      it('throw the help message of a nested command with option filter', () => {
+      it('throw the help message of a subcommand with option filter', () => {
         const options = {
           help: {
             type: 'help',
             names: ['-h'],
             sections: [{ type: 'groups' }],
-            useNested: true,
+            useCommand: true,
             useFilter: true,
           },
           command1: {
@@ -751,7 +751,7 @@ describe('ArgumentParser', () => {
         );
       });
 
-      it('report a warning from a nested command', async () => {
+      it('report a warning from a subcommand', async () => {
         const options = {
           command: {
             type: 'command',
