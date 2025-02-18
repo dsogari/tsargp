@@ -101,7 +101,7 @@ export const regex = {
    */
   word: /\s+/,
   /**
-   * A regular expression to match format specifiers.
+   * A regular expression to match placeholders.
    */
   spec: /(#\d+)/,
   /**

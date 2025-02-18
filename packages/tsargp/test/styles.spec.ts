@@ -181,8 +181,8 @@ describe('AnsiString', () => {
       expect(str.strings).toEqual(['type:', '\n', '-', 'script', '\n', '1.', 'is', 'fun']);
     });
 
-    describe('using format specifiers', () => {
-      it('insert text at the specifier location', () => {
+    describe('using placeholders', () => {
+      it('insert text at the placeholder location', () => {
         const format = jest.fn(function (this: AnsiString) {
           this.word('abc');
         });
@@ -216,6 +216,19 @@ describe('AnsiString', () => {
         expect(format).toHaveBeenCalledTimes(2);
         expect(format).toHaveBeenCalledWith('#0');
       });
+    });
+
+    it('preserve styles that are glued to the placeholder', () => {
+      const format = jest.fn(function (this: AnsiString) {
+        this.word('abc');
+      });
+      const str = new AnsiString().split(style(tf.bold) + '#0 is #1' + style(tf.bold), format);
+      expect(str.count).toEqual(3);
+      expect(str.lengths).toEqual([7, 2, 7]);
+      expect(str.strings).toEqual([style(tf.bold) + 'abc', 'is', 'abc' + style(tf.bold)]);
+      expect(format).toHaveBeenCalledTimes(2);
+      expect(format).toHaveBeenCalledWith('#0');
+      expect(format).toHaveBeenCalledWith('#1');
     });
   });
 

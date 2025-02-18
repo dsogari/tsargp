@@ -281,9 +281,9 @@ const formatFunctions = {
 // Public types
 //--------------------------------------------------------------------------------------------------
 /**
- * A callback that processes a format specifier when splitting text.
+ * A callback that processes a placeholder when splitting text.
  * @param this The ANSI string to append to
- * @param arg The format specifier or argument
+ * @param arg The placeholder or argument
  */
 export type FormatCallback<T = string> = (this: AnsiString, arg: T) => void;
 
@@ -682,7 +682,7 @@ export class AnsiString {
   /**
    * Splits a text into words and style sequences, and appends them to the list.
    * @param text The text to be split
-   * @param format An optional callback to process format specifiers
+   * @param format An optional callback to process placeholders
    * @returns The ANSI string instance
    */
   split(text: string, format?: FormatCallback): this {
@@ -975,7 +975,7 @@ export class ErrorFormatter<T extends number> {
  * Splits a paragraph into words and style sequences, and appends them to the list.
  * @param result The resulting string
  * @param para The paragraph to be split
- * @param format An optional callback to process format specifiers
+ * @param format An optional callback to process placeholders
  */
 function splitParagraph(result: AnsiString, para: string, format?: FormatCallback) {
   const count = result.count;
@@ -995,7 +995,7 @@ function splitParagraph(result: AnsiString, para: string, format?: FormatCallbac
  * Splits a list item into words and style sequences, and appends them to the list.
  * @param result The resulting string
  * @param item The list item to be split
- * @param format An optional callback to process format specifiers
+ * @param format An optional callback to process placeholders
  */
 function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
   const boundFormat = format?.bind(result);

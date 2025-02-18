@@ -12,7 +12,7 @@ The `Style` type is a string literal consisting of Select Graphic Rendition ([SG
 
 The `style` function accepts a list of styling attributes and creates a `Style` that can be used in any part of the API that expects this type. It can also be embedded directly in text attributes, such as the [option synopsis], [deprecation notice], [help section] texts and custom phrases.
 
-Styles are cumulative, i.e., they can be combined with previous styles depending on the kind of styling attribute. For instance, if the style of an option's description is `tf.bold{:ts}` and the style of number values is `fg.yellow{:ts}`, then any number value (except those embedded in text attributes) that appears in the option description will be rendered in bold intensity with yellow foreground color.
+Styles are cumulative, i.e., they can be combined with previous styles depending on the kind of styling attribute. For instance, if the style of an option's description is `tf.bold{:ts}` and the style of number values is `fg.green{:ts}`, then any number value (except those embedded in text attributes) that appears in the option description will be rendered in **bold** intensity with <span style={{color: 'green'}}>green</span> foreground color.
 
 In the next sections we present the various styling attributes available.
 
@@ -139,14 +139,14 @@ This particular feature is only available in _custom phrases_, not in text attri
 
 </Callout>
 
-Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which internally is denoted by a single character. The available ones are:
+Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which is denoted internally by a single character. The available ones are:
 
 - `b` - a boolean value
 - `s` - a string value
 - `n` - a number value
 - `r` - a regular expression
 - `m` - a symbol value (e.g., option name)
-- `t` - a ANSI string
+- `t` - another ANSI string
 - `u` - a URL hyperlink
 - `a` - an array value
 - `o` - an object value
@@ -156,19 +156,13 @@ When a phrase includes placeholders, they indicate where in the phrase to place 
 
 #### Inline styles
 
-Text can contain inline styles. This applies as well to phrases as to text attributes, which the formatter splits into words before adding to the help message.
+Text can contain inline styles. This applies not only to phrases, but to text attributes as well, which the formatter splits into words before adding to the help message.
 
-When splitting text, the ANSI string will try its best to preserve styles. However, if you find some corner case that is not currently covered by our unit tests, please submit a [bug report].
-
-<Callout type="warning">
-
-Phrases can contain inline styles, but not in the _same_ word as a format specifier. Otherwise, they will mess up the text wrapping. For example, the following phrase is not valid: `` `Requires ${style(tf.bold)}%p`{:ts} ``. You must insert a space in-between.
-
-</Callout>
+When splitting text, the ANSI string will try its best to preserve inline styles. However, if you find some corner case that is not currently covered by our unit tests, please submit a [bug report].
 
 #### Paragraphs and lists
 
-Although markdown syntax is not currently supported, paragraphs and itemized/numbered lists are formatted similarly to how they would be in markdown. For example, the following text
+Although Markdown syntax is not fully supported, paragraphs and itemized/numbered lists are formatted in a Markdown-ish fashion. For example, the following text
 
 ```ansi
 A paragraph with
@@ -191,27 +185,27 @@ Another paragraph
 
 ### Text wrapping
 
-Text is wrapped according to a configured _width_, i.e., the number of terminal columns by which to limit each line of text.
+Splitted text is always wrapped according to a configured _width_, i.e., the number of terminal columns by which to limit each line of text.
 
-When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string will avoid wrapping and will suppress some control sequences that would otherwise be used to render the text in a terminal.
+When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string will avoid wrapping and instead suppress some control sequences that would otherwise be used to render the text in a terminal.
 
 The following features are supported in text wrapping.
 
 #### Indentation level
 
-A ANSI string optionally has an indentation level, i.e., the starting column of the text content, relative to the first terminal column.
+A ANSI string optionally has an indentation level, i.e., the starting terminal column of each line of text.
 
-When wrapping text to the desired width, the ANSI string will attempt to respect this setting, but if the desired width does not accommodate the length of the largest word while respecting the string's indentation level, it will instead wrap lines relatively to the first terminal column.
+When wrapping text to the desired width, the ANSI string will attempt to respect this setting, but if the desired width does not accommodate the length of the largest word, it will instead wrap lines to the first terminal column.
 
 #### Text alignment
 
-A ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary when being wrapped. This feature is used by the formatter in the help message's [description column].
+A ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary. This feature is used by the formatter in the help message's [description column].
 
 ## Messages
 
 There are different kinds of content that an application might want to print in a terminal. We call them "messages" and provide a specific class for each kind of message that the library can produce.
 
-For convenience, all message classes have a `toString` method and a `message` property, both of which can be used to obtain a traditional `string{:ts}` message. However, each class uses a default terminal width to render the resulting string. The various classes are described below.
+For convenience, all message classes have a `toString` method and a `message` property, both of which can be used to obtain a traditional `string{:ts}`. However, each class uses its own default terminal width to render the resulting string. The various classes are described below.
 
 <Callout type="default">
 
@@ -221,7 +215,7 @@ All messages produced by the library are instances of one of these classes. So y
 
 ### ANSI message
 
-The `AnsiMessage` is a base class that wraps a list of ANSI strings.
+The `AnsiMessage` is the base class that wraps a list of ANSI strings.
 
 The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable (if present), or the `columns` property of the standard _output_ stream (i.e., `process.stdout{:ts}`). Therefore, this kind of message should be printed with `console.log{:ts}` or equivalent.
 
@@ -242,7 +236,7 @@ The default value of `emitStyles` depends on a few environment variables:
 - `NO_COLOR` - force _omission_ of styles regardless of the terminal width
 - `TERM` - set to `'dumb'{:ts}` to achieve the same behavior as `NO_COLOR`
 
-Generally, you should not alter the returned string after being wrapped, as this will mess up the disposition of text in the terminal. If you do need to, you can _prepend_ additional text ending with a line feed character (`'\n'{:ts}`), or _append_ text starting with a line feed, as this will preserve the disposition of wrapped text.
+Generally, you should not alter the returned string after being wrapped, as this will mess up the disposition of text in the terminal. If you do need to, you can either _prepend_ text ending with a line feed character (`'\n'{:ts}`), or _append_ text starting with a line feed, as this will preserve the disposition of wrapped text.
 
 <Callout type="default">
 
@@ -272,16 +266,16 @@ Messages can be configured via a `MessageConfig` object that contains the proper
 
 The `styles` property specifies the styles of text elements in ANSI messages, and has the following optional properties:
 
-| Property  | Used for            | Default               |
-| --------- | ------------------- | --------------------- |
-| `boolean` | Boolean values      | `fg.blue{:ts}`        |
-| `string`  | String values       | `fg.green{:ts}`       |
-| `number`  | Number values       | `fg.yellow{:ts}`      |
-| `regex`   | Regular expressions | `fg.red{:ts}`         |
-| `option`  | Option names        | `fg.magenta{:ts}`     |
-| `value`   | Unknown values      | `fg.brightBlack{:ts}` |
-| `url`     | URLs                | `fg.cyan{:ts}`        |
-| `text`    | General text        | `''{:ts}`             |
+| Property  | Used for              | Default               |
+| --------- | --------------------- | --------------------- |
+| `boolean` | Boolean values        | `fg.blue{:ts}`        |
+| `string`  | String values         | `fg.green{:ts}`       |
+| `number`  | Number values         | `fg.yellow{:ts}`      |
+| `regex`   | Regular expressions   | `fg.red{:ts}`         |
+| `symbol`  | Symbols (e.g., names) | `fg.magenta{:ts}`     |
+| `value`   | Unknown values        | `fg.brightBlack{:ts}` |
+| `url`     | URLs                  | `fg.cyan{:ts}`        |
+| `text`    | General text          | `''{:ts}`             |
 
 <Callout type="default">
 
@@ -291,7 +285,7 @@ You can also set these styles to the empty string, if you want to disable text s
 
 #### Connective words
 
-The `connectives` property specifies connective words that are used to format some text elements that cannot be customized using phrases, such as option requirements, array element separators and string quoting. It has the following optional properties, whose keys are enumerators from `ConnectiveWord`:
+The `connectives` property specifies connective words that are used to format some text elements that cannot be customized using phrases, such as option requirements, array element separators, and string quoting. It has the following optional properties, whose keys are enumerators from `ConnectiveWord`:
 
 | Property      | Description                                         | Default      |
 | ------------- | --------------------------------------------------- | ------------ |
