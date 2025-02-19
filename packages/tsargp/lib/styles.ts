@@ -85,7 +85,7 @@ const formatFunctions = {
    * @param result The resulting string
    */
   s(value: string, config, result) {
-    const quote = config.connectives?.[ConnectiveWord.stringQuote] ?? '';
+    const quote = config.connectives[ConnectiveWord.stringQuote];
     result.style = config.styles.string;
     result.word(`${quote}${value}${quote}`);
   },
@@ -159,9 +159,9 @@ const formatFunctions = {
    */
   a(value: Array<unknown>, config, result, flags) {
     const connectives = config.connectives;
-    const sep = flags.sep ?? connectives?.[ConnectiveWord.arraySep] ?? '';
-    const open = flags.open ?? connectives?.[ConnectiveWord.arrayOpen] ?? '';
-    const close = flags.close ?? connectives?.[ConnectiveWord.arrayClose] ?? '';
+    const sep = flags.sep ?? connectives[ConnectiveWord.arraySep];
+    const open = flags.open ?? connectives[ConnectiveWord.arrayOpen];
+    const close = flags.close ?? connectives[ConnectiveWord.arrayClose];
     result.open(open);
     value.forEach((val, i) => {
       const spec = flags.custom ? 'c' : 'v';
@@ -184,12 +184,12 @@ const formatFunctions = {
    */
   o(value: object, config, result, flags) {
     const connectives = config.connectives;
-    const valueSep = connectives?.[ConnectiveWord.valueSep] ?? '';
+    const valueSep = connectives[ConnectiveWord.valueSep];
     const newFlags: FormattingFlags = {
       ...flags,
-      sep: flags.sep ?? connectives?.[ConnectiveWord.objectSep] ?? '',
-      open: flags.open ?? connectives?.[ConnectiveWord.objectOpen] ?? '',
-      close: flags.close ?? connectives?.[ConnectiveWord.objectClose] ?? '',
+      sep: flags.sep ?? connectives[ConnectiveWord.objectSep],
+      open: flags.open ?? connectives[ConnectiveWord.objectOpen],
+      close: flags.close ?? connectives[ConnectiveWord.objectClose],
       custom: (entry) => {
         const [key, val] = entry as [string, unknown];
         if (key.match(regex.id)) {
@@ -226,8 +226,8 @@ const formatFunctions = {
       this[spec](value, config, result, flags);
     } else {
       const connectives = config.connectives;
-      const open = connectives?.[ConnectiveWord.valueOpen] ?? '';
-      const close = connectives?.[ConnectiveWord.valueClose] ?? '';
+      const open = connectives[ConnectiveWord.valueOpen];
+      const close = connectives[ConnectiveWord.valueClose];
       result.seq(config.styles.value);
       result.merge = true;
       result.open(open).split(`${value}`).close(close);
