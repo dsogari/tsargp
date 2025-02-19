@@ -141,7 +141,7 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = {
@@ -150,7 +150,7 @@ describe('HelpFormatter', () => {
         descr: { breaks: -1 },
       };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toEqual('  -s  <param>  A boolean option\n');
+      expect(message.wrap()).toEqual('  -s  <param>  A string option\n');
     });
 
     it('break columns in the help message when configured with positive indentation', () => {
@@ -158,7 +158,7 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = {
@@ -167,7 +167,7 @@ describe('HelpFormatter', () => {
         descr: { breaks: 1 },
       };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toMatch(/^\n {2}-s\n {6}<param>\n {15}A boolean option\n$/);
+      expect(message.wrap()).toMatch(/^\n {2}-s\n {6}<param>\n {15}A string option\n$/);
     });
 
     it('break columns in the help message when configured with absolute indentation', () => {
@@ -175,7 +175,7 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = {
@@ -184,7 +184,7 @@ describe('HelpFormatter', () => {
         descr: { breaks: 1, absolute: true },
       };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toMatch(`\n  -s\n  <param>\n  A boolean option\n`);
+      expect(message.wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
     });
 
     it('break columns in the help message when configured with negative indentation', () => {
@@ -192,7 +192,7 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = {
@@ -201,7 +201,7 @@ describe('HelpFormatter', () => {
         descr: { breaks: 1, indent: -1 },
       };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toMatch(/^\n-s\n <param>\n {7}A boolean option\n$/);
+      expect(message.wrap()).toMatch(/^\n-s\n <param>\n {7}A string option\n$/);
     });
 
     it('hide the option names from the help message when configured to do so', () => {
@@ -209,12 +209,12 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { hidden: true } };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toEqual('    <param>  A boolean option\n');
+      expect(message.wrap()).toEqual('  <param>  A string option\n');
     });
 
     it('hide the option parameter from the help message when configured to do so', () => {
@@ -222,12 +222,12 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
-      const layout: PartialHelpLayout = { param: { hidden: true } };
+      const layout: PartialHelpLayout = { param: { hidden: true, absolute: true } };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toEqual('  -s    A boolean option\n');
+      expect(message.wrap()).toEqual('  -s  A string option\n');
     });
 
     it('hide the option description from the help message when configured to do so', () => {
@@ -235,10 +235,10 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
       } as const satisfies Options;
-      const layout: PartialHelpLayout = { descr: { hidden: true } };
+      const layout: PartialHelpLayout = { descr: { hidden: true, absolute: true } };
       const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -s  <param>\n');
     });
@@ -398,7 +398,7 @@ describe('HelpFormatter', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
         flag: {
           type: 'flag',
@@ -408,15 +408,31 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const layout: PartialHelpLayout = { descr: { align: 'merge' } };
       const message = new HelpFormatter(options, undefined, layout).format();
-      expect(message.wrap()).toEqual(`  -s  <param> A boolean option\n  -f  A flag option\n`);
+      expect(message.wrap()).toEqual(`  -s  <param> A string option\n  -f  A flag option\n`);
+    });
+
+    it('merge option descriptions with option names', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          synopsis: 'A string option',
+        },
+      } as const satisfies Options;
+      const layout: PartialHelpLayout = {
+        param: { hidden: true },
+        descr: { align: 'merge' },
+      };
+      const message = new HelpFormatter(options, undefined, layout).format();
+      expect(message.wrap()).toEqual(`  -s A string option\n`);
     });
 
     it('merge option descriptions with option parameters and option names', () => {
       const options = {
-        single1: {
+        single: {
           type: 'single',
           names: ['-s'],
-          synopsis: 'A boolean option',
+          synopsis: 'A string option',
         },
         single2: {
           type: 'single',
@@ -434,7 +450,7 @@ describe('HelpFormatter', () => {
       };
       const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual(
-        `  -s <param> A boolean option\n  <param> A string option\n  -f A flag option\n`,
+        `  -s <param> A string option\n  <param> A string option\n  -f A flag option\n`,
       );
     });
   });

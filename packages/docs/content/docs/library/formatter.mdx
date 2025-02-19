@@ -2,42 +2,45 @@
 title: Formatter - Library - Docs
 ---
 
+import HelpContent from './help-content.svg';
 import { Callout } from 'nextra/components';
 
 # Formatter
 
-The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set of option _definitions_ and provides methods to render help messages in ANSI format.
+The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set of option definitions and provides methods to render help messages in ANSI format.
+
+The messages produced by the formatter can be customized via a [message configuration], which can be provided as the second parameter to the formatter constructor.
 
 ## Help message
 
-Internally, the help message consists of [ANSI strings] that may contain escape sequences and are meant to be printed in a terminal. Visually, it can be divided into the following content parts:
+Internally, the help message consists of [ANSI strings], which may contain escape sequences and are meant to be printed in a terminal. Visually, it is composed of the following kinds of content:
 
-- **section** - a group of text lines, like the section of a document
-- **entry** - the lines pertaining to an option definition
-- **item** - a single piece of information in an option's description
-- **group** - a set of entries corresponding to an option [group]
-- **column** - a horizontal division (as formed by a vertical ruler) across all entries of all groups
+- **entry** - the text lines pertaining to a single option
+- **item** - a piece of information in an option's description
+- **group** - a set of entries corresponding to an [option group]
+- **section** - like the section of a document (may be a collection of groups)
+- **column** - a horizontal division (as formed by a vertical ruler) across all entries
 
-There are two main ways of obtaining help messages, as described below.
+This is better illustrated by the figure below:
+
+<HelpContent style={{ maxWidth: '500', margin: '20px 20px 0px' }} />
+
+There are two ways of obtaining help messages, as described below.
 
 ### Grouped help
 
-The `format` method returns the help message of an option group. It accepts a single optional parameter: the name of the group. If not provided, the _default_ group is used, which corresponds to the set of options that did not explicitly declare a [group] in their definition.
+The `format` method returns the help message of an [option group]. It accepts a single optional parameter: the name of the group. If not provided, the _default_ group will be used, which encompasses all options that did not explicitly declare a group in their definition.
 
 ### Sectioned help
 
-The `sections` method returns a help message that includes [help sections], as will be explained later in this page. It accepts two parameters:
+The `sections` method returns a help message that includes [help sections]. It accepts two parameters:
 
 - `sections` - a list of `HelpSection`s to include in the help message
 - `progName` - an optional program name to display in usage sections
 
-## Message configuration
+## Help columns
 
-The help messages produced by the formatter can be configured via the [message configuration], which can be provided as the second parameter to the formatter constructor.
-
-## Help entries
-
-Each option definition results in a help entry under its respective group in the help message. An entry is divided into "columns" (not to be confused with terminal columns), each containing a piece of information, as described below.
+Every option definition produces a help entry in its respective group in the help message. Furthermore, the whole set of entries across all groups is split into "columns" (not to be confused with terminal columns), each containing a different kind of information, as described below.
 
 ### Names column
 
@@ -45,7 +48,7 @@ This column contains the options' names separated by commas. The names are liste
 
 #### Name slots
 
-Depending on the column's [alignment] setting, each option name may reserve a "slot" in the respective position in this column. The length of a name slot will be the length of the largest name in that slot, among all options. Empty strings or `null{:ts}`s can be specified in order to skip a slot.
+Depending on the column's [alignment] setting, each option name may reserve a "slot" in the respective position in this column. The width of a name slot will be the length of the longest name in that slot, among all options. Empty strings or `null{:ts}`s can be specified in order to skip a slot.
 
 For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `''{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as:
 
@@ -57,23 +60,28 @@ Note how the empty string produced whitespace between its neighbors, and the com
 
 ### Parameter column
 
-This column contains either the option's `type`, the [example value] or the [parameter name]. It is rendered in the following way:
+This column is rendered according to the following rules:
 
-- if the option:
-  - is [niladic], it is omitted
-  - contains an example value, this value is used
-  - is a command option, it is rendered as an ellipsis `'...'{:ts}`
-  - is a function option, `type` is replaced by the word `param`
-  - does not have a parameter name containing an angle bracket `'<'{:ts}`, it is enclosed in angle brackets `'<>'{:ts}`
-  - requires [inline parameters], it is prefixed with an equals sign `'='{:ts}`
-  - accepts more than one parameter, it is suffixed with an ellipsis `'...'{:ts}`
-  - can be specified without parameters, it is enclosed in square brackets `'[]'{:ts}`
+- if the option is [niladic], do nothing
+- else, if it is a [subcommand], render an ellipsis `'...'{:ts}`
+- else, if it contains an [example value], render this value
+  - and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
+  - else, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
+- otherwise
+  - do this
+    - if it contains a [parameter name], render this name
+    - else, render the word `'param'{:ts}`
+  - and enclose the result in angle brackets `'<>'{:ts}` (if not already)
+  - and,
+    - if it requires [inline parameters], prepend an equals sign `'='{:ts}`
+    - else, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
+  - and, if it can be specified without parameters, enclose the result in square brackets `'[]'{:ts}`
 
 The result might be something like `=<param>` or `[<param>...]`.
 
 ### Description column
 
-The last column contains the option description and is composed of [help items], which are explained later in this page.
+The last column contains the option description and is composed of [help items].
 
 ## Help sections
 
@@ -83,9 +91,9 @@ Sections are a convenient way to organize the help content. There are three kind
 
 All help sections share a set of properties:
 
-- `title` - the section heading or the default option group heading (defaults to none)
-- `style` - the style of the section heading or option group headings (defaults to `tf.bold{:ts}`)
-- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, else `2{:ts}`)
+- `title` - the section heading or the default [option group] heading (defaults to none)
+- `style` - the style of the section heading or [option group] headings (defaults to `tf.bold{:ts}`)
+- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, `2{:ts}` for others)
 - `noWrap` - true to disable wrapping of provided texts (defaults to `false{:ts}`)
 
 <Callout type="info">
@@ -184,23 +192,65 @@ In the case of an inclusion filter, groups are listed in the same order specifie
 
 ## Help layout
 
-The layout of the help message can be configured via a `PartialHelpLayout` object, which can be provided as the third parameter to the formatter constructor. It contains the properties described below.
+The layout of the help message can be configured via a `PartialHelpLayout` object, which can be provided as the third parameter to the formatter constructor. It contains the optional properties described below.
 
-### Help columns
+### Column layout
 
-The `names`, `param` and `descr` properties specify settings that can be used to customize the format of the corresponding [help column], for all help entries. They are objects with the following optional properties:
+The `names`, `param` and `descr` properties can be used to customize the layout of the corresponding [help column] (applied to all help entries). They are objects with the following optional settings:
 
 - `align` - text alignment for the column (may be one of `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` - level of indentation for the column (must be non-negative if `absolute` is `true{:ts}`, defaults to `2{:ts}`)
 - `breaks` - number of line breaks to insert before each entry in the column (defaults to `0{:ts}`)
 - `hidden` - whether the column should be hidden (defaults to `false{:ts}`)
-- `absolute` - whether the indentation level should be relative to the beginning of the line instead of the end of the previous column (not available for the names column, defaults to `false{:ts}`)
+- `absolute` - whether the indentation level should be relative to the beginning of the line instead of the end of the previous column (not available for the `names` column, defaults to `false{:ts}`)
 
-The `names.align` property supports an additional value `'slot'{:ts}`, which means that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information.
+Here's a graph showing a single help entry with default layout in a terminal with 80-character width:
+
+```mermaid
+---
+config:
+  packet:
+    bitWidth: 10
+    bitsPerRow: 80
+---
+packet-beta
+0-1: ""
+2-6: "name1"
+7-8: ","
+9-13: "name2"
+14-15: ""
+16-20: "param"
+21-22: ""
+23-79: "description"
+```
+
+And here's a layout where we eliminate the `names` indentation, suppress the `param` column and merge with `descr`:
+
+```mermaid
+---
+config:
+  packet:
+    bitWidth: 10
+    bitsPerRow: 80
+---
+packet-beta
+0-4: "name1"
+5-6: ","
+7-11: "name2"
+12-79: "description"
+```
+
+The `names.align` property supports an additional value `'slot'{:ts}`, meaning that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information.
 
 The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which instructs the formatter to merge the contents of the column with the previous one. This is useful, for instance, if you want option parameters to be inlined with option names. When using this value, both the `indent` and `breaks` properties are ignored.
 
-An example can better illustrate the effect of some of these settings. Suppose we have the following configuration:
+<Callout type="info">
+
+Note that merging a column is not the same as using zero indentation. Indentation is always relative to the end of the previous column, which depends on the length of the _longest_ text in that column, across all entries. On the other hand, merging implies having no additional space between text in both columns.
+
+</Callout>
+
+An additional example can better illustrate the effect of some of these settings. Suppose we have:
 
 ```ts
 {
@@ -220,7 +270,7 @@ An example can better illustrate the effect of some of these settings. Suppose w
 }
 ```
 
-The following is an extract of a help message produced with these settings:
+Below is an extract of a help message produced with the above configuration:
 
 {/* cSpell:disable */}
 
@@ -248,11 +298,11 @@ You might want to use this to limit the amount of information in the help messag
 
 ## Option filter
 
-The formatter constructor accepts a fourth optional parameter, which specifies a list of patterns to select the options that will be rendered in the help message. The filter matches options' names, synopsis and environment data sources. If multiple patterns are provided, any matched one will suffice to include an option in the message.
+The formatter constructor accepts a fourth optional parameter: a list of patterns that indicate which options should be rendered in the help message. The filter matches options' names, synopsis and environment data sources. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
-<Callout type="default">
+<Callout type="info">
 
-This is inherently different from what a text search utility like `grep` would produce. The formatter will render the _whole_ help entry of options matching the given patterns, not just the matching lines.
+This is inherently different from what a text search utility like `grep` would produce. The formatter will render the whole help _entry_ of options matching the given patterns, not just the matching _lines_.
 
 </Callout>
 
@@ -261,7 +311,7 @@ This is inherently different from what a text search utility like `grep` would p
 [^1]: _polyadic_ means that the option accepts more than one parameter, but the parameter count is not variable
 
 [help sections]: #help-sections
-[help column]: #help-entries
+[help column]: #help-columns
 [custom phrases]: #custom-phrases
 [alignment]: #help-layout
 [help items]: #help-items
@@ -270,11 +320,12 @@ This is inherently different from what a text search utility like `grep` would p
 
 {/* options references */}
 
-[group]: options#group--hide
+[option group]: options#group--hide
 [names]: options#option-names
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#niladic-options
+[subcommand]: options#command-option
 
 {/* parser references */}
 
@@ -282,6 +333,6 @@ This is inherently different from what a text search utility like `grep` would p
 
 {/* styles references */}
 
-[ANSI strings]: styles#ansi-strings
+[ANSI strings]: styles#ansi-string
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration

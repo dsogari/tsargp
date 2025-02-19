@@ -112,9 +112,9 @@ The `ul` constant holds the styles of underlined text:
 - `dotted` - dotted underline
 - `dashed` - dashed underline
 
-## ANSI strings
+## ANSI string
 
-The `AnsiString` class is an internal component that handles the construction of strings that can be printed on a terminal. It has methods to split, append and wrap strings, with or without control sequences, and is used by the library in different places:
+The `AnsiString` is an internal component that handles the construction of strings which are meant to be printed on a terminal. It has methods to split, append and wrap strings, with or without control sequences, and is used by the library in different places:
 
 - by both the [parser] and [validator], to create error and warning messages
 - by the [formatter], to build help messages
@@ -259,11 +259,11 @@ The `TextMessage` class represents a list of plain text lines with no wrapping. 
 
 ### Message configuration
 
-Messages can be configured via a `MessageConfig` object that contains the properties described below.
+ANSI-based messages can be configured via a `PartialMessageConfig` object that contains the optional properties described below.
 
 #### Message styles
 
-The `styles` property specifies the styles of text elements in ANSI messages, and has the following optional properties:
+The `styles` property specifies the styles of text elements in ANSI messages. It has the following optional settings:
 
 | Property  | Used for              | Default               |
 | --------- | --------------------- | --------------------- |
@@ -278,13 +278,13 @@ The `styles` property specifies the styles of text elements in ANSI messages, an
 
 <Callout type="default">
 
-You can also set these styles to the empty string, if you want to disable text styling for your application.
+You can also set these styles to the empty string, if you need to disable text styling for your application.
 
 </Callout>
 
 #### Connective words
 
-The `connectives` property specifies connective words that are used to format some text elements that cannot be customized using phrases, such as option requirements, array element separators, and string quoting. It has the following optional properties, whose keys are enumerators from `ConnectiveWord`:
+The `connectives` property specifies connective words that are used to format some text elements that cannot be customized using phrases, such as option requirements, array element separators, and string quoting. It has the following optional settings, whose keys are enumerators from `ConnectiveWord`:
 
 | Property      | Description                                         | Default      |
 | ------------- | --------------------------------------------------- | ------------ |
@@ -311,7 +311,7 @@ The `connectives` property specifies connective words that are used to format so
 
 #### Custom error phrases
 
-The `errorPhrases` property specifies custom phrases to use for error and warning messages. Its properties are optional and are indexed by the `ErrorItem` enumeration, which lists the kinds of errors and warnings that may be produced by both the parser and validator. They are summarized in the table below:
+The `errorPhrases` property specifies custom phrases to use for error and warning messages that may be produced by both the parser and validator. It has the following optional settings, whose keys are enumerators from `ErrorItem`:
 
 | Error item                   | Raised when                                                                                   | Default phrase                                                                                       | Placeholders                                                                               |
 | ---------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -352,7 +352,7 @@ Error phrases are formatted according to [text formatting] rules.
 
 #### Custom help phrases
 
-The `helpPhrases` property specifies custom phrases to use for each kind of help item. Its properties are optional and are indexed by the `HelpItem` enumeration, which lists the kinds of help items. They are summarized in the table below:
+The `helpPhrases` property specifies custom phrases to use for each kind of [help item] that may appear in a help message. It has the following optional settings, whose keys are enumerators from `HelpItem`:
 
 | Help item    | Description                                                                  | Default phrase                                                                   | Placeholders                   |
 | ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------ |
@@ -414,6 +414,7 @@ Help phrases are formatted according to [text formatting] rules.
 [description column]: formatter#description-column
 [parameter column]: formatter#parameter-column
 [name slot]: formatter#name-slots
+[help item]: formatter#help-items
 
 {/* styles references */}
 

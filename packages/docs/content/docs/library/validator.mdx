@@ -6,7 +6,9 @@ import { Callout } from 'nextra/components';
 
 # Validator
 
-The `OptionValidator` component handles validation of option definitions. It can be instantiated with a set of option _definitions_ and provides a single method to perform the validation.
+The `OptionValidator` component handles validation of option definitions. It can be instantiated with a set of option definitions and provides a single method to perform the validation.
+
+The messages produced by the validator can be customized via a [message configuration], which can be provided as the second parameter to the validator constructor.
 
 ## Option validation
 
@@ -62,10 +64,6 @@ The following restrictions will produce a warning that is returned by the valida
 - **Too similar names** - When two option names are very similar (e.g., if they differ by a single character in a five-character name), this may be a development mistake, or worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the same algorithm employed by the parser in [name suggestions], only a little stricter to avoid false positives.
 - **Mixed naming convention** - When a [name slot] contains names with different naming conventions (e.g., all-uppercase vs all-lowercase, or single-dash vs double-dash), this may be a sign of code review negligence, or worse, it can make it hard for end-users to reason about your application. Thus, the validator tries to find names within a slot that contain mixed naming patterns.
 - **Variadic option with cluster letter** - A variadic option that declares [cluster letters] must always be the last option in a cluster argument. This includes [subcommand] options, array-valued options and function options with a variable [parameter count]. This might not be the intended behavior and if so, you should consider alternatives.
-
-### Message configuration
-
-The error and warning messages produced by the validator can be configured via the [message configuration], which can be provided as the second parameter to the validator constructor.
 
 {/* self references */}
 

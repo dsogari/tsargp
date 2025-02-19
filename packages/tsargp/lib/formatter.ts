@@ -440,6 +440,12 @@ function buildHelpEntries(
   context: HelpContext,
   filter: ReadonlyArray<string>,
 ): EntriesByGroup<HelpEntry> {
+  /** @ignore */
+  function getNextIndent(column: HelpLayout['param'], prevIndent: number): number {
+    return column.absolute && !column.hidden
+      ? max(0, column.indent)
+      : prevIndent + (column.hidden ? 0 : column.indent);
+  }
   let nameWidths = getNameWidths(context);
   let paramWidth = 0;
   const groups = buildEntries(context, filter, (option): HelpEntry => {
@@ -453,16 +459,12 @@ function buildHelpEntries(
     nameWidths = nameWidths.length ? nameWidths.reduce((acc, len) => acc + len + 2, -2) : 0;
   }
   const { names, param, descr } = context[2];
-  const namesIndent = max(0, names.indent);
-  const paramIndent = param.absolute
-    ? max(0, param.indent)
-    : namesIndent + nameWidths + param.indent;
-  const descrIndent = descr.absolute
-    ? max(0, descr.indent)
-    : paramIndent + paramWidth + descr.indent;
+  const namesIndent = names.hidden ? 0 : max(0, names.indent);
+  const paramIndent = getNextIndent(param, namesIndent + nameWidths);
+  const descrIndent = getNextIndent(descr, paramIndent + paramWidth);
   const paramRight = param.align === 'right';
-  const paramMerge = param.align === 'merge';
-  const descrMerge = descr.align === 'merge';
+  const paramMerge = param.align === 'merge' || param.hidden;
+  const descrMerge = descr.align === 'merge' || descr.hidden;
   for (const [names, param, descr] of getValues(groups).flat()) {
     if (descrMerge) {
       param.other(descr);
