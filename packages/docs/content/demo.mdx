@@ -45,9 +45,9 @@ npm i -g tsargp && complete -C tsargp tsargp
 ### Value constraints
 
 - check if a string parameter matches the required regex (e.g., try `-s A` and see that it fails)
-- check if a string parameter matches one the choices (e.g., try `-se A` and see that it fails)
+- check if a string parameter matches one of the choices (e.g., try `-se A` and see that it fails)
 - check if a number parameter matches the required range (e.g., try `-n 1` and see that it fails)
-- check if a number parameter matches one the choices (e.g., try `-ne=0` and see that it fails)
+- check if a number parameter matches one of the choices (e.g., try `-ne=0` and see that it fails)
 
 ### Array constraints
 
@@ -69,7 +69,7 @@ When an option is specified more than once, the retained value is usually the la
 - check if inline parameters are disallowed for an option (e.g., `-se=one`)
 - check if inline parameters are required for an option (e.g., `-ne 1`)
 
-### Help option filters
+### Help option
 
 - check if the help option accepts option filters (e.g., `-h -b -ne`)
 - check if the help option accepts a subcommand name (e.g., `-h hello`)

@@ -77,21 +77,21 @@ All options share a set of attributes in addition to their type. They are descri
 
 #### Option names
 
-The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). Names must not contain whitespace or the equals sign `'='{:ts}`, since this character can be used as option-parameter separator.
+The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). Names must not contain whitespace or the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. A name can also be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 <Callout type="default">
 
-This attribute can be safely omitted if the option may be specified through [positional] arguments, [standard input] or environment [data sources].
+This attribute can be safely omitted if the option may be specified through [positional] arguments or through the [environment].
 
 </Callout>
 
 #### Preferred name
 
-The `preferredName` attribute, if present, is displayed in error and help messages in cases where a name is not available, e.g., when evaluating option requirements or processing positional arguments.
+The `preferredName` attribute is used for informational purposes. It is displayed in [messages] in cases where a name is not available, e.g., when evaluating option requirements or processing positional arguments. If not specified, the first name in the `names` array will be used.
 
 <Callout type="info">
 
-This attribute is not validated, so it can be any string. If not specified, the first name in the `names` array will be used (notice that it is not marked as `readonly`).
+This attribute is not validated, so it can be any string.
 
 </Callout>
 
@@ -137,7 +137,7 @@ Both the help and version options share the attribute described below.
 
 #### Save message
 
-By default, the option will _throw_ the message, as a convenient way for the application to print it in the terminal. However, this behavior can be changed with the `saveMessage` attribute. If present, it indicates that the message should be saved as the option value instead of being thrown.
+By default, the option will _throw_ the generated message, as a convenient way for the application to print it in the terminal. However, this behavior can be changed with the `saveMessage` attribute. If present, it indicates that the message should be saved as the option value instead of being thrown.
 
 ### Value attributes
 
@@ -288,17 +288,13 @@ And if they were defined in the `requiredIf` attribute, they would mean:
 
 <Callout type="info">
 
-An option is considered specified if it appears either on the command line, the [standard input] or an environment [data source].
+An option is considered specified if it either appears on the command line or exists in the [environment].
 
 </Callout>
 
 #### Default value
 
-The `default` attribute, if present, specifies a value to be used at the end of the parsing loop, in case the option is not specified in any of the following:
-
-- the command line;
-- the [standard input];
-- an environment [data source]
+The `default` attribute, if present, specifies a value to be used at the end of the parsing loop, in case the option is specified neither on the command line nor in the [environment].
 
 <Callout type="info">
 
@@ -368,7 +364,7 @@ You can omit the [option names] or completely [hide] the option from the help me
 
 #### Data sources
 
-The `sources` attribute, if present, specifies names of environment sources from which the option value should be read, in case it is specified neither on the command line nor in the [standard input].
+The `sources` attribute, if present, specifies names of environment data sources from which the option value should be read, in case it is specified neither on the command line nor in the [standard input].
 
 Sources are tried in the specified order. A `string{:ts}` means an environment _variable_, while a `URL{:ts}` indicates the path of a _local file_.
 
@@ -384,7 +380,7 @@ The `break` attribute indicates whether the parser should exit the parsing loop 
 
 <Callout type="warning">
 
-When setting this attribute, the requirements of all options specified up to the current [argument sequence] will be verified. Hence, you should make it clear in the help message that any options required by the affected one must be specified _before_ it.
+When setting this attribute, the requirements of all options specified up to the current argument will be verified. Hence, you should make it clear in the help message that any options required by the affected one must be specified _before_ it.
 
 </Callout>
 
@@ -435,7 +431,7 @@ The `complete` attribute, if present, specifies a custom callback for [word comp
 - `param` - the word being completed
 - `info` - the current [sequence information]
 
-It should return the list of completion words. If an error is thrown, it is ignored, and the default completion message is thrown instead.
+It should return the list of completion words. If an error is thrown, it is ignored, and the default completion message will be thrown instead.
 
 <Callout type="info">
 
@@ -576,7 +572,7 @@ All incoming arguments will be parsed using the option definitions from this att
 
 #### Cluster prefix
 
-The `clusterPrefix` property indicates whether the command accepts cluster arguments. This must be used in conjunction with the [cluster letters] of the nested option definitions.
+The `clusterPrefix` property indicates whether the command accepts cluster arguments. This must be used in conjunction with the [cluster letters] of the nested options.
 
 ### Flag option
 
@@ -609,7 +605,7 @@ Previous versions of the library also provided a `negationNames` attribute, whic
 
 #### Skip count
 
-The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parse callback]. Its value is meant to be changed by the callback.
+The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parse callback]. This value is meant to be changed by the callback.
 
 It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends.
 
@@ -721,13 +717,13 @@ The `paramCount` attribute, if present, specifies the number of parameters that 
 - a positive **number**: the option expects exactly this amount (must be greater than one)
 - a numeric **range**: the option expects between a minimum and a maximum count
 
+Note that the function option cannot have a [parameter separator], since it would conflict with the parameter count. To see why, consider the case where the minimum count is 2. Then, the second parameter would always be treated as such, regardless of whether it is the name of another option, _even if the previous argument had two delimited parameters_. This is because the parser does not look for delimiters when trying to form an [argument sequence].
+
 <Callout type="warning">
 
 If the data comes from the [environment], then the [parse callback] will receive a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [sequence information], which should be `NaN{:ts}` in this case.
 
 </Callout>
-
-Note that the function option cannot have a [parameter separator], since it would conflict with the parameter count. To see why, consider the case where the minimum count is 2. Then, the second parameter would always be treated as such, regardless of whether it is the name of another option, _even if the previous argument had two delimited parameters_. This is because the parser does not look for delimiters when trying to form an [argument sequence].
 
 {/* self references */}
 
@@ -841,7 +837,6 @@ Note that the function option cannot have a [parameter separator], since it woul
 {/* formatter references */}
 
 [formatter]: formatter
-[output format]: formatter#output-format
 [help items]: formatter#help-items
 [help item]: formatter#help-items
 [help entry]: formatter#help-entries
@@ -851,9 +846,11 @@ Note that the function option cannot have a [parameter separator], since it woul
 [parameter column]: formatter#parameter-column
 [option filter]: formatter#option-filter
 [formatter configuration]: formatter#formatter-configuration
+[name slot]: formatter#name-slots
 
 {/* styles references */}
 
+[messages]: styles#messages
 [styling attributes]: styles#styling-attributes
 [text formatting]: styles#text-splitting
 [warning message]: styles#warning-message

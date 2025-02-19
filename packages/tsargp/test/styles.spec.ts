@@ -624,7 +624,7 @@ describe('AnsiMessage', () => {
     ['NO_COLOR', 'FORCE_COLOR', 'FORCE_WIDTH'].forEach((key) => delete process.env[key]);
   });
 
-  it('wrap the message to the specified width, while respecting the environment configuration', () => {
+  it('wrap the message while respecting the environment configuration', () => {
     const str = new AnsiString().split('type script');
     const msg = new AnsiMessage(str);
     expect(msg.wrap(0)).toEqual('type script');
@@ -652,7 +652,7 @@ describe('WarnMessage', () => {
     ['FORCE_WIDTH'].forEach((key) => delete process.env[key]);
   });
 
-  it('wrap the message to the specified width, while respecting the environment configuration', () => {
+  it('wrap the message while respecting the environment configuration', () => {
     const str = new AnsiString().split('type script');
     const msg = new WarnMessage(str);
     process.env['FORCE_WIDTH'] = '10';

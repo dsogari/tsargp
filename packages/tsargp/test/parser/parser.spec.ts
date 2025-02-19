@@ -60,7 +60,7 @@ describe('ArgumentParser', () => {
         expect(parser.parse([])).resolves.toEqual({ help: undefined });
         expect(parser.parse(['-h'])).resolves.toEqual({
           help: expect.objectContaining({
-            message: expect.stringMatching(`  -h`),
+            message: expect.stringMatching(/^ {2}-h$/),
           }),
         });
       });
@@ -105,7 +105,7 @@ describe('ArgumentParser', () => {
         );
       });
 
-      it('throw a help message with filtered options', () => {
+      it('throw a help message with option filter', () => {
         const options = {
           flag1: {
             type: 'flag',

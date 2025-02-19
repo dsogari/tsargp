@@ -134,7 +134,7 @@ An argument sequence is the occurrence of an option in the command line with pos
 
 For example, if the option initiating a sequence is array-valued, the parser starts looking for a new option as soon as it advances to the next argument, since that may be either an option parameter or the start of a new sequence.
 
-The same is true for function options with a variable [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name or not. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option (even if it is a new occurrence of the previous one).
+The same is true for function options with a variable [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name or not. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option specification (even if it is a new occurrence of the same option).
 
 #### Sequence information
 
@@ -246,7 +246,7 @@ The process title would be updated in the following way:
 3. `node script.js cmd1` - as soon as the `cmd1` subcommand is parsed
 4. `node script.js cmd1 cmd2` - as soon as the `cmd2` subcommand is parsed
 
-The title will remain in the changed state after the parser returns. Other option names are not used, because they would pollute the output of process management utilities such as `ps`.
+The title will remain in changed state after the parser returns. Other option names are not used, because they would pollute the output of process management utilities such as `ps`.
 
 {/* self references */}
 

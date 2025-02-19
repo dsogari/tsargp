@@ -3,6 +3,7 @@ import { Callout, Steps } from 'nextra/components';
 
 export const Play = dynamic(() => import('@components/play'), { ssr: false });
 export const Code = dynamic(() => import('@components/code'), { ssr: false });
+export const callbacks = {}; // will hold the editor callbacks
 
 {/* prettier-ignore-start */}
 
@@ -21,8 +22,6 @@ return {
 };`;
 
 {/* prettier-ignore-end */}
-
-export const callbacks = {}; // will hold the editor callbacks
 
 <Code callbacks={callbacks} initialDoc={initialDoc} />
 

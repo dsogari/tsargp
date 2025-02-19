@@ -215,7 +215,7 @@ All messages produced by the library are instances of one of these classes. So y
 
 ### ANSI message
 
-The `AnsiMessage` is the base class that wraps a list of ANSI strings.
+The `AnsiMessage` class wraps a list of ANSI strings. It is the type used for help messages.
 
 The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable (if present), or the `columns` property of the standard _output_ stream (i.e., `process.stdout{:ts}`). Therefore, this kind of message should be printed with `console.log{:ts}` or equivalent.
 
@@ -246,17 +246,17 @@ Alternatively, you can retrieve the underlying ANSI strings from the list and ma
 
 ### Warning message
 
-The `WarnMessage` class is a specialization of the ANSI message, intended for warnings.
+The `WarnMessage` class is a specialization of the ANSI message, used for warnings.
 
 The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable (if present), or the `columns` property of the standard _error_ stream (i.e., `process.stderr{:ts}`). Therefore, this kind of message should be printed with `console.error{:ts}` or equivalent.
 
 ### Error message
 
-The `ErrorMessage` class is a specialization of the standard `Error` class. It has the same semantics as the warning message, so it should be printed with `console.error{:ts}` or equivalent.
+The `ErrorMessage` class is a specialization of the standard `Error` class, used for errors. It has the same semantics as the warning message, so it should be printed with `console.error{:ts}` or equivalent.
 
 ### Text message
 
-The `TextMessage` class represents a list of text lines with no escape sequences or wrapping. It produces a string with lines separated by line feeds, and should be printed with `console.log{:ts}` or equivalent.
+The `TextMessage` class represents a list of plain text lines with no wrapping. It is used for version and completion words. It produces a string delimited by line feeds, and should be printed with `console.log{:ts}` or equivalent.
 
 ### Message configuration
 
@@ -314,7 +314,6 @@ The `connectives` property specifies connective words that are used to format so
 
 [option synopsis]: options#option-synopsis
 [deprecation notice]: options#deprecation-notice
-[version messages]: options#version-option
 
 {/* parser references */}
 
