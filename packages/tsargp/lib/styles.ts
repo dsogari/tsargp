@@ -1,6 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
+import type { MessageConfig } from './config.js';
 import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
 
 import { ConnectiveWord, cs, fg, bg, tf } from './enums.js';
@@ -15,48 +16,11 @@ import {
 } from './utils.js';
 
 export { sequence as seq, sgr as style, foreground as fg8, background as bg8, underline as ul8 };
-export { underlineStyle as ul, formatFunctions as fmt, defaultConfig as cfg };
+export { underlineStyle as ul, formatFunctions as fmt };
 
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-/**
- * The default message configuration.
- */
-const defaultConfig: MessageConfig = {
-  styles: {
-    boolean: sgr(fg.blue),
-    string: sgr(fg.green),
-    number: sgr(fg.yellow),
-    regex: sgr(fg.red),
-    symbol: sgr(fg.magenta),
-    value: sgr(fg.brightBlack),
-    url: sgr(fg.cyan),
-    text: '',
-  },
-  connectives: {
-    [ConnectiveWord.and]: 'and',
-    [ConnectiveWord.or]: 'or',
-    [ConnectiveWord.not]: 'not',
-    [ConnectiveWord.no]: 'no',
-    [ConnectiveWord.equals]: '==',
-    [ConnectiveWord.notEquals]: '!=',
-    [ConnectiveWord.optionAlt]: '|',
-    [ConnectiveWord.optionSep]: ',',
-    [ConnectiveWord.stringQuote]: `'`,
-    [ConnectiveWord.arraySep]: ',',
-    [ConnectiveWord.arrayOpen]: '[',
-    [ConnectiveWord.arrayClose]: ']',
-    [ConnectiveWord.objectSep]: ',',
-    [ConnectiveWord.objectOpen]: '{',
-    [ConnectiveWord.objectClose]: '}',
-    [ConnectiveWord.valueSep]: ':',
-    [ConnectiveWord.valueOpen]: '<',
-    [ConnectiveWord.valueClose]: '>',
-    [ConnectiveWord.exprOpen]: '(',
-    [ConnectiveWord.exprClose]: ')',
-  },
-} as const;
 
 /**
  * A predefined underline style.
@@ -326,57 +290,6 @@ export type FormattingFlags = {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly custom?: FormatCallback<any>;
-};
-/**
- * A set of styles for error/warning/help messages.
- */
-export type MessageStyles = {
-  /**
-   * The style of boolean values.
-   */
-  readonly boolean: Style;
-  /**
-   * The style of string values.
-   */
-  readonly string: Style;
-  /**
-   * The style of number values.
-   */
-  readonly number: Style;
-  /**
-   * The style of regular expressions.
-   */
-  readonly regex: Style;
-  /**
-   * The style of symbols (e.g., option names).
-   */
-  readonly symbol: Style;
-  /**
-   * The style of unknown values.
-   */
-  readonly value: Style;
-  /**
-   * The style of URLs.
-   */
-  readonly url: Style;
-  /**
-   * The style of general text.
-   */
-  readonly text: Style;
-};
-
-/**
- * The configuration for messages.
- */
-export type MessageConfig = {
-  /**
-   * The messages styles.
-   */
-  readonly styles: MessageStyles;
-  /**
-   * The connective words.
-   */
-  readonly connectives: Readonly<Record<ConnectiveWord, string>>;
 };
 
 /**

@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { FormattingFlags, MessageConfig } from './styles.js';
+import type { PartialParserConfig } from './config.js';
 import type {
   HelpSections,
   Options,
@@ -15,20 +15,21 @@ import type {
   ResolveCallback,
   RequiresCallback,
 } from './options.js';
-import type { Args, PartialWithDepth } from './utils.js';
+import type { FormattingFlags } from './styles.js';
+import type { Args } from './utils.js';
 
+import { defaultParserConfig } from './config.js';
 import { ConnectiveWord, ParsingError } from './enums.js';
 import { HelpFormatter } from './formatter.js';
-import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
 import {
   fmt,
-  cfg,
   ErrorFormatter,
   WarnMessage,
   AnsiMessage,
   TextMessage,
   AnsiString,
 } from './styles.js';
+import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
 import {
   getCmdLine,
   findSimilar,
@@ -57,52 +58,9 @@ const defaultSections: HelpSections = [
   { type: 'groups', title: 'Options:' },
 ];
 
-/**
- * The default configuration used by the parser.
- */
-const defaultConfig: ParseConfig = {
-  ...cfg,
-  phrases: {
-    [ParsingError.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
-    [ParsingError.unsatisfiedRequirement]: 'Option #0 requires #1.',
-    [ParsingError.missingRequiredOption]: 'Option #0 is required.',
-    [ParsingError.mismatchedParamCount]:
-      'Wrong number of parameters to option #0: requires (exactly|at least|at most|between) #1.',
-    [ParsingError.missingPackageJson]: 'Could not find a "package.json" file.',
-    [ParsingError.disallowedInlineParameter]:
-      '(Option|Positional marker) #0 does not accept inline parameters.',
-    [ParsingError.choiceConstraintViolation]:
-      'Invalid parameter to #0: #1. Value must be one of: #2.',
-    [ParsingError.regexConstraintViolation]:
-      'Invalid parameter to #0: #1. Value must match the regex #2.',
-    [ParsingError.limitConstraintViolation]:
-      'Option #0 has too many values: #1. Should have at most #2.',
-    [ParsingError.deprecatedOption]:
-      'Option #0 is deprecated and may be removed in future releases.',
-    [ParsingError.unsatisfiedCondRequirement]: 'Option #0 is required if #1.',
-    [ParsingError.invalidClusterOption]: 'Option letter #0 must be the last in a cluster.',
-    [ParsingError.missingInlineParameter]: 'Option #0 requires an inline parameter.',
-  },
-};
-
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
-/**
- * The configuration for error/warning messages.
- */
-export type ParseConfig = MessageConfig & {
-  /**
-   * The parse error/warning phrases.
-   */
-  readonly phrases: Readonly<Record<ParsingError, string>>;
-};
-
-/**
- * A partial parser configuration.
- */
-export type ParserConfig = PartialWithDepth<ParseConfig>;
-
 /**
  * The parsing flags.
  */
@@ -196,9 +154,9 @@ export class ArgumentParser<T extends Options = Options> {
    * @param options The option definitions
    * @param config The parse configuration
    */
-  constructor(options: T, config: ParserConfig = {}) {
+  constructor(options: T, config: PartialParserConfig = {}) {
     this.registry = new OptionRegistry(options);
-    this.formatter = new ErrorFormatter(mergeValues(defaultConfig, config));
+    this.formatter = new ErrorFormatter(mergeValues(defaultParserConfig, config));
   }
 
   /**

@@ -1,9 +1,8 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { FormattingFlags, MessageConfig, Style } from './styles.js';
+import type { PartialFormatterConfig, FormatterConfig, MessageConfig } from './config.js';
 import type {
-  WithColumn,
   HelpGroups,
   HelpSection,
   HelpUsage,
@@ -13,12 +12,12 @@ import type {
   Requires,
   RequiresCallback,
   RequiresEntry,
-  PartialFormatterConfig,
-  FormatterConfig,
 } from './options.js';
+import type { FormattingFlags, Style } from './styles.js';
 
+import { defaultFormatterConfig } from './config.js';
 import { ConnectiveWord, HelpItem, tf } from './enums.js';
-import { fmt, cfg, style, AnsiString, AnsiMessage } from './styles.js';
+import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
 import { getParamCount, getOptionNames, visitRequirements } from './options.js';
 import {
   mergeValues,
@@ -74,73 +73,6 @@ type EntriesByGroup<T> = Readonly<Record<string, ReadonlyArray<T>>>;
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-/**
- * The default column configuration.
- */
-const defaultColumn: WithColumn = {
-  align: 'left',
-  indent: 2,
-  breaks: 0,
-  hidden: false,
-};
-
-/**
- * The default configuration used by the formatter.
- */
-const defaultConfig: FormatterConfig = {
-  ...cfg,
-  names: defaultColumn,
-  param: { ...defaultColumn, absolute: false },
-  descr: { ...defaultColumn, absolute: false },
-  phrases: {
-    [HelpItem.synopsis]: '#0',
-    [HelpItem.separator]: 'Values can be delimited with #0.',
-    [HelpItem.paramCount]: 'Accepts (multiple|#0|at most #0|at least #0|between #0) parameters.',
-    [HelpItem.positional]: 'Accepts positional arguments(| that may be preceded by #0).',
-    [HelpItem.append]: 'Can be specified multiple times.',
-    [HelpItem.choices]: 'Values must be one of #0.',
-    [HelpItem.regex]: 'Values must match the regex #0.',
-    [HelpItem.unique]: 'Duplicate values will be removed.',
-    [HelpItem.limit]: 'Element count is limited to #0.',
-    [HelpItem.requires]: 'Requires #0.',
-    [HelpItem.required]: 'Always required.',
-    [HelpItem.default]: 'Defaults to #0.',
-    [HelpItem.deprecated]: 'Deprecated for #0.',
-    [HelpItem.link]: 'Refer to #0 for details.',
-    [HelpItem.stdin]: 'Reads data from standard input.',
-    [HelpItem.sources]: 'Reads environment data from #0.',
-    [HelpItem.requiredIf]: 'Required if #0.',
-    [HelpItem.cluster]: 'Can be clustered with #0.',
-    [HelpItem.useCommand]: 'Uses the next argument as the name of a subcommand.',
-    [HelpItem.useFilter]: 'Uses the remaining arguments as option filter.',
-    [HelpItem.inline]: '(Disallows|Requires) inline parameters.',
-  },
-  items: [
-    HelpItem.synopsis,
-    HelpItem.cluster,
-    HelpItem.separator,
-    HelpItem.paramCount,
-    HelpItem.positional,
-    HelpItem.inline,
-    HelpItem.append,
-    HelpItem.choices,
-    HelpItem.regex,
-    HelpItem.unique,
-    HelpItem.limit,
-    HelpItem.stdin,
-    HelpItem.sources,
-    HelpItem.requires,
-    HelpItem.required,
-    HelpItem.requiredIf,
-    HelpItem.default,
-    HelpItem.useCommand,
-    HelpItem.useFilter,
-    HelpItem.deprecated,
-    HelpItem.link,
-  ],
-  filter: [],
-};
-
 /**
  * Keep this in-sync with {@link HelpItem}.
  */
@@ -384,7 +316,7 @@ export class HelpFormatter {
    * @param config The formatter configuration
    */
   constructor(options: OpaqueOptions, config: PartialFormatterConfig = {}) {
-    this.context = [options, mergeValues(defaultConfig, config)];
+    this.context = [options, mergeValues(defaultFormatterConfig, config)];
     this.groups = buildHelpEntries(this.context);
   }
 

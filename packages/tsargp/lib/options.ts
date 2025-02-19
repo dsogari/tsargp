@@ -1,10 +1,10 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { AnsiMessage, ErrorFormatter, MessageConfig, Style } from './styles.js';
-import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
+import type { PartialHelpConfig } from './config.js';
+import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
+import type { Promissory, Resolve } from './utils.js';
 
-import { HelpItem } from './enums.js';
 import { getEntries } from './utils.js';
 
 export { requirementExpressions as req };
@@ -65,90 +65,6 @@ const niladicOptionTypes = [...messageOptionTypes, 'command', 'flag'] as const;
  * In a valid range, the minimum should be strictly less than the maximum.
  */
 export type Range = readonly [min: number, max: number];
-
-/**
- * A text alignment setting.
- */
-export type Alignment = 'left' | 'right';
-
-/**
- * Defines attributes common to all help columns.
- * @template A The type of text alignment
- */
-export type WithColumn<A extends string = Alignment> = {
-  /**
-   * The text alignment for this column. (Defaults to 'left')
-   */
-  readonly align: A;
-  /**
-   * The indentation level for this column. (Defaults to 2)
-   */
-  readonly indent: number;
-  /**
-   * The number of line breaks to insert before each entry in this column. (Defaults to 0)
-   */
-  readonly breaks: number;
-  /**
-   * Whether the column should be hidden. (Defaults to false)
-   */
-  readonly hidden: boolean;
-};
-
-/**
- * Defines attributes for columns that may be preceded by other columns.
- */
-export type WithAbsolute = {
-  /**
-   * Whether the indentation level should be relative to the beginning of the line instead of the
-   * end of the previous column. (Defaults to false)
-   */
-  readonly absolute: boolean;
-};
-
-/**
- * The help configuration.
- */
-export type HelpConfig = {
-  /**
-   * The settings for the names column.
-   */
-  readonly names: WithColumn<Alignment | 'slot'>;
-  /**
-   * The settings for the parameter column.
-   */
-  readonly param: WithColumn<Alignment | 'merge'> & WithAbsolute;
-  /**
-   * The settings for the description column.
-   */
-  readonly descr: WithColumn<Alignment | 'merge'> & WithAbsolute;
-  /**
-   * The phrases to be used for each kind of help item.
-   */
-  readonly phrases: Readonly<Record<HelpItem, string>>;
-  /**
-   * The order of items to be shown in the option description.
-   */
-  readonly items: ReadonlyArray<HelpItem>;
-  /**
-   * A list of patterns to filter options.
-   */
-  filter: ReadonlyArray<string>;
-};
-
-/**
- * A partial help configuration.
- */
-export type PartialHelpConfig = PartialWithDepth<HelpConfig>;
-
-/**
- * A formatter configuration.
- */
-export type FormatterConfig = MessageConfig & HelpConfig;
-
-/**
- * A partial formatter configuration.
- */
-export type PartialFormatterConfig = PartialWithDepth<FormatterConfig>;
 
 /**
  * Defines attributes common to all help sections.

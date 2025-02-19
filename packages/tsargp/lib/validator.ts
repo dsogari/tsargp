@@ -1,13 +1,14 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { MessageConfig } from './styles.js';
+import type { PartialValidatorConfig } from './config.js';
 import type { OpaqueOption, Requires, RequiresVal, OpaqueOptions } from './options.js';
-import type { Args, NamingRules, PartialWithDepth } from './utils.js';
+import type { Args, NamingRules } from './utils.js';
 
+import { defaultValidatorConfig } from './config.js';
 import { ValidationError } from './enums.js';
-import { cfg, WarnMessage, ErrorFormatter } from './styles.js';
 import { getParamCount, getOptionNames, visitRequirements, isMessage } from './options.js';
+import { WarnMessage, ErrorFormatter } from './styles.js';
 import {
   findSimilar,
   getEntries,
@@ -42,50 +43,9 @@ const namingConventions = {
   },
 } as const satisfies NamingRules;
 
-/**
- * The default configuration used by the parser.
- */
-const defaultConfig: ValidateConfig = {
-  ...cfg,
-  phrases: {
-    [ValidationError.invalidOptionName]: 'Option #0 has invalid name #1.',
-    [ValidationError.invalidSelfRequirement]: 'Option #0 requires itself.',
-    [ValidationError.unknownRequiredOption]: 'Unknown option #0 in requirement.',
-    [ValidationError.invalidRequiredOption]: 'Invalid option #0 in requirement.',
-    [ValidationError.invalidRequiredValue]:
-      'Invalid required value for option #0. Option is always required or has a default value.',
-    [ValidationError.duplicateOptionName]: 'Option #0 has duplicate name #1.',
-    [ValidationError.duplicatePositionalOption]: 'Duplicate positional option #0: previous was #1.',
-    [ValidationError.duplicateChoiceValue]: 'Option #0 has duplicate choice #1.',
-    [ValidationError.duplicateClusterLetter]: 'Option #0 has duplicate cluster letter #1.',
-    [ValidationError.invalidClusterLetter]: 'Option #0 has invalid cluster letter #1.',
-    [ValidationError.tooSimilarOptionNames]: '#0: Option name #1 has too similar names: #2.',
-    [ValidationError.mixedNamingConvention]: '#0: Name slot #1 has mixed naming conventions: #2.',
-    [ValidationError.invalidParamCount]: 'Option #0 has invalid parameter count #1.',
-    [ValidationError.variadicWithClusterLetter]:
-      'Variadic option #0 may only appear as the last option in a cluster.',
-    [ValidationError.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
-  },
-};
-
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
-/**
- * The configuration for error/warning messages.
- */
-export type ValidateConfig = MessageConfig & {
-  /**
-   * The parse error/warning phrases.
-   */
-  readonly phrases: Readonly<Record<ValidationError, string>>;
-};
-
-/**
- * A partial validator configuration.
- */
-export type ValidatorConfig = PartialWithDepth<ValidateConfig>;
-
 /**
  * The validation flags.
  */
@@ -141,9 +101,9 @@ export class OptionValidator {
    */
   constructor(
     readonly options: OpaqueOptions,
-    config: ValidatorConfig = {},
+    config: PartialValidatorConfig = {},
   ) {
-    this.formatter = new ErrorFormatter(mergeValues(defaultConfig, config));
+    this.formatter = new ErrorFormatter(mergeValues(defaultValidatorConfig, config));
   }
 
   /**
