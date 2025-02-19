@@ -1,12 +1,12 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { PartialValidatorConfig } from './config.js';
+import type { PartialMessageConfig } from './config.js';
 import type { OpaqueOption, Requires, RequiresVal, OpaqueOptions } from './options.js';
 import type { Args, NamingRules } from './utils.js';
 
-import { defaultValidatorConfig } from './config.js';
-import { ValidationError } from './enums.js';
+import { defaultMessageConfig } from './config.js';
+import { ErrorItem } from './enums.js';
 import { getParamCount, getOptionNames, visitRequirements, isMessage } from './options.js';
 import { WarnMessage, ErrorFormatter } from './styles.js';
 import {
@@ -78,7 +78,7 @@ export type ValidationResult = {
  */
 type ValidateContext = [
   options: OpaqueOptions,
-  formatter: ErrorFormatter<ValidationError>,
+  formatter: ErrorFormatter,
   flags: ValidationFlags,
   warning: WarnMessage,
   visited: Set<OpaqueOptions>,
@@ -92,18 +92,18 @@ type ValidateContext = [
  * Implements validation of option definitions.
  */
 export class OptionValidator {
-  private readonly formatter: ErrorFormatter<ValidationError>;
+  private readonly formatter: ErrorFormatter;
 
   /**
    * Creates an option registry based on a set of option definitions.
    * @param options The option definitions
-   * @param config The validator configuration
+   * @param config The message configuration
    */
   constructor(
     readonly options: OpaqueOptions,
-    config: PartialValidatorConfig = {},
+    config: PartialMessageConfig = {},
   ) {
-    this.formatter = new ErrorFormatter(mergeValues(defaultValidatorConfig, config));
+    this.formatter = new ErrorFormatter(mergeValues(defaultMessageConfig, config));
   }
 
   /**
@@ -139,7 +139,7 @@ async function validate(context: ValidateContext) {
     if (option.positional !== undefined) {
       if (positional) {
         throw formatter.error(
-          ValidationError.duplicatePositionalOption,
+          ErrorItem.duplicatePositionalOption,
           {},
           getSymbol(prefix + key),
           getSymbol(prefix + positional),
@@ -174,19 +174,19 @@ function validateNames(
   const names = getOptionNames(option);
   for (const name of names) {
     if (name.match(regex.name)) {
-      throw formatter.error(ValidationError.invalidOptionName, {}, prefixedKey, name);
+      throw formatter.error(ErrorItem.invalidOptionName, {}, prefixedKey, name);
     }
     if (nameToKey.has(name)) {
-      throw formatter.error(ValidationError.duplicateOptionName, {}, prefixedKey, name);
+      throw formatter.error(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
     }
     nameToKey.set(name, key);
   }
   for (const letter of option.cluster ?? '') {
     if (letter.match(regex.name)) {
-      throw formatter.error(ValidationError.invalidClusterLetter, {}, prefixedKey, letter);
+      throw formatter.error(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
     }
     if (letterToKey.has(letter)) {
-      throw formatter.error(ValidationError.duplicateClusterLetter, {}, prefixedKey, letter);
+      throw formatter.error(ErrorItem.duplicateClusterLetter, {}, prefixedKey, letter);
     }
     letterToKey.set(letter, key);
   }
@@ -199,7 +199,7 @@ function validateNames(
  */
 function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, string>) {
   /** @ignore */
-  function warn(kind: ValidationError, ...args: Args) {
+  function warn(kind: ErrorItem, ...args: Args) {
     warning.push(formatter.create(kind, { open: '', close: '' }, ...args));
   }
   const [options, formatter, , warning, , prefix] = context;
@@ -209,7 +209,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
     if (!visited.has(name)) {
       const similar = findSimilar(name, nameToKey.keys(), 0.8);
       if (similar.length) {
-        warn(ValidationError.tooSimilarOptionNames, prefix2, name, similar);
+        warn(ErrorItem.tooSimilarOptionNames, prefix2, name, similar);
         for (const similarName of similar) {
           visited.add(similarName);
         }
@@ -235,7 +235,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
     for (const entries of getValues(match).map(getEntries)) {
       if (entries.length > 1) {
         const list = entries.map(([rule, name]) => rule + ': ' + name);
-        warn(ValidationError.mixedNamingConvention, prefix2, i, list);
+        warn(ErrorItem.mixedNamingConvention, prefix2, i, list);
       }
     }
   });
@@ -312,18 +312,18 @@ function validateRequirement(
   const [options, formatter, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + requiredKey);
   if (requiredKey === key) {
-    throw formatter.error(ValidationError.invalidSelfRequirement, {}, prefixedKey);
+    throw formatter.error(ErrorItem.invalidSelfRequirement, {}, prefixedKey);
   }
   if (!(requiredKey in options)) {
-    throw formatter.error(ValidationError.unknownRequiredOption, {}, prefixedKey);
+    throw formatter.error(ErrorItem.unknownRequiredOption, {}, prefixedKey);
   }
   const option = options[requiredKey];
   if (isMessage(option.type)) {
-    throw formatter.error(ValidationError.invalidRequiredOption, {}, prefixedKey);
+    throw formatter.error(ErrorItem.invalidRequiredOption, {}, prefixedKey);
   }
   const noValue = {};
   if ((requiredValue ?? noValue) === noValue && (option.required || option.default !== undefined)) {
-    throw formatter.error(ValidationError.invalidRequiredValue, {}, prefixedKey);
+    throw formatter.error(ErrorItem.invalidRequiredValue, {}, prefixedKey);
   }
 }
 
@@ -342,7 +342,7 @@ function validateConstraints(context: ValidateContext, key: symbol, option: Opaq
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
       if (dup) {
-        throw formatter.error(ValidationError.duplicateChoiceValue, {}, key, dup);
+        throw formatter.error(ErrorItem.duplicateChoiceValue, {}, key, dup);
       }
     }
   }
@@ -356,13 +356,13 @@ function validateConstraints(context: ValidateContext, key: symbol, option: Opaq
   }
   // handles NaN
   if (!valid) {
-    throw formatter.error(ValidationError.invalidParamCount, {}, key, paramCount);
+    throw formatter.error(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);
   if (max > 1 && !option.separator && !option.append && option.inline) {
-    throw formatter.error(ValidationError.invalidInlineConstraint, {}, key);
+    throw formatter.error(ErrorItem.invalidInlineConstraint, {}, key);
   }
   if (min < max && option.cluster) {
-    warning.push(formatter.create(ValidationError.variadicWithClusterLetter, {}, key));
+    warning.push(formatter.create(ErrorItem.variadicWithClusterLetter, {}, key));
   }
 }

@@ -22,7 +22,7 @@ const helloOpts = {
     type: 'help',
     names: ['-h', '--help'],
     synopsis: 'The help option for the hello command. Prints this help message.',
-    config: {
+    layout: {
       param: { align: 'merge' },
     },
     useFilter: true,

@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { PartialHelpConfig } from './config.js';
+import type { PartialHelpLayout } from './config.js';
 import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
 import type { Promissory, Resolve } from './utils.js';
 
@@ -69,7 +69,7 @@ export type Range = readonly [min: number, max: number];
 /**
  * Defines attributes common to all help sections.
  */
-export type WithKind<T extends string> = {
+export type WithSectionKind<T extends string> = {
   /**
    * The kind of section.
    */
@@ -79,7 +79,7 @@ export type WithKind<T extends string> = {
 /**
  * Defines attributes for a help section with wrapping.
  */
-export type WithTitle = {
+export type WithSectionTitle = {
   /**
    * The section heading or default group heading. May contain inline styles.
    */
@@ -102,7 +102,7 @@ export type WithTitle = {
 /**
  * Defines attributes for a help section with text content.
  */
-export type WithText = {
+export type WithSectionText = {
   /**
    * The section content. May contain inline styles.
    */
@@ -112,7 +112,7 @@ export type WithText = {
 /**
  * Defines attributes for a help section with indentation.
  */
-export type WithIndent = {
+export type WithSectionIndent = {
   /**
    * The indentation level of the section content. (Defaults to 0)
    */
@@ -122,7 +122,7 @@ export type WithIndent = {
 /**
  * Defines attributes for a help section with filter.
  */
-export type WithFilter = {
+export type WithSectionFilter = {
   /**
    * A list of options keys or group names to include or exclude.
    */
@@ -136,7 +136,7 @@ export type WithFilter = {
 /**
  * Defines additional attributes for the usage section.
  */
-export type WithUsage = {
+export type WithSectionUsage = {
   /**
    * A list of options that should be considered required in the usage.
    */
@@ -154,22 +154,29 @@ export type WithUsage = {
 /**
  * A help text section.
  */
-export type HelpText = WithKind<'text'> & WithTitle & WithText & WithIndent;
+export type HelpTextSection = WithSectionKind<'text'> &
+  WithSectionTitle &
+  WithSectionText &
+  WithSectionIndent;
 
 /**
  * A help usage section.
  */
-export type HelpUsage = WithKind<'usage'> & WithTitle & WithUsage & WithIndent & WithFilter;
+export type HelpUsageSection = WithSectionKind<'usage'> &
+  WithSectionTitle &
+  WithSectionUsage &
+  WithSectionIndent &
+  WithSectionFilter;
 
 /**
  * A help groups section.
  */
-export type HelpGroups = WithKind<'groups'> & WithTitle & WithFilter;
+export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionTitle & WithSectionFilter;
 
 /**
  * A help section.
  */
-export type HelpSection = HelpText | HelpUsage | HelpGroups;
+export type HelpSection = HelpTextSection | HelpUsageSection | HelpGroupsSection;
 
 /**
  * A list of help sections.
@@ -340,7 +347,7 @@ export type WithFormat = {
   /**
    * Creates a formatted message.
    */
-  format: ErrorFormatter<0>['format'];
+  format: ErrorFormatter['format'];
 };
 
 /**
@@ -517,9 +524,9 @@ export type WithSelection = {
  */
 export type WithHelp = {
   /**
-   * The formatter configuration.
+   * The help layout.
    */
-  readonly config?: PartialHelpConfig;
+  readonly layout?: PartialHelpLayout;
   /**
    * The help sections to be rendered.
    */

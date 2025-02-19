@@ -4,7 +4,7 @@
 import type { MessageConfig } from './config.js';
 import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
 
-import { ConnectiveWord, cs, fg, bg, tf } from './enums.js';
+import { ConnectiveWord, ErrorItem, cs, fg, bg, tf } from './enums.js';
 import {
   getEntries,
   isArray,
@@ -290,17 +290,6 @@ export type FormattingFlags = {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly custom?: FormatCallback<any>;
-};
-
-/**
- * The configuration for messages with custom phrases.
- * @template T The type of phrase identifier
- */
-export type WithPhrases<T extends number> = {
-  /**
-   * The message phrases.
-   */
-  readonly phrases: Readonly<Record<T, string>>;
 };
 
 /**
@@ -833,14 +822,13 @@ export class TextMessage extends Array<string> {
 
 /**
  * Implements formatting of error and warning messages.
- * @template T The type of phrase identifier
  */
-export class ErrorFormatter<T extends number> {
+export class ErrorFormatter {
   /**
    * Creates an error formatter.
    * @param config The message configuration
    */
-  constructor(readonly config: MessageConfig & WithPhrases<T>) {}
+  constructor(readonly config: MessageConfig) {}
 
   /**
    * Creates a formatted error message.
@@ -849,7 +837,7 @@ export class ErrorFormatter<T extends number> {
    * @param args The message arguments
    * @returns The formatted error
    */
-  error(kind: T, flags?: FormattingFlags, ...args: Args): ErrorMessage {
+  error(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): ErrorMessage {
     return new ErrorMessage(this.create(kind, flags, ...args));
   }
 
@@ -862,8 +850,8 @@ export class ErrorFormatter<T extends number> {
    * @param args The message arguments
    * @returns The formatted message
    */
-  create(kind: T, flags?: FormattingFlags, ...args: Args): AnsiString {
-    return this.format(this.config.phrases[kind], flags, ...args);
+  create(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): AnsiString {
+    return this.format(this.config.errorPhrases[kind], flags, ...args);
   }
 
   /**

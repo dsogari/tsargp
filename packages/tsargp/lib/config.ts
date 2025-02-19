@@ -5,7 +5,7 @@ import type { Style } from './styles.js';
 import type { PartialWithDepth } from './utils.js';
 
 import { style } from './styles.js';
-import { fg, ConnectiveWord, HelpItem, ParsingError, ValidationError } from './enums.js';
+import { fg, ConnectiveWord, ErrorItem, HelpItem } from './enums.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -46,81 +46,43 @@ export const defaultMessageConfig: MessageConfig = {
     [ConnectiveWord.exprOpen]: '(',
     [ConnectiveWord.exprClose]: ')',
   },
-} as const;
-
-/**
- * The default configuration used by the parser.
- */
-export const defaultParserConfig: ParserConfig = {
-  ...defaultMessageConfig,
-  phrases: {
-    [ParsingError.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
-    [ParsingError.unsatisfiedRequirement]: 'Option #0 requires #1.',
-    [ParsingError.missingRequiredOption]: 'Option #0 is required.',
-    [ParsingError.mismatchedParamCount]:
+  errorPhrases: {
+    [ErrorItem.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
+    [ErrorItem.unsatisfiedRequirement]: 'Option #0 requires #1.',
+    [ErrorItem.missingRequiredOption]: 'Option #0 is required.',
+    [ErrorItem.mismatchedParamCount]:
       'Wrong number of parameters to option #0: requires (exactly|at least|at most|between) #1.',
-    [ParsingError.missingPackageJson]: 'Could not find a "package.json" file.',
-    [ParsingError.disallowedInlineParameter]:
+    [ErrorItem.missingPackageJson]: 'Could not find a "package.json" file.',
+    [ErrorItem.disallowedInlineParameter]:
       '(Option|Positional marker) #0 does not accept inline parameters.',
-    [ParsingError.choiceConstraintViolation]:
-      'Invalid parameter to #0: #1. Value must be one of: #2.',
-    [ParsingError.regexConstraintViolation]:
+    [ErrorItem.choiceConstraintViolation]: 'Invalid parameter to #0: #1. Value must be one of: #2.',
+    [ErrorItem.regexConstraintViolation]:
       'Invalid parameter to #0: #1. Value must match the regex #2.',
-    [ParsingError.limitConstraintViolation]:
+    [ErrorItem.limitConstraintViolation]:
       'Option #0 has too many values: #1. Should have at most #2.',
-    [ParsingError.deprecatedOption]:
-      'Option #0 is deprecated and may be removed in future releases.',
-    [ParsingError.unsatisfiedCondRequirement]: 'Option #0 is required if #1.',
-    [ParsingError.invalidClusterOption]: 'Option letter #0 must be the last in a cluster.',
-    [ParsingError.missingInlineParameter]: 'Option #0 requires an inline parameter.',
-  },
-};
-
-/**
- * The default configuration used by the validator.
- */
-export const defaultValidatorConfig: ValidatorConfig = {
-  ...defaultMessageConfig,
-  phrases: {
-    [ValidationError.invalidOptionName]: 'Option #0 has invalid name #1.',
-    [ValidationError.invalidSelfRequirement]: 'Option #0 requires itself.',
-    [ValidationError.unknownRequiredOption]: 'Unknown option #0 in requirement.',
-    [ValidationError.invalidRequiredOption]: 'Invalid option #0 in requirement.',
-    [ValidationError.invalidRequiredValue]:
+    [ErrorItem.deprecatedOption]: 'Option #0 is deprecated and may be removed in future releases.',
+    [ErrorItem.unsatisfiedCondRequirement]: 'Option #0 is required if #1.',
+    [ErrorItem.invalidClusterOption]: 'Option letter #0 must be the last in a cluster.',
+    [ErrorItem.missingInlineParameter]: 'Option #0 requires an inline parameter.',
+    [ErrorItem.invalidOptionName]: 'Option #0 has invalid name #1.',
+    [ErrorItem.invalidSelfRequirement]: 'Option #0 requires itself.',
+    [ErrorItem.unknownRequiredOption]: 'Unknown option #0 in requirement.',
+    [ErrorItem.invalidRequiredOption]: 'Invalid option #0 in requirement.',
+    [ErrorItem.invalidRequiredValue]:
       'Invalid required value for option #0. Option is always required or has a default value.',
-    [ValidationError.duplicateOptionName]: 'Option #0 has duplicate name #1.',
-    [ValidationError.duplicatePositionalOption]: 'Duplicate positional option #0: previous was #1.',
-    [ValidationError.duplicateChoiceValue]: 'Option #0 has duplicate choice #1.',
-    [ValidationError.duplicateClusterLetter]: 'Option #0 has duplicate cluster letter #1.',
-    [ValidationError.invalidClusterLetter]: 'Option #0 has invalid cluster letter #1.',
-    [ValidationError.tooSimilarOptionNames]: '#0: Option name #1 has too similar names: #2.',
-    [ValidationError.mixedNamingConvention]: '#0: Name slot #1 has mixed naming conventions: #2.',
-    [ValidationError.invalidParamCount]: 'Option #0 has invalid parameter count #1.',
-    [ValidationError.variadicWithClusterLetter]:
+    [ErrorItem.duplicateOptionName]: 'Option #0 has duplicate name #1.',
+    [ErrorItem.duplicatePositionalOption]: 'Duplicate positional option #0: previous was #1.',
+    [ErrorItem.duplicateChoiceValue]: 'Option #0 has duplicate choice #1.',
+    [ErrorItem.duplicateClusterLetter]: 'Option #0 has duplicate cluster letter #1.',
+    [ErrorItem.invalidClusterLetter]: 'Option #0 has invalid cluster letter #1.',
+    [ErrorItem.tooSimilarOptionNames]: '#0: Option name #1 has too similar names: #2.',
+    [ErrorItem.mixedNamingConvention]: '#0: Name slot #1 has mixed naming conventions: #2.',
+    [ErrorItem.invalidParamCount]: 'Option #0 has invalid parameter count #1.',
+    [ErrorItem.variadicWithClusterLetter]:
       'Variadic option #0 may only appear as the last option in a cluster.',
-    [ValidationError.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
+    [ErrorItem.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
   },
-};
-
-/**
- * The default column configuration.
- */
-const defaultColumn: WithColumn = {
-  align: 'left',
-  indent: 2,
-  breaks: 0,
-  hidden: false,
-};
-
-/**
- * The default configuration used by the formatter.
- */
-export const defaultFormatterConfig: FormatterConfig = {
-  ...defaultMessageConfig,
-  names: defaultColumn,
-  param: { ...defaultColumn, absolute: false },
-  descr: { ...defaultColumn, absolute: false },
-  phrases: {
+  helpPhrases: {
     [HelpItem.synopsis]: '#0',
     [HelpItem.separator]: 'Values can be delimited with #0.',
     [HelpItem.paramCount]: 'Accepts (multiple|#0|at most #0|at least #0|between #0) parameters.',
@@ -143,6 +105,25 @@ export const defaultFormatterConfig: FormatterConfig = {
     [HelpItem.useFilter]: 'Uses the remaining arguments as option filter.',
     [HelpItem.inline]: '(Disallows|Requires) inline parameters.',
   },
+};
+
+/**
+ * The default help column layout.
+ */
+const defaultHelpColumn: WithColumnLayout = {
+  align: 'left',
+  indent: 2,
+  breaks: 0,
+  hidden: false,
+};
+
+/**
+ * The default help layout.
+ */
+export const defaultHelpLayout: HelpLayout = {
+  names: defaultHelpColumn,
+  param: { ...defaultHelpColumn, absolute: false },
+  descr: { ...defaultHelpColumn, absolute: false },
   items: [
     HelpItem.synopsis,
     HelpItem.cluster,
@@ -166,39 +147,13 @@ export const defaultFormatterConfig: FormatterConfig = {
     HelpItem.deprecated,
     HelpItem.link,
   ],
-  filter: [],
 };
 
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
 /**
- * A partial help configuration.
- */
-export type PartialHelpConfig = PartialWithDepth<HelpConfig>;
-
-/**
- * A formatter configuration.
- */
-export type FormatterConfig = MessageConfig & HelpConfig;
-
-/**
- * A partial parser configuration.
- */
-export type PartialParserConfig = PartialWithDepth<ParserConfig>;
-
-/**
- * A partial validator configuration.
- */
-export type PartialValidatorConfig = PartialWithDepth<ValidatorConfig>;
-
-/**
- * A partial formatter configuration.
- */
-export type PartialFormatterConfig = PartialWithDepth<FormatterConfig>;
-
-/**
- * The configuration for messages.
+ * The message configuration.
  */
 export type MessageConfig = {
   /**
@@ -209,7 +164,25 @@ export type MessageConfig = {
    * The connective words.
    */
   readonly connectives: Readonly<Record<ConnectiveWord, string>>;
+  /**
+   * The custom error phrases.
+   */
+  readonly errorPhrases: Readonly<Record<ErrorItem, string>>;
+  /**
+   * The custom help phrases.
+   */
+  readonly helpPhrases: Readonly<Record<HelpItem, string>>;
 };
+
+/**
+ * A partial message configuration.
+ */
+export type PartialMessageConfig = PartialWithDepth<MessageConfig>;
+
+/**
+ * A partial help layout.
+ */
+export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
 
 //--------------------------------------------------------------------------------------------------
 // Internal types
@@ -253,35 +226,15 @@ type MessageStyles = {
 };
 
 /**
- * The configuration for error/warning messages.
- */
-type ParserConfig = MessageConfig & {
-  /**
-   * The parse error/warning phrases.
-   */
-  readonly phrases: Readonly<Record<ParsingError, string>>;
-};
-
-/**
- * The configuration for error/warning messages.
- */
-type ValidatorConfig = MessageConfig & {
-  /**
-   * The parse error/warning phrases.
-   */
-  readonly phrases: Readonly<Record<ValidationError, string>>;
-};
-
-/**
  * A text alignment setting.
  */
 type Alignment = 'left' | 'right';
 
 /**
- * Defines attributes common to all help columns.
+ * Defines layout attributes common to all help columns.
  * @template A The type of text alignment
  */
-type WithColumn<A extends string = Alignment> = {
+type WithColumnLayout<A extends string = Alignment> = {
   /**
    * The text alignment for this column. (Defaults to 'left')
    */
@@ -301,9 +254,9 @@ type WithColumn<A extends string = Alignment> = {
 };
 
 /**
- * Defines attributes for columns that may be preceded by other columns.
+ * Defines layout attributes for columns that may be preceded by other columns.
  */
-type WithAbsolute = {
+type WithAbsoluteLayout = {
   /**
    * Whether the indentation level should be relative to the beginning of the line instead of the
    * end of the previous column. (Defaults to false)
@@ -312,31 +265,23 @@ type WithAbsolute = {
 };
 
 /**
- * The help configuration.
+ * The help layout.
  */
-type HelpConfig = {
+export type HelpLayout = {
   /**
    * The settings for the names column.
    */
-  readonly names: WithColumn<Alignment | 'slot'>;
+  readonly names: WithColumnLayout<Alignment | 'slot'>;
   /**
    * The settings for the parameter column.
    */
-  readonly param: WithColumn<Alignment | 'merge'> & WithAbsolute;
+  readonly param: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
   /**
    * The settings for the description column.
    */
-  readonly descr: WithColumn<Alignment | 'merge'> & WithAbsolute;
-  /**
-   * The phrases to be used for each kind of help item.
-   */
-  readonly phrases: Readonly<Record<HelpItem, string>>;
+  readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
   /**
    * The order of items to be shown in the option description.
    */
   readonly items: ReadonlyArray<HelpItem>;
-  /**
-   * A list of patterns to filter options.
-   */
-  filter: ReadonlyArray<string>;
 };

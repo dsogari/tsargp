@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options, PartialFormatterConfig } from '../../lib/options';
+import type { PartialHelpLayout } from '../../lib/config';
+import type { Options } from '../../lib/options';
 import { HelpFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -38,8 +39,8 @@ describe('HelpFormatter', () => {
           names: ['-s'],
         },
       } as const satisfies Options;
-      const config: PartialFormatterConfig = { descr: { absolute: true }, filter: ['flag'] };
-      const message = new HelpFormatter(options, config).format();
+      const config: PartialHelpLayout = { descr: { absolute: true } };
+      const message = new HelpFormatter(options, undefined, config, ['flag']).format();
       expect(message.wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
     });
 
@@ -58,8 +59,8 @@ describe('HelpFormatter', () => {
           sources: ['SINGLE'],
         },
       } as const satisfies Options;
-      const config: PartialFormatterConfig = { items: [], filter: ['-f', 'sing'] };
-      const message = new HelpFormatter(options, config).format();
+      const config: PartialHelpLayout = { items: [] };
+      const message = new HelpFormatter(options, undefined, config, ['-f', 'sing']).format();
       expect(message.wrap()).toEqual(`  -f\n  -s  <param>\n`);
     });
 

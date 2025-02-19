@@ -7,9 +7,9 @@ export { ControlSequence as cs, TypeFace as tf, ForegroundColor as fg, Backgroun
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * The kind of error/warning raised by the parser.
+ * The kind of error/warning raised by the parser or validator.
  */
-export const enum ParsingError {
+export const enum ErrorItem {
   /**
    * Error raised when an option name is not found, with possible name suggestions.
    */
@@ -63,12 +63,6 @@ export const enum ParsingError {
    * Error raised when an option is specified with no inline parameter, despite it being required.
    */
   missingInlineParameter,
-}
-
-/**
- * The kind of error/warning raised by the validator.
- */
-export const enum ValidationError {
   /**
    * Error raised when an option has an invalid name.
    */

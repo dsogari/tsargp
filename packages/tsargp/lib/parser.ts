@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { PartialParserConfig } from './config.js';
+import type { PartialMessageConfig } from './config.js';
 import type {
   HelpSections,
   Options,
@@ -18,8 +18,8 @@ import type {
 import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
 
-import { defaultParserConfig } from './config.js';
-import { ConnectiveWord, ParsingError } from './enums.js';
+import { defaultMessageConfig } from './config.js';
+import { ConnectiveWord, ErrorItem } from './enums.js';
 import { HelpFormatter } from './formatter.js';
 import {
   fmt,
@@ -103,7 +103,7 @@ export type CommandLine = string | Array<string>;
  */
 type ParseContext = [
   registry: OptionRegistry,
-  formatter: ErrorFormatter<ParsingError>,
+  formatter: ErrorFormatter,
   values: OpaqueOptionValues,
   args: Array<string>,
   specifiedKeys: Set<string>,
@@ -147,16 +147,16 @@ type RequireItemFn<T> = (
  */
 export class ArgumentParser<T extends Options = Options> {
   private readonly registry: OptionRegistry;
-  private readonly formatter: ErrorFormatter<ParsingError>;
+  private readonly formatter: ErrorFormatter;
 
   /**
    * Creates an argument parser based on a set of option definitions.
    * @param options The option definitions
    * @param config The parse configuration
    */
-  constructor(options: T, config: PartialParserConfig = {}) {
+  constructor(options: T, config: PartialMessageConfig = {}) {
     this.registry = new OptionRegistry(options);
-    this.formatter = new ErrorFormatter(mergeValues(defaultParserConfig, config));
+    this.formatter = new ErrorFormatter(mergeValues(defaultMessageConfig, config));
   }
 
   /**
@@ -216,7 +216,7 @@ export class ArgumentParser<T extends Options = Options> {
  */
 function createContext(
   registry: OptionRegistry,
-  formatter: ErrorFormatter<ParsingError>,
+  formatter: ErrorFormatter,
   values: OpaqueOptionValues,
   args: Array<string>,
   completing: boolean,
@@ -284,7 +284,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
     if (j < rest.length - 1 && (option.type === 'command' || min < max)) {
-      throw formatter.error(ParsingError.invalidClusterOption, {}, letter);
+      throw formatter.error(ErrorItem.invalidClusterOption, {}, letter);
     }
     if (name !== undefined) {
       args.splice(index++, 0, name);
@@ -335,7 +335,7 @@ async function parseArgs(context: ParseContext) {
             continue;
           }
           const [alt, name2] = marker ? [1, `${option.positional}`] : [0, name];
-          throw formatter.error(ParsingError.disallowedInlineParameter, { alt }, getSymbol(name2));
+          throw formatter.error(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       } else if (min && !hasValue && option.inline) {
         if (completing) {
@@ -343,11 +343,11 @@ async function parseArgs(context: ParseContext) {
           prev[1] = undefined;
           continue;
         }
-        throw formatter.error(ParsingError.missingInlineParameter, {}, getSymbol(name));
+        throw formatter.error(ErrorItem.missingInlineParameter, {}, getSymbol(name));
       }
       if (!completing && !specifiedKeys.has(key)) {
         if (option.deprecated !== undefined) {
-          warning.push(formatter.create(ParsingError.deprecatedOption, {}, getSymbol(name)));
+          warning.push(formatter.create(ErrorItem.deprecatedOption, {}, getSymbol(name)));
         }
         specifiedKeys.add(key);
       }
@@ -456,7 +456,7 @@ function reportUnknownName(context: ParseContext, name: string): never {
   const alt = similar.length ? 1 : 0;
   const sep = formatter.config.connectives[ConnectiveWord.optionSep];
   throw formatter.error(
-    ParsingError.unknownOption,
+    ErrorItem.unknownOption,
     { alt, sep, open: '', close: '' },
     getSymbol(name),
     similar.map(getSymbol),
@@ -555,7 +555,7 @@ async function parseParams(
   params: Array<string>,
 ): Promise<[boolean, number]> {
   /** @ignore */
-  function error(kind: ParsingError, flags: FormattingFlags, ...args: Args) {
+  function error(kind: ErrorItem, flags: FormattingFlags, ...args: Args) {
     return formatter.error(kind, flags, getSymbol(name), ...args);
   }
   /** @ignore */
@@ -593,7 +593,7 @@ async function parseParams(
         min === max ? [0, min] : !min ? [2, max] : isFinite(max) ? [3, [min, max]] : [1, min];
       const sep = formatter.config.connectives[ConnectiveWord.and];
       const flags = { alt, sep, mergePrev: false };
-      throw error(ParsingError.mismatchedParamCount, flags, val);
+      throw error(ErrorItem.mismatchedParamCount, flags, val);
     }
   }
   if (option.type === 'function') {
@@ -606,7 +606,7 @@ async function parseParams(
   if (regex) {
     const mismatch = params.find((param) => !param.match(regex));
     if (mismatch) {
-      throw error(ParsingError.regexConstraintViolation, {}, mismatch, regex);
+      throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
     }
   }
   const choices = option.choices;
@@ -616,7 +616,7 @@ async function parseParams(
   if (keys) {
     const mismatch = params.find((param) => !keys.includes(param));
     if (mismatch) {
-      throw error(ParsingError.choiceConstraintViolation, { open: '', close: '' }, mismatch, keys);
+      throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, keys);
     }
   }
   if (option.type === 'single') {
@@ -643,7 +643,7 @@ async function parseParams(
  * @throws On value not satisfying the specified limit constraint
  */
 function normalizeArray<T>(
-  formatter: ErrorFormatter<ParsingError>,
+  formatter: ErrorFormatter,
   option: OpaqueOption,
   name: string,
   value: Array<T>,
@@ -656,7 +656,7 @@ function normalizeArray<T>(
   const limit = option.limit;
   if (limit !== undefined && value.length > limit) {
     throw formatter.error(
-      ParsingError.limitConstraintViolation,
+      ErrorItem.limitConstraintViolation,
       {},
       getSymbol(name),
       value.length,
@@ -813,12 +813,13 @@ async function handleHelp(
       }
     }
   }
-  const helpConfig = option.config ?? {};
-  if (option.useFilter) {
-    helpConfig.filter = rest;
-  }
-  const config = { ...formatter.config, phrases: {}, ...helpConfig };
-  const helpFormatter = new HelpFormatter(registry.options, config);
+  const filter = option.useFilter ? rest : undefined;
+  const helpFormatter = new HelpFormatter(
+    registry.options,
+    formatter.config,
+    option.layout,
+    filter,
+  );
   return helpFormatter.sections(option.sections ?? defaultSections, progName);
 }
 
@@ -828,10 +829,7 @@ async function handleHelp(
  * @param resolve The resolve callback
  * @returns The version string
  */
-async function handleVersion(
-  formatter: ErrorFormatter<ParsingError>,
-  resolve: ResolveCallback,
-): Promise<string> {
+async function handleVersion(formatter: ErrorFormatter, resolve: ResolveCallback): Promise<string> {
   for (
     let path = './package.json', resolved = resolve(path), lastResolved;
     resolved !== lastResolved;
@@ -842,7 +840,7 @@ async function handleVersion(
       return JSON.parse(data).version;
     }
   }
-  throw formatter.error(ParsingError.missingPackageJson);
+  throw formatter.error(ErrorItem.missingPackageJson);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -884,7 +882,7 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   }
   const name = option.preferredName ?? '';
   if (option.required) {
-    throw formatter.error(ParsingError.missingRequiredOption, {}, getSymbol(name));
+    throw formatter.error(ErrorItem.missingRequiredOption, {}, getSymbol(name));
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
@@ -919,8 +917,8 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   ) {
     const name = option.preferredName ?? '';
     const kind = specified
-      ? ParsingError.unsatisfiedRequirement
-      : ParsingError.unsatisfiedCondRequirement;
+      ? ErrorItem.unsatisfiedRequirement
+      : ErrorItem.unsatisfiedCondRequirement;
     throw formatter.error(kind, {}, getSymbol(name), error);
   }
 }
