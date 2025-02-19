@@ -1,8 +1,8 @@
 ---
-title: Introduction
+title: Introduction - Docs
 ---
 
-import { Tabs } from 'nextra/components';
+import { FileTree, Steps, Tabs } from 'nextra/components';
 
 # Introduction
 
@@ -10,59 +10,97 @@ import { Tabs } from 'nextra/components';
 
 ## Features
 
-| Usability            | Functionality          | Presentation            |
+| Usability-wise       | Functionality-wise     | Presentation-wise       |
 | -------------------- | ---------------------- | ----------------------- |
 | Zero-dependency      | Word completion        | Help message formatting |
-| Fully declarative    | Option validation      | Text wrapping/alignment |
+| Fully declarative    | Run-time validation    | Text wrapping/alignment |
 | Type-checked         | Option requirements    | Paragraphs and lists    |
 | Browser-compatible   | Name suggestions       | [SGR] colors and styles |
-| 32KB minified        | Nested commands        | Custom phrasing         |
-| ESM-native           | Asynchronous callbacks | Option grouping/hiding  |
-| Online documentation | GNU's _short-options_  | Help formats/sections   |
+| 30KB minified        | Subcommands            | Option grouping/hiding  |
+| ESM-native           | Asynchronous callbacks | Help sections/usage     |
+| Online documentation | GNU's _short-options_  |                         |
 
 ## Motivation
 
 Why use this library when there are already many good argument parsers on npm?
 
-Its most distinctive feature is a _declarative_ API. Very few libraries on npm that we know of (at
-the time of writing) have this feature (worth mentioning [meow], [yargs] and [oclif]). Most others
-have either imperative or fluent interface, whereas **tsargp** offers a way to declare all of your
-command-line options in a single `object`.
+The most distinctive feature is the _declarative_-ness of its API. Very few libraries that we know of support this (at the time of writing, it's worth mentioning [meow], [yargs] and [oclif]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
 
-Furthermore, by using TypeScript, it ensures that the values resulting from argument parsing have
-_accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In
-particular, an option's value will be a union literal if you declare a choice mapping in its
-definition. Even JSDoc comments are preserved in IntelliSense!
+Moreover, by relying on TypeScript, it ensures that values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a choice constraint in its definition. Even JSDoc comments are preserved in IntelliSense!
 
 ## Installation
 
-```sh copy
-npm install tsargp
-```
+<Tabs items={['npm', 'pnpm', 'Bun', 'Yarn']}>
+  <Tabs.Tab>
+
+    ```sh copy
+    npm add tsargp
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+    ```sh copy
+    pnpm add tsargp
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+    ```sh copy
+    bun add tsargp
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+    ```sh copy
+    yarn add tsargp
+    ```
+
+  </Tabs.Tab>
+</Tabs>
 
 ## Quick Start
 
-Define your command-line options:
+<Steps>
 
-```ts copy filename="<your_cli_name>.options.ts" /<your_cli_name>/
+### Define folder structure
+
+By convention, we keep command-line options separate from the main script which uses them. Assuming your application name is `cli`, here's a possible folder structure for the related source code:
+
+<FileTree>
+  <FileTree.Folder name="lib" defaultOpen>
+    <FileTree.File name="cli.options.spec.ts" />
+    <FileTree.File name="cli.options.ts" />
+    <FileTree.File name="cli.ts" />
+  </FileTree.Folder>
+</FileTree>
+
+### Define command-line options
+
+You should define the options and export them by default as a single object. Below is an example. In the documentation, you will learn about the different option types and their attributes.
+
+```ts copy filename="cli.options.ts" {4}
 import { type Options, ... } from 'tsargp';
 
 export default {
-  // define the options' attributes...
+  // definitions go here...
 } as const satisfies Options;
 ```
 
-Import them in your main script:
+### Parse arguments in main script
 
-```ts copy filename="<your_cli_name>.ts" {7,8} /<your_cli_name>/
+There are multiple ways to parse the command-line arguments. Below is an example. In the documentation, you will learn how to parse them into an existing object or class instance, specify parsing flags, and print warnings.
+
+```ts copy filename="cli.ts" {3}
 #!/usr/bin/env node
 import { ArgumentParser } from 'tsargp';
-import options from './<your_cli_name>.options.js';
+import options from './cli.options.js';
 
 try {
-  const parser = new ArgumentParser(options);
-  const values = await parser.parse(); // use this to get the options' values
-  // await parser.parseInto(myValues); // use this to fill an existing object or class instance
+  const values = await new ArgumentParser(options).parse();
+  // do something with the options' values...
 } catch (err) {
   if (err instanceof Error) {
     console.error(`${err}`); // genuine errors
@@ -73,32 +111,35 @@ try {
 }
 ```
 
-Validate them in your test script:
+### Validate options in test script
 
-```ts copy filename="<your_cli_name>.spec.ts" /<your_cli_name>/
+You should check the validity of command-line options during development, to avoid headaches for end users. The documentation also shows how to check for inconsistencies in option naming, among other things.
+
+```ts copy filename="cli.options.spec.ts" {2}
 import { OptionValidator } from 'tsargp';
-import options from './<your_cli_name>.options.js';
+import options from './cli.options.js';
 
-describe('<your_cli_name>', () => {
+describe('cli', () => {
   it('should have valid options', async () => {
-    const validator = new OptionValidator(options);
-    const { warning } = await validator.validate();
+    const { warning } = await new OptionValidator(options).validate();
     expect(warning).toBeUndefined(); // or check warnings that are important to your application
   });
 });
 ```
 
-Optionally, enable word completion:
+### Enable word completion (optional)
+
+You can configure shell completion to use the main script as a source of completion words. This is handled automatically by the library. You just need to register it with the completion builtins.
 
 <Tabs items={['Bash', 'PowerShell', 'Zsh', 'Fish', 'Nushell']}>
   <Tabs.Tab>
-    ```bash copy /<your_cli_name>/ /<path_to_main_script>/
-    complete -o default -C <path_to_main_script> <your_cli_name>
+    ```bash copy /cli/ /<path_to_main_script>/
+    complete -o default -C <path_to_main_script> cli
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```ps copy /<your_cli_name>/ /<path_to_main_script>/
-    Register-ArgumentCompleter -Native -CommandName <your_cli_name> -ScriptBlock {
+    ```ps copy /cli/ /<path_to_main_script>/
+    Register-ArgumentCompleter -Native -CommandName cli -ScriptBlock {
       param($word, $cmdLine, $cursorPos)
         $env:BUFFER="$cmdLine"; $env:CURSOR=$cursorPos
         <path_to_main_script>
@@ -107,20 +148,20 @@ Optionally, enable word completion:
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```zsh copy /<your_cli_name>/ /<path_to_main_script>/
-    compdef 'export BUFFER CURSOR; _values <your_cli_name> `<path_to_main_script>`' <your_cli_name>
+    ```zsh copy /cli/ /<path_to_main_script>/
+    compdef 'export BUFFER CURSOR; _values cli `<path_to_main_script>`' cli
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```fish copy /<your_cli_name>/ /<path_to_main_script>/
-    complete <your_cli_name> -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
+    ```fish copy /cli/ /<path_to_main_script>/
+    complete cli -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```nu copy /<your_cli_name>/ /<path_to_main_script>/
+    ```nu copy /cli/ /<path_to_main_script>/
     $env.config.completions.external.completer = {|spans|
       {
-        <your_cli_name>: {
+        cli: {
           with-env { BUFFER: ($spans | str join ' ') } { <path_to_main_script> } | lines
         }
       } | get $spans.0 | each { || do $in }
@@ -129,7 +170,11 @@ Optionally, enable word completion:
   </Tabs.Tab>
 </Tabs>
 
-[SGR]: https://www.wikiwand.com/en/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
+</Steps>
+
+{/* external references */}
+
+[SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [meow]: https://www.npmjs.com/package/meow
 [yargs]: https://yargs.js.org/
 [oclif]: https://oclif.io/

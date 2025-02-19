@@ -166,12 +166,12 @@ const formatFunctions = {
     result.word(url.href);
   },
   /**
-   * The formatting function for terminal strings.
-   * @param str The terminal string
+   * The formatting function for ANSI strings.
+   * @param str The ANSI string
    * @param _config The message configuration
    * @param result The resulting string
    */
-  t(str: TerminalString, _config, result) {
+  t(str: AnsiString, _config, result) {
     result.other(str);
   },
   /**
@@ -253,7 +253,7 @@ const formatFunctions = {
         ? 'u'
         : value instanceof RegExp
           ? 'r'
-          : value instanceof TerminalString
+          : value instanceof AnsiString
             ? 't'
             : isArray(value)
               ? 'a'
@@ -281,21 +281,11 @@ const formatFunctions = {
 // Public types
 //--------------------------------------------------------------------------------------------------
 /**
- * A help message.
+ * A callback that processes a placeholder when splitting text.
+ * @param this The ANSI string to append to
+ * @param arg The placeholder or argument
  */
-export type HelpMessage = AnsiMessage | JsonMessage | TextMessage;
-
-/**
- * A message that can be printed on a terminal.
- */
-export type Message = ErrorMessage | WarnMessage | HelpMessage;
-
-/**
- * A callback that processes a format specifier when splitting text.
- * @param this The terminal string to append to
- * @param arg The format specifier or argument
- */
-export type FormatCallback<T = string> = (this: TerminalString, arg: T) => void;
+export type FormatCallback<T = string> = (this: AnsiString, arg: T) => void;
 
 /**
  * The formatting flags.
@@ -461,7 +451,7 @@ type FormatFunction = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
   config: MessageConfig,
-  result: TerminalString,
+  result: AnsiString,
   flags: FormattingFlags,
 ) => void;
 
@@ -471,9 +461,9 @@ type FormatFunction = (
 type FormatFunctions = Record<string, FormatFunction>;
 
 /**
- * The terminal string context.
+ * The ANSI string context.
  */
-type TerminalContext = [
+type AnsiContext = [
   /**
    * The list of internal strings that have been appended.
    */
@@ -498,11 +488,11 @@ type TerminalContext = [
 /**
  * Implements concatenation of strings that can be printed on a terminal.
  */
-export class TerminalString {
+export class AnsiString {
   /**
-   * The terminal string context.
+   * The ANSI string context.
    */
-  private readonly context: TerminalContext = [[], [], false, ''];
+  private readonly context: AnsiContext = [[], [], false, ''];
 
   /**
    * Whether to merge the first internal string to the last internal string of another terminal
@@ -548,7 +538,7 @@ export class TerminalString {
   }
 
   /**
-   * Creates a terminal string.
+   * Creates a ANSI string.
    * @param indent The starting column for this string (negative values are replaced by zero)
    * @param breaks The initial number of line feeds (non-positive values are ignored)
    * @param righty True if the string should be right-aligned to the terminal width
@@ -566,7 +556,7 @@ export class TerminalString {
   /**
    * Removes strings from the end of the list.
    * @param count The number of strings
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   pop(count = 1): this {
     if (count > 0) {
@@ -579,12 +569,12 @@ export class TerminalString {
   }
 
   /**
-   * Appends another terminal string to the list.
+   * Appends another ANSI string to the list.
    * We deliberately avoided optimizing this code, in order to keep it short.
-   * @param other The other terminal string
-   * @returns The terminal string instance
+   * @param other The other ANSI string
+   * @returns The ANSI string instance
    */
-  other(other: TerminalString): this {
+  other(other: AnsiString): this {
     if (other.count) {
       const [otherStrings, otherLengths, otherMerge] = other.context;
       this.context[2] ||= other.mergeFirst;
@@ -602,7 +592,7 @@ export class TerminalString {
    * Appends a word that will be merged with the next word.
    * @param word The opening word
    * @param pos The position of a previously added word
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   open(word: string, pos = NaN): this {
     if (pos >= 0 && pos < this.count) {
@@ -618,7 +608,7 @@ export class TerminalString {
   /**
    * Appends a word that is merged with the last word.
    * @param word The closing word
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   close(word: string): this {
     if (word) {
@@ -631,7 +621,7 @@ export class TerminalString {
   /**
    * Appends a word to the list.
    * @param word The word to be appended. Should not contain control characters or sequences.
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   word(word: string): this {
     return this.add(word, word.length);
@@ -640,7 +630,7 @@ export class TerminalString {
   /**
    * Appends line breaks to the list.
    * @param count The number of line breaks to insert (non-positive values are ignored)
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   break(count = 1): this {
     return count > 0 ? this.add('\n'.repeat(count), 0) : this;
@@ -649,7 +639,7 @@ export class TerminalString {
   /**
    * Appends a sequence to the list.
    * @param seq The sequence to insert
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   seq(seq: Sequence): this {
     return this.add(seq, 0);
@@ -659,7 +649,7 @@ export class TerminalString {
    * Appends an SGR clear sequence to the list.
    * This is different from the {@link pop} method (we are aware of this ambiguity, but we want
    * method names to be short).
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   clear(): this {
     return this.add(sgr(tf.clear), 0);
@@ -669,7 +659,7 @@ export class TerminalString {
    * Appends a text that may contain control characters or sequences to the list.
    * @param text The text to be appended
    * @param length The length of the text without control characters or sequences
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   add(text: string, length: number): this {
     if (text) {
@@ -692,8 +682,8 @@ export class TerminalString {
   /**
    * Splits a text into words and style sequences, and appends them to the list.
    * @param text The text to be split
-   * @param format An optional callback to process format specifiers
-   * @returns The terminal string instance
+   * @param format An optional callback to process placeholders
+   * @returns The ANSI string instance
    */
   split(text: string, format?: FormatCallback): this {
     const paragraphs = text.split(regex.para);
@@ -810,7 +800,7 @@ export class TerminalString {
    * @param phrase The message phrase
    * @param flags The formatting flags
    * @param args The message arguments
-   * @returns The terminal string instance
+   * @returns The ANSI string instance
    */
   format(config: MessageConfig, phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
     const formatFn: FormatCallback | undefined =
@@ -827,9 +817,9 @@ export class TerminalString {
 }
 
 /**
- * An ANSI message. Used as base for other message classes.
+ * The ANSI message. Used as base for other message classes.
  */
-export class AnsiMessage extends Array<TerminalString> {
+export class AnsiMessage extends Array<AnsiString> {
   /**
    * Wraps the help message to a specified width.
    * @param width The terminal width (or zero to avoid wrapping)
@@ -864,25 +854,6 @@ export class AnsiMessage extends Array<TerminalString> {
 }
 
 /**
- * A JSON message.
- */
-export class JsonMessage extends Array<object> {
-  /**
-   * @returns The wrapped message
-   */
-  toString(): string {
-    return JSON.stringify(this);
-  }
-
-  /**
-   * @returns The wrapped message
-   */
-  get message(): string {
-    return this.toString();
-  }
-}
-
-/**
  * A warning message.
  */
 export class WarnMessage extends AnsiMessage {
@@ -905,9 +876,9 @@ export class ErrorMessage extends Error {
 
   /**
    * Creates an error message
-   * @param str The terminal string
+   * @param str The ANSI string
    */
-  constructor(str: TerminalString) {
+  constructor(str: AnsiString) {
     super(); // do not wrap the message now. wait until it is actually needed
     this.msg = new WarnMessage(str);
   }
@@ -978,7 +949,7 @@ export class ErrorFormatter<T extends number> {
    * @param args The message arguments
    * @returns The formatted message
    */
-  create(kind: T, flags?: FormattingFlags, ...args: Args): TerminalString {
+  create(kind: T, flags?: FormattingFlags, ...args: Args): AnsiString {
     return this.format(this.config.phrases[kind], flags, ...args);
   }
 
@@ -990,8 +961,8 @@ export class ErrorFormatter<T extends number> {
    * @param args The message arguments
    * @returns The formatted message
    */
-  format(phrase: string, flags?: FormattingFlags, ...args: Args): TerminalString {
-    return new TerminalString(0, 0, false, this.config.styles.text)
+  format(phrase: string, flags?: FormattingFlags, ...args: Args): AnsiString {
+    return new AnsiString(0, 0, false, this.config.styles.text)
       .format(this.config, phrase, flags, ...args)
       .break();
   }
@@ -1004,9 +975,9 @@ export class ErrorFormatter<T extends number> {
  * Splits a paragraph into words and style sequences, and appends them to the list.
  * @param result The resulting string
  * @param para The paragraph to be split
- * @param format An optional callback to process format specifiers
+ * @param format An optional callback to process placeholders
  */
-function splitParagraph(result: TerminalString, para: string, format?: FormatCallback) {
+function splitParagraph(result: AnsiString, para: string, format?: FormatCallback) {
   const count = result.count;
   para.split(regex.item).forEach((item, i) => {
     if (i % 2 === 0) {
@@ -1024,9 +995,9 @@ function splitParagraph(result: TerminalString, para: string, format?: FormatCal
  * Splits a list item into words and style sequences, and appends them to the list.
  * @param result The resulting string
  * @param item The list item to be split
- * @param format An optional callback to process format specifiers
+ * @param format An optional callback to process placeholders
  */
-function splitItem(result: TerminalString, item: string, format?: FormatCallback) {
+function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
   const boundFormat = format?.bind(result);
   const words = item.split(regex.word);
   for (const word of words) {

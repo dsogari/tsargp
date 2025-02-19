@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { HelpMessage, ErrorFormatter, MessageConfig, Style } from './styles.js';
+import type { AnsiMessage, ErrorFormatter, MessageConfig, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { HelpItem } from './enums.js';
@@ -65,31 +65,6 @@ const niladicOptionTypes = [...messageOptionTypes, 'command', 'flag'] as const;
  * In a valid range, the minimum should be strictly less than the maximum.
  */
 export type Range = readonly [min: number, max: number];
-
-/**
- * Implements formatting of help messages for a set of option definitions.
- */
-export interface HelpFormatter {
-  /**
-   * Formats a help message with sections.
-   * Options are rendered in the same order as was declared in the option definitions.
-   * @param sections The help sections
-   * @param progName The program name, if any
-   * @returns The formatted help message
-   */
-  sections(sections: HelpSections, progName?: string): HelpMessage;
-}
-
-/**
- * The constructor of a help formatter.
- * @param options The option definitions
- * @param config The formatter configuration
- * @returns The formatter instance
- */
-export type HelpFormatterClass = new (
-  options: OpaqueOptions,
-  config?: PartialFormatterConfig,
-) => HelpFormatter;
 
 /**
  * A text alignment setting.
@@ -374,10 +349,10 @@ export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
 /**
  * A callback for custom parsing or custom completion.
  * @template P The parameter data type
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  * @template R The return type
  * @param param The option parameter(s)
- * @param info The sequence information
+ * @param info The argument sequence information
  * @returns The return value
  */
 export type CustomCallback<P, I, R> = (param: P, info: I) => R;
@@ -385,13 +360,13 @@ export type CustomCallback<P, I, R> = (param: P, info: I) => R;
 /**
  * A callback for custom parsing.
  * @template P The parameter data type
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type ParseCallback<P, I> = CustomCallback<P, I, unknown>;
 
 /**
  * A callback for custom completion.
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type CompleteCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
 
@@ -443,7 +418,7 @@ export type WithPrev = {
 };
 
 /**
- * A utility to format terminal strings, to be used by custom callbacks.
+ * A utility to format ANSI strings, to be used by custom callbacks.
  */
 export type WithFormat = {
   /**
@@ -519,7 +494,7 @@ export type WithMessage = {
 /**
  * Defines attributes common to options that have values.
  * @template P The type of parse parameter
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type WithValue<P, I> = {
   /**
@@ -575,7 +550,7 @@ export type WithEnv = {
 
 /**
  * Defines attributes for options that may have parameters.
- * @template I The type of sequence information
+ * @template I The type of argument sequence information
  */
 export type WithParam<I> = {
   /**
@@ -634,20 +609,10 @@ export type WithHelp = {
    */
   readonly sections?: HelpSections;
   /**
-   * The available help formats.
-   * Each entry maps a format to a help formatter class.
-   */
-  readonly formats?: Record<string, HelpFormatterClass>;
-  /**
-   * Whether to use the next argument as the name of a nested command.
-   * Has precedence over {@link WithHelp.useFormat}.
-   */
-  readonly useNested?: true;
-  /**
-   * Whether to use the next argument as the name of a help format.
+   * Whether to use the next argument as the name of a subcommand.
    * Has precedence over {@link WithHelp.useFilter}.
    */
-  readonly useFormat?: true;
+  readonly useCommand?: true;
   /**
    * Whether to use the remaining arguments as option filter.
    */
@@ -1040,7 +1005,7 @@ type MessageDataType<T extends Option, M> = T extends { saveMessage: true } ? M 
  */
 type OptionDataType<T extends Option> =
   T extends WithType<'help'>
-    ? MessageDataType<T, HelpMessage>
+    ? MessageDataType<T, AnsiMessage>
     : T extends WithType<'version'>
       ? MessageDataType<T, string>
       : ChoiceDataType<T> | DefaultDataType<T>;

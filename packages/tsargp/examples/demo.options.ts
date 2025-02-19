@@ -1,5 +1,5 @@
 import type { Options, OptionValues } from 'tsargp';
-import { AnsiFormatter, fg, style, req, tf, fg8 } from 'tsargp';
+import { fg, style, req, tf, fg8 } from 'tsargp';
 
 /**
  * The hello option definitions.
@@ -22,12 +22,9 @@ const helloOpts = {
     type: 'help',
     names: ['-h', '--help'],
     synopsis: 'The help option for the hello command. Prints this help message.',
-    formats: { ansi: AnsiFormatter },
     config: {
       param: { align: 'merge' },
-      descr: { indent: -10 },
     },
-    useFormat: true,
     useFilter: true,
   },
   /**
@@ -58,7 +55,6 @@ export default {
     type: 'help',
     names: ['-h', '--help'],
     synopsis: 'A help option. Prints this help message.',
-    formats: { ansi: AnsiFormatter },
     sections: [
       {
         type: 'text',
@@ -99,8 +95,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
         noWrap: true,
       },
     ],
-    useNested: true,
-    useFormat: true,
+    useCommand: true,
     useFilter: true,
   },
   /**

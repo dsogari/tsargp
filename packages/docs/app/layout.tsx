@@ -47,10 +47,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <Head
-        faviconGlyph="ts"
-        // ... Your additional head options
+      // ... Your additional head options
       >
-        {/* Your additional tags should be passed as `children` of `<Head>` element */}
+        <link rel="icon" href="/api/assets/favicon.svg" type="image/svg+xml" />
+        {/* ... Your additional head tags */}
       </Head>
       <body>
         <Layout

@@ -22,7 +22,7 @@ class CodeEditor extends Editor {}
 export default function Code(props: Props): JSX.Element {
   /** @ignore */
   function getHash(): string {
-    return compress(props.callbacks.getSource());
+    return compress(props.callbacks.getSource?.() ?? '');
   }
   const hash = window.location.hash;
   const initialDoc = hash ? decompress(hash.slice(1)) : props.initialDoc;

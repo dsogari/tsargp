@@ -182,7 +182,7 @@ describe('ArgumentParser', () => {
       });
     });
 
-    it('parse options in a cluster argument for a nested command', () => {
+    it('parse options in a cluster argument for a subcommand', () => {
       const options = {
         command: {
           type: 'command',

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../lib/options';
-import { AnsiFormatter } from '../../lib/formatter';
+import { HelpFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
-describe('AnsiFormatter', () => {
+describe('HelpFormatter', () => {
   describe('format', () => {
     describe('a default value is specified', () => {
       it('handle a boolean value', () => {
@@ -15,7 +15,7 @@ describe('AnsiFormatter', () => {
             default: true,
           },
         } as const satisfies Options;
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toEqual(`  -f    Defaults to true.\n`);
       });
 
@@ -27,7 +27,7 @@ describe('AnsiFormatter', () => {
             default: 'abc',
           },
         } as const satisfies Options;
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toEqual(`  -f    Defaults to 'abc'.\n`);
       });
 
@@ -39,7 +39,7 @@ describe('AnsiFormatter', () => {
             default: 123,
           },
         } as const satisfies Options;
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toEqual(`  -f    Defaults to 123.\n`);
       });
 
@@ -51,7 +51,7 @@ describe('AnsiFormatter', () => {
             default: ['one', 'two'],
           },
         } as const satisfies Options;
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toEqual(`  -f    Defaults to ['one', 'two'].\n`);
       });
 
@@ -63,7 +63,7 @@ describe('AnsiFormatter', () => {
             default: [1, 2],
           },
         } as const satisfies Options;
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toMatch(`  -f    Defaults to [1, 2].\n`);
       });
     });
@@ -77,7 +77,7 @@ describe('AnsiFormatter', () => {
             default: () => 0,
           },
         } as const satisfies Options;
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toEqual(`  -f    Defaults to <() => 0>.\n`);
       });
 
@@ -90,7 +90,7 @@ describe('AnsiFormatter', () => {
           },
         } as const satisfies Options;
         options.flag.default.toString = () => 'fcn';
-        const message = new AnsiFormatter(options).format();
+        const message = new HelpFormatter(options).format();
         expect(message.wrap()).toEqual(`  -f    Defaults to <fcn>.\n`);
       });
     });

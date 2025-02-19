@@ -18,16 +18,17 @@ import type {
 import type { Args, PartialWithDepth } from './utils.js';
 
 import { ConnectiveWord, ParsingError } from './enums.js';
+import { HelpFormatter } from './formatter.js';
+import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
 import {
   fmt,
   cfg,
   ErrorFormatter,
   WarnMessage,
-  HelpMessage,
+  AnsiMessage,
   TextMessage,
-  TerminalString,
+  AnsiString,
 } from './styles.js';
-import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
 import {
   getCmdLine,
   findSimilar,
@@ -42,7 +43,6 @@ import {
   getArgs,
   readFile,
   areEqual,
-  getValues,
   mergeValues,
 } from './utils.js';
 
@@ -175,7 +175,7 @@ type RequireItemFn<T> = (
   context: ParseContext,
   option: OpaqueOption,
   item: T,
-  error: TerminalString,
+  error: AnsiString,
   negate: boolean,
   invert: boolean,
 ) => boolean | Promise<boolean>;
@@ -833,10 +833,10 @@ async function handleHelp(
   context: ParseContext,
   option: OpaqueOption,
   rest: Array<string>,
-): Promise<HelpMessage> {
+): Promise<AnsiMessage> {
   let registry = context[0];
   const [, formatter, , , , , , progName] = context;
-  if (option.useNested && rest.length) {
+  if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
       (opt) => opt.type === 'command' && !!opt.names?.includes(rest[0]),
@@ -855,25 +855,13 @@ async function handleHelp(
       }
     }
   }
-  const formats = option.formats;
-  if (formats) {
-    let format;
-    if (option.useFormat && rest.length && rest[0] in formats) {
-      format = rest[0];
-      rest.splice(0, 1); // only if the format is recognized; otherwise, it may be an option filter
-    }
-    const helpConfig = option.config ?? {};
-    if (option.useFilter) {
-      helpConfig.filter = rest;
-    }
-    const formatterClass = format ? formats[format] : getValues(formats)[0];
-    if (formatterClass) {
-      const config = { ...formatter.config, phrases: {}, ...helpConfig };
-      const helpFormatter = new formatterClass(registry.options, config);
-      return helpFormatter.sections(option.sections ?? defaultSections, progName);
-    }
+  const helpConfig = option.config ?? {};
+  if (option.useFilter) {
+    helpConfig.filter = rest;
   }
-  return new TextMessage(); // fallback to an empty message
+  const config = { ...formatter.config, phrases: {}, ...helpConfig };
+  const helpFormatter = new HelpFormatter(registry.options, config);
+  return helpFormatter.sections(option.sections ?? defaultSections, progName);
 }
 
 /**
@@ -966,7 +954,7 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   const specified = specifiedKeys.has(key);
   const requires = option.requires;
   const requiredIf = option.requiredIf;
-  const error = new TerminalString();
+  const error = new AnsiString();
   if (
     (specified && requires && !(await check(requires, false, false))) ||
     (!specified && requiredIf && !(await check(requiredIf, true, true)))
@@ -984,7 +972,7 @@ async function checkRequiredOption(context: ParseContext, key: string) {
  * @param context The parsing context
  * @param option The option definition
  * @param requires The option requirements
- * @param error The terminal string error
+ * @param error The ANSI string error
  * @param negate True if the requirements should be negated
  * @param invert True if the requirements should be inverted
  * @returns True if the requirements were satisfied
@@ -993,7 +981,7 @@ async function checkRequires(
   context: ParseContext,
   option: OpaqueOption,
   requires: Requires,
-  error: TerminalString,
+  error: AnsiString,
   negate: boolean,
   invert: boolean,
 ): Promise<boolean> {
@@ -1018,7 +1006,7 @@ async function checkRequires(
  * @param context The parsing context
  * @param _option The requiring option definition
  * @param entry The required option key and value
- * @param error The terminal string error
+ * @param error The ANSI string error
  * @param negate True if the requirement should be negated
  * @param invert True if the requirements should be inverted
  * @returns True if the requirement was satisfied
@@ -1027,7 +1015,7 @@ function checkRequiresEntry(
   context: ParseContext,
   _option: OpaqueOption,
   entry: RequiresEntry,
-  error: TerminalString,
+  error: AnsiString,
   negate: boolean,
   invert: boolean,
 ): boolean {
@@ -1067,7 +1055,7 @@ function checkRequiresEntry(
  * @param option The option definition
  * @param items The list of requirement items
  * @param itemFn The callback to execute on each item
- * @param error The terminal string error
+ * @param error The ANSI string error
  * @param negate True if the requirement should be negated
  * @param invert True if the requirements should be inverted
  * @param and If true, return on the first error; else return on the first success
@@ -1078,7 +1066,7 @@ async function checkRequireItems<T>(
   option: OpaqueOption,
   items: Array<T>,
   itemFn: RequireItemFn<T>,
-  error: TerminalString,
+  error: AnsiString,
   negate: boolean,
   invert: boolean,
   and: boolean,
@@ -1114,7 +1102,7 @@ async function checkRequireItems<T>(
  * @param context The parsing context
  * @param option The option definition
  * @param callback The requirement callback
- * @param error The terminal string error
+ * @param error The ANSI string error
  * @param negate True if the requirements should be negated
  * @param invert True if the requirements should be inverted
  * @returns True if the requirements were satisfied
@@ -1123,7 +1111,7 @@ async function checkRequiresCallback(
   context: ParseContext,
   option: OpaqueOption,
   callback: RequiresCallback,
-  error: TerminalString,
+  error: AnsiString,
   negate: boolean,
   invert: boolean,
 ): Promise<boolean> {

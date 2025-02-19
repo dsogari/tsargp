@@ -67,7 +67,7 @@ describe('OptionValidator', () => {
       );
     });
 
-    it('validate nested command options recursively', () => {
+    it('validate nested options recursively', () => {
       const options = {
         cmd1: {
           type: 'command',
@@ -83,7 +83,23 @@ describe('OptionValidator', () => {
       expect(validator.validate()).rejects.toThrow(`Option cmd1.cmd2.flag has invalid name ' '.`);
     });
 
-    it('avoid circular references while evaluating nested command options', () => {
+    it('skip nested options when configured that way', () => {
+      const options = {
+        cmd1: {
+          type: 'command',
+          options: {
+            cmd2: {
+              type: 'command',
+              options: { flag: { type: 'flag', names: [' '] } },
+            },
+          },
+        },
+      } as const satisfies Options;
+      const validator = new OptionValidator(options);
+      expect(validator.validate({ noRecurse: true })).resolves.toMatchObject({});
+    });
+
+    it('avoid circular references while evaluating nested options', () => {
       const options = {
         command: {
           type: 'command',

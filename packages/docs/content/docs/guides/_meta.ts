@@ -10,7 +10,7 @@ import type { MetaRecord } from 'nextra';
  * type MetaRecord = Record<string, MetaRecordValue>
  */
 const meta: MetaRecord = {
-  commands: 'Commands',
+  subcommands: 'Subcommands',
   help: 'Help',
 };
 

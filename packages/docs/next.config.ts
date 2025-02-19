@@ -3,7 +3,7 @@ import nextra from 'nextra';
 import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 
 const withNextra = nextra({
-  // additional nextra config
+  // ... Your additional nextra config
 });
 
 const baseConfig: NextConfig = {
