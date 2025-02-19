@@ -39,8 +39,8 @@ describe('HelpFormatter', () => {
           names: ['-s'],
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { descr: { absolute: true } };
-      const message = new HelpFormatter(options, undefined, config, ['flag']).format();
+      const layout: PartialHelpLayout = { descr: { absolute: true } };
+      const message = new HelpFormatter(options, undefined, layout, ['flag']).format();
       expect(message.wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
     });
 
@@ -59,8 +59,8 @@ describe('HelpFormatter', () => {
           sources: ['SINGLE'],
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { items: [] };
-      const message = new HelpFormatter(options, undefined, config, ['-f', 'sing']).format();
+      const layout: PartialHelpLayout = { items: [] };
+      const message = new HelpFormatter(options, undefined, layout, ['-f', 'sing']).format();
       expect(message.wrap()).toEqual(`  -f\n  -s  <param>\n`);
     });
 

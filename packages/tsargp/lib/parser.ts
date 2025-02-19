@@ -152,7 +152,7 @@ export class ArgumentParser<T extends Options = Options> {
   /**
    * Creates an argument parser based on a set of option definitions.
    * @param options The option definitions
-   * @param config The parse configuration
+   * @param config The message configuration
    */
   constructor(options: T, config: PartialMessageConfig = {}) {
     this.registry = new OptionRegistry(options);

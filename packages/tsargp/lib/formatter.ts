@@ -47,7 +47,7 @@ type HelpEntry = [names: ReadonlyArray<AnsiString>, param: AnsiString, descr: An
 /**
  * Information about the current help message.
  */
-type HelpContext = [options: OpaqueOptions, msgConfig: MessageConfig, helpConfig: HelpLayout];
+type HelpContext = [options: OpaqueOptions, config: MessageConfig, layout: HelpLayout];
 
 /**
  * A function to format a help item.
@@ -322,20 +322,20 @@ export class HelpFormatter {
   /**
    * Creates a help message formatter.
    * @param options The option definitions
-   * @param msgConfig The message configuration
-   * @param helpConfig The help configuration
+   * @param config The message configuration
+   * @param layout The help layout
    * @param filter The option filter
    */
   constructor(
     options: OpaqueOptions,
-    msgConfig: PartialMessageConfig = {},
-    helpConfig: PartialHelpLayout = {},
+    config: PartialMessageConfig = {},
+    layout: PartialHelpLayout = {},
     filter: ReadonlyArray<string> = [],
   ) {
     this.context = [
       options,
-      mergeValues(defaultMessageConfig, msgConfig),
-      mergeValues(defaultHelpLayout, helpConfig),
+      mergeValues(defaultMessageConfig, config),
+      mergeValues(defaultHelpLayout, layout),
     ];
     this.groups = buildHelpEntries(this.context, filter);
   }
@@ -496,13 +496,13 @@ function formatNames(
   option: OpaqueOption,
   nameWidths: Array<number> | number,
 ): Array<AnsiString> {
-  const [, msgConfig, helpConfig] = context;
-  let { indent, breaks } = helpConfig.names;
-  const { align, hidden } = helpConfig.names;
+  const [, config, layout] = context;
+  let { indent, breaks } = layout.names;
+  const { align, hidden } = layout.names;
   if (hidden || !option.names) {
     return [];
   }
-  const { styles, connectives } = msgConfig;
+  const { styles, connectives } = config;
   const style = option.styles?.names ?? styles.symbol;
   const sep = connectives[ConnectiveWord.optionSep];
   const slotted = typeof nameWidths !== 'number';
@@ -545,11 +545,11 @@ function formatNames(
  * @returns [the formatted string, the string length]
  */
 function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, number] {
-  const [, msgConfig, helpConfig] = context;
-  const { hidden, breaks } = helpConfig.param;
-  const result = new AnsiString(0, breaks, false, msgConfig.styles.text);
+  const [, config, layout] = context;
+  const { hidden, breaks } = layout.param;
+  const result = new AnsiString(0, breaks, false, config.styles.text);
   if (!hidden) {
-    formatParam(option, msgConfig, result);
+    formatParam(option, config, result);
   }
   const len = result.lengths.reduce((acc, len) => acc + (len ? len + 1 : 0), -1);
   if (len < 0) {
@@ -567,15 +567,15 @@ function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, 
  * @returns The formatted string
  */
 function formatDescription(context: HelpContext, option: OpaqueOption): AnsiString {
-  const [, msgConfig, helpConfig] = context;
-  const { descr, items } = helpConfig;
+  const [, config, layout] = context;
+  const { descr, items } = layout;
   const { hidden, breaks, align } = descr;
-  const style = option.styles?.descr ?? msgConfig.styles.text;
+  const style = option.styles?.descr ?? config.styles.text;
   const result = new AnsiString(0, breaks, align === 'right', style);
   const count = result.count;
   if (!hidden) {
     for (const item of items) {
-      helpFunctions[item](option, msgConfig.helpPhrases[item], context, result);
+      helpFunctions[item](option, config.helpPhrases[item], context, result);
     }
   }
   return (result.count === count ? result.pop(count) : result.clear()).break();
@@ -587,12 +587,12 @@ function formatDescription(context: HelpContext, option: OpaqueOption): AnsiStri
  * @returns The name slot widths, or the maximum combined width
  */
 function getNameWidths(context: HelpContext): Array<number> | number {
-  const [options, msgConfig, helpConfig] = context;
-  const { hidden, align } = helpConfig.names;
+  const [options, config, layout] = context;
+  const { hidden, align } = layout.names;
   if (hidden) {
     return 0;
   }
-  const sepLen = msgConfig.connectives[ConnectiveWord.optionSep].length + 1;
+  const sepLen = config.connectives[ConnectiveWord.optionSep].length + 1;
   const slotted = align === 'slot';
   const slotWidths: Array<number> = [];
   let maxWidth = 0;
@@ -722,8 +722,8 @@ function formatUsage(
   indent?: number,
   breaks?: number,
 ): AnsiString {
-  const [options, msgConfig] = context;
-  const result = new AnsiString(indent, breaks, false, msgConfig.styles.text);
+  const [options, config] = context;
+  const result = new AnsiString(indent, breaks, false, config.styles.text);
   const { filter, exclude, required, requires, comment } = section;
   const visited = new Set<string>(exclude && filter);
   const requiredKeys = new Set(required);
@@ -769,7 +769,7 @@ function formatUsageOption(
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
     formatUsageNames(context, option, result);
-    formatParam(option, msgConfig, result);
+    formatParam(option, config, result);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -790,7 +790,7 @@ function formatUsageOption(
     return required;
   }
   visited.add(key);
-  const [options, msgConfig] = context;
+  const [options, config] = context;
   const option = options[key];
   if (!required && option.required) {
     required = true;
@@ -826,18 +826,18 @@ function formatUsageOption(
  * @param result The resulting string
  */
 function formatUsageNames(context: HelpContext, option: OpaqueOption, result: AnsiString) {
-  const [, msgConfig] = context;
+  const [, config] = context;
   const names = getOptionNames(option);
   if (names.length) {
     const count = result.count;
     const enclose = names.length > 1;
     const flags = {
-      sep: msgConfig.connectives[ConnectiveWord.optionAlt],
-      open: enclose ? msgConfig.connectives[ConnectiveWord.exprOpen] : '',
-      close: enclose ? msgConfig.connectives[ConnectiveWord.exprClose] : '',
+      sep: config.connectives[ConnectiveWord.optionAlt],
+      open: enclose ? config.connectives[ConnectiveWord.exprOpen] : '',
+      close: enclose ? config.connectives[ConnectiveWord.exprClose] : '',
       mergeNext: true,
     };
-    fmt.a(names.map(getSymbol), msgConfig, result, flags);
+    fmt.a(names.map(getSymbol), config, result, flags);
     if (option.positional) {
       result.open('[', count).close(']');
     }
@@ -847,10 +847,10 @@ function formatUsageNames(context: HelpContext, option: OpaqueOption, result: An
 /**
  * Formats an option's parameter to be included in the description or the usage text.
  * @param option The option definition
- * @param msgConfig The message configuration
+ * @param config The message configuration
  * @param result The resulting string
  */
-function formatParam(option: OpaqueOption, msgConfig: MessageConfig, result: AnsiString) {
+function formatParam(option: OpaqueOption, config: MessageConfig, result: AnsiString) {
   const [min, max] = getParamCount(option);
   const equals = option.inline ? '=' : '';
   const ellipsis = max > 1 && !equals ? '...' : '';
@@ -865,7 +865,7 @@ function formatParam(option: OpaqueOption, msgConfig: MessageConfig, result: Ans
       const sep = typeof separator === 'string' ? separator : separator.source;
       example = example.join(sep);
     }
-    fmt.v(example, msgConfig, result.open(equals), { sep: '', open: '', close: '' });
+    fmt.v(example, config, result.open(equals), { sep: '', open: '', close: '' });
     if (ellipsis) {
       param = ellipsis;
       result.merge = true;
@@ -882,7 +882,7 @@ function formatParam(option: OpaqueOption, msgConfig: MessageConfig, result: Ans
     }
   }
   if (param) {
-    result.style = option.styles?.param ?? msgConfig.styles.value;
+    result.style = option.styles?.param ?? config.styles.value;
     result.word(param);
   }
 }
@@ -934,12 +934,12 @@ function formatRequiredKey(
   result: AnsiString,
   negate: boolean,
 ) {
-  const [options, msgConfig] = context;
+  const [options, config] = context;
   if (negate) {
-    result.word(msgConfig.connectives[ConnectiveWord.no]);
+    result.word(config.connectives[ConnectiveWord.no]);
   }
   const name = options[requiredKey].preferredName ?? '';
-  fmt.m(getSymbol(name), msgConfig, result);
+  fmt.m(getSymbol(name), config, result);
 }
 
 /**
@@ -960,15 +960,15 @@ function formatRequiresExp<T>(
   isAll: boolean,
   custom: FormattingFlags['custom'],
 ) {
-  const [, msgConfig] = context;
-  const connectives = msgConfig.connectives;
+  const [, config] = context;
+  const connectives = config.connectives;
   const enclose = items.length > 1;
   const flags = {
     open: enclose ? connectives[ConnectiveWord.exprOpen] : '',
     close: enclose ? connectives[ConnectiveWord.exprClose] : '',
   };
   const sep = isAll === negate ? connectives[ConnectiveWord.or] : connectives[ConnectiveWord.and];
-  fmt.a(items, msgConfig, result, { ...flags, sep, custom, mergePrev: false });
+  fmt.a(items, config, result, { ...flags, sep, custom, mergePrev: false });
 }
 
 /**
@@ -987,21 +987,21 @@ function formatRequiredValue(
   result: AnsiString,
   negate: boolean,
 ) {
-  const [, msgConfig] = context;
-  const connectives = msgConfig.connectives;
+  const [, config] = context;
+  const connectives = config.connectives;
   const requireAbsent = value === null;
   const requirePresent = value === undefined;
   if ((requireAbsent && !negate) || (requirePresent && negate)) {
     result.word(connectives[ConnectiveWord.no]);
   }
   const name = option.preferredName ?? '';
-  fmt.m(getSymbol(name), msgConfig, result);
+  fmt.m(getSymbol(name), config, result);
   if (!requireAbsent && !requirePresent) {
     const connective = negate
       ? connectives[ConnectiveWord.notEquals]
       : connectives[ConnectiveWord.equals];
     result.word(connective);
-    fmt.v(value, msgConfig, result, {});
+    fmt.v(value, config, result, {});
   }
 }
 
@@ -1019,9 +1019,9 @@ function formatRequiresCallback(
   result: AnsiString,
   negate: boolean,
 ) {
-  const [, msgConfig] = context;
+  const [, config] = context;
   if (negate) {
-    result.word(msgConfig.connectives[ConnectiveWord.not]);
+    result.word(config.connectives[ConnectiveWord.not]);
   }
-  fmt.v(callback, msgConfig, result, {});
+  fmt.v(callback, config, result, {});
 }

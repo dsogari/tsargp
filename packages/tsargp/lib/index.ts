@@ -1,3 +1,4 @@
+export type * from './config.js';
 export type * from './options.js';
 export type * from './styles.js';
 

@@ -144,12 +144,12 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         names: { breaks: -1 },
         param: { breaks: -1 },
         descr: { breaks: -1 },
       };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -s  <param>  A boolean option\n');
     });
 
@@ -161,12 +161,12 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         names: { breaks: 1 },
         param: { breaks: 1 },
         descr: { breaks: 1 },
       };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toMatch(/^\n {2}-s\n {6}<param>\n {15}A boolean option\n$/);
     });
 
@@ -178,12 +178,12 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         names: { breaks: 1 },
         param: { breaks: 1, absolute: true },
         descr: { breaks: 1, absolute: true },
       };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toMatch(`\n  -s\n  <param>\n  A boolean option\n`);
     });
 
@@ -195,12 +195,12 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         names: { breaks: 1, indent: -1 },
         param: { breaks: 1, indent: -1 },
         descr: { breaks: 1, indent: -1 },
       };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toMatch(/^\n-s\n <param>\n {7}A boolean option\n$/);
     });
 
@@ -212,8 +212,8 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { names: { hidden: true } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { names: { hidden: true } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('    <param>  A boolean option\n');
     });
 
@@ -225,8 +225,8 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { param: { hidden: true } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { param: { hidden: true } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -s    A boolean option\n');
     });
 
@@ -238,8 +238,8 @@ describe('HelpFormatter', () => {
           synopsis: 'A boolean option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { descr: { hidden: true } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { descr: { hidden: true } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -s  <param>\n');
     });
 
@@ -256,13 +256,13 @@ describe('HelpFormatter', () => {
           synopsis: 'A flag option',
         },
       } as const satisfies Options;
-      const msgConfig: PartialMessageConfig = {
+      const config: PartialMessageConfig = {
         connectives: { [ConnectiveWord.optionSep]: '' },
       };
-      const helpConfig: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         names: { align: 'left' },
       };
-      const message = new HelpFormatter(options, msgConfig, helpConfig).format();
+      const message = new HelpFormatter(options, config, layout).format();
       expect(message.wrap()).toEqual(
         `  -f --flag    A flag option\n  --flag2      A flag option\n`,
       );
@@ -279,8 +279,8 @@ describe('HelpFormatter', () => {
           names: [null, '--flag2', null],
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { names: { align: 'left' } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { names: { align: 'left' } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -f, --flag\n  --flag2\n');
     });
 
@@ -295,8 +295,8 @@ describe('HelpFormatter', () => {
           names: [null, '--flag2', null],
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { names: { align: 'right' } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { names: { align: 'right' } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -f, --flag\n     --flag2\n');
     });
 
@@ -311,13 +311,13 @@ describe('HelpFormatter', () => {
           names: [null, '--flag2', null],
         },
       } as const satisfies Options;
-      const msgConfig: PartialMessageConfig = {
+      const config: PartialMessageConfig = {
         connectives: { [ConnectiveWord.optionSep]: '' },
       };
-      const helpConfig: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         names: { align: 'slot' },
       };
-      const message = new HelpFormatter(options, msgConfig, helpConfig).format();
+      const message = new HelpFormatter(options, config, layout).format();
       expect(message.wrap()).toEqual('  -f         --flag\n     --flag2\n');
     });
 
@@ -332,8 +332,8 @@ describe('HelpFormatter', () => {
           names: [null, '--flag2', null],
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { names: { align: 'slot' } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { names: { align: 'slot' } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual('  -f           --flag\n      --flag2\n');
     });
 
@@ -350,8 +350,8 @@ describe('HelpFormatter', () => {
           example: 'ab',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { param: { align: 'right' }, items: [] };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { param: { align: 'right' }, items: [] };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual(`  -s1  'abcde'\n  -s2     'ab'\n`);
     });
 
@@ -363,8 +363,8 @@ describe('HelpFormatter', () => {
           synopsis: 'A flag option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { descr: { align: 'right' } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { descr: { align: 'right' } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap(14, false)).toEqual('  -f    A flag\n        option\n');
     });
 
@@ -388,8 +388,8 @@ describe('HelpFormatter', () => {
           inline: 'always',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { param: { align: 'merge' }, items: [] };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { param: { align: 'merge' }, items: [] };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual(`  -s1 <param>\n  <param>\n  -s3=<param>\n  -a[=<param>]\n`);
     });
 
@@ -406,8 +406,8 @@ describe('HelpFormatter', () => {
           synopsis: 'A flag option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = { descr: { align: 'merge' } };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const layout: PartialHelpLayout = { descr: { align: 'merge' } };
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual(`  -s  <param> A boolean option\n  -f  A flag option\n`);
     });
 
@@ -428,11 +428,11 @@ describe('HelpFormatter', () => {
           synopsis: 'A flag option',
         },
       } as const satisfies Options;
-      const config: PartialHelpLayout = {
+      const layout: PartialHelpLayout = {
         param: { align: 'merge' },
         descr: { align: 'merge' },
       };
-      const message = new HelpFormatter(options, undefined, config).format();
+      const message = new HelpFormatter(options, undefined, layout).format();
       expect(message.wrap()).toEqual(
         `  -s <param> A boolean option\n  <param> A string option\n  -f A flag option\n`,
       );

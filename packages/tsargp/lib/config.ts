@@ -150,47 +150,12 @@ export const defaultHelpLayout: HelpLayout = {
 };
 
 //--------------------------------------------------------------------------------------------------
-// Public types
-//--------------------------------------------------------------------------------------------------
-/**
- * The message configuration.
- */
-export type MessageConfig = {
-  /**
-   * The messages styles.
-   */
-  readonly styles: MessageStyles;
-  /**
-   * The connective words.
-   */
-  readonly connectives: Readonly<Record<ConnectiveWord, string>>;
-  /**
-   * The custom error phrases.
-   */
-  readonly errorPhrases: Readonly<Record<ErrorItem, string>>;
-  /**
-   * The custom help phrases.
-   */
-  readonly helpPhrases: Readonly<Record<HelpItem, string>>;
-};
-
-/**
- * A partial message configuration.
- */
-export type PartialMessageConfig = PartialWithDepth<MessageConfig>;
-
-/**
- * A partial help layout.
- */
-export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
-
-//--------------------------------------------------------------------------------------------------
-// Internal types
+// Types
 //--------------------------------------------------------------------------------------------------
 /**
  * A set of styles for error/warning/help messages.
  */
-type MessageStyles = {
+export type MessageStyles = {
   /**
    * The style of boolean values.
    */
@@ -226,15 +191,42 @@ type MessageStyles = {
 };
 
 /**
+ * The message configuration.
+ */
+export type MessageConfig = {
+  /**
+   * The messages styles.
+   */
+  readonly styles: MessageStyles;
+  /**
+   * The connective words.
+   */
+  readonly connectives: Readonly<Record<ConnectiveWord, string>>;
+  /**
+   * The custom error phrases.
+   */
+  readonly errorPhrases: Readonly<Record<ErrorItem, string>>;
+  /**
+   * The custom help phrases.
+   */
+  readonly helpPhrases: Readonly<Record<HelpItem, string>>;
+};
+
+/**
+ * A partial message configuration.
+ */
+export type PartialMessageConfig = PartialWithDepth<MessageConfig>;
+
+/**
  * A text alignment setting.
  */
-type Alignment = 'left' | 'right';
+export type Alignment = 'left' | 'right';
 
 /**
  * Defines layout attributes common to all help columns.
  * @template A The type of text alignment
  */
-type WithColumnLayout<A extends string = Alignment> = {
+export type WithColumnLayout<A extends string = Alignment> = {
   /**
    * The text alignment for this column. (Defaults to 'left')
    */
@@ -256,7 +248,7 @@ type WithColumnLayout<A extends string = Alignment> = {
 /**
  * Defines layout attributes for columns that may be preceded by other columns.
  */
-type WithAbsoluteLayout = {
+export type WithAbsoluteLayout = {
   /**
    * Whether the indentation level should be relative to the beginning of the line instead of the
    * end of the previous column. (Defaults to false)
@@ -285,3 +277,8 @@ export type HelpLayout = {
    */
   readonly items: ReadonlyArray<HelpItem>;
 };
+
+/**
+ * A partial help layout.
+ */
+export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
