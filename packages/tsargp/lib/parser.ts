@@ -17,7 +17,7 @@ import type {
 import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
 
-import config from './config.js';
+import { config } from './config.js';
 import { ErrorItem } from './enums.js';
 import { HelpFormatter } from './formatter.js';
 import {

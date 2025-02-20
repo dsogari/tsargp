@@ -12,7 +12,7 @@ import { fg, ErrorItem, HelpItem } from './enums.js';
 /**
  * The default message configuration.
  */
-const config: MessageConfig = {
+export const config: MessageConfig = {
   styles: {
     boolean: style(fg.blue),
     string: style(fg.green),
@@ -256,8 +256,3 @@ export type MessageConfig = {
    */
   readonly helpPhrases: Record<HelpItem, string>;
 };
-
-//--------------------------------------------------------------------------------------------------
-// Exports
-//--------------------------------------------------------------------------------------------------
-export default config;

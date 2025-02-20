@@ -4,7 +4,7 @@
 import type { ConnectiveWords } from './config.js';
 import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
 
-import config from './config.js';
+import { config } from './config.js';
 import { ErrorItem, cs, fg, bg, tf } from './enums.js';
 import {
   getEntries,

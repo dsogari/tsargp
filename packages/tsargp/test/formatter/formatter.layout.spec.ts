@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, PartialHelpLayout } from '../../lib/options';
-import config from '../../lib/config';
+import { config } from '../../lib/config';
 import { tf } from '../../lib/enums';
 import { HelpFormatter } from '../../lib/formatter';
 import { style } from '../../lib/styles';

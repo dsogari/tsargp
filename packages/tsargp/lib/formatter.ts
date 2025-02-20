@@ -17,7 +17,7 @@ import type {
 } from './options.js';
 import type { FormattingFlags, Style } from './styles.js';
 
-import config from './config.js';
+import { config } from './config.js';
 import { HelpItem, tf } from './enums.js';
 import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
 import { getParamCount, getOptionNames, visitRequirements } from './options.js';

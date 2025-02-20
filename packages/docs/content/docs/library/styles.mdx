@@ -259,7 +259,7 @@ The `TextMessage` class represents a list of plain text lines with no wrapping. 
 
 ### Message configuration
 
-ANSI-based messages can be configured via a `PartialMessageConfig` object that contains the optional properties described below.
+ANSI-based messages produced by the library can be customized via the global `config` object. It is a singleton instance of the `MessageConfig` type, which contains the optional properties described below.
 
 #### Message styles
 
@@ -284,7 +284,7 @@ You can also set these styles to the empty string, if you need to disable text s
 
 #### Connective words
 
-The `connectives` property specifies connective words that are used to format some text elements that cannot be customized using phrases, such as option requirements, array element separators, and string quoting. It has the following optional settings, whose keys are enumerators from `ConnectiveWord`:
+The `connectives` property specifies words used to format some text elements that cannot be customized with phrases, such as option requirements, element separators and string quoting. It has the following optional settings:
 
 | Property      | Description                                         | Default      |
 | ------------- | --------------------------------------------------- | ------------ |
@@ -311,7 +311,7 @@ The `connectives` property specifies connective words that are used to format so
 
 <Callout type="info">
 
-Inline styles and line breaks are not supported in connective words.
+Connective words cannot contain [inline styles] or line breaks.
 
 </Callout>
 
@@ -394,6 +394,7 @@ Help phrases are formatted according to [text formatting] rules.
 
 [^1]: The command prefix is a series of option keys interspersed with periods, denoting the current [subcommand] in a hierarchical option definition. It starts as the empty string and is appended with a subcommand's key whenever one is encountered. This prefix also appears in other validation errors, prefixing an option's key. Here's an example: `cmd1.cmd2.flag`.
 
+[inline styles]: #inline-styles
 [text formatting]: #text-splitting
 [custom error phrases]: #custom-error-phrases
 [custom help phrases]: #custom-help-phrases
