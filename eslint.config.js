@@ -13,10 +13,14 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
-          args: 'none',
-          caughtErrors: 'none',
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
         },
       ],
+      'jsdoc/no-undefined-types': 'error',
     },
   },
   {
@@ -31,7 +35,7 @@ export default tseslint.config(
     ...cspell.recommended,
     rules: {
       ...cspell.recommended.rules,
-      '@cspell/spellchecker': ['error', {}],
+      '@cspell/spellchecker': 'error',
     },
   },
   {

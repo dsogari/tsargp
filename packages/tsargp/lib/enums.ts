@@ -7,9 +7,9 @@ export { ControlSequence as cs, TypeFace as tf, ForegroundColor as fg, Backgroun
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * The kind of error/warning raised by the parser.
+ * The kind of error/warning raised by the parser or validator.
  */
-export const enum ParsingError {
+export const enum ErrorItem {
   /**
    * Error raised when an option name is not found, with possible name suggestions.
    */
@@ -63,12 +63,6 @@ export const enum ParsingError {
    * Error raised when an option is specified with no inline parameter, despite it being required.
    */
   missingInlineParameter,
-}
-
-/**
- * The kind of error/warning raised by the validator.
- */
-export const enum ValidationError {
   /**
    * Error raised when an option has an invalid name.
    */
@@ -141,6 +135,10 @@ export const enum HelpItem {
    */
   synopsis,
   /**
+   * The option's cluster letters.
+   */
+  cluster,
+  /**
    * The parameter delimiter of a non-niladic option.
    */
   separator,
@@ -152,6 +150,10 @@ export const enum HelpItem {
    * Whether the option accepts positional arguments.
    */
   positional,
+  /**
+   * The option's treatment of inline parameters.
+   */
+  inline,
   /**
    * Whether an array-valued option can be specified multiple times.
    */
@@ -173,26 +175,6 @@ export const enum HelpItem {
    */
   limit,
   /**
-   * The option's forward requirements.
-   */
-  requires,
-  /**
-   * Whether the option is always required.
-   */
-  required,
-  /**
-   * The option's default value.
-   */
-  default,
-  /**
-   * The option's deprecation notice.
-   */
-  deprecated,
-  /**
-   * The option's external resource hyperlink.
-   */
-  link,
-  /**
    * Whether the option accepts data from standard input.
    */
   stdin,
@@ -201,13 +183,21 @@ export const enum HelpItem {
    */
   sources,
   /**
+   * The option's forward requirements.
+   */
+  requires,
+  /**
+   * Whether the option is always required.
+   */
+  required,
+  /**
    * The option's conditional requirements.
    */
   requiredIf,
   /**
-   * The option's cluster letters.
+   * The option's default value.
    */
-  cluster,
+  default,
   /**
    * Whether a help option uses the next argument as the name of a subcommand.
    */
@@ -217,96 +207,18 @@ export const enum HelpItem {
    */
   useFilter,
   /**
-   * The option's treatment of inline parameters.
+   * The option's deprecation notice.
    */
-  inline,
-}
-
-/**
- * The kind of connective words used in option requirements.
- * Inline styles and line breaks are not supported in connective words.
- */
-export const enum ConnectiveWord {
+  deprecated,
   /**
-   * The word used to connect two logical expressions in conjunction.
+   * The option's external resource hyperlink.
    */
-  and,
+  link,
   /**
-   * The word used to connect two logical expressions in disjunction.
+   * The number of help items (for internal use only).
+   * New enumerators should be added in their intended position.
    */
-  or,
-  /**
-   * The word used to connect a logical expression in negation.
-   */
-  not,
-  /**
-   * The word used to connect a logical expression in non-existence.
-   */
-  no,
-  /**
-   * The word used to connect two expressions in equality comparison.
-   */
-  equals,
-  /**
-   * The word used to connect two expressions in non-equality comparison.
-   */
-  notEquals,
-  /**
-   * The word used to connect two option names in alternation.
-   */
-  optionAlt,
-  /**
-   * The word used to connect two option names in succession.
-   */
-  optionSep,
-  /**
-   * The quote character used to enclose a string value.
-   */
-  stringQuote,
-  /**
-   * The word used to connect two array elements in succession.
-   */
-  arraySep,
-  /**
-   * The bracket character used to open an array value.
-   */
-  arrayOpen,
-  /**
-   * The bracket character used to close an array value.
-   */
-  arrayClose,
-  /**
-   * The word used to connect two object entries in succession.
-   */
-  objectSep,
-  /**
-   * The bracket character used to open an object value.
-   */
-  objectOpen,
-  /**
-   * The bracket character used to close an object value.
-   */
-  objectClose,
-  /**
-   * The word used to connect an object key with its value.
-   */
-  valueSep,
-  /**
-   * The bracket character used to open an unknown value.
-   */
-  valueOpen,
-  /**
-   * The bracket character used to close an unknown value.
-   */
-  valueClose,
-  /**
-   * The bracket character used to open an expression.
-   */
-  exprOpen,
-  /**
-   * The bracket character used to close an expression.
-   */
-  exprClose,
+  _count,
 }
 
 /**

@@ -1,22 +1,13 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { MessageConfig } from './styles.js';
 import type { OpaqueOption, Requires, RequiresVal, OpaqueOptions } from './options.js';
-import type { Args, NamingRules, PartialWithDepth } from './utils.js';
+import type { Args, NamingRules } from './utils.js';
 
-import { ValidationError } from './enums.js';
-import { cfg, WarnMessage, ErrorFormatter } from './styles.js';
+import { ErrorItem } from './enums.js';
 import { getParamCount, getOptionNames, visitRequirements, isMessage } from './options.js';
-import {
-  findSimilar,
-  getEntries,
-  getSymbol,
-  getValues,
-  matchNamingRules,
-  mergeValues,
-  regex,
-} from './utils.js';
+import { WarnMessage, ErrorFormatter } from './styles.js';
+import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -42,50 +33,9 @@ const namingConventions = {
   },
 } as const satisfies NamingRules;
 
-/**
- * The default configuration used by the parser.
- */
-const defaultConfig: ValidateConfig = {
-  ...cfg,
-  phrases: {
-    [ValidationError.invalidOptionName]: 'Option #0 has invalid name #1.',
-    [ValidationError.invalidSelfRequirement]: 'Option #0 requires itself.',
-    [ValidationError.unknownRequiredOption]: 'Unknown option #0 in requirement.',
-    [ValidationError.invalidRequiredOption]: 'Invalid option #0 in requirement.',
-    [ValidationError.invalidRequiredValue]:
-      'Invalid required value for option #0. Option is always required or has a default value.',
-    [ValidationError.duplicateOptionName]: 'Option #0 has duplicate name #1.',
-    [ValidationError.duplicatePositionalOption]: 'Duplicate positional option #0: previous was #1.',
-    [ValidationError.duplicateChoiceValue]: 'Option #0 has duplicate choice #1.',
-    [ValidationError.duplicateClusterLetter]: 'Option #0 has duplicate cluster letter #1.',
-    [ValidationError.invalidClusterLetter]: 'Option #0 has invalid cluster letter #1.',
-    [ValidationError.tooSimilarOptionNames]: '#0: Option name #1 has too similar names: #2.',
-    [ValidationError.mixedNamingConvention]: '#0: Name slot #1 has mixed naming conventions: #2.',
-    [ValidationError.invalidParamCount]: 'Option #0 has invalid parameter count #1.',
-    [ValidationError.variadicWithClusterLetter]:
-      'Variadic option #0 may only appear as the last option in a cluster.',
-    [ValidationError.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
-  },
-};
-
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
-/**
- * The configuration for error/warning messages.
- */
-export type ValidateConfig = MessageConfig & {
-  /**
-   * The parse error/warning phrases.
-   */
-  readonly phrases: Readonly<Record<ValidationError, string>>;
-};
-
-/**
- * A partial validator configuration.
- */
-export type ValidatorConfig = PartialWithDepth<ValidateConfig>;
-
 /**
  * The validation flags.
  */
@@ -117,11 +67,29 @@ export type ValidationResult = {
  * The validation context.
  */
 type ValidateContext = [
+  /**
+   * The option definitions.
+   */
   options: OpaqueOptions,
-  formatter: ErrorFormatter<ValidationError>,
+  /**
+   * The error formatter instance.
+   */
+  formatter: ErrorFormatter,
+  /**
+   * The validation flags.
+   */
   flags: ValidationFlags,
+  /**
+   * The list of warnings.
+   */
   warning: WarnMessage,
+  /**
+   * An internal flag to avoid cyclic recurrence.
+   */
   visited: Set<OpaqueOptions>,
+  /**
+   * The current option prefix.
+   */
   prefix: string,
 ];
 
@@ -131,19 +99,13 @@ type ValidateContext = [
 /**
  * Implements validation of option definitions.
  */
-export class OptionValidator {
-  private readonly formatter: ErrorFormatter<ValidationError>;
-
+export class OptionValidator extends ErrorFormatter {
   /**
    * Creates an option registry based on a set of option definitions.
    * @param options The option definitions
-   * @param config The validator configuration
    */
-  constructor(
-    readonly options: OpaqueOptions,
-    config: ValidatorConfig = {},
-  ) {
-    this.formatter = new ErrorFormatter(mergeValues(defaultConfig, config));
+  constructor(readonly options: OpaqueOptions) {
+    super();
   }
 
   /**
@@ -154,7 +116,7 @@ export class OptionValidator {
   async validate(flags: ValidationFlags = {}): Promise<ValidationResult> {
     const warning = new WarnMessage();
     const visited = new Set<OpaqueOptions>();
-    const context: ValidateContext = [this.options, this.formatter, flags, warning, visited, ''];
+    const context: ValidateContext = [this.options, this, flags, warning, visited, ''];
     await validate(context);
     return warning.length ? { warning } : {};
   }
@@ -179,7 +141,7 @@ async function validate(context: ValidateContext) {
     if (option.positional !== undefined) {
       if (positional) {
         throw formatter.error(
-          ValidationError.duplicatePositionalOption,
+          ErrorItem.duplicatePositionalOption,
           {},
           getSymbol(prefix + key),
           getSymbol(prefix + positional),
@@ -214,19 +176,19 @@ function validateNames(
   const names = getOptionNames(option);
   for (const name of names) {
     if (name.match(regex.name)) {
-      throw formatter.error(ValidationError.invalidOptionName, {}, prefixedKey, name);
+      throw formatter.error(ErrorItem.invalidOptionName, {}, prefixedKey, name);
     }
     if (nameToKey.has(name)) {
-      throw formatter.error(ValidationError.duplicateOptionName, {}, prefixedKey, name);
+      throw formatter.error(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
     }
     nameToKey.set(name, key);
   }
   for (const letter of option.cluster ?? '') {
     if (letter.match(regex.name)) {
-      throw formatter.error(ValidationError.invalidClusterLetter, {}, prefixedKey, letter);
+      throw formatter.error(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
     }
     if (letterToKey.has(letter)) {
-      throw formatter.error(ValidationError.duplicateClusterLetter, {}, prefixedKey, letter);
+      throw formatter.error(ErrorItem.duplicateClusterLetter, {}, prefixedKey, letter);
     }
     letterToKey.set(letter, key);
   }
@@ -239,7 +201,7 @@ function validateNames(
  */
 function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, string>) {
   /** @ignore */
-  function warn(kind: ValidationError, ...args: Args) {
+  function warn(kind: ErrorItem, ...args: Args) {
     warning.push(formatter.create(kind, { open: '', close: '' }, ...args));
   }
   const [options, formatter, , warning, , prefix] = context;
@@ -249,7 +211,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
     if (!visited.has(name)) {
       const similar = findSimilar(name, nameToKey.keys(), 0.8);
       if (similar.length) {
-        warn(ValidationError.tooSimilarOptionNames, prefix2, name, similar);
+        warn(ErrorItem.tooSimilarOptionNames, prefix2, name, similar);
         for (const similarName of similar) {
           visited.add(similarName);
         }
@@ -275,7 +237,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
     for (const entries of getValues(match).map(getEntries)) {
       if (entries.length > 1) {
         const list = entries.map(([rule, name]) => rule + ': ' + name);
-        warn(ValidationError.mixedNamingConvention, prefix2, i, list);
+        warn(ErrorItem.mixedNamingConvention, prefix2, i, list);
       }
     }
   });
@@ -352,18 +314,18 @@ function validateRequirement(
   const [options, formatter, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + requiredKey);
   if (requiredKey === key) {
-    throw formatter.error(ValidationError.invalidSelfRequirement, {}, prefixedKey);
+    throw formatter.error(ErrorItem.invalidSelfRequirement, {}, prefixedKey);
   }
   if (!(requiredKey in options)) {
-    throw formatter.error(ValidationError.unknownRequiredOption, {}, prefixedKey);
+    throw formatter.error(ErrorItem.unknownRequiredOption, {}, prefixedKey);
   }
   const option = options[requiredKey];
   if (isMessage(option.type)) {
-    throw formatter.error(ValidationError.invalidRequiredOption, {}, prefixedKey);
+    throw formatter.error(ErrorItem.invalidRequiredOption, {}, prefixedKey);
   }
   const noValue = {};
   if ((requiredValue ?? noValue) === noValue && (option.required || option.default !== undefined)) {
-    throw formatter.error(ValidationError.invalidRequiredValue, {}, prefixedKey);
+    throw formatter.error(ErrorItem.invalidRequiredValue, {}, prefixedKey);
   }
 }
 
@@ -382,7 +344,7 @@ function validateConstraints(context: ValidateContext, key: symbol, option: Opaq
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
       if (dup) {
-        throw formatter.error(ValidationError.duplicateChoiceValue, {}, key, dup);
+        throw formatter.error(ErrorItem.duplicateChoiceValue, {}, key, dup);
       }
     }
   }
@@ -396,13 +358,13 @@ function validateConstraints(context: ValidateContext, key: symbol, option: Opaq
   }
   // handles NaN
   if (!valid) {
-    throw formatter.error(ValidationError.invalidParamCount, {}, key, paramCount);
+    throw formatter.error(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);
   if (max > 1 && !option.separator && !option.append && option.inline) {
-    throw formatter.error(ValidationError.invalidInlineConstraint, {}, key);
+    throw formatter.error(ErrorItem.invalidInlineConstraint, {}, key);
   }
   if (min < max && option.cluster) {
-    warning.push(formatter.create(ValidationError.variadicWithClusterLetter, {}, key));
+    warning.push(formatter.create(ErrorItem.variadicWithClusterLetter, {}, key));
   }
 }

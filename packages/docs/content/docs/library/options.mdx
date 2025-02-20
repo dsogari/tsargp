@@ -121,7 +121,7 @@ You can assign a unique group to the [positional] option (if there is one) and p
 
 #### Display styles
 
-The `styles` attribute, if present, specifies custom [styling attributes] for the option's [help entry]. It has the following optional properties:
+The `styles` attribute, if present, specifies custom [styling attributes] for each of the option's [help columns]. It has the following optional properties:
 
 - `names` - the style of the option names
 - `param` - the style of the option parameter
@@ -481,9 +481,9 @@ When [word completion] is in effect, this option will be _skipped_.
 
 In addition to the sets of [basic] and [message] attributes, this option has the attributes described below.
 
-#### Formatter configuration
+#### Help layout
 
-The `config` attribute specifies a custom [formatter configuration].
+The `layout` attribute specifies a custom [help layout].
 
 #### Help sections
 
@@ -837,15 +837,13 @@ If the data comes from the [environment], then the [parse callback] will receive
 {/* formatter references */}
 
 [formatter]: formatter
-[help items]: formatter#help-items
-[help item]: formatter#help-items
-[help entry]: formatter#help-entries
+[help columns]: formatter#help-columns
+[help layout]: formatter#help-layout
 [help sections]: formatter#help-sections
 [usage section]: formatter#usage-section
 [groups section]: formatter#groups-section
 [parameter column]: formatter#parameter-column
 [option filter]: formatter#option-filter
-[formatter configuration]: formatter#formatter-configuration
 [name slot]: formatter#name-slots
 
 {/* styles references */}

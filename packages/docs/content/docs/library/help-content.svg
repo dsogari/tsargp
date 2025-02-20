@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 80">
+  <style>
+    .serif { font: italic 4px serif; }
+    .sans { font: 4px sans-serif; }
+  </style>
+  <rect width="40" height="24" rx="3" fill="pink"/>
+  <rect width="40" height="24" rx="3" fill="pink" y="30"/>
+  <path d="M5,5 30,5" stroke="green" stroke-width="0.5"/>
+  <path d="M5,15 25,15" stroke="red" stroke-width="0.5"/>
+  <path d="M5,35 30,35" stroke="blue" stroke-width="0.5"/>
+  <path d="M45,0 45,60" stroke="orange" stroke-width="0.5"/>
+  <path d="M0,60 90,60" stroke="grey" stroke-width="0.5"/>
+  <g transform="translate(50)">
+    <rect width="40" height="24" rx="3" fill="pink" />
+    <rect width="40" height="24" rx="3" fill="pink" y="30" />
+    <path d="M5,5 30,5" stroke="green" stroke-width="0.5"/>
+    <path d="M5,10 25,10" stroke="green" stroke-width="0.5"/>
+    <path d="M5,15 20,15" stroke="red" stroke-width="0.5"/>
+    <path d="M25,15 35,15" stroke="red" stroke-width="0.5"/>
+    <path d="M5,35 25,35" stroke="blue" stroke-width="0.5"/>
+    <path d="M5,40 15,40" stroke="blue" stroke-width="0.5"/>
+    <path d="M20,40 35,40" stroke="blue" stroke-width="0.5"/>
+    <path d="M5,45 30,45" stroke="blue" stroke-width="0.5"/>
+  </g>
+  <g transform="translate(4)">
+    <text y="67" fill="grey" class="serif">Lorem ipsum dolor sit amet, consectetur adipiscing</text>
+    <text y="72" fill="grey" class="serif">elit, sed do eiusmod tempor incididunt ut labore et</text>
+    <text y="77" fill="grey" class="serif">dolore magna aliqua.</text>
+  </g>
+  <text x="5" y="8" fill="green" class="sans">[entry]</text>
+  <text x="55" y="18" fill="red" class="sans">[item]</text>
+  <text x="5" y="27" fill="pink" class="sans">[group]</text>
+  <text x="45" y="59" fill="orange" class="sans">[column]</text>
+  <text x="75" y="79" fill="grey" class="sans">[section]</text>
+</svg>

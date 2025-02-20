@@ -107,8 +107,7 @@ export const regex = {
   /**
    * A regular expression to match SGR sequences.
    */
-  // eslint-disable-next-line no-control-regex
-  sgr: /(?:\x1b\[[\d;]+m)+/g,
+  sgr: /(?:\x1b\[[\d;]+m)+/g, // eslint-disable-line no-control-regex
   /**
    * A regular expression to match JavaScript identifiers.
    */

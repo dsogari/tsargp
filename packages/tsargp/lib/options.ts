@@ -1,10 +1,10 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { AnsiMessage, ErrorFormatter, MessageConfig, Style } from './styles.js';
+import type { HelpItem } from './enums.js';
+import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
-import { HelpItem } from './enums.js';
 import { getEntries } from './utils.js';
 
 export { requirementExpressions as req };
@@ -72,10 +72,10 @@ export type Range = readonly [min: number, max: number];
 export type Alignment = 'left' | 'right';
 
 /**
- * Defines attributes common to all help columns.
+ * Defines layout attributes common to all help columns.
  * @template A The type of text alignment
  */
-export type WithColumn<A extends string = Alignment> = {
+export type WithColumnLayout<A extends string = Alignment> = {
   /**
    * The text alignment for this column. (Defaults to 'left')
    */
@@ -95,9 +95,9 @@ export type WithColumn<A extends string = Alignment> = {
 };
 
 /**
- * Defines attributes for columns that may be preceded by other columns.
+ * Defines layout attributes for columns that may be preceded by other columns.
  */
-export type WithAbsolute = {
+export type WithAbsoluteLayout = {
   /**
    * Whether the indentation level should be relative to the beginning of the line instead of the
    * end of the previous column. (Defaults to false)
@@ -106,54 +106,36 @@ export type WithAbsolute = {
 };
 
 /**
- * The help configuration.
+ * The help layout.
  */
-export type HelpConfig = {
+export type HelpLayout = {
   /**
    * The settings for the names column.
    */
-  readonly names: WithColumn<Alignment | 'slot'>;
+  readonly names: WithColumnLayout<Alignment | 'slot'>;
   /**
    * The settings for the parameter column.
    */
-  readonly param: WithColumn<Alignment | 'merge'> & WithAbsolute;
+  readonly param: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
   /**
    * The settings for the description column.
    */
-  readonly descr: WithColumn<Alignment | 'merge'> & WithAbsolute;
-  /**
-   * The phrases to be used for each kind of help item.
-   */
-  readonly phrases: Readonly<Record<HelpItem, string>>;
+  readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
   /**
    * The order of items to be shown in the option description.
    */
   readonly items: ReadonlyArray<HelpItem>;
-  /**
-   * A list of patterns to filter options.
-   */
-  filter: ReadonlyArray<string>;
 };
 
 /**
- * A partial help configuration.
+ * A partial help layout.
  */
-export type PartialHelpConfig = PartialWithDepth<HelpConfig>;
-
-/**
- * A formatter configuration.
- */
-export type FormatterConfig = MessageConfig & HelpConfig;
-
-/**
- * A partial formatter configuration.
- */
-export type PartialFormatterConfig = PartialWithDepth<FormatterConfig>;
+export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
 
 /**
  * Defines attributes common to all help sections.
  */
-export type WithKind<T extends string> = {
+export type WithSectionKind<T extends string> = {
   /**
    * The kind of section.
    */
@@ -163,7 +145,7 @@ export type WithKind<T extends string> = {
 /**
  * Defines attributes for a help section with wrapping.
  */
-export type WithTitle = {
+export type WithSectionTitle = {
   /**
    * The section heading or default group heading. May contain inline styles.
    */
@@ -186,7 +168,7 @@ export type WithTitle = {
 /**
  * Defines attributes for a help section with text content.
  */
-export type WithText = {
+export type WithSectionText = {
   /**
    * The section content. May contain inline styles.
    */
@@ -196,7 +178,7 @@ export type WithText = {
 /**
  * Defines attributes for a help section with indentation.
  */
-export type WithIndent = {
+export type WithSectionIndent = {
   /**
    * The indentation level of the section content. (Defaults to 0)
    */
@@ -206,7 +188,7 @@ export type WithIndent = {
 /**
  * Defines attributes for a help section with filter.
  */
-export type WithFilter = {
+export type WithSectionFilter = {
   /**
    * A list of options keys or group names to include or exclude.
    */
@@ -220,7 +202,7 @@ export type WithFilter = {
 /**
  * Defines additional attributes for the usage section.
  */
-export type WithUsage = {
+export type WithSectionUsage = {
   /**
    * A list of options that should be considered required in the usage.
    */
@@ -238,22 +220,29 @@ export type WithUsage = {
 /**
  * A help text section.
  */
-export type HelpText = WithKind<'text'> & WithTitle & WithText & WithIndent;
+export type HelpTextSection = WithSectionKind<'text'> &
+  WithSectionTitle &
+  WithSectionText &
+  WithSectionIndent;
 
 /**
  * A help usage section.
  */
-export type HelpUsage = WithKind<'usage'> & WithTitle & WithUsage & WithIndent & WithFilter;
+export type HelpUsageSection = WithSectionKind<'usage'> &
+  WithSectionTitle &
+  WithSectionUsage &
+  WithSectionIndent &
+  WithSectionFilter;
 
 /**
  * A help groups section.
  */
-export type HelpGroups = WithKind<'groups'> & WithTitle & WithFilter;
+export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionTitle & WithSectionFilter;
 
 /**
  * A help section.
  */
-export type HelpSection = HelpText | HelpUsage | HelpGroups;
+export type HelpSection = HelpTextSection | HelpUsageSection | HelpGroupsSection;
 
 /**
  * A list of help sections.
@@ -424,7 +413,7 @@ export type WithFormat = {
   /**
    * Creates a formatted message.
    */
-  format: ErrorFormatter<0>['format'];
+  format: ErrorFormatter['format'];
 };
 
 /**
@@ -601,9 +590,9 @@ export type WithSelection = {
  */
 export type WithHelp = {
   /**
-   * The formatter configuration.
+   * The help layout.
    */
-  readonly config?: PartialHelpConfig;
+  readonly layout?: PartialHelpLayout;
   /**
    * The help sections to be rendered.
    */
@@ -881,7 +870,7 @@ type WithDefault = {
  */
 type WithExample = {
   /**
-   * @deprecated mutually exclusive with {@link WithKnownValue.example}
+   * @deprecated mutually exclusive with {@link WithParam.example}
    */
   readonly paramName?: never;
 };
@@ -943,8 +932,7 @@ type WithResolve = {
 type DefaultDataType<T extends Option> = T extends { required: true }
   ? never
   : T extends { default: infer D }
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      D extends (...args: any) => infer R
+    ? D extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
       ? R extends Promise<infer V>
         ? V
         : R
@@ -957,19 +945,18 @@ type DefaultDataType<T extends Option> = T extends { required: true }
  * @template C The choices data type
  * @template F The fallback data type
  */
-type ParseDataType<T extends Option, C, F> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends { parse: (...args: any) => infer R }
-    ? R extends Promise<infer D>
-      ? ElementDataType<T, D | C>
-      : ElementDataType<T, R | C>
-    : T extends WithType<'command'>
-      ? OpaqueOptionValues
-      : T extends WithType<'flag'>
-        ? true
-        : T extends WithType<'function'>
-          ? null
-          : ElementDataType<T, F>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ParseDataType<T extends Option, C, F> = T extends { parse: (...args: any) => infer R }
+  ? R extends Promise<infer D>
+    ? ElementDataType<T, D | C>
+    : ElementDataType<T, R | C>
+  : T extends WithType<'command'>
+    ? OpaqueOptionValues
+    : T extends WithType<'flag'>
+      ? true
+      : T extends WithType<'function'>
+        ? null
+        : ElementDataType<T, F>;
 
 /**
  * The data type of an option that may have choices.

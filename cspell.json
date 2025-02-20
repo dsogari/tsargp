@@ -26,7 +26,17 @@
     "rulesets"
   ],
   "ignoreRegExpList": ["gh-username", "ga-measurement-id"],
-  "ignorePaths": ["*.lock", "*.json", "*.txt", ".git", ".prettierignore", "*.{js,ts,jsx,tsx}"],
+  "ignorePaths": [
+    "*.lock",
+    "*.json",
+    "*.svg",
+    ".git",
+    ".prettierignore",
+    "*.{js,ts,jsx,tsx}",
+    "**/.next/",
+    "**/dist/",
+    "**/public/"
+  ],
   "useGitignore": true,
   "enableGlobDot": true,
   "patterns": [

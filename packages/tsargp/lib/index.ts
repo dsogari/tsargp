@@ -1,6 +1,7 @@
 export type * from './options.js';
 export type * from './styles.js';
 
+export * from './config.js';
 export * from './enums.js';
 export * from './formatter.js';
 export { req, valuesFor } from './options.js';
