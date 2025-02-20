@@ -1,23 +1,13 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { PartialMessageConfig } from './config.js';
 import type { OpaqueOption, Requires, RequiresVal, OpaqueOptions } from './options.js';
 import type { Args, NamingRules } from './utils.js';
 
-import { defaultMessageConfig } from './config.js';
 import { ErrorItem } from './enums.js';
 import { getParamCount, getOptionNames, visitRequirements, isMessage } from './options.js';
 import { WarnMessage, ErrorFormatter } from './styles.js';
-import {
-  findSimilar,
-  getEntries,
-  getSymbol,
-  getValues,
-  matchNamingRules,
-  mergeValues,
-  regex,
-} from './utils.js';
+import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -77,11 +67,29 @@ export type ValidationResult = {
  * The validation context.
  */
 type ValidateContext = [
+  /**
+   * The option definitions.
+   */
   options: OpaqueOptions,
+  /**
+   * The error formatter instance.
+   */
   formatter: ErrorFormatter,
+  /**
+   * The validation flags.
+   */
   flags: ValidationFlags,
+  /**
+   * The list of warnings.
+   */
   warning: WarnMessage,
+  /**
+   * An internal flag to avoid cyclic recurrence.
+   */
   visited: Set<OpaqueOptions>,
+  /**
+   * The current option prefix.
+   */
   prefix: string,
 ];
 
@@ -91,19 +99,13 @@ type ValidateContext = [
 /**
  * Implements validation of option definitions.
  */
-export class OptionValidator {
-  private readonly formatter: ErrorFormatter;
-
+export class OptionValidator extends ErrorFormatter {
   /**
    * Creates an option registry based on a set of option definitions.
    * @param options The option definitions
-   * @param config The message configuration
    */
-  constructor(
-    readonly options: OpaqueOptions,
-    config: PartialMessageConfig = {},
-  ) {
-    this.formatter = new ErrorFormatter(mergeValues(defaultMessageConfig, config));
+  constructor(readonly options: OpaqueOptions) {
+    super();
   }
 
   /**
@@ -114,7 +116,7 @@ export class OptionValidator {
   async validate(flags: ValidationFlags = {}): Promise<ValidationResult> {
     const warning = new WarnMessage();
     const visited = new Set<OpaqueOptions>();
-    const context: ValidateContext = [this.options, this.formatter, flags, warning, visited, ''];
+    const context: ValidateContext = [this.options, this, flags, warning, visited, ''];
     await validate(context);
     return warning.length ? { warning } : {};
   }

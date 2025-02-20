@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import type { PartialMessageConfig, PartialHelpLayout } from '../../lib/config';
-import type { Options } from '../../lib/options';
-import { tf, ConnectiveWord } from '../../lib/enums';
+import type { Options, PartialHelpLayout } from '../../lib/options';
+import config from '../../lib/config';
+import { tf } from '../../lib/enums';
 import { HelpFormatter } from '../../lib/formatter';
 import { style } from '../../lib/styles';
 
@@ -149,7 +149,7 @@ describe('HelpFormatter', () => {
         param: { breaks: -1 },
         descr: { breaks: -1 },
       };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  -s  <param>  A string option\n');
     });
 
@@ -166,7 +166,7 @@ describe('HelpFormatter', () => {
         param: { breaks: 1 },
         descr: { breaks: 1 },
       };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toMatch(/^\n {2}-s\n {6}<param>\n {15}A string option\n$/);
     });
 
@@ -183,7 +183,7 @@ describe('HelpFormatter', () => {
         param: { breaks: 1, absolute: true },
         descr: { breaks: 1, absolute: true },
       };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
     });
 
@@ -200,7 +200,7 @@ describe('HelpFormatter', () => {
         param: { breaks: 1, indent: -1 },
         descr: { breaks: 1, indent: -1 },
       };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toMatch(/^\n-s\n <param>\n {7}A string option\n$/);
     });
 
@@ -213,7 +213,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { hidden: true } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  <param>  A string option\n');
     });
 
@@ -226,7 +226,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { param: { hidden: true, absolute: true } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  -s  A string option\n');
     });
 
@@ -239,7 +239,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { descr: { hidden: true, absolute: true } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  -s  <param>\n');
     });
 
@@ -256,16 +256,16 @@ describe('HelpFormatter', () => {
           synopsis: 'A flag option',
         },
       } as const satisfies Options;
-      const config: PartialMessageConfig = {
-        connectives: { [ConnectiveWord.optionSep]: '' },
-      };
-      const layout: PartialHelpLayout = {
-        names: { align: 'left' },
-      };
-      const message = new HelpFormatter(options, config, layout).format();
-      expect(message.wrap()).toEqual(
-        `  -f --flag    A flag option\n  --flag2      A flag option\n`,
-      );
+      config.connectives.optionSep = '';
+      try {
+        const layout: PartialHelpLayout = { names: { align: 'left' } };
+        const message = new HelpFormatter(options, layout).format();
+        expect(message.wrap()).toEqual(
+          `  -f --flag    A flag option\n  --flag2      A flag option\n`,
+        );
+      } finally {
+        config.connectives.optionSep = ',';
+      }
     });
 
     it('align option names to the left boundary with a separator', () => {
@@ -280,7 +280,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { align: 'left' } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  -f, --flag\n  --flag2\n');
     });
 
@@ -296,7 +296,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { align: 'right' } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  -f, --flag\n     --flag2\n');
     });
 
@@ -311,14 +311,14 @@ describe('HelpFormatter', () => {
           names: [null, '--flag2', null],
         },
       } as const satisfies Options;
-      const config: PartialMessageConfig = {
-        connectives: { [ConnectiveWord.optionSep]: '' },
-      };
-      const layout: PartialHelpLayout = {
-        names: { align: 'slot' },
-      };
-      const message = new HelpFormatter(options, config, layout).format();
-      expect(message.wrap()).toEqual('  -f         --flag\n     --flag2\n');
+      config.connectives.optionSep = '';
+      try {
+        const layout: PartialHelpLayout = { names: { align: 'slot' } };
+        const message = new HelpFormatter(options, layout).format();
+        expect(message.wrap()).toEqual('  -f         --flag\n     --flag2\n');
+      } finally {
+        config.connectives.optionSep = ',';
+      }
     });
 
     it('align option names within slots with a separator', () => {
@@ -333,7 +333,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { align: 'slot' } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual('  -f           --flag\n      --flag2\n');
     });
 
@@ -351,7 +351,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { param: { align: 'right' }, items: [] };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual(`  -s1  'abcde'\n  -s2     'ab'\n`);
     });
 
@@ -364,7 +364,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { descr: { align: 'right' } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap(14, false)).toEqual('  -f    A flag\n        option\n');
     });
 
@@ -389,7 +389,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { param: { align: 'merge' }, items: [] };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual(`  -s1 <param>\n  <param>\n  -s3=<param>\n  -a[=<param>]\n`);
     });
 
@@ -407,7 +407,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const layout: PartialHelpLayout = { descr: { align: 'merge' } };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual(`  -s  <param> A string option\n  -f  A flag option\n`);
     });
 
@@ -423,7 +423,7 @@ describe('HelpFormatter', () => {
         param: { hidden: true },
         descr: { align: 'merge' },
       };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual(`  -s A string option\n`);
     });
 
@@ -448,7 +448,7 @@ describe('HelpFormatter', () => {
         param: { align: 'merge' },
         descr: { align: 'merge' },
       };
-      const message = new HelpFormatter(options, undefined, layout).format();
+      const message = new HelpFormatter(options, layout).format();
       expect(message.wrap()).toEqual(
         `  -s <param> A string option\n  <param> A string option\n  -f A flag option\n`,
       );

@@ -2,10 +2,9 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type { Style } from './styles.js';
-import type { PartialWithDepth } from './utils.js';
 
 import { style } from './styles.js';
-import { fg, ConnectiveWord, ErrorItem, HelpItem } from './enums.js';
+import { fg, ErrorItem, HelpItem } from './enums.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -13,7 +12,7 @@ import { fg, ConnectiveWord, ErrorItem, HelpItem } from './enums.js';
 /**
  * The default message configuration.
  */
-export const defaultMessageConfig: MessageConfig = {
+const config: MessageConfig = {
   styles: {
     boolean: style(fg.blue),
     string: style(fg.green),
@@ -25,26 +24,26 @@ export const defaultMessageConfig: MessageConfig = {
     text: '',
   },
   connectives: {
-    [ConnectiveWord.and]: 'and',
-    [ConnectiveWord.or]: 'or',
-    [ConnectiveWord.not]: 'not',
-    [ConnectiveWord.no]: 'no',
-    [ConnectiveWord.equals]: '==',
-    [ConnectiveWord.notEquals]: '!=',
-    [ConnectiveWord.optionAlt]: '|',
-    [ConnectiveWord.optionSep]: ',',
-    [ConnectiveWord.stringQuote]: `'`,
-    [ConnectiveWord.arraySep]: ',',
-    [ConnectiveWord.arrayOpen]: '[',
-    [ConnectiveWord.arrayClose]: ']',
-    [ConnectiveWord.objectSep]: ',',
-    [ConnectiveWord.objectOpen]: '{',
-    [ConnectiveWord.objectClose]: '}',
-    [ConnectiveWord.valueSep]: ':',
-    [ConnectiveWord.valueOpen]: '<',
-    [ConnectiveWord.valueClose]: '>',
-    [ConnectiveWord.exprOpen]: '(',
-    [ConnectiveWord.exprClose]: ')',
+    and: 'and',
+    or: 'or',
+    not: 'not',
+    no: 'no',
+    equals: '==',
+    notEquals: '!=',
+    optionAlt: '|',
+    optionSep: ',',
+    stringQuote: `'`,
+    arraySep: ',',
+    arrayOpen: '[',
+    arrayClose: ']',
+    objectSep: ',',
+    objectOpen: '{',
+    objectClose: '}',
+    valueSep: ':',
+    valueOpen: '<',
+    valueClose: '>',
+    exprOpen: '(',
+    exprClose: ')',
   },
   errorPhrases: {
     [ErrorItem.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
@@ -108,30 +107,8 @@ export const defaultMessageConfig: MessageConfig = {
   },
 };
 
-/**
- * The default help column layout.
- */
-const defaultHelpColumn: WithColumnLayout = {
-  align: 'left',
-  indent: 2,
-  breaks: 0,
-  hidden: false,
-};
-
-/**
- * The default help layout.
- */
-export const defaultHelpLayout: HelpLayout = {
-  names: defaultHelpColumn,
-  param: { ...defaultHelpColumn, absolute: false },
-  descr: { ...defaultHelpColumn, absolute: false },
-  items: Array(HelpItem._count)
-    .fill(0)
-    .map((_, index) => HelpItem.synopsis + index),
-};
-
 //--------------------------------------------------------------------------------------------------
-// Types
+// Public types
 //--------------------------------------------------------------------------------------------------
 /**
  * A set of styles for error/warning/help messages.
@@ -140,35 +117,122 @@ export type MessageStyles = {
   /**
    * The style of boolean values.
    */
-  readonly boolean: Style;
+  boolean: Style;
   /**
    * The style of string values.
    */
-  readonly string: Style;
+  string: Style;
   /**
    * The style of number values.
    */
-  readonly number: Style;
+  number: Style;
   /**
    * The style of regular expressions.
    */
-  readonly regex: Style;
+  regex: Style;
   /**
    * The style of symbols (e.g., option names).
    */
-  readonly symbol: Style;
+  symbol: Style;
   /**
    * The style of unknown values.
    */
-  readonly value: Style;
+  value: Style;
   /**
    * The style of URLs.
    */
-  readonly url: Style;
+  url: Style;
   /**
    * The style of general text.
    */
-  readonly text: Style;
+  text: Style;
+};
+
+/**
+ * The connective words used in option requirements.
+ * Inline styles and line breaks are not supported.
+ */
+export type ConnectiveWords = {
+  /**
+   * The word used to connect two logical expressions in conjunction.
+   */
+  and: string;
+  /**
+   * The word used to connect two logical expressions in disjunction.
+   */
+  or: string;
+  /**
+   * The word used to connect a logical expression in negation.
+   */
+  not: string;
+  /**
+   * The word used to connect a logical expression in non-existence.
+   */
+  no: string;
+  /**
+   * The word used to connect two expressions in equality comparison.
+   */
+  equals: string;
+  /**
+   * The word used to connect two expressions in non-equality comparison.
+   */
+  notEquals: string;
+  /**
+   * The word used to connect two option names in alternation.
+   */
+  optionAlt: string;
+  /**
+   * The word used to connect two option names in succession.
+   */
+  optionSep: string;
+  /**
+   * The quote character used to enclose a string value.
+   */
+  stringQuote: string;
+  /**
+   * The word used to connect two array elements in succession.
+   */
+  arraySep: string;
+  /**
+   * The bracket character used to open an array value.
+   */
+  arrayOpen: string;
+  /**
+   * The bracket character used to close an array value.
+   */
+  arrayClose: string;
+  /**
+   * The word used to connect two object entries in succession.
+   */
+  objectSep: string;
+  /**
+   * The bracket character used to open an object value.
+   */
+  objectOpen: string;
+  /**
+   * The bracket character used to close an object value.
+   */
+  objectClose: string;
+  /**
+   * The word used to connect an object key with its value.
+   */
+  valueSep: string;
+  /**
+   * The bracket character used to open an unknown value.
+   */
+  valueOpen: string;
+  /**
+   * The bracket character used to close an unknown value.
+   */
+  valueClose: string;
+  /**
+   * The bracket character used to open an expression.
+   */
+  exprOpen: string;
+  /**
+   * The bracket character used to close an expression.
+   */
+  exprClose: string;
 };
 
 /**
@@ -182,84 +246,18 @@ export type MessageConfig = {
   /**
    * The connective words.
    */
-  readonly connectives: Readonly<Record<ConnectiveWord, string>>;
+  readonly connectives: ConnectiveWords;
   /**
    * The custom error phrases.
    */
-  readonly errorPhrases: Readonly<Record<ErrorItem, string>>;
+  readonly errorPhrases: Record<ErrorItem, string>;
   /**
    * The custom help phrases.
    */
-  readonly helpPhrases: Readonly<Record<HelpItem, string>>;
+  readonly helpPhrases: Record<HelpItem, string>;
 };
 
-/**
- * A partial message configuration.
- */
-export type PartialMessageConfig = PartialWithDepth<MessageConfig>;
-
-/**
- * A text alignment setting.
- */
-export type Alignment = 'left' | 'right';
-
-/**
- * Defines layout attributes common to all help columns.
- * @template A The type of text alignment
- */
-export type WithColumnLayout<A extends string = Alignment> = {
-  /**
-   * The text alignment for this column. (Defaults to 'left')
-   */
-  readonly align: A;
-  /**
-   * The indentation level for this column. (Defaults to 2)
-   */
-  readonly indent: number;
-  /**
-   * The number of line breaks to insert before each entry in this column. (Defaults to 0)
-   */
-  readonly breaks: number;
-  /**
-   * Whether the column should be hidden. (Defaults to false)
-   */
-  readonly hidden: boolean;
-};
-
-/**
- * Defines layout attributes for columns that may be preceded by other columns.
- */
-export type WithAbsoluteLayout = {
-  /**
-   * Whether the indentation level should be relative to the beginning of the line instead of the
-   * end of the previous column. (Defaults to false)
-   */
-  readonly absolute: boolean;
-};
-
-/**
- * The help layout.
- */
-export type HelpLayout = {
-  /**
-   * The settings for the names column.
-   */
-  readonly names: WithColumnLayout<Alignment | 'slot'>;
-  /**
-   * The settings for the parameter column.
-   */
-  readonly param: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
-  /**
-   * The settings for the description column.
-   */
-  readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
-  /**
-   * The order of items to be shown in the option description.
-   */
-  readonly items: ReadonlyArray<HelpItem>;
-};
-
-/**
- * A partial help layout.
- */
-export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
+//--------------------------------------------------------------------------------------------------
+// Exports
+//--------------------------------------------------------------------------------------------------
+export default config;

@@ -1,9 +1,9 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { PartialHelpLayout } from './config.js';
+import type { HelpItem } from './enums.js';
 import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
-import type { Promissory, Resolve } from './utils.js';
+import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { getEntries } from './utils.js';
 
@@ -65,6 +65,72 @@ const niladicOptionTypes = [...messageOptionTypes, 'command', 'flag'] as const;
  * In a valid range, the minimum should be strictly less than the maximum.
  */
 export type Range = readonly [min: number, max: number];
+
+/**
+ * A text alignment setting.
+ */
+export type Alignment = 'left' | 'right';
+
+/**
+ * Defines layout attributes common to all help columns.
+ * @template A The type of text alignment
+ */
+export type WithColumnLayout<A extends string = Alignment> = {
+  /**
+   * The text alignment for this column. (Defaults to 'left')
+   */
+  readonly align: A;
+  /**
+   * The indentation level for this column. (Defaults to 2)
+   */
+  readonly indent: number;
+  /**
+   * The number of line breaks to insert before each entry in this column. (Defaults to 0)
+   */
+  readonly breaks: number;
+  /**
+   * Whether the column should be hidden. (Defaults to false)
+   */
+  readonly hidden: boolean;
+};
+
+/**
+ * Defines layout attributes for columns that may be preceded by other columns.
+ */
+export type WithAbsoluteLayout = {
+  /**
+   * Whether the indentation level should be relative to the beginning of the line instead of the
+   * end of the previous column. (Defaults to false)
+   */
+  readonly absolute: boolean;
+};
+
+/**
+ * The help layout.
+ */
+export type HelpLayout = {
+  /**
+   * The settings for the names column.
+   */
+  readonly names: WithColumnLayout<Alignment | 'slot'>;
+  /**
+   * The settings for the parameter column.
+   */
+  readonly param: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
+  /**
+   * The settings for the description column.
+   */
+  readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
+  /**
+   * The order of items to be shown in the option description.
+   */
+  readonly items: ReadonlyArray<HelpItem>;
+};
+
+/**
+ * A partial help layout.
+ */
+export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
 
 /**
  * Defines attributes common to all help sections.
@@ -804,7 +870,7 @@ type WithDefault = {
  */
 type WithExample = {
   /**
-   * @deprecated mutually exclusive with {@link WithKnownValue.example}
+   * @deprecated mutually exclusive with {@link WithParam.example}
    */
   readonly paramName?: never;
 };
@@ -866,8 +932,7 @@ type WithResolve = {
 type DefaultDataType<T extends Option> = T extends { required: true }
   ? never
   : T extends { default: infer D }
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      D extends (...args: any) => infer R
+    ? D extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
       ? R extends Promise<infer V>
         ? V
         : R
@@ -880,19 +945,18 @@ type DefaultDataType<T extends Option> = T extends { required: true }
  * @template C The choices data type
  * @template F The fallback data type
  */
-type ParseDataType<T extends Option, C, F> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends { parse: (...args: any) => infer R }
-    ? R extends Promise<infer D>
-      ? ElementDataType<T, D | C>
-      : ElementDataType<T, R | C>
-    : T extends WithType<'command'>
-      ? OpaqueOptionValues
-      : T extends WithType<'flag'>
-        ? true
-        : T extends WithType<'function'>
-          ? null
-          : ElementDataType<T, F>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ParseDataType<T extends Option, C, F> = T extends { parse: (...args: any) => infer R }
+  ? R extends Promise<infer D>
+    ? ElementDataType<T, D | C>
+    : ElementDataType<T, R | C>
+  : T extends WithType<'command'>
+    ? OpaqueOptionValues
+    : T extends WithType<'flag'>
+      ? true
+      : T extends WithType<'function'>
+        ? null
+        : ElementDataType<T, F>;
 
 /**
  * The data type of an option that may have choices.

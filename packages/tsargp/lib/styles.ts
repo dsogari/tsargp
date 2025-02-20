@@ -1,10 +1,11 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { MessageConfig } from './config.js';
+import type { ConnectiveWords } from './config.js';
 import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
 
-import { ConnectiveWord, ErrorItem, cs, fg, bg, tf } from './enums.js';
+import config from './config.js';
+import { ErrorItem, cs, fg, bg, tf } from './enums.js';
 import {
   getEntries,
   isArray,
@@ -70,101 +71,92 @@ const formatFunctions = {
   /**
    * The formatting function for boolean values.
    * @param value The boolean value
-   * @param config The message configuration
    * @param result The resulting string
    */
-  b(value: boolean, config, result) {
+  b(value: boolean, result) {
     result.style = config.styles.boolean;
     result.word(`${value}`);
   },
   /**
    * The formatting function for string values.
    * @param value The string value
-   * @param config The message configuration
    * @param result The resulting string
    */
-  s(value: string, config, result) {
-    const quote = config.connectives[ConnectiveWord.stringQuote];
+  s(value: string, result) {
+    const quote = config.connectives.stringQuote;
     result.style = config.styles.string;
     result.word(`${quote}${value}${quote}`);
   },
   /**
    * The formatting function for number values.
    * @param value The number value
-   * @param config The message configuration
    * @param result The resulting string
    */
-  n(value: number, config, result) {
+  n(value: number, result) {
     result.style = config.styles.number;
     result.word(`${value}`);
   },
   /**
    * The formatting function for regular expressions.
    * @param value The regular expression
-   * @param config The message configuration
    * @param result The resulting string
    */
-  r(value: RegExp, config, result) {
+  r(value: RegExp, result) {
     result.style = config.styles.regex;
     result.word(`${value}`);
   },
   /**
    * The formatting function for symbols.
    * @param value The symbol value
-   * @param config The message configuration
    * @param result The resulting string
    */
-  m(value: symbol, config, result) {
+  m(value: symbol, result) {
     result.style = config.styles.symbol;
     result.word(Symbol.keyFor(value) ?? '');
   },
   /**
    * The formatting function for URLs.
    * @param url The URL object
-   * @param config The message configuration
    * @param result The resulting string
    */
-  u(url: URL, config, result) {
+  u(url: URL, result) {
     result.style = config.styles.url;
     result.word(url.href);
   },
   /**
    * The formatting function for ANSI strings.
    * @param str The ANSI string
-   * @param _config The message configuration
    * @param result The resulting string
    */
-  t(str: AnsiString, _config, result) {
+  t(str: AnsiString, result) {
     result.other(str);
   },
   /**
    * The formatting function for custom format callbacks.
-   * This is used internally and should not be exposed in the API.
+   * For internal use only.
    * @param arg The format argument
-   * @param _config The message configuration
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  c(arg: unknown, _config, result, flags) {
+  c(arg: unknown, result, flags) {
     flags.custom?.bind(result)(arg);
   },
   /**
    * The formatting function for array values.
    * A custom format callback may be used for array elements.
    * @param value The array value
-   * @param config The message configuration
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  a(value: Array<unknown>, config, result, flags) {
+  a(value: Array<unknown>, result, flags) {
     const connectives = config.connectives;
-    const sep = flags.sep ?? connectives[ConnectiveWord.arraySep];
-    const open = flags.open ?? connectives[ConnectiveWord.arrayOpen];
-    const close = flags.close ?? connectives[ConnectiveWord.arrayClose];
+    const sep = flags.sep ?? connectives.arraySep;
+    const open = flags.open ?? connectives.arrayOpen;
+    const close = flags.close ?? connectives.arrayClose;
     result.open(open);
     value.forEach((val, i) => {
       const spec = flags.custom ? 'c' : 'v';
-      this[spec](val, config, result, flags);
+      this[spec](val, result, flags);
       if (sep && i < value.length - 1) {
         result.merge = flags.mergePrev ?? true;
         result.word(sep);
@@ -177,40 +169,38 @@ const formatFunctions = {
    * The formatting function for object values.
    * Assumes that the object is not null.
    * @param value The object value
-   * @param config The message configuration
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  o(value: object, config, result, flags) {
+  o(value: object, result, flags) {
     const connectives = config.connectives;
-    const valueSep = connectives[ConnectiveWord.valueSep];
+    const valueSep = connectives.valueSep;
     const newFlags: FormattingFlags = {
       ...flags,
-      sep: flags.sep ?? connectives[ConnectiveWord.objectSep],
-      open: flags.open ?? connectives[ConnectiveWord.objectOpen],
-      close: flags.close ?? connectives[ConnectiveWord.objectClose],
+      sep: flags.sep ?? connectives.objectSep,
+      open: flags.open ?? connectives.objectOpen,
+      close: flags.close ?? connectives.objectClose,
       custom: (entry) => {
         const [key, val] = entry as [string, unknown];
         if (key.match(regex.id)) {
           result.word(key);
         } else {
-          this['s'](key, config, result, flags);
+          this['s'](key, result, flags);
         }
         result.close(valueSep);
-        this['v'](val, config, result, flags);
+        this['v'](val, result, flags);
       },
     };
     const entries = getEntries(value as Record<string, unknown>);
-    this['a'](entries, config, result, newFlags);
+    this['a'](entries, result, newFlags);
   },
   /**
    * The formatting function for unknown values.
    * @param value The unknown value
-   * @param config The message configuration
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  v(value: unknown, config, result, flags) {
+  v(value: unknown, result, flags) {
     const spec =
       value instanceof URL
         ? 'u'
@@ -222,11 +212,11 @@ const formatFunctions = {
               ? 'a'
               : typeMapping[typeof value];
     if (spec && value !== null) {
-      this[spec](value, config, result, flags);
+      this[spec](value, result, flags);
     } else {
       const connectives = config.connectives;
-      const open = connectives[ConnectiveWord.valueOpen];
-      const close = connectives[ConnectiveWord.valueClose];
+      const open = connectives.valueOpen;
+      const close = connectives.valueClose;
       result.seq(config.styles.value);
       result.merge = true;
       result.open(open).split(`${value}`).close(close);
@@ -240,9 +230,6 @@ const formatFunctions = {
   },
 } as const satisfies FormatFunctions;
 
-//--------------------------------------------------------------------------------------------------
-// Public types
-//--------------------------------------------------------------------------------------------------
 /**
  * A callback that processes a placeholder when splitting text.
  * @param this The ANSI string to append to
@@ -260,20 +247,17 @@ export type FormattingFlags = {
   readonly alt?: number;
   /**
    * An element delimiter for array and object values.
-   * Overrides {@link ConnectiveWord.arraySep} and {@link ConnectiveWord.objectSep} from
-   * {@link MessageConfig.connectives}.
+   * Overrides {@link ConnectiveWords.arraySep} and {@link ConnectiveWords.objectSep}.
    */
   readonly sep?: string;
   /**
    * An opening delimiter for array and object values.
-   * Overrides {@link ConnectiveWord.arrayOpen} and {@link ConnectiveWord.objectOpen} from
-   * {@link MessageConfig.connectives}.
+   * Overrides {@link ConnectiveWords.arrayOpen} and {@link ConnectiveWords.objectOpen}.
    */
   readonly open?: string;
   /**
    * A closing delimiter for array and object values.
-   * Overrides {@link ConnectiveWord.arrayClose} and {@link ConnectiveWord.objectClose} from
-   * {@link MessageConfig.connectives}.
+   * Overrides {@link ConnectiveWords.arrayClose} and {@link ConnectiveWords.objectClose}.
    */
   readonly close?: string;
   /**
@@ -287,8 +271,7 @@ export type FormattingFlags = {
   /**
    * A custom callback to format arguments.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly custom?: FormatCallback<any>;
+  readonly custom?: FormatCallback<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
 /**
@@ -344,17 +327,11 @@ export type StyleAttr = tf | fg | bg | FgColor | BgColor | UlColor | UlStyle;
 /**
  * A formatting function.
  * @param value The value to be formatted
- * @param config The message configuration
  * @param result The resulting string
  * @param flags The formatting flags
  */
-type FormatFunction = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any,
-  config: MessageConfig,
-  result: AnsiString,
-  flags: FormattingFlags,
-) => void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FormatFunction = (value: any, result: AnsiString, flags: FormattingFlags) => void;
 
 /**
  * A set of formatting functions.
@@ -548,8 +525,8 @@ export class AnsiString {
 
   /**
    * Appends an SGR clear sequence to the list.
-   * This is different from the {@link pop} method (we are aware of this ambiguity, but we want
-   * method names to be short).
+   * This is different from the {@link AnsiString.pop} method (we are aware of this ambiguity, but
+   * we want to keep method names short).
    * @returns The ANSI string instance
    */
   clear(): this {
@@ -697,19 +674,18 @@ export class AnsiString {
 
   /**
    * Formats a text from a custom phrase with a set of arguments.
-   * @param config The message configuration
    * @param phrase The message phrase
    * @param flags The formatting flags
    * @param args The message arguments
    * @returns The ANSI string instance
    */
-  format(config: MessageConfig, phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
+  format(phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
     const formatFn: FormatCallback | undefined =
       args &&
       function (spec) {
         const index = Number(spec.slice(1));
         if (index >= 0 && index < args.length) {
-          formatFunctions.v(args[index], config, this, flags);
+          formatFunctions.v(args[index], this, flags);
         }
       };
     const alternative = flags.alt !== undefined ? selectAlternative(phrase, flags.alt) : phrase;
@@ -824,12 +800,6 @@ export class TextMessage extends Array<string> {
  */
 export class ErrorFormatter {
   /**
-   * Creates an error formatter.
-   * @param config The message configuration
-   */
-  constructor(readonly config: MessageConfig) {}
-
-  /**
    * Creates a formatted error message.
    * @param kind The message kind
    * @param flags The formatting flags
@@ -850,7 +820,7 @@ export class ErrorFormatter {
    * @returns The formatted message
    */
   create(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): AnsiString {
-    return this.format(this.config.errorPhrases[kind], flags, ...args);
+    return this.format(config.errorPhrases[kind], flags, ...args);
   }
 
   /**
@@ -862,9 +832,7 @@ export class ErrorFormatter {
    * @returns The formatted message
    */
   format(phrase: string, flags?: FormattingFlags, ...args: Args): AnsiString {
-    return new AnsiString(0, 0, false, this.config.styles.text)
-      .format(this.config, phrase, flags, ...args)
-      .break();
+    return new AnsiString(0, 0, false, config.styles.text).format(phrase, flags, ...args).break();
   }
 }
 

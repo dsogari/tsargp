@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, jest } from 'bun:test';
-import { defaultMessageConfig } from '../lib/config';
 import { cs, fg, bg, tf } from '../lib/enums';
 import {
   AnsiString,
@@ -462,20 +461,19 @@ describe('AnsiString', () => {
   describe('format', () => {
     it('preserve a merge flag set before formatting', () => {
       const str1 = new AnsiString().split('type script');
-      const str2 = new AnsiString().open('[').format(defaultMessageConfig, '#0', {}, str1);
+      const str2 = new AnsiString().open('[').format('#0', {}, str1);
       expect(str2.count).toEqual(2);
       expect(str2.strings).toEqual(['[type', 'script']);
     });
 
     it('preserve add closing word to a formatted generic value', () => {
-      const str = new AnsiString().format(defaultMessageConfig, '#0', {}, () => 1).close('.');
+      const str = new AnsiString().format('#0', {}, () => 1).close('.');
       expect(str.count).toEqual(3);
       expect(str.strings).toEqual(['\x1b[90m' + '<()', '=>', '1>' + '\x1b[0m.']);
     });
 
     it('format single-valued arguments out of order', () => {
       const str = new AnsiString().format(
-        defaultMessageConfig,
         '#9 #8 #7 #6 #5 #4 #3 #2 #1 #0',
         {},
         true,
@@ -516,7 +514,7 @@ describe('AnsiString', () => {
 
     it('format array-valued arguments with custom separator', () => {
       const str1 = new AnsiString().split('type script');
-      const str2 = new AnsiString().format(defaultMessageConfig, '#0', { sep: ';' }, [
+      const str2 = new AnsiString().format('#0', { sep: ';' }, [
         true,
         'some text',
         123,
@@ -553,7 +551,6 @@ describe('AnsiString', () => {
 
     it('format object-valued arguments without merging the separator', () => {
       const str = new AnsiString().format(
-        defaultMessageConfig,
         '#0',
         { mergePrev: false },
         {

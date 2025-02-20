@@ -1,7 +1,6 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { PartialMessageConfig } from './config.js';
 import type {
   HelpSections,
   Options,
@@ -18,8 +17,8 @@ import type {
 import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
 
-import { defaultMessageConfig } from './config.js';
-import { ConnectiveWord, ErrorItem } from './enums.js';
+import config from './config.js';
+import { ErrorItem } from './enums.js';
 import { HelpFormatter } from './formatter.js';
 import {
   fmt,
@@ -44,7 +43,6 @@ import {
   getArgs,
   readFile,
   areEqual,
-  mergeValues,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -99,17 +97,44 @@ export type CommandLine = string | Array<string>;
 // Internal types
 //--------------------------------------------------------------------------------------------------
 /**
- * Information about the current parsing context.
+ * The parsing context.
  */
 type ParseContext = [
+  /**
+   * The option registry.
+   */
   registry: OptionRegistry,
+  /**
+   * The error formatter.
+   */
   formatter: ErrorFormatter,
+  /**
+   * The current option values.
+   */
   values: OpaqueOptionValues,
+  /**
+   * The command-line arguments.
+   */
   args: Array<string>,
+  /**
+   * The set of options that were specified.
+   */
   specifiedKeys: Set<string>,
+  /**
+   * True if word completion is in effect.
+   */
   completing: boolean,
+  /**
+   * The list of warnings.
+   */
   warning: WarnMessage,
+  /**
+   * The current program name.
+   */
   progName?: string,
+  /**
+   * The current cluster prefix.
+   */
   clusterPrefix?: string,
 ];
 
@@ -117,11 +142,29 @@ type ParseContext = [
  * Information about the current argument sequence.
  */
 type ParseEntry = [
+  /**
+   * The argument.
+   */
   index: number,
+  /**
+   * The option definition (augmented).
+   */
   info?: OptionInfo,
+  /**
+   * The option value.
+   */
   value?: string,
+  /**
+   * True if an argument is being completed.
+   */
   comp?: boolean,
+  /**
+   * The positional marker.
+   */
   marker?: boolean,
+  /**
+   * True if it is a new specification.
+   */
   isNew?: boolean,
 ];
 
@@ -145,18 +188,16 @@ type RequireItemFn<T> = (
  * Implements parsing of command-line arguments into option values.
  * @template T The type of the option definitions
  */
-export class ArgumentParser<T extends Options = Options> {
+export class ArgumentParser<T extends Options = Options> extends ErrorFormatter {
   private readonly registry: OptionRegistry;
-  private readonly formatter: ErrorFormatter;
 
   /**
    * Creates an argument parser based on a set of option definitions.
    * @param options The option definitions
-   * @param config The message configuration
    */
-  constructor(options: T, config: PartialMessageConfig = {}) {
+  constructor(options: T) {
+    super();
     this.registry = new OptionRegistry(options);
-    this.formatter = new ErrorFormatter(mergeValues(defaultMessageConfig, config));
   }
 
   /**
@@ -187,7 +228,7 @@ export class ArgumentParser<T extends Options = Options> {
     const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
     const context = createContext(
       this.registry,
-      this.formatter,
+      this,
       values,
       args,
       !!compIndex,
@@ -454,7 +495,7 @@ function reportUnknownName(context: ParseContext, name: string): never {
   const [registry, formatter] = context;
   const similar = findSimilar(name, registry.names.keys(), 0.6);
   const alt = similar.length ? 1 : 0;
-  const sep = formatter.config.connectives[ConnectiveWord.optionSep];
+  const sep = config.connectives.optionSep;
   throw formatter.error(
     ErrorItem.unknownOption,
     { alt, sep, open: '', close: '' },
@@ -496,7 +537,7 @@ async function completeParameter(
     try {
       // do not destructure `complete`, because the callback might need to use `this`
       words = await option.complete(comp, { values, index, name, prev });
-    } catch (ignoreErr) {
+    } catch (_err) {
       // do not propagate errors during completion
       words = [];
     }
@@ -591,7 +632,7 @@ async function parseParams(
       // comp === false, otherwise completion would have taken place by now
       const [alt, val] =
         min === max ? [0, min] : !min ? [2, max] : isFinite(max) ? [3, [min, max]] : [1, min];
-      const sep = formatter.config.connectives[ConnectiveWord.and];
+      const sep = config.connectives.and;
       const flags = { alt, sep, mergePrev: false };
       throw error(ErrorItem.mismatchedParamCount, flags, val);
     }
@@ -793,7 +834,6 @@ async function handleHelp(
   rest: Array<string>,
 ): Promise<AnsiMessage> {
   let registry = context[0];
-  const [, formatter, , , , , , progName] = context;
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
@@ -814,13 +854,8 @@ async function handleHelp(
     }
   }
   const filter = option.useFilter ? rest : undefined;
-  const helpFormatter = new HelpFormatter(
-    registry.options,
-    formatter.config,
-    option.layout,
-    filter,
-  );
-  return helpFormatter.sections(option.sections ?? defaultSections, progName);
+  const helpFormatter = new HelpFormatter(registry.options, option.layout, filter);
+  return helpFormatter.sections(option.sections ?? defaultSections, context[7]);
 }
 
 /**
@@ -975,33 +1010,31 @@ function checkRequiresEntry(
   negate: boolean,
   invert: boolean,
 ): boolean {
-  const [registry, formatter, values, , specifiedKeys] = context;
+  const [registry, , values, , specifiedKeys] = context;
   const [key, expected] = entry;
   const actual = values[key];
   const option = registry.options[key];
   const specified = specifiedKeys.has(key) || actual !== undefined; // consider default values
   const required = expected !== null;
   const name = option.preferredName ?? '';
-  const { config } = formatter;
   const { connectives } = config;
   if (!specified || !required || expected === undefined) {
     if ((specified === required) !== negate) {
       return true;
     }
     if (specified !== invert) {
-      error.word(connectives[ConnectiveWord.no]);
+      error.word(connectives.no);
     }
-    fmt.m(Symbol.for(name), config, error);
+    fmt.m(Symbol.for(name), error);
     return false;
   }
   if (areEqual(actual, expected) !== negate) {
     return true;
   }
-  const connective =
-    negate !== invert ? connectives[ConnectiveWord.notEquals] : connectives[ConnectiveWord.equals];
-  fmt.m(Symbol.for(name), config, error);
+  const connective = negate !== invert ? connectives.notEquals : connectives.equals;
+  fmt.m(Symbol.for(name), error);
   error.word(connective);
-  fmt.v(expected, config, error, {});
+  fmt.v(expected, error, {});
   return false;
 }
 
@@ -1027,10 +1060,10 @@ async function checkRequireItems<T>(
   invert: boolean,
   and: boolean,
 ): Promise<boolean> {
-  const connectives = context[1].config.connectives;
-  const connective = invert ? connectives[ConnectiveWord.and] : connectives[ConnectiveWord.or];
+  const { connectives } = config;
+  const connective = invert ? connectives.and : connectives.or;
   if (!and && items.length > 1) {
-    error.open(connectives[ConnectiveWord.exprOpen]);
+    error.open(connectives.exprOpen);
   }
   let first = true;
   for (const item of items) {
@@ -1048,7 +1081,7 @@ async function checkRequireItems<T>(
     return true;
   }
   if (items.length > 1) {
-    error.close(connectives[ConnectiveWord.exprClose]);
+    error.close(connectives.exprClose);
   }
   return false;
 }
@@ -1071,14 +1104,13 @@ async function checkRequiresCallback(
   negate: boolean,
   invert: boolean,
 ): Promise<boolean> {
-  const [, formatter, values] = context;
+  const [, , values] = context;
   const result = await callback.bind(option)(values);
   if (result === negate) {
-    const { config } = formatter;
     if (negate !== invert) {
-      error.word(config.connectives[ConnectiveWord.not]);
+      error.word(config.connectives.not);
     }
-    fmt.v(callback, config, error, {});
+    fmt.v(callback, error, {});
     return false;
   }
   return true;
