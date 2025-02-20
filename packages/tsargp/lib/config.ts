@@ -104,6 +104,7 @@ export const defaultMessageConfig: MessageConfig = {
     [HelpItem.useCommand]: 'Uses the next argument as the name of a subcommand.',
     [HelpItem.useFilter]: 'Uses the remaining arguments as option filter.',
     [HelpItem.inline]: '(Disallows|Requires) inline parameters.',
+    [HelpItem._count]: '', // to satisfy the compiler
   },
 };
 
@@ -124,29 +125,9 @@ export const defaultHelpLayout: HelpLayout = {
   names: defaultHelpColumn,
   param: { ...defaultHelpColumn, absolute: false },
   descr: { ...defaultHelpColumn, absolute: false },
-  items: [
-    HelpItem.synopsis,
-    HelpItem.cluster,
-    HelpItem.separator,
-    HelpItem.paramCount,
-    HelpItem.positional,
-    HelpItem.inline,
-    HelpItem.append,
-    HelpItem.choices,
-    HelpItem.regex,
-    HelpItem.unique,
-    HelpItem.limit,
-    HelpItem.stdin,
-    HelpItem.sources,
-    HelpItem.requires,
-    HelpItem.required,
-    HelpItem.requiredIf,
-    HelpItem.default,
-    HelpItem.useCommand,
-    HelpItem.useFilter,
-    HelpItem.deprecated,
-    HelpItem.link,
-  ],
+  items: Array(HelpItem._count)
+    .fill(0)
+    .map((_, index) => HelpItem.synopsis + index),
 };
 
 //--------------------------------------------------------------------------------------------------

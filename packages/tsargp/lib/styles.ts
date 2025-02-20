@@ -21,7 +21,6 @@ export { underlineStyle as ul, formatFunctions as fmt };
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-
 /**
  * A predefined underline style.
  */
@@ -65,7 +64,7 @@ const typeMapping: Record<string, string> = {
 } as const;
 
 /**
- * The formatting functions.
+ * The formatting function for each data types.
  */
 const formatFunctions = {
   /**

@@ -83,34 +83,22 @@ type EntriesByGroup<T> = Readonly<Record<string, ReadonlyArray<T>>>;
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * Keep this in-sync with {@link HelpItem}.
+ * The formatting functions for {@link HelpItem}.
  */
-const helpFunctions = [
-  /**
-   * Formats an option's synopsis to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const desc = option.synopsis;
-    if (desc) {
-      result.format(context[1], phrase, {}, new AnsiString().split(desc));
+const helpFunctions = {
+  [HelpItem.synopsis]: (option, phrase, context, result) => {
+    const { synopsis } = option;
+    if (synopsis) {
+      result.format(context[1], phrase, {}, new AnsiString().split(synopsis));
     }
   },
-  /**
-   * Formats an option's separator string to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const separator = option.separator;
+  [HelpItem.separator]: (option, phrase, context, result) => {
+    const { separator } = option;
     if (separator) {
       result.format(context[1], phrase, {}, separator);
     }
   },
-  /**
-   * Formats an option's parameter count to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
+  [HelpItem.paramCount]: (option, phrase, context, result) => {
     const [min, max] = getParamCount(option);
     if (max > 1 && !option.inline) {
       const [alt, val] =
@@ -129,185 +117,114 @@ const helpFunctions = [
       result.format(context[1], phrase, { alt, sep, open: '', close: '', mergePrev: false }, val);
     }
   },
-  /**
-   * Formats an option's positional attribute to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const positional = option.positional;
+  [HelpItem.positional]: (option, phrase, context, result) => {
+    const { positional } = option;
     if (positional) {
       const [alt, name] = positional === true ? [0] : [1, getSymbol(positional)];
       result.format(context[1], phrase, { alt }, name);
     }
   },
-  /**
-   * Formats an option's append attribute to be included in the description.
-   * @ignore
-   */
-  (option, phrase, _, result) => {
+  [HelpItem.append]: (option, phrase, _, result) => {
     if (option.append) {
       result.split(phrase);
     }
   },
-  /**
-   * Formats an option's choices to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const choices = option.choices;
+  [HelpItem.choices]: (option, phrase, context, result) => {
+    const { choices } = option;
     const values = isReadonlyArray<string>(choices) ? choices : choices && getKeys(choices);
     if (values?.length) {
       result.format(context[1], phrase, { open: '{', close: '}' }, values);
     }
   },
-  /**
-   * Formats an option's regex constraint to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const regex = option.regex;
+  [HelpItem.regex]: (option, phrase, context, result) => {
+    const { regex } = option;
     if (regex) {
       result.format(context[1], phrase, {}, regex);
     }
   },
-  /**
-   * Formats an option's unique constraint to be included in the description.
-   * @ignore
-   */
-  (option, phrase, _, result) => {
+  [HelpItem.unique]: (option, phrase, _, result) => {
     if (option.unique) {
       result.split(phrase);
     }
   },
-  /**
-   * Formats an option's limit constraint to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const limit = option.limit;
+  [HelpItem.limit]: (option, phrase, context, result) => {
+    const { limit } = option;
     if (limit !== undefined) {
       result.format(context[1], phrase, {}, limit);
     }
   },
-  /**
-   * Formats an option's requirements to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const requires = option.requires;
+  [HelpItem.requires]: (option, phrase, context, result) => {
+    const { requires } = option;
     if (requires) {
       result.split(phrase, () => formatRequirements(context, requires, result));
     }
   },
-  /**
-   * Formats an option's required attribute to be included in the description.
-   * @ignore
-   */
-  (option, phrase, _, result) => {
+  [HelpItem.required]: (option, phrase, _, result) => {
     if (option.required) {
       result.split(phrase);
     }
   },
-  /**
-   * Formats an option's default value to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
+  [HelpItem.default]: (option, phrase, context, result) => {
     const def = option.default;
     if (def !== undefined) {
       result.format(context[1], phrase, {}, def);
     }
   },
-  /**
-   * Formats an option's deprecation notice to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const deprecated = option.deprecated;
+  [HelpItem.deprecated]: (option, phrase, context, result) => {
+    const { deprecated } = option;
     if (deprecated) {
       result.format(context[1], phrase, {}, new AnsiString().split(deprecated));
     }
   },
-  /**
-   * Formats an option's external resource reference to be included in the description
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const link = option.link;
+  [HelpItem.link]: (option, phrase, context, result) => {
+    const { link } = option;
     if (link) {
       result.format(context[1], phrase, {}, link);
     }
   },
-  /**
-   * Formats an option's handling of standard input to be included in the description.
-   * @ignore
-   */
-  (option, phrase, _, result) => {
+  [HelpItem.stdin]: (option, phrase, _, result) => {
     if (option.stdin) {
       result.split(phrase);
     }
   },
-  /**
-   * Formats an option's environment data sources to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const env = option.sources;
-    if (env?.length) {
-      const map = (name: (typeof env)[number]) =>
+  [HelpItem.sources]: (option, phrase, context, result) => {
+    const { sources } = option;
+    if (sources?.length) {
+      const map = (name: (typeof sources)[number]) =>
         typeof name === 'string' ? getSymbol(name) : name;
-      result.format(context[1], phrase, { open: '', close: '' }, env.map(map));
+      result.format(context[1], phrase, { open: '', close: '' }, sources.map(map));
     }
   },
-  /**
-   * Formats an option's conditional requirements to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
+  [HelpItem.requiredIf]: (option, phrase, context, result) => {
     const requiredIf = option.requiredIf;
     if (requiredIf) {
       result.split(phrase, () => formatRequirements(context, requiredIf, result));
     }
   },
-  /**
-   * Formats an option's cluster letters to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const cluster = option.cluster;
+  [HelpItem.cluster]: (option, phrase, context, result) => {
+    const { cluster } = option;
     if (cluster) {
       result.format(context[1], phrase, {}, cluster);
     }
   },
-  /**
-   * Formats a help option's useCommand to be included in the description.
-   * @ignore
-   */
-  (option, phrase, _, result) => {
+  [HelpItem.useCommand]: (option, phrase, _, result) => {
     if (option.useCommand) {
       result.split(phrase);
     }
   },
-  /**
-   * Formats a help option's useFilter to be included in the description.
-   * @ignore
-   */
-  (option, phrase, _, result) => {
+  [HelpItem.useFilter]: (option, phrase, _, result) => {
     if (option.useFilter) {
       result.split(phrase);
     }
   },
-  /**
-   * Formats an option's inline treatment to be included in the description.
-   * @ignore
-   */
-  (option, phrase, context, result) => {
-    const inline = option.inline;
+  [HelpItem.inline]: (option, phrase, context, result) => {
+    const { inline } = option;
     if (inline !== undefined) {
       result.format(context[1], phrase, { alt: inline ? 1 : 0 });
     }
   },
-] as const satisfies Record<HelpItem, HelpFunction>;
+  [HelpItem._count]: () => {},
+} as const satisfies Record<HelpItem, HelpFunction>;
 
 //--------------------------------------------------------------------------------------------------
 // Classes

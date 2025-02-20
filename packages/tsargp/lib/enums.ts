@@ -135,6 +135,10 @@ export const enum HelpItem {
    */
   synopsis,
   /**
+   * The option's cluster letters.
+   */
+  cluster,
+  /**
    * The parameter delimiter of a non-niladic option.
    */
   separator,
@@ -146,6 +150,10 @@ export const enum HelpItem {
    * Whether the option accepts positional arguments.
    */
   positional,
+  /**
+   * The option's treatment of inline parameters.
+   */
+  inline,
   /**
    * Whether an array-valued option can be specified multiple times.
    */
@@ -167,26 +175,6 @@ export const enum HelpItem {
    */
   limit,
   /**
-   * The option's forward requirements.
-   */
-  requires,
-  /**
-   * Whether the option is always required.
-   */
-  required,
-  /**
-   * The option's default value.
-   */
-  default,
-  /**
-   * The option's deprecation notice.
-   */
-  deprecated,
-  /**
-   * The option's external resource hyperlink.
-   */
-  link,
-  /**
    * Whether the option accepts data from standard input.
    */
   stdin,
@@ -195,13 +183,21 @@ export const enum HelpItem {
    */
   sources,
   /**
+   * The option's forward requirements.
+   */
+  requires,
+  /**
+   * Whether the option is always required.
+   */
+  required,
+  /**
    * The option's conditional requirements.
    */
   requiredIf,
   /**
-   * The option's cluster letters.
+   * The option's default value.
    */
-  cluster,
+  default,
   /**
    * Whether a help option uses the next argument as the name of a subcommand.
    */
@@ -211,9 +207,18 @@ export const enum HelpItem {
    */
   useFilter,
   /**
-   * The option's treatment of inline parameters.
+   * The option's deprecation notice.
    */
-  inline,
+  deprecated,
+  /**
+   * The option's external resource hyperlink.
+   */
+  link,
+  /**
+   * The number of help items (for internal use only).
+   * New enumerators should be added in their intended position.
+   */
+  _count,
 }
 
 /**
