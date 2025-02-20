@@ -196,7 +196,7 @@ In the case of an inclusion filter, groups are listed in the same order specifie
 
 ## Help layout
 
-The layout of the help message can be configured via a `PartialHelpLayout` object, which can be provided as the third parameter to the formatter constructor. It contains the optional properties described below.
+The layout of the help message can be configured via a `PartialHelpLayout` object, which can be provided as the second parameter to the formatter constructor. It contains the optional properties described below.
 
 ### Column layout
 
@@ -302,7 +302,7 @@ You might want to use this to limit the amount of information in the help messag
 
 ## Option filter
 
-The formatter constructor accepts a fourth optional parameter: a list of patterns that indicate which options should be rendered in the help message. The filter matches options' names, synopsis and environment data sources. If multiple patterns are provided, any matched one will suffice to include an option in the message.
+The formatter constructor accepts a third optional parameter: a list of patterns that indicate which options should be rendered in the help message. The filter matches options' names, synopsis and environment data sources. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
 <Callout type="info">
 

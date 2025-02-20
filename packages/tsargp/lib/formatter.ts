@@ -366,7 +366,8 @@ function buildEntries<T>(
       !option.sources?.find((name) => `${name}`.match(regexp))
     );
   }
-  const regexp = filter.length && RegExp(`(${filter.map(escapeRegExp).join('|')})`, 'i');
+  const escaped = filter.map(escapeRegExp).join('|');
+  const regexp = escaped.length && RegExp(`(${escaped})`, 'i');
   const groups: Record<string, Array<T>> = {};
   for (const option of getValues(context[0])) {
     if (option.group !== null && !exclude(option)) {
@@ -744,8 +745,7 @@ function formatUsageOption(
     return required;
   }
   visited.add(key);
-  const [options] = context;
-  const option = options[key];
+  const option = context[0][key];
   if (!required && option.required) {
     required = true;
     requiredKeys.add(key);
@@ -885,11 +885,10 @@ function formatRequiredKey(
   result: AnsiString,
   negate: boolean,
 ) {
-  const [options] = context;
   if (negate) {
     result.word(config.connectives.no);
   }
-  const name = options[requiredKey].preferredName ?? '';
+  const name = context[0][requiredKey].preferredName ?? '';
   fmt.m(getSymbol(name), result);
 }
 

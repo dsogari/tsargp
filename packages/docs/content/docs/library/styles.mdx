@@ -129,8 +129,8 @@ Text is split into paragraphs, list items and words using a combination of simpl
 
 During splitting, numeric placeholders prefixed with a hashtag `#` may be extracted from the text and processed by a formatting callback. This is used by the library in different places:
 
-- by both the [parser] and [validator], to produce error and warning messages based on configured [custom error phrases]
-- by the [formatter], to assemble help items from configured [custom help phrases]
+- by both the [parser] and [validator], to produce error/warning messages based on configured [error phrases]
+- by the [formatter], to assemble help items from configured [help phrases]
 
 <Callout type="info">
 
@@ -315,7 +315,7 @@ Connective words cannot contain [inline styles] or line breaks.
 
 </Callout>
 
-#### Custom error phrases
+#### Error phrases
 
 The `errorPhrases` property specifies custom phrases to use for error and warning messages that may be produced by both the parser and validator. It has the following optional settings, whose keys are enumerators from `ErrorItem`:
 
@@ -356,7 +356,7 @@ Error phrases are formatted according to [text formatting] rules.
 
 </Callout>
 
-#### Custom help phrases
+#### Help phrases
 
 The `helpPhrases` property specifies custom phrases to use for each kind of [help item] that may appear in a help message. It has the following optional settings, whose keys are enumerators from `HelpItem`:
 
@@ -396,8 +396,8 @@ Help phrases are formatted according to [text formatting] rules.
 
 [inline styles]: #inline-styles
 [text formatting]: #text-splitting
-[custom error phrases]: #custom-error-phrases
-[custom help phrases]: #custom-help-phrases
+[error phrases]: #error-phrases
+[help phrases]: #help-phrases
 
 {/* options references */}
 
@@ -408,7 +408,6 @@ Help phrases are formatted according to [text formatting] rules.
 
 [parser]: parser
 [completion words]: parser#word-completion
-[parser custom phrases]: parser#custom-phrases
 
 {/* validator references */}
 

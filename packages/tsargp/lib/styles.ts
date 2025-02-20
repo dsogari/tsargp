@@ -65,7 +65,7 @@ const typeMapping: Record<string, string> = {
 } as const;
 
 /**
- * The formatting function for each data types.
+ * The formatting function for each data type.
  */
 const formatFunctions = {
   /**
@@ -230,6 +230,9 @@ const formatFunctions = {
   },
 } as const satisfies FormatFunctions;
 
+//--------------------------------------------------------------------------------------------------
+// Public types
+//--------------------------------------------------------------------------------------------------
 /**
  * A callback that processes a placeholder when splitting text.
  * @param this The ANSI string to append to

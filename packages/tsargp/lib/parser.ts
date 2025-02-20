@@ -20,6 +20,7 @@ import type { Args } from './utils.js';
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
 import { HelpFormatter } from './formatter.js';
+import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
 import {
   fmt,
   ErrorFormatter,
@@ -28,7 +29,6 @@ import {
   TextMessage,
   AnsiString,
 } from './styles.js';
-import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
 import {
   getCmdLine,
   findSimilar,
@@ -143,7 +143,7 @@ type ParseContext = [
  */
 type ParseEntry = [
   /**
-   * The argument.
+   * The argument index.
    */
   index: number,
   /**
@@ -853,7 +853,7 @@ async function handleHelp(
       }
     }
   }
-  const filter = option.useFilter ? rest : undefined;
+  const filter = option.useFilter && rest;
   const helpFormatter = new HelpFormatter(registry.options, option.layout, filter);
   return helpFormatter.sections(option.sections ?? defaultSections, context[7]);
 }

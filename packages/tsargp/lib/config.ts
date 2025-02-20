@@ -149,7 +149,7 @@ export type MessageStyles = {
 };
 
 /**
- * The connective words used in option requirements.
+ * The connective words used in option requirements and other places.
  * Inline styles and line breaks are not supported.
  */
 export type ConnectiveWords = {
