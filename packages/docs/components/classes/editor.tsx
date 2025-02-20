@@ -25,6 +25,10 @@ type Props = {
    */
   readonly initialDoc?: string;
   /**
+   * The initial editor selection.
+   */
+  readonly initialSel?: [number, number | undefined];
+  /**
    * A set of callbacks to interact with other components.
    */
   readonly callbacks: {
@@ -63,10 +67,12 @@ class Editor extends Component<Props> {
 
   override componentDidMount() {
     if (this.ref.current) {
+      const selection = this.props.initialSel;
       this.editorView = new EditorView({
         extensions: [basicSetup, javascript()],
         parent: this.ref.current,
         doc: this.props.initialDoc,
+        selection: selection && { anchor: selection[0], head: selection[1] },
       });
     }
   }

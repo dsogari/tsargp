@@ -5,11 +5,14 @@
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
 import { ArgumentParser, OptionValidator, ErrorMessage, AnsiMessage } from 'tsargp';
-import { style, req, fg8, bg8, ul8, ul } from 'tsargp';
+import { config, style, req, fg8, bg8, ul8, ul } from 'tsargp';
 import * as enums from 'tsargp/enums';
 import { type Props, Command } from './classes/command';
 
-const tsargp = { ArgumentParser, req, ul, ...enums, style, fg8, bg8, ul8 };
+//--------------------------------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------------------------------
+const tsargp = { ArgumentParser, config, req, ul, ...enums, style, fg8, bg8, ul8 };
 
 //--------------------------------------------------------------------------------------------------
 // Types
