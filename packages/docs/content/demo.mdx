@@ -30,11 +30,11 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 - check if completion works by pressing `<Tab>` (it behaves slightly differently than a real bash)
 - check if option names get completed (e.g., `<Tab>`, `--<Tab>`, `--h<Tab>`)
-- check if option parameters get completed (e.g., `-b <Tab>`, `-se <Tab>`, `-ne=<Tab>`)
+- check if option parameters get completed (e.g., `-b <Tab>`, `-sc <Tab>`, `-nc=<Tab>`)
 
 ### Positional arguments
 
-- check if positional arguments can be specified before named ones (e.g., `two -s 0`)
+- check if positional arguments can be specified before named ones (e.g., `two -sr 0`)
 - check if all arguments after `--` are recognized as positional (e.g., `-- -f`)
 
 ### Cluster arguments
@@ -44,34 +44,34 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 ### Value constraints
 
-- check if a string parameter matches the required regex (e.g., try `-s A` and see that it fails)
-- check if a string parameter matches one of the choices (e.g., try `-se A` and see that it fails)
-- check if a number parameter matches the required range (e.g., try `-n 1` and see that it fails)
-- check if a number parameter matches one of the choices (e.g., try `-ne=0` and see that it fails)
+- check if a string parameter matches the required regex (e.g., try `-sr A` and see that it fails)
+- check if a string parameter matches one of the choices (e.g., try `-sc A` and see that it fails)
+- check if a number parameter matches the required range (e.g., try `-nr 1` and see that it fails)
+- check if a number parameter matches one of the choices (e.g., try `-nc=0` and see that it fails)
 
 ### Array constraints
 
 - check if the element count is limited to a certain amount (e.g., `-- a b c d`)
-- check if duplicate values get removed (e.g., `--numbersUnique 1,2,1,2`)
+- check if duplicate values get removed (e.g., `--numArrayUnique 1,2,1,2`)
 
 ### Value replacement
 
 When an option is specified more than once, the retained value is usually the last occurrence.
 
-- check if values get overridden for a single-valued option (e.g., `-s 1 -n 1 -s 2 -n 2`)
+- check if values get overridden for a single-valued option (e.g., `-sr 1 -nr 1 -sr 2 -nr 2`)
 - check if values get overridden for an array-valued option (e.g., `abc -- def`)
-- check if values get _appended_ for an array-valued option that is configured that way (e.g., `--numbersUnique 1 --numbersUnique 2`)
+- check if values get _appended_ for an array-valued option that is configured that way (e.g., `--numArrayUnique 1 --numArrayUnique 2`)
 
 ### Inline parameters
 
-- check if parameters can be inlined with option names (e.g., `-ss=abc`)
-- check if inline parameters can contain equal signs (e.g., `-ss==a=b`)
-- check if inline parameters are disallowed for an option (e.g., `-se=one`)
-- check if inline parameters are required for an option (e.g., `-ne 1`)
+- check if parameters can be inlined with option names (e.g., `-sa=abc`)
+- check if inline parameters can contain equal signs (e.g., `-sa==a=b`)
+- check if inline parameters are disallowed for an option (e.g., `-sc=one`)
+- check if inline parameters are required for an option (e.g., `-nc 1`)
 
 ### Help option
 
-- check if the help option accepts option filters (e.g., `-h -b -ne`)
+- check if the help option accepts option filters (e.g., `-h -b -nc`)
 - check if the help option accepts a subcommand name (e.g., `-h hello`)
 - check if the above can be combined (e.g., `-h hello -h`)
 

@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options } from '../../lib/options';
+import { type Options, numberInRange } from '../../lib/options';
 import { ArgumentParser } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('ArgumentParser', () => {
   describe('parse', () => {
+    describe('a custom parse callback is specified', () => {
+      it('handle a single-valued option', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+            parse: numberInRange(1),
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-s', '123'])).resolves.toEqual({ single: 123 });
+        expect(parser.parse(['-s', '0'])).rejects.toThrow(
+          `Invalid parameter to -s: '0'. Value must be within the range [1, Infinity].`,
+        );
+        expect(parser.parse(['-s', 'a'])).rejects.toThrow(
+          `Invalid parameter to -s: 'a'. Value must be within the range [1, Infinity].`,
+        );
+      });
+    });
+
     describe('a regex constraint is specified', () => {
       it('handle a single-valued option', () => {
         const options = {

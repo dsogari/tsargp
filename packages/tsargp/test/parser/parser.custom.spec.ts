@@ -88,7 +88,7 @@ describe('ArgumentParser', () => {
         comp: false,
         format: expect.anything(),
       });
-      expect(options.function.parse).toHaveBeenCalled();
+      expect(options.function.parse).toHaveBeenCalledTimes(1);
     });
   });
 });

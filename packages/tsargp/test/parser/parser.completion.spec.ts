@@ -201,23 +201,54 @@ describe('ArgumentParser', () => {
         expect(options.flag.parse).not.toHaveBeenCalled(); // option was ignored
       });
 
-      it('handle an array-valued option', () => {
+      it('handle a single-valued option with choices', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+            choices: ['one', 'two'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse('cmd ', { compIndex: 4 })).rejects.toThrow(/^-s$/);
+        expect(parser.parse('cmd -', { compIndex: 5 })).rejects.toThrow(/^-s$/);
+        expect(parser.parse('cmd -s', { compIndex: 6 })).rejects.toThrow(/^-s$/);
+        expect(parser.parse('cmd -s ', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+        expect(parser.parse('cmd -s o', { compIndex: 8 })).rejects.toThrow(/^one$/);
+        expect(parser.parse('cmd -s t', { compIndex: 8 })).rejects.toThrow(/^two$/);
+        expect(parser.parse('cmd -s 1', { compIndex: 8 })).rejects.toThrow(/^$/);
+        expect(parser.parse('cmd -s=', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+        expect(parser.parse('cmd -s=o', { compIndex: 8 })).rejects.toThrow(/^one$/);
+        expect(parser.parse('cmd -s=t', { compIndex: 8 })).rejects.toThrow(/^two$/);
+        expect(parser.parse('cmd -s=1', { compIndex: 8 })).rejects.toThrow(/^$/);
+        expect(parser.parse('cmd -s= ', { compIndex: 8 })).rejects.toThrow(/^-s$/);
+      });
+
+      it('handle an array-valued option with choices', () => {
         const options = {
           array: {
             type: 'array',
             names: ['-a'],
+            choices: ['one', 'two'],
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
         expect(parser.parse('cmd ', { compIndex: 4 })).rejects.toThrow(/^-a$/);
         expect(parser.parse('cmd -', { compIndex: 5 })).rejects.toThrow(/^-a$/);
         expect(parser.parse('cmd -a', { compIndex: 6 })).rejects.toThrow(/^-a$/);
-        expect(parser.parse('cmd -a ', { compIndex: 7 })).rejects.toThrow(/^-a$/);
+        expect(parser.parse('cmd -a ', { compIndex: 7 })).rejects.toThrow(/^one\ntwo\n-a$/);
+        expect(parser.parse('cmd -a o', { compIndex: 8 })).rejects.toThrow(/^one$/);
+        expect(parser.parse('cmd -a t', { compIndex: 8 })).rejects.toThrow(/^two$/);
         expect(parser.parse('cmd -a 1', { compIndex: 8 })).rejects.toThrow(/^$/);
-        expect(parser.parse('cmd -a 1 ', { compIndex: 9 })).rejects.toThrow(/^-a$/);
-        expect(parser.parse('cmd -a=', { compIndex: 7 })).rejects.toThrow(/^$/);
+        expect(parser.parse('cmd -a=', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+        expect(parser.parse('cmd -a=o', { compIndex: 8 })).rejects.toThrow(/^one$/);
+        expect(parser.parse('cmd -a=t', { compIndex: 8 })).rejects.toThrow(/^two$/);
+        expect(parser.parse('cmd -a=1', { compIndex: 8 })).rejects.toThrow(/^$/);
         expect(parser.parse('cmd -a= ', { compIndex: 8 })).rejects.toThrow(/^-a$/);
-        expect(parser.parse('cmd -a 1 -a', { compIndex: 11 })).rejects.toThrow(/^-a$/);
+        expect(parser.parse('cmd -a 1 ', { compIndex: 9 })).rejects.toThrow(/^one\ntwo\n-a$/);
+        expect(parser.parse('cmd -a 1 o', { compIndex: 10 })).rejects.toThrow(/^one$/);
+        expect(parser.parse('cmd -a 1 t', { compIndex: 10 })).rejects.toThrow(/^two$/);
+        expect(parser.parse('cmd -a 1 1', { compIndex: 10 })).rejects.toThrow(/^$/);
       });
 
       it('handle a flag option that wants to break the parsing loop', () => {
@@ -360,6 +391,7 @@ describe('ArgumentParser', () => {
           single: {
             type: 'single',
             names: ['-s'],
+            parse: jest.fn((param) => param),
             complete: jest.fn((param) => [param]),
           },
         } as const satisfies Options;
@@ -379,6 +411,7 @@ describe('ArgumentParser', () => {
           name: '-s',
           prev: [],
         });
+        expect(options.single.parse).not.toHaveBeenCalled();
       });
 
       it('handle an array-valued option', () => {
@@ -386,6 +419,7 @@ describe('ArgumentParser', () => {
           array: {
             type: 'array',
             names: ['-a'],
+            parse: jest.fn((param) => param),
             complete: jest.fn((param) => [param]),
           },
         } as const satisfies Options;
@@ -413,6 +447,7 @@ describe('ArgumentParser', () => {
           name: '-a',
           prev: ['1'],
         });
+        expect(options.array.parse).not.toHaveBeenCalled();
       });
 
       it('handle a polyadic function option', () => {
@@ -428,7 +463,11 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
+        expect(parser.parse('cmd -f ', { compIndex: 7 })).rejects.toThrow(/^function$/);
+        expect(parser.parse('cmd -f 1', { compIndex: 8 })).rejects.toThrow(/^function$/);
+        expect(parser.parse('cmd -f 1 ', { compIndex: 9 })).rejects.toThrow(/^function$/);
         expect(parser.parse('cmd -f 1 2', { compIndex: 10 })).rejects.toThrow(/^function$/);
+        expect(parser.parse('cmd -f 1 2 ', { compIndex: 11 })).rejects.toThrow(/^-f$/);
         expect(options.function.parse).not.toHaveBeenCalled();
       });
 
@@ -438,6 +477,7 @@ describe('ArgumentParser', () => {
             type: 'function',
             paramCount: 2,
             positional: true,
+            parse: jest.fn((param) => param),
             complete: jest.fn((param) => [param]),
           },
         } as const satisfies Options;
@@ -460,11 +500,19 @@ describe('ArgumentParser', () => {
         options.function.complete.mockClear();
         expect(parser.parse('cmd a a a', { compIndex: 9 })).rejects.toThrow(/^a$/);
         expect(options.function.complete).toHaveBeenCalledWith('a', {
-          values: { function: null },
+          values: { function: ['a', 'a'] },
           index: 0,
           name: '',
           prev: [],
         });
+        expect(options.function.parse).toHaveBeenCalledWith(['a', 'a'], {
+          values: { function: ['a', 'a'] }, // should have been { function: undefined } at the time of call
+          index: 0,
+          name: '',
+          comp: true,
+          format: expect.anything(),
+        });
+        expect(options.function.parse).toHaveBeenCalledTimes(1);
       });
     });
   });

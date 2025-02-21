@@ -139,13 +139,13 @@ export const enum HelpItem {
    */
   cluster,
   /**
-   * The parameter delimiter of a non-niladic option.
-   */
-  separator,
-  /**
    * The parameter count of a variadic or polyadic option.
    */
   paramCount,
+  /**
+   * The parameter delimiter of a non-niladic option.
+   */
+  separator,
   /**
    * Whether the option accepts positional arguments.
    */

@@ -21,7 +21,7 @@ export const config: MessageConfig = {
     symbol: style(fg.magenta),
     value: style(fg.brightBlack),
     url: style(fg.cyan),
-    text: '',
+    text: style(fg.default),
   },
   connectives: {
     and: 'and',

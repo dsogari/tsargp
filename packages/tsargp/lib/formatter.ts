@@ -112,15 +112,20 @@ const defaultHelpColumn: WithColumnLayout = {
 };
 
 /**
+ * The complete list of help items.
+ */
+export const helpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
+  .fill(0)
+  .map((_, index) => HelpItem.synopsis + index);
+
+/**
  * The default help layout.
  */
 const defaultHelpLayout: HelpLayout = {
   names: defaultHelpColumn,
   param: { ...defaultHelpColumn, absolute: false },
   descr: { ...defaultHelpColumn, absolute: false },
-  items: Array(HelpItem._count)
-    .fill(0)
-    .map((_, index) => HelpItem.synopsis + index),
+  items: helpItems,
 };
 
 /**
@@ -473,12 +478,11 @@ function formatNames(
         len += sepLen;
       }
       if (!str || slotted) {
-        str = new AnsiString(indent, breaks, false, styles.text);
+        str = new AnsiString(indent, breaks);
         result.push(str);
         breaks = 0; // break only on the first name
       }
-      str.style = style;
-      str.word(name);
+      str.word(name, style);
       len += name.length;
     } else if (slotted) {
       str = undefined;
@@ -502,11 +506,11 @@ function formatNames(
 function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, number] {
   const [, layout] = context;
   const { hidden, breaks } = layout.param;
-  const result = new AnsiString(0, breaks, false, config.styles.text);
+  const result = new AnsiString(0, breaks);
   if (!hidden) {
     formatParam(option, result);
   }
-  const len = result.lengths.reduce((acc, len) => acc + (len ? len + 1 : 0), -1);
+  const len = result.strings.reduce((acc, str) => acc + (str.length && str.length + 1), -1);
   if (len < 0) {
     return [result.pop(result.count), 0]; // this string does not contain any word
   }
@@ -678,7 +682,7 @@ function formatUsage(
   breaks?: number,
 ): AnsiString {
   const [options] = context;
-  const result = new AnsiString(indent, breaks, false, config.styles.text);
+  const result = new AnsiString(indent, breaks);
   const { filter, exclude, required, requires, comment } = section;
   const visited = new Set<string>(exclude && filter);
   const requiredKeys = new Set(required);
@@ -735,7 +739,7 @@ function formatUsageOption(
       // if I'm not always required and I'm the last option in a dependency chain, ignore the
       // received key, so I can be considered optional
       if (!required && (isLast || !receivedKey)) {
-        result.open('[', count).close(']');
+        result.openAtPos('[', count).close(']');
       }
     }
     return required;
@@ -791,7 +795,7 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
     };
     fmt.a(names.map(getSymbol), result, flags);
     if (option.positional) {
-      result.open('[', count).close(']');
+      result.openAtPos('[', count).close(']');
     }
   }
 }
@@ -833,8 +837,7 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
     }
   }
   if (param) {
-    result.style = option.styles?.param ?? config.styles.value;
-    result.word(param);
+    result.word(param, option.styles?.param ?? config.styles.value);
   }
 }
 

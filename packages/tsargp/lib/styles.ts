@@ -11,6 +11,7 @@ import {
   isArray,
   max,
   omitStyles,
+  omitSpaces,
   regex,
   selectAlternative,
   streamWidth,
@@ -74,8 +75,7 @@ const formatFunctions = {
    * @param result The resulting string
    */
   b(value: boolean, result) {
-    result.style = config.styles.boolean;
-    result.word(`${value}`);
+    result.word(`${value}`, config.styles.boolean);
   },
   /**
    * The formatting function for string values.
@@ -84,8 +84,7 @@ const formatFunctions = {
    */
   s(value: string, result) {
     const quote = config.connectives.stringQuote;
-    result.style = config.styles.string;
-    result.word(`${quote}${value}${quote}`);
+    result.word(`${quote}${value}${quote}`, config.styles.string);
   },
   /**
    * The formatting function for number values.
@@ -93,8 +92,7 @@ const formatFunctions = {
    * @param result The resulting string
    */
   n(value: number, result) {
-    result.style = config.styles.number;
-    result.word(`${value}`);
+    result.word(`${value}`, config.styles.number);
   },
   /**
    * The formatting function for regular expressions.
@@ -102,8 +100,7 @@ const formatFunctions = {
    * @param result The resulting string
    */
   r(value: RegExp, result) {
-    result.style = config.styles.regex;
-    result.word(`${value}`);
+    result.word(`${value}`, config.styles.regex);
   },
   /**
    * The formatting function for symbols.
@@ -111,8 +108,7 @@ const formatFunctions = {
    * @param result The resulting string
    */
   m(value: symbol, result) {
-    result.style = config.styles.symbol;
-    result.word(Symbol.keyFor(value) ?? '');
+    result.word(Symbol.keyFor(value) ?? '', config.styles.symbol);
   },
   /**
    * The formatting function for URLs.
@@ -120,8 +116,7 @@ const formatFunctions = {
    * @param result The resulting string
    */
   u(url: URL, result) {
-    result.style = config.styles.url;
-    result.word(url.href);
+    result.word(url.href, config.styles.url);
   },
   /**
    * The formatting function for ANSI strings.
@@ -217,14 +212,10 @@ const formatFunctions = {
       const connectives = config.connectives;
       const open = connectives.valueOpen;
       const close = connectives.valueClose;
-      result.seq(config.styles.value);
-      result.merge = true;
+      result.open('', config.styles.value);
       result.open(open).split(`${value}`).close(close);
       if (config.styles.value) {
-        result.merge = true;
-        result.clear();
-        result.merge = true;
-        result.seq(result.defStyle); // TODO: optimize this
+        result.close('', sgr(tf.clear) + result.defSty);
       }
     }
   },
@@ -346,21 +337,29 @@ type FormatFunctions = Record<string, FormatFunction>;
  */
 type AnsiContext = [
   /**
-   * The list of internal strings that have been appended.
+   * The list of internal strings without control sequences.
    */
   strings: Array<string>,
   /**
-   * The lengths of the internal strings, ignoring control sequences.
+   * The list of internal strings with control sequences.
    */
-  lengths: Array<number>,
+  styledStrings: Array<string>,
   /**
-   * Whether the next string should be merged with the last string.
+   * The styles to be applied to the next string.
    */
-  merge: boolean,
+  curStyle: string,
   /**
-   * The style to apply to the next string.
+   * Whether the last internal string should be merged with the next string.
    */
-  style: Style,
+  mergeLeft: boolean,
+  /**
+   * Whether the first internal string should be merged with the previous string.
+   */
+  mergeRight: boolean,
+  /**
+   * The largest length among all internal strings.
+   */
+  maxLength: number,
 ];
 
 //--------------------------------------------------------------------------------------------------
@@ -373,25 +372,19 @@ export class AnsiString {
   /**
    * The ANSI string context.
    */
-  private readonly context: AnsiContext = [[], [], false, ''];
+  private readonly context: AnsiContext = [[], [], '', false, false, 0];
 
   /**
-   * Whether to merge the first internal string to the last internal string of another terminal
-   * string.
-   */
-  private mergeFirst = false;
-
-  /**
-   * @returns The list of internal strings
+   * @returns The list of internal strings without control sequences
    */
   get strings(): Array<string> {
     return this.context[0];
   }
 
   /**
-   * @returns The lengths of internal strings
+   * @returns The list of internal strings with control sequences
    */
-  get lengths(): Array<number> {
+  get styles(): Array<string> {
     return this.context[1];
   }
 
@@ -399,7 +392,7 @@ export class AnsiString {
    * @returns The number of internal strings
    */
   get count(): number {
-    return this.context[1].length;
+    return this.strings.length;
   }
 
   /**
@@ -407,15 +400,7 @@ export class AnsiString {
    * @param merge The flag value
    */
   set merge(merge: boolean) {
-    this.context[2] = merge;
-  }
-
-  /**
-   * Sets a style to apply to the next word.
-   * @param style The style
-   */
-  set style(style: Style) {
-    this.context[3] = style;
+    this.context[4] = merge;
   }
 
   /**
@@ -423,153 +408,201 @@ export class AnsiString {
    * @param indent The starting column for this string (negative values are replaced by zero)
    * @param breaks The initial number of line feeds (non-positive values are ignored)
    * @param righty True if the string should be right-aligned to the terminal width
-   * @param defStyle The default style to use
+   * @param defSty The default style to use
    */
   constructor(
     public indent = 0,
     breaks = 0,
     public righty = false,
-    public defStyle: Style = '',
+    public defSty = config.styles.text,
   ) {
-    this.break(breaks).seq(defStyle);
+    this.break(breaks).context[2] = defSty;
   }
 
   /**
-   * Removes strings from the end of the list.
+   * Removes strings from the end.
    * @param count The number of strings
    * @returns The ANSI string instance
    */
   pop(count = 1): this {
     if (count > 0) {
-      const [strings, lengths] = this.context;
-      const len = max(0, strings.length - count);
+      const len = max(0, this.count - count);
+      const [strings, styledStrings] = this.context;
       strings.length = len;
-      lengths.length = len;
+      styledStrings.length = len;
+      if (!len) {
+        this.context[3] = false;
+      }
+      this.context[4] = false;
+      this.context[5] = Math.max(...strings.map((str) => str.length));
     }
     return this;
   }
 
   /**
-   * Appends another ANSI string to the list.
-   * We deliberately avoided optimizing this code, in order to keep it short.
+   * Appends another ANSI string.
    * @param other The other ANSI string
    * @returns The ANSI string instance
    */
   other(other: AnsiString): this {
     if (other.count) {
-      const [otherStrings, otherLengths, otherMerge] = other.context;
-      this.context[2] ||= other.mergeFirst;
-      const [str, ...restStr] = otherStrings;
-      const [len, ...restLen] = otherLengths;
-      const [strings, lengths] = this.add(str, len).context;
-      strings.push(...restStr);
-      lengths.push(...restLen);
-      this.merge = otherMerge;
+      const count = this.count;
+      const [thisStrings, thisStyledStrings, thisCurStyle, , thisMergeRight, thisMaxLength] =
+        this.context;
+      const [
+        otherStrings,
+        otherStyledStrings,
+        otherCurStyle,
+        otherMergeLeft,
+        otherMergeRight,
+        otherMaxLength,
+      ] = other.context;
+      const [firstString, ...restStrings] = otherStrings;
+      const [firstStyledString, ...restStyledStrings] = otherStyledStrings;
+      if (count && (thisMergeRight || otherMergeLeft)) {
+        thisStrings[count - 1] += firstString;
+        thisStyledStrings[count - 1] += thisCurStyle + firstStyledString;
+      } else {
+        thisStrings.push(firstString);
+        thisStyledStrings.push(thisCurStyle + firstStyledString);
+      }
+      thisStrings.push(...restStrings);
+      thisStyledStrings.push(...restStyledStrings);
+      this.context[2] = otherCurStyle;
+      this.context[4] = otherMergeRight;
+      this.context[5] = max(thisMaxLength, otherMaxLength);
     }
     return this;
   }
 
   /**
-   * Appends a word that will be merged with the next word.
-   * @param word The opening word
-   * @param pos The position of a previously added word
+   * Prepends text to the string at a specific position.
+   * This can only be done if the affected string does not contain opening styles.
+   * @param text The opening text
+   * @param pos The position of the previously added string
    * @returns The ANSI string instance
    */
-  open(word: string, pos = NaN): this {
-    if (pos >= 0 && pos < this.count) {
-      const [strings, lengths] = this.context;
-      strings[pos] = word + strings[pos];
-      lengths[pos] += word.length;
-    } else if (word) {
-      this.word(word).merge = true;
+  openAtPos(text: string, pos: number): this {
+    if (pos >= this.count) {
+      return this.open(text);
+    }
+    if (pos >= 0) {
+      const [strings, styledStrings] = this.context;
+      strings[pos] = text + strings[pos];
+      styledStrings[pos] = text + styledStrings[pos];
     }
     return this;
   }
 
   /**
-   * Appends a word that is merged with the last word.
-   * @param word The closing word
+   * Appends text that will be merged with the next text.
+   * @param text The text with no control sequences
+   * @param styledText The text with possible control sequences
    * @returns The ANSI string instance
    */
-  close(word: string): this {
-    if (word) {
+  open(text: string, styledText = text): this {
+    this.add(text, styledText);
+    if (text) {
       this.merge = true;
-      this.word(word);
     }
     return this;
   }
 
   /**
-   * Appends a word to the list.
-   * @param word The word to be appended. Should not contain control characters or sequences.
+   * Appends a text that is merged with the last text.
+   * @param text The text with no control sequences
+   * @param styledText The text with possible control sequences
    * @returns The ANSI string instance
    */
-  word(word: string): this {
-    return this.add(word, word.length);
+  close(text: string, styledText = text): this {
+    return this.add(text, styledText, true);
   }
 
   /**
-   * Appends line breaks to the list.
+   * Appends line breaks.
    * @param count The number of line breaks to insert (non-positive values are ignored)
    * @returns The ANSI string instance
    */
   break(count = 1): this {
-    return count > 0 ? this.add('\n'.repeat(count), 0) : this;
+    if (count > 0) {
+      const [strings, styledStrings] = this.context;
+      strings.push(''); // the only case where the string can be empty
+      styledStrings.push('\n'.repeat(count)); // special case for line feeds
+      this.merge = false;
+    }
+    return this;
   }
 
   /**
-   * Appends a sequence to the list.
-   * @param seq The sequence to insert
+   * Appends a word.
+   * @param word The word to insert
+   * @param sty The style to be applied
    * @returns The ANSI string instance
    */
-  seq(seq: Sequence): this {
-    return this.add(seq, 0);
+  word(word: string, sty: Style = ''): this {
+    if (word) {
+      const styledText = sty ? sty + word + sgr(tf.clear) + this.defSty : word;
+      this.add(word, styledText);
+    }
+    return this;
   }
 
   /**
-   * Appends an SGR clear sequence to the list.
+   * Appends an SGR clear sequence.
    * This is different from the {@link AnsiString.pop} method (we are aware of this ambiguity, but
    * we want to keep method names short).
    * @returns The ANSI string instance
    */
   clear(): this {
-    return this.add(sgr(tf.clear), 0);
+    return this.close('', sgr(tf.clear));
   }
 
   /**
-   * Appends a text that may contain control characters or sequences to the list.
-   * @param text The text to be appended
-   * @param length The length of the text without control characters or sequences
+   * Appends a text.
+   * @param text The text with no control sequences
+   * @param styledText The text with possible control sequences
+   * @param close True if the text should be merged with the previous string, if any
    * @returns The ANSI string instance
    */
-  add(text: string, length: number): this {
-    if (text) {
-      const [strings, lengths, merge, curStyle] = this.context;
-      let index = 0;
-      if (!strings.length) {
-        this.mergeFirst = merge;
-      } else {
-        index = strings.length - (merge ? 1 : 0);
+  add(text: string, styledText: string, close = false): this {
+    if (styledText) {
+      const count = this.count;
+      const [strings, styledStrings, curStyle, , mergeRight, maxLength] = this.context;
+      if (text) {
+        if (count && (mergeRight || close)) {
+          strings[count - 1] += text;
+          styledStrings[count - 1] += curStyle + styledText;
+        } else {
+          strings.push(text);
+          styledStrings.push(curStyle + styledText);
+        }
+        if (!maxLength) {
+          this.context[3] = mergeRight || close;
+        }
+        this.context[5] = max(maxLength, text.length);
+        this.merge = false;
+      } else if (!close) {
+        this.context[2] += styledText; // append to opening style
+      } else if (count && !curStyle) {
+        styledStrings[count - 1] += styledText; // close with style
       }
-      const revert = curStyle ? sgr(tf.clear) + this.defStyle : '';
-      strings[index] = (strings[index] ?? '') + curStyle + text + revert;
-      lengths[index] = (lengths[index] ?? 0) + length;
+      if (text || close) {
+        this.context[2] = '';
+      }
     }
-    this.merge = false;
-    this.style = '';
     return this;
   }
 
   /**
-   * Splits a text into words and style sequences, and appends them to the list.
+   * Splits a text into words and style sequences, and appends them.
    * @param text The text to be split
    * @param format An optional callback to process placeholders
    * @returns The ANSI string instance
    */
   split(text: string, format?: FormatCallback): this {
     const paragraphs = text.split(regex.para);
-    paragraphs.forEach((para, i) => {
-      splitParagraph(this, para, format);
+    paragraphs.forEach((paragraph, i) => {
+      splitParagraph(this, paragraph, format);
       if (i < paragraphs.length - 1) {
         this.break(2);
       }
@@ -583,17 +616,29 @@ export class AnsiString {
    * @param column The current terminal column
    * @param width The desired terminal width (or zero to avoid wrapping)
    * @param emitStyles True if styles should be emitted
+   * @param emitSpaces True if spaces should be emitted instead of move sequences
    * @returns The updated terminal column
    */
-  wrap(result: Array<string>, column: number, width: number, emitStyles: boolean): number {
+  wrap(
+    result: Array<string>,
+    column: number,
+    width: number,
+    emitStyles: boolean,
+    emitSpaces: boolean,
+  ): number {
     /** @ignore */
     function align() {
       if (needToAlign && j < result.length && column < width) {
         const rem = width - column; // remaining columns until right boundary
-        const pad = emitStyles ? sequence(cs.cuf, rem) : ' '.repeat(rem);
+        const pad = !emitSpaces ? sequence(cs.cuf, rem) : ' '.repeat(rem);
         result.splice(j, 0, pad); // insert padding at the indentation boundary
         column = width;
       }
+    }
+    /** @ignore */
+    function push(str: string, col: number): number {
+      column = col;
+      return result.push(str);
     }
     const count = this.count;
     if (!count) {
@@ -603,16 +648,16 @@ export class AnsiString {
     width = max(0, width);
     let start = max(0, this.indent);
 
-    const [strings, lengths] = this.context;
+    const [strings, styledStrings, , , , maxLength] = this.context;
     const needToAlign = width && this.righty;
-    const largestFits = !width || width >= start + Math.max(...lengths);
+    const largestFits = !width || width >= start + maxLength;
     if (!largestFits) {
       start = 0; // wrap to the first column instead
     }
-    if (column !== start && !strings[0].startsWith('\n')) {
+    if (column !== start && strings[0]) {
       const pad = !largestFits
         ? '\n'
-        : emitStyles
+        : !emitSpaces
           ? sequence(cs.cha, start + 1)
           : column < start
             ? ' '.repeat(start - column)
@@ -635,40 +680,31 @@ export class AnsiString {
       column = start;
     }
 
-    const indent = start ? (emitStyles ? sequence(cs.cha, start + 1) : ' '.repeat(start)) : '';
+    const indent = start ? (!emitSpaces ? sequence(cs.cha, start + 1) : ' '.repeat(start)) : '';
     let j = result.length; // save index for right-alignment
-    for (let i = 0; i < count; ++i) {
+    for (let i = 0; i < count; i++) {
       let str = strings[i];
-      if (str.startsWith('\n')) {
+      const len = str.length;
+      const styledStr = styledStrings[i];
+      if (!len) {
         align();
-        j = result.push(str); // save index for right-alignment
-        column = 0;
+        j = push(styledStr, 0); // save index for right-alignment
         continue;
       }
       if (!column && indent) {
-        j = result.push(indent); // save index for right-alignment
-        column = start;
+        j = push(indent, start); // save index for right-alignment
       }
-      const len = lengths[i];
-      if (!len) {
-        if (emitStyles) {
-          result.push(str);
-        }
-        continue;
-      }
-      if (!emitStyles) {
-        str = str.replace(regex.sgr, '');
+      if (emitStyles) {
+        str = styledStr;
       }
       if (column === start) {
-        result.push(str);
-        column += len;
+        push(str, column + len);
       } else if (!width || column + 1 + len <= width) {
-        result.push(' ' + str);
-        column += 1 + len;
+        push(' ' + str, column + 1 + len);
       } else {
         align();
-        j = result.push('\n' + indent, str) - 1; // save index for right-alignment
-        column = start + len;
+        j = push('\n' + indent, start + len); // save index for right-alignment
+        result.push(str);
       }
     }
     align();
@@ -704,13 +740,14 @@ export class AnsiMessage extends Array<AnsiString> {
    * Wraps the help message to a specified width.
    * @param width The terminal width (or zero to avoid wrapping)
    * @param emitStyles True if styles should be emitted
+   * @param emitSpaces True if spaces should be emitted instead of move sequences
    * @returns The message to be printed on a terminal
    */
-  wrap(width = 0, emitStyles = !omitStyles(width)): string {
+  wrap(width = 0, emitStyles = !omitStyles(width), emitSpaces = !omitSpaces(width)): string {
     const result: Array<string> = [];
     let column = 0;
     for (const str of this) {
-      column = str.wrap(result, column, width, emitStyles);
+      column = str.wrap(result, column, width, emitStyles, emitSpaces);
     }
     if (emitStyles) {
       result.push(sgr(tf.clear));
@@ -835,7 +872,7 @@ export class ErrorFormatter {
    * @returns The formatted message
    */
   format(phrase: string, flags?: FormattingFlags, ...args: Args): AnsiString {
-    return new AnsiString(0, 0, false, config.styles.text).format(phrase, flags, ...args).break();
+    return new AnsiString().format(phrase, flags, ...args).break();
   }
 }
 
@@ -843,7 +880,7 @@ export class ErrorFormatter {
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
- * Splits a paragraph into words and style sequences, and appends them to the list.
+ * Splits a paragraph into words and style sequences, and appends them to ANSI string.
  * @param result The resulting string
  * @param para The paragraph to be split
  * @param format An optional callback to process placeholders
@@ -863,33 +900,28 @@ function splitParagraph(result: AnsiString, para: string, format?: FormatCallbac
 }
 
 /**
- * Splits a list item into words and style sequences, and appends them to the list.
+ * Splits a list item into words and styles, and appends them to the ANSI string.
  * @param result The resulting string
  * @param item The list item to be split
  * @param format An optional callback to process placeholders
  */
 function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
   const boundFormat = format?.bind(result);
-  const words = item.split(regex.word);
+  const words = item.split(regex.space);
   for (const word of words) {
-    if (!word) {
-      continue;
-    }
-    if (boundFormat) {
+    if (word) {
       const parts = word.split(regex.spec);
-      if (parts.length > 1) {
-        result.open(parts[0]);
-        for (let i = 1; i < parts.length; i += 2) {
-          boundFormat(parts[i]);
-          result.close(parts[i + 1]).merge = true;
+      let text = parts[0].replace(regex.sgr, '');
+      result.add(text, parts[0]);
+      for (let i = 1; i < parts.length; i += 2) {
+        if (text) {
+          result.merge = true;
         }
-        result.merge = false;
-        continue;
+        boundFormat?.(parts[i]);
+        text = parts[i + 1].replace(regex.sgr, '');
+        result.close(text, parts[i + 1]);
       }
     }
-    const styles = word.match(regex.sgr) ?? [];
-    const length = styles.reduce((acc, str) => acc + str.length, 0);
-    result.add(word, word.length - length);
   }
 }
 

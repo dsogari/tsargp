@@ -686,7 +686,7 @@ describe('ArgumentParser', () => {
         );
       });
 
-      it('throw an error on requirement not satisfied with a negated callback', () => {
+      it('throw an error on requirement not satisfied with a negated callback 1', () => {
         const options = {
           flag1: {
             type: 'flag',

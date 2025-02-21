@@ -277,7 +277,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  'one,two'...  Values can be delimited with ','. Accepts multiple parameters.\n`,
+        `  -a  'one,two'...  Accepts multiple parameters. Values can be delimited with ','.\n`,
       );
     });
 
@@ -292,7 +292,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  '1[,;]2'...  Values can be delimited with /[,;]/s. Accepts multiple parameters.\n`,
+        `  -a  '1[,;]2'...  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
       );
     });
   });

@@ -5,7 +5,8 @@ import type { HelpItem } from './enums.js';
 import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
-import { getEntries } from './utils.js';
+import { ErrorMessage } from './styles.js';
+import { getEntries, getSymbol } from './utils.js';
 
 export { requirementExpressions as req };
 
@@ -347,11 +348,16 @@ export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
 export type CustomCallback<P, I, R> = (param: P, info: I) => R;
 
 /**
+ * The type of sequence information used by valued options (except subcommands).
+ */
+export type ValueSeqInfo = WithValues & WithFormat & WithComp;
+
+/**
  * A callback for custom parsing.
  * @template P The parameter data type
- * @template I The type of argument sequence information
+ * @template R The result data type
  */
-export type ParseCallback<P, I> = CustomCallback<P, I, unknown>;
+export type ParseCallback<P, R = unknown> = CustomCallback<P, ValueSeqInfo, R>;
 
 /**
  * A callback for custom completion.
@@ -483,9 +489,8 @@ export type WithMessage = {
 /**
  * Defines attributes common to options that have values.
  * @template P The type of parse parameter
- * @template I The type of argument sequence information
  */
-export type WithValue<P, I> = {
+export type WithValue<P> = {
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
    */
@@ -513,7 +518,7 @@ export type WithValue<P, I> = {
   /**
    * A custom callback for parsing the option parameter(s).
    */
-  readonly parse?: ParseCallback<P, I>;
+  readonly parse?: ParseCallback<P>;
 };
 
 /**
@@ -712,7 +717,7 @@ export type VersionOption = WithType<'version'> &
 export type CommandOption = WithType<'command'> &
   WithCommand &
   WithBasic &
-  WithValue<OpaqueOptionValues, WithValues & WithFormat> &
+  WithValue<OpaqueOptionValues> &
   (WithDefault | WithRequired);
 
 /**
@@ -721,7 +726,7 @@ export type CommandOption = WithType<'command'> &
 export type FlagOption = WithType<'flag'> &
   WithFlag &
   WithBasic &
-  WithValue<Array<string>, WithValues & WithFormat & WithComp> &
+  WithValue<Array<string>> &
   WithEnv &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName);
@@ -732,7 +737,7 @@ export type FlagOption = WithType<'flag'> &
 export type SingleOption = WithType<'single'> &
   WithSingle &
   WithBasic &
-  WithValue<string, WithValues & WithFormat & WithComp> &
+  WithValue<string> &
   WithEnv &
   WithParam<WithValues> &
   WithSelection &
@@ -746,7 +751,7 @@ export type SingleOption = WithType<'single'> &
 export type ArrayOption = WithType<'array'> &
   WithArray &
   WithBasic &
-  WithValue<string, WithValues & WithFormat & WithComp> &
+  WithValue<string> &
   WithEnv &
   WithParam<WithValues & WithPrev> &
   WithSelection &
@@ -760,7 +765,7 @@ export type ArrayOption = WithType<'array'> &
 export type FunctionOption = WithType<'function'> &
   WithFunction &
   WithBasic &
-  WithValue<Array<string>, WithValues & WithFormat & WithComp> &
+  WithValue<Array<string>> &
   WithEnv &
   WithParam<WithValues & WithPrev> &
   (WithDefault | WithRequired) &
@@ -807,7 +812,7 @@ export type OpaqueOption = WithType<OptionType> &
   WithFlag &
   WithFunction &
   WithMessage &
-  WithValue<string & Array<string> & OpaqueOptionValues, WithValues & WithFormat & WithComp> &
+  WithValue<string & Array<string> & OpaqueOptionValues> &
   WithEnv &
   WithParam<WithValues & WithPrev> &
   WithSelection &
@@ -1143,4 +1148,25 @@ export function visitRequirements<T>(
  */
 export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
   return {} as OptionValues<T>;
+}
+
+/**
+ * Create a parse callback for numbers that should be within a range.
+ * @param min The inferior limit
+ * @param max The superior limit
+ * @returns The parse callback
+ */
+export function numberInRange(min: number, max = Infinity): ParseCallback<string, number> {
+  return function (param: string, info: ValueSeqInfo): number {
+    if (info.comp) {
+      return 0; // the result does not matter when completion is in effect
+    }
+    const num = Number(param);
+    if (min <= num && num <= max) {
+      // handles NaN
+      return num;
+    }
+    const phrase = 'Invalid parameter to #0: #1. Value must be within the range #2.';
+    throw new ErrorMessage(info.format(phrase, {}, getSymbol(info.name), param, [min, max]));
+  };
 }

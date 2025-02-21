@@ -789,7 +789,7 @@ async function handleCommand(
   // comp === false, otherwise completion will have taken place by now
   if (option.parse) {
     const format = formatter.format.bind(formatter);
-    const seq = { values, index, name, format };
+    const seq = { values, index, name, comp, format };
     // do not destructure `parse`, because the callback might need to use `this`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     values[key] = await option.parse(param as any, seq as any);

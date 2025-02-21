@@ -450,6 +450,7 @@ describe('ArgumentParser', () => {
             values: { command: { flag: undefined } },
             index: 0,
             name: '-c',
+            comp: false,
             format: expect.anything(),
           },
         );
@@ -462,6 +463,7 @@ describe('ArgumentParser', () => {
             values: { command: { flag: true } },
             index: 0,
             name: '-c',
+            comp: false,
             format: expect.anything(),
           },
         );

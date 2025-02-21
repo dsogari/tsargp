@@ -265,7 +265,7 @@ ANSI-based messages produced by the library can be customized via the global `co
 
 The `styles` property specifies the styles of text elements in ANSI messages. It has the following optional settings:
 
-| Property  | Used for              | Default               |
+| Property  | Used for              | Default style         |
 | --------- | --------------------- | --------------------- |
 | `boolean` | Boolean values        | `fg.blue{:ts}`        |
 | `string`  | String values         | `fg.green{:ts}`       |
@@ -274,11 +274,17 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 | `symbol`  | Symbols (e.g., names) | `fg.magenta{:ts}`     |
 | `value`   | Unknown values        | `fg.brightBlack{:ts}` |
 | `url`     | URLs                  | `fg.cyan{:ts}`        |
-| `text`    | General text          | `''{:ts}`             |
+| `text`    | General text          | `fg.default{:ts}`     |
 
 <Callout type="default">
 
 You can also set these styles to the empty string, if you need to disable text styling for your application.
+
+</Callout>
+
+<Callout type="warning">
+
+You should not need to use `tf.clear{:ts}` in these styles, as the ANSI string will handle style resetting.
 
 </Callout>
 

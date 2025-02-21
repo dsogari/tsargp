@@ -97,9 +97,9 @@ export const regex = {
    */
   item: /^[ \t]*(-|\*|\d+\.) /m,
   /**
-   * A regular expression to split words.
+   * A regular expression to match whitespace.
    */
-  word: /\s+/,
+  space: /\s+/,
   /**
    * A regular expression to match placeholders.
    */
@@ -124,10 +124,6 @@ export const regex = {
    * A regular expression to match invalid option names.
    */
   name: /[\s=]/,
-  /**
-   * A regular expression to match whitespace.
-   */
-  ws: /\s+/g,
 } as const satisfies Record<string, RegExp>;
 
 /**
@@ -558,12 +554,22 @@ export function streamWidth(stream: 'stdout' | 'stderr'): number | undefined {
 }
 
 /**
+ * Check whether styles should be omitted from ANSI strings
  * @param width The terminal width (in number of columns)
- * @returns True if styles should be omitted from ANSI strings
+ * @returns True if styles should be omitted
  * @see https://clig.dev/#output
  */
 export function omitStyles(width: number): boolean {
   return !getEnv('FORCE_COLOR') && (!width || !!getEnv('NO_COLOR') || getEnv('TERM') === 'dumb');
+}
+
+/**
+ * Check whether spaces can be omitted from ANSI strings
+ * @param width The terminal width (in number of columns)
+ * @returns True if spaces can be omitted
+ */
+export function omitSpaces(width: number): boolean {
+  return !getEnv('FORCE_SPACES') && !!width;
 }
 
 /**

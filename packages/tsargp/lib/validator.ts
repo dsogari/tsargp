@@ -356,7 +356,6 @@ function validateConstraints(context: ValidateContext, key: symbol, option: Opaq
   } else {
     valid = paramCount === undefined || paramCount > 1;
   }
-  // handles NaN
   if (!valid) {
     throw formatter.error(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
