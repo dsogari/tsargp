@@ -23,7 +23,6 @@ describe('ArgumentParser', () => {
         index: NaN,
         name: 'FLAG',
         comp: false,
-        format: expect.anything(),
       });
       expect(options.flag.parse).toHaveBeenCalled();
     });
@@ -44,14 +43,12 @@ describe('ArgumentParser', () => {
         index: 0,
         name: 'preferred',
         comp: false,
-        format: expect.anything(),
       });
       expect(options.single.parse).toHaveBeenCalledWith('2', {
         values: { single: '2' }, // should have been { single: undefined } at the time of call
         index: 1,
         name: 'preferred',
         comp: false,
-        format: expect.anything(),
       });
       expect(options.single.parse).toHaveBeenCalledTimes(2);
     });
@@ -86,7 +83,6 @@ describe('ArgumentParser', () => {
         index: 0,
         name: '-f',
         comp: false,
-        format: expect.anything(),
       });
       expect(options.function.parse).toHaveBeenCalledTimes(1);
     });

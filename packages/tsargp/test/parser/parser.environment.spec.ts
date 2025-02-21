@@ -25,7 +25,6 @@ describe('ArgumentParser', () => {
         index: NaN,
         name: expect.stringMatching(/data\/test-read-file.txt$/),
         comp: false,
-        format: expect.anything(),
       });
       options.array.parse.mockClear();
       process.env['ARRAY'] = '1';
@@ -36,7 +35,6 @@ describe('ArgumentParser', () => {
         index: NaN,
         name: 'ARRAY',
         comp: false,
-        format: expect.anything(),
       });
     });
 

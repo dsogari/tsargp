@@ -21,14 +21,7 @@ import { config } from './config.js';
 import { ErrorItem } from './enums.js';
 import { HelpFormatter } from './formatter.js';
 import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
-import {
-  fmt,
-  ErrorFormatter,
-  WarnMessage,
-  AnsiMessage,
-  TextMessage,
-  AnsiString,
-} from './styles.js';
+import { fmt, WarnMessage, AnsiMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
   getCmdLine,
   findSimilar,
@@ -104,10 +97,6 @@ type ParseContext = [
    * The option registry.
    */
   registry: OptionRegistry,
-  /**
-   * The error formatter.
-   */
-  formatter: ErrorFormatter,
   /**
    * The current option values.
    */
@@ -188,7 +177,7 @@ type RequireItemFn<T> = (
  * Implements parsing of command-line arguments into option values.
  * @template T The type of the option definitions
  */
-export class ArgumentParser<T extends Options = Options> extends ErrorFormatter {
+export class ArgumentParser<T extends Options = Options> {
   private readonly registry: OptionRegistry;
 
   /**
@@ -196,7 +185,6 @@ export class ArgumentParser<T extends Options = Options> extends ErrorFormatter 
    * @param options The option definitions
    */
   constructor(options: T) {
-    super();
     this.registry = new OptionRegistry(options);
   }
 
@@ -228,7 +216,6 @@ export class ArgumentParser<T extends Options = Options> extends ErrorFormatter 
     const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
     const context = createContext(
       this.registry,
-      this,
       values,
       args,
       !!compIndex,
@@ -236,7 +223,7 @@ export class ArgumentParser<T extends Options = Options> extends ErrorFormatter 
       flags?.clusterPrefix,
     );
     await parseArgs(context);
-    const warning = context[6];
+    const warning = context[5];
     return warning.length ? { warning } : {};
   }
 }
@@ -247,7 +234,6 @@ export class ArgumentParser<T extends Options = Options> extends ErrorFormatter 
 /**
  * Initializes the command-line arguments for parsing.
  * @param registry The option registry
- * @param formatter The error formatter
  * @param values The option values
  * @param args The command-line arguments
  * @param completing True if performing completion
@@ -257,7 +243,6 @@ export class ArgumentParser<T extends Options = Options> extends ErrorFormatter 
  */
 function createContext(
   registry: OptionRegistry,
-  formatter: ErrorFormatter,
   values: OpaqueOptionValues,
   args: Array<string>,
   completing: boolean,
@@ -274,17 +259,7 @@ function createContext(
   }
   const specifiedKeys = new Set<string>();
   const warning = new WarnMessage();
-  return [
-    registry,
-    formatter,
-    values,
-    args,
-    specifiedKeys,
-    completing,
-    warning,
-    progName,
-    clusterPrefix,
-  ];
+  return [registry, values, args, specifiedKeys, completing, warning, progName, clusterPrefix];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -304,7 +279,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const name = option.names?.find((name): name is string => name !== null);
     return [key, option, name];
   }
-  const [registry, formatter, , args, , completing, , , prefix] = context;
+  const [registry, , args, , completing, , , prefix] = context;
   const cluster = args[index++];
   if (prefix === undefined || !cluster.startsWith(prefix) || cluster.length === prefix.length) {
     return false;
@@ -325,7 +300,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
     if (j < rest.length - 1 && (option.type === 'command' || min < max)) {
-      throw formatter.error(ErrorItem.invalidClusterOption, {}, letter);
+      throw ErrorMessage.create(ErrorItem.invalidClusterOption, {}, letter);
     }
     if (name !== undefined) {
       args.splice(index++, 0, name);
@@ -340,7 +315,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParseContext) {
-  const [registry, formatter, values, args, specifiedKeys, completing, warning] = context;
+  const [registry, values, args, specifiedKeys, completing, warning] = context;
   let prev: ParseEntry = [-1];
   let paramCount: Range = [0, 0];
   let suggestNames = false;
@@ -376,7 +351,7 @@ async function parseArgs(context: ParseContext) {
             continue;
           }
           const [alt, name2] = marker ? [1, `${option.positional}`] : [0, name];
-          throw formatter.error(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
+          throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       } else if (min && !hasValue && option.inline) {
         if (completing) {
@@ -384,11 +359,11 @@ async function parseArgs(context: ParseContext) {
           prev[1] = undefined;
           continue;
         }
-        throw formatter.error(ErrorItem.missingInlineParameter, {}, getSymbol(name));
+        throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(name));
       }
       if (!completing && !specifiedKeys.has(key)) {
         if (option.deprecated !== undefined) {
-          warning.push(formatter.create(ErrorItem.deprecatedOption, {}, getSymbol(name)));
+          warning.add(ErrorItem.deprecatedOption, {}, getSymbol(name));
         }
         specifiedKeys.add(key);
       }
@@ -441,7 +416,7 @@ async function parseArgs(context: ParseContext) {
  * @returns The new parse entry
  */
 function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
-  const [registry, , , args, , completing] = context;
+  const [registry, , args, , completing] = context;
   const [index, info, prevVal, , marker] = prev;
   const inc = prevVal !== undefined ? 1 : 0;
   const positional = registry.positional;
@@ -492,11 +467,10 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
  * @param name The unknown option name
  */
 function reportUnknownName(context: ParseContext, name: string): never {
-  const [registry, formatter] = context;
-  const similar = findSimilar(name, registry.names.keys(), 0.6);
+  const similar = findSimilar(name, context[0].names.keys(), 0.6);
   const alt = similar.length ? 1 : 0;
   const sep = config.connectives.optionSep;
-  throw formatter.error(
+  throw ErrorMessage.create(
     ErrorItem.unknownOption,
     { alt, sep, open: '', close: '' },
     getSymbol(name),
@@ -574,7 +548,7 @@ async function tryParseParams(
     return breakLoop;
   } catch (err) {
     // do not propagate parsing errors during completion
-    if (!context[5]) {
+    if (!context[4]) {
       throw err;
     }
     return false;
@@ -597,7 +571,7 @@ async function parseParams(
 ): Promise<[boolean, number]> {
   /** @ignore */
   function error(kind: ErrorItem, flags: FormattingFlags, ...args: Args) {
-    return formatter.error(kind, flags, getSymbol(name), ...args);
+    return ErrorMessage.create(kind, flags, getSymbol(name), ...args);
   }
   /** @ignore */
   function parse(param: string): unknown {
@@ -605,15 +579,14 @@ async function parseParams(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return rec && param in rec ? rec[param] : (option.parse?.(param as any, seq) ?? param);
   }
-  const [, formatter, values, , , comp] = context;
+  const [, values, , , comp] = context;
   const [key, option, name] = info;
   const breakLoop = !!option.break && !comp;
   // if index is NaN, we are in the middle of requirements checking
   if (index >= 0 && breakLoop) {
     await checkRequired(context);
   }
-  const format = formatter.format.bind(formatter);
-  const seq = { values, index, name, comp, format };
+  const seq = { values, index, name, comp };
   if (option.type === 'flag') {
     // do not destructure `parse`, because the callback might need to use `this`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -668,7 +641,7 @@ async function parseParams(
     for (const param of params) {
       prev.push(await parse(param));
     }
-    values[key] = normalizeArray(formatter, option, name, prev);
+    values[key] = normalizeArray(option, name, prev);
   }
   return [breakLoop, 0];
 }
@@ -676,19 +649,13 @@ async function parseParams(
 /**
  * Normalizes the value of an array-valued option and checks the validity of its element count.
  * @template T The type of the array element
- * @param formatter The error formatter
  * @param option The option definition
  * @param name The option name
  * @param value The option value
  * @returns The normalized array
  * @throws On value not satisfying the specified limit constraint
  */
-function normalizeArray<T>(
-  formatter: ErrorFormatter,
-  option: OpaqueOption,
-  name: string,
-  value: Array<T>,
-): Array<T> {
+function normalizeArray<T>(option: OpaqueOption, name: string, value: Array<T>): Array<T> {
   if (option.unique) {
     const unique = new Set(value);
     value.length = 0; // reuse the same array
@@ -696,7 +663,7 @@ function normalizeArray<T>(
   }
   const limit = option.limit;
   if (limit !== undefined && value.length > limit) {
-    throw formatter.error(
+    throw ErrorMessage.create(
       ErrorItem.limitConstraintViolation,
       {},
       getSymbol(name),
@@ -724,7 +691,7 @@ async function handleNiladic(
   index: number,
   rest: Array<string>,
 ): Promise<[boolean, number]> {
-  const comp = context[5];
+  const comp = context[4];
   switch (info[1].type) {
     case 'help':
     case 'version':
@@ -768,28 +735,19 @@ async function handleCommand(
   index: number,
   rest: Array<string>,
 ) {
-  const [, formatter, values, , , comp, warning] = context;
+  const [, values, , , comp, warning] = context;
   const [key, option, name] = info;
   // do not destructure `options`, because the callback might need to use `this`
   const cmdOptions =
     typeof option.options === 'function' ? await option.options() : (option.options ?? {});
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const cmdContext = createContext(
-    cmdRegistry,
-    formatter,
-    param,
-    rest,
-    comp,
-    name,
-    option.clusterPrefix,
-  );
+  const cmdContext = createContext(cmdRegistry, param, rest, comp, name, option.clusterPrefix);
   await parseArgs(cmdContext);
-  warning.push(...cmdContext[6]);
+  warning.push(...cmdContext[5]);
   // comp === false, otherwise completion will have taken place by now
   if (option.parse) {
-    const format = formatter.format.bind(formatter);
-    const seq = { values, index, name, comp, format };
+    const seq = { values, index, name, comp };
     // do not destructure `parse`, because the callback might need to use `this`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     values[key] = await option.parse(param as any, seq as any);
@@ -806,13 +764,13 @@ async function handleCommand(
  * @throws The help or version message
  */
 async function handleMessage(context: ParseContext, info: OptionInfo, rest: Array<string>) {
-  const [, formatter, values] = context;
+  const [, values] = context;
   const [key, option] = info;
   const message =
     option.type === 'help'
       ? await handleHelp(context, option, rest)
       : option.resolve
-        ? await handleVersion(formatter, option.resolve)
+        ? await handleVersion(option.resolve)
         : (option.version ?? '');
   if (option.saveMessage) {
     values[key] = message;
@@ -855,16 +813,15 @@ async function handleHelp(
   }
   const filter = option.useFilter && rest;
   const helpFormatter = new HelpFormatter(registry.options, option.layout, filter);
-  return helpFormatter.sections(option.sections ?? defaultSections, context[7]);
+  return helpFormatter.sections(option.sections ?? defaultSections, context[6]);
 }
 
 /**
  * Resolve a package version using a module-resolve function.
- * @param formatter The error formatter
  * @param resolve The resolve callback
  * @returns The version string
  */
-async function handleVersion(formatter: ErrorFormatter, resolve: ResolveCallback): Promise<string> {
+async function handleVersion(resolve: ResolveCallback): Promise<string> {
   for (
     let path = './package.json', resolved = resolve(path), lastResolved;
     resolved !== lastResolved;
@@ -875,7 +832,7 @@ async function handleVersion(formatter: ErrorFormatter, resolve: ResolveCallback
       return JSON.parse(data).version;
     }
   }
-  throw formatter.error(ErrorItem.missingPackageJson);
+  throw ErrorMessage.create(ErrorItem.missingPackageJson);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -900,7 +857,7 @@ async function checkRequired(context: ParseContext) {
  * @returns A promise that must be awaited before continuing
  */
 async function checkDefaultValue(context: ParseContext, key: string) {
-  const [registry, formatter, values, , specifiedKeys] = context;
+  const [registry, values, , specifiedKeys] = context;
   if (specifiedKeys.has(key)) {
     return;
   }
@@ -917,16 +874,14 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   }
   const name = option.preferredName ?? '';
   if (option.required) {
-    throw formatter.error(ErrorItem.missingRequiredOption, {}, getSymbol(name));
+    throw ErrorMessage.create(ErrorItem.missingRequiredOption, {}, getSymbol(name));
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
     const value =
       typeof option.default === 'function' ? await option.default(values) : option.default;
     values[key] =
-      option.type === 'array' && isArray(value)
-        ? normalizeArray(formatter, option, name, value)
-        : value;
+      option.type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
   }
 }
 
@@ -940,7 +895,7 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   function check(requires: Requires, negate: boolean, invert: boolean) {
     return checkRequires(context, option, requires, error, negate, invert);
   }
-  const [registry, formatter, , , specifiedKeys] = context;
+  const [registry, , , specifiedKeys] = context;
   const option = registry.options[key];
   const specified = specifiedKeys.has(key);
   const requires = option.requires;
@@ -954,7 +909,7 @@ async function checkRequiredOption(context: ParseContext, key: string) {
     const kind = specified
       ? ErrorItem.unsatisfiedRequirement
       : ErrorItem.unsatisfiedCondRequirement;
-    throw formatter.error(kind, {}, getSymbol(name), error);
+    throw ErrorMessage.create(kind, {}, getSymbol(name), error);
   }
 }
 
@@ -1010,7 +965,7 @@ function checkRequiresEntry(
   negate: boolean,
   invert: boolean,
 ): boolean {
-  const [registry, , values, , specifiedKeys] = context;
+  const [registry, values, , specifiedKeys] = context;
   const [key, expected] = entry;
   const actual = values[key];
   const option = registry.options[key];
@@ -1104,7 +1059,7 @@ async function checkRequiresCallback(
   negate: boolean,
   invert: boolean,
 ): Promise<boolean> {
-  const [, , values] = context;
+  const [, values] = context;
   const result = await callback.bind(option)(values);
   if (result === negate) {
     if (negate !== invert) {

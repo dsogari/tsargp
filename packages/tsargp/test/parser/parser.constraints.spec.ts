@@ -12,17 +12,13 @@ describe('ArgumentParser', () => {
           single: {
             type: 'single',
             names: ['-s'],
-            parse: numberInRange(1),
+            parse: numberInRange(1, Infinity, '#0 #1 #2.'),
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
         expect(parser.parse(['-s', '123'])).resolves.toEqual({ single: 123 });
-        expect(parser.parse(['-s', '0'])).rejects.toThrow(
-          `Invalid parameter to -s: '0'. Value must be within the range [1, Infinity].`,
-        );
-        expect(parser.parse(['-s', 'a'])).rejects.toThrow(
-          `Invalid parameter to -s: 'a'. Value must be within the range [1, Infinity].`,
-        );
+        expect(parser.parse(['-s', '0'])).rejects.toThrow(`-s '0' [1, Infinity]`);
+        expect(parser.parse(['-s', 'a'])).rejects.toThrow(`-s 'a' [1, Infinity]`);
       });
     });
 

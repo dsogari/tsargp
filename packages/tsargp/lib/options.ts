@@ -2,7 +2,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
-import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
+import type { AnsiMessage, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorMessage } from './styles.js';
@@ -348,16 +348,11 @@ export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
 export type CustomCallback<P, I, R> = (param: P, info: I) => R;
 
 /**
- * The type of sequence information used by valued options (except subcommands).
- */
-export type ValueSeqInfo = WithValues & WithFormat & WithComp;
-
-/**
  * A callback for custom parsing.
  * @template P The parameter data type
  * @template R The result data type
  */
-export type ParseCallback<P, R = unknown> = CustomCallback<P, ValueSeqInfo, R>;
+export type ParseCallback<P, R = unknown> = CustomCallback<P, WithValues & WithComp, R>;
 
 /**
  * A callback for custom completion.
@@ -410,16 +405,6 @@ export type WithPrev = {
    * The parameters preceding the word being completed, if any.
    */
   prev: Array<string>;
-};
-
-/**
- * A utility to format ANSI strings, to be used by custom callbacks.
- */
-export type WithFormat = {
-  /**
-   * Creates a formatted message.
-   */
-  format: ErrorFormatter['format'];
 };
 
 /**
@@ -1154,19 +1139,22 @@ export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
  * Create a parse callback for numbers that should be within a range.
  * @param min The inferior limit
  * @param max The superior limit
+ * @param phrase The custom error phrase
  * @returns The parse callback
  */
-export function numberInRange(min: number, max = Infinity): ParseCallback<string, number> {
-  return function (param: string, info: ValueSeqInfo): number {
+export function numberInRange(
+  min: number,
+  max: number,
+  phrase: string,
+): ParseCallback<string, number> {
+  return function (param, info) {
     if (info.comp) {
       return 0; // the result does not matter when completion is in effect
     }
     const num = Number(param);
     if (min <= num && num <= max) {
-      // handles NaN
-      return num;
+      return num; // handles NaN
     }
-    const phrase = 'Invalid parameter to #0: #1. Value must be within the range #2.';
-    throw new ErrorMessage(info.format(phrase, {}, getSymbol(info.name), param, [min, max]));
+    throw ErrorMessage.createCustom(phrase, {}, getSymbol(info.name), param, [min, max]);
   };
 }

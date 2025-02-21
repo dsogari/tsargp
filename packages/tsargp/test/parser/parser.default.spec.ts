@@ -49,7 +49,7 @@ describe('ArgumentParser', () => {
         });
       });
 
-      it('set default values before calling the parse callback of command option', () => {
+      it('set default values before calling the parse callback of command option', async () => {
         const options = {
           command: {
             type: 'command',
@@ -65,6 +65,11 @@ describe('ArgumentParser', () => {
           },
         } as const satisfies Options;
         const parser = new ArgumentParser(options);
+        try {
+          await parser.parse(['-c']);
+        } catch (err) {
+          console.log(err);
+        }
         expect(parser.parse(['-c'])).resolves.toEqual({ command: undefined, flag: [1, 'a'] });
       });
     });

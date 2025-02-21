@@ -95,7 +95,6 @@ describe('ArgumentParser', () => {
           index: 0,
           name: '-f',
           comp: true,
-          format: expect.anything(),
         });
         expect(options.flag.parse).toHaveBeenCalled();
       });
@@ -117,7 +116,6 @@ describe('ArgumentParser', () => {
           index: 0,
           name: '-s',
           comp: true,
-          format: expect.anything(),
         });
         expect(options.single.parse).toHaveBeenCalled();
       });
@@ -510,7 +508,6 @@ describe('ArgumentParser', () => {
           index: 0,
           name: '',
           comp: true,
-          format: expect.anything(),
         });
         expect(options.function.parse).toHaveBeenCalledTimes(1);
       });

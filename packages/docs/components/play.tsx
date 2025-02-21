@@ -4,7 +4,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import { ArgumentParser, OptionValidator, ErrorMessage, AnsiMessage } from 'tsargp';
+import { ArgumentParser, OptionValidator, ErrorMessage, AnsiMessage, TextMessage } from 'tsargp';
 import { config, style, req, fg8, bg8, ul8, ul } from 'tsargp';
 import * as enums from 'tsargp/enums';
 import { type Props, Command } from './classes/command';
@@ -12,7 +12,19 @@ import { type Props, Command } from './classes/command';
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-const tsargp = { ArgumentParser, config, req, ul, ...enums, style, fg8, bg8, ul8 };
+const tsargp = {
+  ArgumentParser,
+  ErrorMessage,
+  TextMessage,
+  config,
+  req,
+  ul,
+  ...enums,
+  style,
+  fg8,
+  bg8,
+  ul8,
+};
 
 //--------------------------------------------------------------------------------------------------
 // Types

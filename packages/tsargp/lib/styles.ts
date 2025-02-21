@@ -775,6 +775,26 @@ export class AnsiMessage extends Array<AnsiString> {
  */
 export class WarnMessage extends AnsiMessage {
   /**
+   * Appends a ANSI message formatted with an error phrase.
+   * @param kind The error kind
+   * @param flags The formatting flags
+   * @param args The error arguments
+   */
+  add(kind: ErrorItem, flags?: FormattingFlags, ...args: Args) {
+    this.addCustom(config.errorPhrases[kind], flags, ...args);
+  }
+
+  /**
+   * Appends a ANSI string formatted with a custom phrase.
+   * @param phrase The phrase
+   * @param flags The formatting flags
+   * @param args The phrase arguments
+   */
+  addCustom(phrase: string, flags?: FormattingFlags, ...args: Args) {
+    this.push(new AnsiString().format(phrase, flags, ...args).break());
+  }
+
+  /**
    * @returns The wrapped message
    */
   override toString(): string {
@@ -787,18 +807,9 @@ export class WarnMessage extends AnsiMessage {
  */
 export class ErrorMessage extends Error {
   /**
-   * The terminal message.
+   * The warning message.
    */
-  readonly msg: AnsiMessage;
-
-  /**
-   * Creates an error message
-   * @param str The ANSI string
-   */
-  constructor(str: AnsiString) {
-    super(); // do not wrap the message now. wait until it is actually needed
-    this.msg = new WarnMessage(str);
-  }
+  readonly msg = new WarnMessage();
 
   /**
    * We have to override this, since the message cannot be transformed after being wrapped.
@@ -813,6 +824,32 @@ export class ErrorMessage extends Error {
    */
   get message(): string {
     return this.toString();
+  }
+
+  /**
+   * Creates an error message formatted with an error phrase.
+   * @param kind The error kind
+   * @param flags The formatting flags
+   * @param args The error arguments
+   * @returns The newly created message
+   */
+  static create(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): ErrorMessage {
+    const err = new ErrorMessage();
+    err.msg.add(kind, flags, ...args);
+    return err;
+  }
+
+  /**
+   * Creates an error message formatted with a custom phrase.
+   * @param phrase The phrase
+   * @param flags The formatting flags
+   * @param args The phrase arguments
+   * @returns The newly created message
+   */
+  static createCustom(phrase: string, flags?: FormattingFlags, ...args: Args): ErrorMessage {
+    const err = new ErrorMessage();
+    err.msg.addCustom(phrase, flags, ...args);
+    return err;
   }
 }
 
@@ -832,47 +869,6 @@ export class TextMessage extends Array<string> {
    */
   get message(): string {
     return this.toString();
-  }
-}
-
-/**
- * Implements formatting of error and warning messages.
- */
-export class ErrorFormatter {
-  /**
-   * Creates a formatted error message.
-   * @param kind The message kind
-   * @param flags The formatting flags
-   * @param args The message arguments
-   * @returns The formatted error
-   */
-  error(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): ErrorMessage {
-    return new ErrorMessage(this.create(kind, flags, ...args));
-  }
-
-  /**
-   * Creates a formatted message.
-   * The message always ends with a single line break.
-   * @template T The type of phrase identifier
-   * @param kind The message kind
-   * @param flags The formatting flags
-   * @param args The message arguments
-   * @returns The formatted message
-   */
-  create(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): AnsiString {
-    return this.format(config.errorPhrases[kind], flags, ...args);
-  }
-
-  /**
-   * Creates a formatted message.
-   * The message always ends with a single line break.
-   * @param phrase The message phrase
-   * @param flags The formatting flags
-   * @param args The message arguments
-   * @returns The formatted message
-   */
-  format(phrase: string, flags?: FormattingFlags, ...args: Args): AnsiString {
-    return new AnsiString().format(phrase, flags, ...args).break();
   }
 }
 

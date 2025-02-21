@@ -248,11 +248,11 @@ export type MessageConfig = {
    */
   readonly connectives: ConnectiveWords;
   /**
-   * The custom error phrases.
+   * The error phrases.
    */
   readonly errorPhrases: Record<ErrorItem, string>;
   /**
-   * The custom help phrases.
+   * The help phrases.
    */
   readonly helpPhrases: Record<HelpItem, string>;
 };

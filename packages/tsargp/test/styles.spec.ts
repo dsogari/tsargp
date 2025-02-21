@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, jest } from 'bun:test';
-import { cs, fg, bg, tf } from '../lib/enums';
+import { cs, fg, bg, tf, ErrorItem } from '../lib/enums';
 import {
   AnsiString,
   AnsiMessage,
@@ -805,6 +805,24 @@ describe('WarnMessage', () => {
     process.env['FORCE_WIDTH'] = '0';
     expect(msg.message).toEqual('type script');
   });
+
+  describe('add', () => {
+    it('format a string message from an error phrase', () => {
+      const msg = new WarnMessage();
+      msg.add(ErrorItem.missingRequiredOption, {}, 'abc');
+      process.env['FORCE_WIDTH'] = '0';
+      expect(msg.message).toEqual(`Option 'abc' is required.\n`);
+    });
+  });
+
+  describe('addCustom', () => {
+    it('format a string message from an error phrase', () => {
+      const msg = new WarnMessage();
+      msg.addCustom('#0 #1 #2', {}, 0, 'abc', false);
+      process.env['FORCE_WIDTH'] = '0';
+      expect(msg.message).toEqual(`0 'abc' false\n`);
+    });
+  });
 });
 
 describe('ErrorMessage', () => {
@@ -812,18 +830,20 @@ describe('ErrorMessage', () => {
     ['FORCE_WIDTH'].forEach((key) => delete process.env[key]);
   });
 
-  it('avoid prefixing the message with "Error:" when converting to string', () => {
-    const str = new AnsiString().split('type script');
-    const msg = new ErrorMessage(str);
-    process.env['FORCE_WIDTH'] = '0';
-    expect(`${msg}`).toMatch(/^type script/);
+  describe('create', () => {
+    it('format a string message from an error phrase', () => {
+      const msg = ErrorMessage.create(ErrorItem.missingRequiredOption, {}, 'abc');
+      process.env['FORCE_WIDTH'] = '0';
+      expect(msg.message).toEqual(`Option 'abc' is required.\n`);
+    });
   });
 
-  it('produce a string message', () => {
-    const str = new AnsiString().split('type script');
-    const msg = new ErrorMessage(str);
-    process.env['FORCE_WIDTH'] = '0';
-    expect(msg.message).toEqual('type script');
+  describe('createCustom', () => {
+    it('format a string message from an error phrase', () => {
+      const msg = ErrorMessage.createCustom('#0 #1 #2', {}, 0, 'abc', false);
+      process.env['FORCE_WIDTH'] = '0';
+      expect(msg.message).toEqual(`0 'abc' false\n`);
+    });
   });
 });
 

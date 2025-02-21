@@ -1,5 +1,4 @@
 import { describe, expect, it, jest } from 'bun:test';
-import { ErrorMessage } from '../../lib/styles';
 import { type Options, OptionValues } from '../../lib/options';
 import { ArgumentParser } from '../../lib/parser';
 
@@ -248,8 +247,8 @@ describe('ArgumentParser', () => {
           flag: {
             type: 'flag',
             names: ['-f'],
-            async parse(_, { format }) {
-              throw new ErrorMessage(format(this.type)); // test `this`
+            async parse() {
+              throw Error(this.type); // test `this`
             },
           },
         } as const satisfies Options;
@@ -326,7 +325,6 @@ describe('ArgumentParser', () => {
           index: 0,
           name: '-f',
           comp: false,
-          format: expect.anything(),
         });
         options.flag.parse.mockClear();
         expect(parser.parse(['-f', '-f'])).resolves.toEqual({ flag: [] });
@@ -335,7 +333,6 @@ describe('ArgumentParser', () => {
           index: 0,
           name: '-f',
           comp: false,
-          format: expect.anything(),
         });
         expect(options.flag.parse).toHaveBeenCalledTimes(2);
       });
@@ -403,8 +400,8 @@ describe('ArgumentParser', () => {
           command: {
             type: 'command',
             names: ['-c'],
-            async parse(_, { format }) {
-              throw new ErrorMessage(format(this.type)); // test `this`
+            async parse() {
+              throw Error(this.type); // test `this`
             },
           },
         } as const satisfies Options;
@@ -451,7 +448,6 @@ describe('ArgumentParser', () => {
             index: 0,
             name: '-c',
             comp: false,
-            format: expect.anything(),
           },
         );
         options.command.parse.mockClear();
@@ -464,7 +460,6 @@ describe('ArgumentParser', () => {
             index: 0,
             name: '-c',
             comp: false,
-            format: expect.anything(),
           },
         );
       });
