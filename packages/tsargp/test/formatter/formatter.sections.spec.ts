@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections } from '../../lib/options';
 import { HelpFormatter } from '../../lib/formatter';
+import { tf } from '../../lib/enums';
+import { style } from '../../lib/styles';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -19,13 +21,26 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [
-        { type: 'text', title: 'section  title', text: 'section  text', noWrap: true },
-        { type: 'usage', title: 'section  title', noWrap: true },
-        { type: 'groups', title: 'section  title', noWrap: true },
+        {
+          type: 'text',
+          title: `section ${style(tf.clear)} title`,
+          text: `section ${style(tf.clear)} text`,
+          noWrap: true,
+        },
+        { type: 'usage', title: `section ${style(tf.clear)} title`, noWrap: true },
+        { type: 'groups', title: `section ${style(tf.clear)} title`, noWrap: true },
       ];
       const message = new HelpFormatter(options).sections(sections);
       expect(message.wrap()).toEqual(
-        'section  title\n\nsection  text\n\nsection  title\n\n[-f]\n\nsection  title\n\n  -f',
+        'section ' +
+          '\x1b[0m' +
+          ' title\n\nsection ' +
+          '\x1b[0m' +
+          ' text\n\nsection ' +
+          '\x1b[0m' +
+          ' title\n\n[-f]\n\nsection ' +
+          '\x1b[0m' +
+          ' title\n\n  -f',
       );
     });
 
@@ -74,22 +89,43 @@ describe('HelpFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('');
       });
 
-      it('render the program name', () => {
+      it('skip the program name and comment when there are no options', () => {
         const formatter = new HelpFormatter({});
+        const sections: HelpSections = [{ type: 'usage', comment: 'comment' }];
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('');
+      });
+
+      it('render the program name', () => {
+        const formatter = new HelpFormatter({
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        });
         const sections: HelpSections = [{ type: 'usage' }];
-        expect(formatter.sections(sections, 'prog').wrap()).toEqual('prog');
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('prog [-f]');
       });
 
       it('indent the program name', () => {
-        const formatter = new HelpFormatter({});
+        const formatter = new HelpFormatter({
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        });
         const sections: HelpSections = [{ type: 'usage', indent: 2 }];
-        expect(formatter.sections(sections, 'prog').wrap()).toEqual('  prog');
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('  prog [-f]');
       });
 
       it('break the program name', () => {
-        const formatter = new HelpFormatter({});
+        const formatter = new HelpFormatter({
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        });
         const sections: HelpSections = [{ type: 'usage', breaks: 1 }];
-        expect(formatter.sections(sections, 'prog').wrap()).toEqual('\nprog');
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('\nprog [-f]');
       });
 
       it('render the section heading, but avoid indenting it', () => {
@@ -164,7 +200,6 @@ describe('HelpFormatter', () => {
           },
           array3: {
             type: 'array',
-            names: ['-a3'],
             positional: true,
           },
           array4: {
@@ -177,11 +212,11 @@ describe('HelpFormatter', () => {
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections).wrap()).toEqual(
-          '[-a1 [<param>...]] -a2 [<param>...] [[-a3] [<param>...]] [-a4=true]',
+          '[-a1 [<param>...]] -a2 [<param>...] [<param>...] [-a4=true]',
         );
       });
 
-      it('include and exclude an option', () => {
+      it('filter, include and exclude options', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -191,16 +226,22 @@ describe('HelpFormatter', () => {
             type: 'flag',
             names: ['-f2'],
           },
+          flag3: {
+            type: 'flag',
+            names: ['-f3'],
+          },
         } as const satisfies Options;
-        const formatter = new HelpFormatter(options);
+        const formatter = new HelpFormatter(options, undefined, ['-f1', '-f2']);
         const sections1: HelpSections = [{ type: 'usage', filter: ['flag1'] }];
         const sections2: HelpSections = [{ type: 'usage', filter: ['flag1'], exclude: true }];
         const sections3: HelpSections = [{ type: 'usage', filter: ['flag1'], required: ['flag1'] }];
         const sections4: HelpSections = [{ type: 'usage', filter: ['flag2', 'flag1'] }];
+        const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
         expect(formatter.sections(sections1).wrap()).toEqual('[-f1]');
         expect(formatter.sections(sections2).wrap()).toEqual('[-f2]');
         expect(formatter.sections(sections3).wrap()).toEqual('-f1');
         expect(formatter.sections(sections4).wrap()).toEqual('[-f2] [-f1]');
+        expect(formatter.sections(sections5).wrap()).toEqual('');
       });
 
       it('group options according to an adjacency list', () => {

@@ -69,8 +69,7 @@ describe('HelpFormatter', () => {
           '\x1b[0m\x1b[2m' +
           '.' +
           '\x1b[0m' +
-          '\n' +
-          '\x1b[0m',
+          '\n',
       );
     });
 
@@ -95,8 +94,7 @@ describe('HelpFormatter', () => {
           '\x1b[0m' +
           ' option' +
           '\x1b[0m' +
-          '\n' +
-          '\x1b[0m',
+          '\n',
       );
     });
 

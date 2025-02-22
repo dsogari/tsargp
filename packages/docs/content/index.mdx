@@ -18,57 +18,58 @@ Get started with:
 ```ansi
 [1mArgument parser for TypeScript.[0m
 
-  [35m-h[0m, [35m--help[0m                      A help option. Prints this help message. Uses the next argument as
+  [39m[35m-h[0m[39m, [35m--help[0m[39m                      [39m[39mA help option. Prints this help message. Uses the next argument as
                                   the name of a subcommand. Uses the remaining arguments as option
                                   filter.[0m
-  [35m-v[0m, [35m--version[0m                   A version option. Prints the package version.[0m
-  [0;38;5;138m-f[0m, [0;38;5;138m--no-flag[0m                   [0;3;9mA flag option. Deprecated for some reason.[0m
-  [35mhello[0m             [90m...[0m           A subcommand. Logs the arguments passed after it.[0m
-  [35m-b[0m, [35m--boolean[0m     [90m<param>[0m       A boolean option with:
+  [39m[35m-v[0m[39m, [35m--version[0m[39m                   [39m[39mA version option. Prints the package version.[0m
+  [39m[38;5;138m-f[0m[39m, [38;5;138m--no-flag[0m[39m                   [3;9m[39mA flag option. Deprecated for [39msome reason.[0m
+  [39m[35mhello[0m[39m             [39m[90m...[0m[39m           [39m[39mA subcommand. Logs the arguments passed after it.[0m
+  [39m[35m-b[0m[39m, [35m--boolean[0m[39m     [39m[90m<param>[0m[39m       [39m[39mA boolean option with:
                                   * a paragraph
                                   - [4;38;5;223minline styles[39;24m
                                   1. and a list
 
-                                  Values must be one of {[32m'yes'[0m, [32m'no'[0m}. Reads environment data from
-                                  [35mBOOLEAN[0m. Requires ([35m-sc[0m or ([35m-sa[0m == [[32m'a'[0m, [32m'b'[0m] and [35m-na[0m != [[33m1[0m, [33m2[0m])).
-                                  Defaults to [34mfalse[0m.[0m
+                                  Values must be one of {[32m'yes'[0m[39m, [32m'no'[0m[39m}. Reads environment data from
+                                  [35mBOOLEAN[0m[39m. Requires ([35m-sc[0m[39m or ([35m-sa[0m[39m == [[32m'a'[0m[39m, [32m'b'[0m[39m] and [35m-na[0m[39m != [[33m1[0m[39m, [33m2[0m[39m])).
+                                  Defaults to [34mfalse[0m[39m.[0m
 
 [1mString options:[0m
 
-  [35m-sr[0m, [35m--strRegex[0m   [90m<my str>[0m      A string option. Can be clustered with [32m's'[0m. Values must match the
-                                  regex [31m/^\d+$/[0m. Defaults to [32m'123456789'[0m.[0m
-  [35m-sc[0m, [35m--strChoice[0m  [32m'one'[0m         A string option. Disallows inline parameters. Values must be one
-                                  of {[32m'one'[0m, [32m'two'[0m}.[0m
-  [35m-sa[0m, [35m--strArray[0m   [90m[<param>...][0m  A string array option. Accepts multiple parameters. Values can be
-                                  delimited with [32m','[0m. Defaults to [[32m'one'[0m].[0m
-  [35m--strArrayLimit[0m   [32m'one'[0m[90m...[0m      A string array option. Accepts multiple parameters. Accepts
-                                  positional arguments that may be preceded by [35m--[0m. Element count is
-                                  limited to [33m3[0m.[0m
+  [39m[35m-sr[0m[39m, [35m--strRegex[0m[39m   [39m[90m<my str>[0m[39m      [39m[39mA string option. Can be clustered with [32m's'[0m[39m. Values must match the
+                                  regex [31m/^\d+$/[0m[39m. Defaults to [32m'123456789'[0m[39m.[0m
+  [39m[35m-sc[0m[39m, [35m--strChoice[0m[39m  [39m[32m'one'[0m[39m         [39m[39mA string option. Disallows inline parameters. Values must be one
+                                  of {[32m'one'[0m[39m, [32m'two'[0m[39m}.[0m
+  [39m[35m-sa[0m[39m, [35m--strArray[0m[39m   [39m[90m[<param>...][0m[39m  [39m[39mA string array option. Accepts multiple parameters. Values can be
+                                  delimited with [32m','[0m[39m. Defaults to [[32m'one'[0m[39m].[0m
+  [39m[35m--strArrayLimit[0m[39m   [39m[32m'one'[0m[39m[90m...[0m[39m      [39m[39mA string array option. Accepts multiple parameters. Accepts
+                                  positional arguments that may be preceded by [35m--[0m[39m. Element count is
+                                  limited to [33m3[0m[39m.[0m
 
 [1mNumber options:[0m
 
-  [35m-nr[0m, [35m--numRange[0m   [90m<my num>[0m      A number option. Can be clustered with [32m'n'[0m. Defaults to [33m-1.23[0m.[0m
-  [35m-nc[0m, [35m--numChoice[0m  =[33m1[0m            A number array option. Requires inline parameters. Values must be
-                                  one of {[32m'1'[0m, [32m'2'[0m}.[0m
-  [35m-na[0m, [35m--numArray[0m   [90m[<param>...][0m  A number array option. Accepts multiple parameters. Defaults to
-                                  [[33m1[0m, [33m2[0m].[0m
-  [35m--numArrayUnique[0m  [32m'1,2'[0m[90m...[0m      A number array option. Accepts multiple parameters. Values can be
-                                  delimited with [32m','[0m. Can be specified multiple times. Duplicate
+  [39m[35m-nr[0m[39m, [35m--numRange[0m[39m   [39m[90m<my num>[0m[39m      [39m[39mA number option. The minimum accepted value is [33m-2[39m. Can be
+                                  clustered with [32m'n'[0m[39m. Defaults to [33m-1.23[0m[39m.[0m
+  [39m[35m-nc[0m[39m, [35m--numChoice[0m[39m  [39m=[33m1[0m[39m            [39m[39mA number array option. Requires inline parameters. Values must be
+                                  one of {[32m'1'[0m[39m, [32m'2'[0m[39m}.[0m
+  [39m[35m-na[0m[39m, [35m--numArray[0m[39m   [39m[90m[<param>...][0m[39m  [39m[39mA number array option. Accepts multiple parameters. Defaults to
+                                  [[33m1[0m[39m, [33m2[0m[39m].[0m
+  [39m[35m--numArrayUnique[0m[39m  [39m[32m'1,2'[0m[39m[90m...[0m[39m      [39m[39mA number array option. Accepts multiple parameters. Values can be
+                                  delimited with [32m','[0m[39m. Can be specified multiple times. Duplicate
                                   values will be removed.[0m
 
 [1mUsage:[0m
 
-  demo.js[0m [([35m-h[0m|[35m--help[0m)] [([35m-v[0m|[35m--version[0m)] [32m# get help[0m
-  demo.js[0m [35mhello[0m [90m...[0m [32m# execute the hello command[0m
-  demo.js[0m [([35m-f[0m|[35m--no-flag[0m)] [[([35m-b[0m|[35m--boolean[0m) [90m<param>[0m] ([35m-sc[0m|[35m--strChoice[0m) [32m'one'[0m] [([35m-sr[0m|[35m--strRegex[0m)
-          [90m<my str>[0m] [([35m-nr[0m|[35m--numRange[0m) [90m<my num>[0m] [([35m-nc[0m|[35m--numChoice[0m)=[33m1[0m] [([35m-sa[0m|[35m--strArray[0m)
-          [90m[<param>...][0m] [([35m-na[0m|[35m--numArray[0m) [90m[<param>...][0m] [[([35m--strArrayLimit[0m|[35m--[0m)] [32m'one'[0m[90m...[0m]
-          [[35m--numArrayUnique[0m [32m'1,2'[0m[90m...[0m][0m
+  [39mdemo.js[0m [[39m([35m-h[0m[39m|[35m--help[0m[39m)] [([35m-v[0m[39m|[35m--version[0m[39m)] [32m# get help[0m
+  [39mdemo.js[0m [39m[35mhello[0m[39m [90m...[0m[39m [32m# execute the hello command[0m
+  [39mdemo.js[0m [[39m([35m-f[0m[39m|[35m--no-flag[0m[39m)] [[([35m-b[0m[39m|[35m--boolean[0m[39m) [90m<param>[0m[39m] ([35m-sc[0m[39m|[35m--strChoice[0m[39m) [32m'one'[0m[39m] [([35m-sr[0m[39m|[35m--strRegex[0m[39m)
+          [90m<my str>[0m[39m] [([35m-nr[0m[39m|[35m--numRange[0m[39m) [90m<my num>[0m[39m] [([35m-nc[0m[39m|[35m--numChoice[0m[39m)=[33m1[0m[39m] [([35m-sa[0m[39m|[35m--strArray[0m[39m)
+          [90m[<param>...][0m[39m] [([35m-na[0m[39m|[35m--numArray[0m[39m) [90m[<param>...][0m[39m] [[([35m--strArrayLimit[0m[39m|[35m--[0m[39m)] [32m'one'[0m[39m[90m...[0m[39m]
+          [[35m--numArrayUnique[0m[39m [32m'1,2'[0m[39m[90m...[0m[39m][0m
 
-MIT License.
+[39mMIT License.
 Copyright (c) 2024-2025 [1;3mDiego Sogari[0m
 
-Report a bug: [90mhttps://github.com/dsogari/tsargp/issues[0m[0m
+Report a bug: [90mhttps://github.com/dsogari/tsargp/issues[0m
 ```
 
 {/* cSpell:enable */}

@@ -12,27 +12,32 @@ describe('OptionRegistry', () => {
         const options = {
           flag: {
             type: 'flag',
-            names: ['-f', null],
+            names: [null, '-f'],
+          },
+          single: {
+            type: 'single',
+            positional: true,
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
         expect(registry.names).toHaveLength(1);
         expect(registry.names.get('-f')).toEqual('flag');
         expect(options.flag).toHaveProperty('preferredName', '-f');
+        expect(options.single).toHaveProperty('preferredName', undefined);
       });
 
       it('include the positional marker', () => {
         const options = {
           single: {
             type: 'single',
-            positional: '',
-            preferredName: 'preferred',
+            positional: 'marker',
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
         expect(registry.names).toHaveLength(1);
-        expect(registry.names.get('')).toEqual('single');
-        expect(registry.positional).toEqual(['single', options.single, 'preferred']);
+        expect(registry.names.get('marker')).toEqual('single');
+        expect(options.single).toHaveProperty('preferredName', 'marker');
+        expect(registry.positional).toEqual(['single', options.single, 'marker']);
       });
     });
 

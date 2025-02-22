@@ -100,9 +100,9 @@ All help sections share a set of properties:
 - `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, `2{:ts}` for others)
 - `noWrap` - true to disable wrapping of provided texts (defaults to `false{:ts}`)
 
-<Callout type="info">
+<Callout type="warning">
 
-Even if `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to the [text formatting] rules.
+When `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to [text formatting] rules. This also means that they will appear in redirected command outputs.
 
 </Callout>
 
@@ -284,8 +284,8 @@ Below is an extract of a help message produced with the above configuration:
                              [0mA number option. Values must be one of {[33m1[0m, [33m2[0m}.[0m
   [95m-ns[0m,   [95m--numbers[0m
             [90m[<param>...][0m
-                      [0mA numbers option. Accepts multiple parameters. Values
-                    must be in the range [[33m0[0m, [33mInfinity[0m]. Defaults to [[33m1[0m, [33m2[0m].[0m
+                        [0mA number array option. Accepts multiple parameters.
+                                                        Defaults to [[33m1[0m, [33m2[0m].[0m
 ```
 
 {/* cSpell:enable */}

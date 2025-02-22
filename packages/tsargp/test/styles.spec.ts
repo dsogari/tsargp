@@ -238,9 +238,11 @@ describe('AnsiString', () => {
     });
 
     it('split text with style sequences', () => {
-      const str = new AnsiString().split(`${style(tf.clear)}type script${style(tf.clear)}`);
+      const str = new AnsiString().split(
+        `${style(tf.clear)}type ${style(tf.clear)} script${style(tf.clear)}`,
+      );
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual(['\x1b[39m\x1b[0m' + 'type', 'script' + '\x1b[0m']);
+      expect(str.styles).toEqual(['\x1b[39m\x1b[0m' + 'type', '\x1b[0m' + 'script' + '\x1b[0m']);
     });
 
     it('split text with paragraphs', () => {
@@ -768,15 +770,15 @@ describe('AnsiMessage', () => {
     const str = new AnsiString().split('type script');
     const msg = new AnsiMessage(str);
     expect(msg.wrap(0)).toEqual('type script');
-    expect(msg.wrap(11)).toEqual(style(fg.default) + 'type script' + style(tf.clear));
+    expect(msg.wrap(11)).toEqual(style(fg.default) + 'type script');
     process.env['NO_COLOR'] = '1';
     expect(msg.wrap(0)).toEqual('type script');
     expect(msg.wrap(11)).toEqual('type script');
     process.env['FORCE_COLOR'] = '1';
-    expect(msg.wrap(0)).toEqual(style(fg.default) + 'type script' + style(tf.clear));
-    expect(msg.wrap(11)).toEqual(style(fg.default) + 'type script' + style(tf.clear));
+    expect(msg.wrap(0)).toEqual(style(fg.default) + 'type script');
+    expect(msg.wrap(11)).toEqual(style(fg.default) + 'type script');
     process.env['FORCE_WIDTH'] = '10';
-    expect(msg.message).toEqual(style(fg.default) + 'type\nscript' + style(tf.clear));
+    expect(msg.message).toEqual(style(fg.default) + 'type\nscript');
   });
 
   it('produce a string message', () => {
@@ -796,7 +798,7 @@ describe('WarnMessage', () => {
     const str = new AnsiString().split('type script');
     const msg = new WarnMessage(str);
     process.env['FORCE_WIDTH'] = '10';
-    expect(msg.message).toEqual(style(fg.default) + 'type\nscript' + style(tf.clear));
+    expect(msg.message).toEqual(style(fg.default) + 'type\nscript');
   });
 
   it('produce a string message', () => {

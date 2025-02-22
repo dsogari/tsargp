@@ -5,7 +5,7 @@ import type { Options, OptionValues } from 'tsargp';
  */
 const multiOpts = {
   /**
-   * A numbers option that receives unlimited positional arguments.
+   * A number array option that receives unlimited positional arguments.
    */
   numbers: {
     type: 'array',
@@ -23,7 +23,7 @@ const multiOpts = {
  */
 const binaryOpts = {
   /**
-   * A numbers option that receives at most two positional arguments.
+   * A number array option that receives at most two positional arguments.
    */
   numbers: {
     ...multiOpts.numbers,

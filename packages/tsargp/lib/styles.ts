@@ -749,9 +749,6 @@ export class AnsiMessage extends Array<AnsiString> {
     for (const str of this) {
       column = str.wrap(result, column, width, emitStyles, emitSpaces);
     }
-    if (emitStyles) {
-      result.push(sgr(tf.clear));
-    }
     return result.join('');
   }
 

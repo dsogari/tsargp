@@ -28,7 +28,7 @@ const helloOpts = {
     useFilter: true,
   },
   /**
-   * A recursive command option that logs the arguments passed after it.
+   * A subcommand that logs the arguments passed after it.
    */
   hello: {
     type: 'command',
@@ -116,8 +116,8 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
       return name !== this.names?.[1];
     },
     styles: {
-      names: style(tf.clear, fg8(138)),
-      descr: style(tf.clear, tf.italic, tf.crossedOut),
+      names: style(fg8(138)),
+      descr: style(tf.italic, tf.crossedOut),
     },
   },
   /**

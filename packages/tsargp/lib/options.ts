@@ -141,12 +141,6 @@ export type WithSectionKind<T extends string> = {
    * The kind of section.
    */
   readonly type: T;
-};
-
-/**
- * Defines attributes for a help section with wrapping.
- */
-export type WithSectionTitle = {
   /**
    * The section heading or default group heading. May contain inline styles.
    */
@@ -157,7 +151,7 @@ export type WithSectionTitle = {
   readonly style?: Style;
   /**
    * The number of line breaks to insert before the section.
-   * (Defaults to 0 for the first section, else 2)
+   * (Defaults to 0 for the first section, 2 for others)
    */
   readonly breaks?: number;
   /**
@@ -221,16 +215,12 @@ export type WithSectionUsage = {
 /**
  * A help text section.
  */
-export type HelpTextSection = WithSectionKind<'text'> &
-  WithSectionTitle &
-  WithSectionText &
-  WithSectionIndent;
+export type HelpTextSection = WithSectionKind<'text'> & WithSectionText & WithSectionIndent;
 
 /**
  * A help usage section.
  */
 export type HelpUsageSection = WithSectionKind<'usage'> &
-  WithSectionTitle &
   WithSectionUsage &
   WithSectionIndent &
   WithSectionFilter;
@@ -238,7 +228,7 @@ export type HelpUsageSection = WithSectionKind<'usage'> &
 /**
  * A help groups section.
  */
-export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionTitle & WithSectionFilter;
+export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter;
 
 /**
  * A help section.

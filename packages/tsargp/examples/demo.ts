@@ -7,7 +7,7 @@ try {
   const values = valuesFor(options);
   const { warning } = await parser.parseInto(values, undefined, { clusterPrefix: '-' });
   if (warning) {
-    console.log(`${warning}`);
+    console.error(`${warning}`);
   }
   if (!values.hello) {
     console.log(values);
