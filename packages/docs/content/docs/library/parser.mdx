@@ -81,9 +81,13 @@ The `clusterPrefix` property specifies the prefix for cluster arguments. If set,
 
 <Callout type="info">
 
-Option names have precedence over the cluster prefix. For example, if the prefix is a single dash and there's an option named `'-flag'{:ts}`, then an argument with this name will _not_ be considered a cluster argument.
+Option names have precedence over the cluster prefix. For example, if the prefix is a single dash and there's an option named `'-flag'{:ts}`, then an argument with this name will _not_ be considered a cluster argument. On the other hand, the cluster prefix has precedence over the [option prefix].
 
 </Callout>
+
+### Option prefix
+
+The `optionPrefix` property specifies the prefix for option names. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
 
 ## Parsing features
 
@@ -112,16 +116,18 @@ For example, if the option initiating a sequence is array-valued, the parser sta
 
 The same is true for function options with a variable [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name or not. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option specification (even if it is a new occurrence of the same option).
 
-#### Sequence information
+#### Argument information
 
 The information gathered by the parser is saved in an object that is passed as parameter to some of the [custom callbacks]. It contains details about the current argument sequence in the parsing loop:
 
 - `values` - The previously parsed values. It has an opaque type that should be cast to `OptionValues<typeof your_options>{:ts}`.
-- `index` - The index of the occurrence of the option name, or of the first option parameter. It will be `NaN{:ts}` if the sequence comes from [environment] data.
-- `name` - The option name as specified on the command line, or the environment [data source]. It will be the option's [preferred name] if the sequence comes from positional arguments, or `'0'{:ts}` if it comes from the standard input.
-- `comp` - True if performing [word completion]. Only available for the [parse callback], except that of a [subcommand].
-- `prev` - The option parameters preceding the word being completed, if any. Only available to the [complete callback].
-- `format` - A utility function to create [ANSI strings] with a formatted message. Only available to the [parse callback].
+- `index` - The index of the occurrence of the option name, or of the first option parameter. It will be `NaN{:ts}` if the data comes from the [environment].
+- `name` - The option name as specified on the command line, or one of the following:
+  - the option's [preferred name] if the sequence comes from positional arguments
+  - an environment [data source] if the data comes from the environment
+  - `'0'{:ts}` if the data comes from the standard input
+- `comp` - True if performing [word completion]. Only available for the [parse callback].
+- `prev` - The option parameters preceding the word being completed, if any. Only available for the [complete callback].
 
 ### Word completion
 
@@ -227,6 +233,7 @@ The title will remain in changed state after the parser returns. Other option na
 {/* self references */}
 
 [parsing flags]: #parsing-flags
+[option prefix]: #option-prefix
 [word completion]: #word-completion
 [process title]: #process-title
 [requirements checking]: #requirements-checking

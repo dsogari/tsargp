@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
-import { ArgumentParser } from '../../lib/parser';
+import { ArgumentParser, ParsingFlags } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('ArgumentParser', () => {
   describe('parse', () => {
+    describe('an option prefix is specified', () => {
+      const flags: ParsingFlags = { optionPrefix: '-' };
+
+      it('do not interpret arguments with the prefix as positional', () => {
+        const options = {
+          single: {
+            type: 'single',
+            positional: true,
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-s'], flags)).rejects.toThrow(`Unknown option -s.`);
+      });
+    });
+
     describe('parameters are specified as positional arguments', () => {
       it('handle a single-valued option', () => {
         const options = {

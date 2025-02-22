@@ -326,7 +326,7 @@ options.flag.default.toString = () => 'this and that ...';
 
 The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s).
 
-It may receive different kinds of information depending on the option type, but its second parameter always contains the current [sequence information], including the option's name, argument index and any previously parsed values.
+It may receive different kinds of data depending on the option type, but its second parameter always contains the current [argument information], including the option's name, argument index and any previously parsed values.
 
 <Callout type="info">
 
@@ -336,7 +336,13 @@ This callback can be asynchronous.
 
 <Callout type="default">
 
-Inside the callback you may check whether an option has been specified before it by comparing its value with `undefined{:ts}`. This works because default values are only set at the _end_ of the parsing loop.
+If you need to throw an error from the callback, we recommend using the [error message]'s `createCustom` static method. It receives a custom phrase that is formatted similarly to [error phrases].
+
+</Callout>
+
+<Callout type="default">
+
+You may also check whether an option has been specified before it by comparing its value with `undefined{:ts}`. This works because default values are only set at the _end_ of the parsing loop.
 
 </Callout>
 
@@ -429,7 +435,7 @@ The `inline` attribute, if present, indicates the option's treatment of [inline 
 The `complete` attribute, if present, specifies a custom callback for [word completion], which can be used to make better suggestions than the built-in algorithm would for the option. It receives two parameters:
 
 - `param` - the word being completed
-- `info` - the current [sequence information]
+- `info` - the current [argument information]
 
 It should return the list of completion words. If an error is thrown, it is ignored, and the default completion message will be thrown instead.
 
@@ -572,15 +578,27 @@ All incoming arguments will be parsed using the option definitions from this att
 
 #### Cluster prefix
 
-The `clusterPrefix` property indicates whether the command accepts cluster arguments. This must be used in conjunction with the [cluster letters] of the nested options.
+The `clusterPrefix` property indicates whether the command accepts cluster arguments. It has the same semantics as the homonymous property of the [parsing flags], and must be used in conjunction with the [cluster letters] of the nested options.
+
+<Callout type="info">
+
+This attribute has precedence over [option prefix].
+
+</Callout>
+
+#### Option prefix
+
+The `optionPrefix` property specifies the prefix for option names within the command. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
 
 ### Flag option
 
 The **flag** option accepts no parameter, but has a value that will be either the result of the [parse callback], if specified, or `true{:ts}`. The callback receives a `string[]{:ts}` as first parameter, which holds _all_ the remaining command-line arguments, and should return the option value.
 
+When [word completion] is in effect, the last argument will be the word to complete (you can check if this is the case by inspecting the `comp` property of the [argument information]). If it pertains to the current argument sequence, you can throw completion words from the callback as an instance of the [text message].
+
 <Callout type="info">
 
-Altering the string array inside the parse callback will have _no_ effect on the original command-line arguments, as it is just a copy.
+Altering the string array inside the parse callback will have _no_ effect on the original command-line arguments.
 
 </Callout>
 
@@ -597,11 +615,7 @@ This option has the following sets of attributes:
 - [environment] attributes
 - the attribute described below
 
-<Callout type="info">
-
-Previous versions of the library also provided a `negationNames` attribute, which specified alternate option names to turn the option value `false{:ts}` (e.g., _--no-flag_). This can now be achieved by inspecting the `name` property of the [sequence information] in the callback.
-
-</Callout>
+Previous versions of the library also provided an attribute to indicate alternate option names to turn the option value `false{:ts}` (e.g., _--no-flag_). This can now be achieved by inspecting the `name` property of the [argument information].
 
 #### Skip count
 
@@ -609,7 +623,7 @@ The `skipCount` attribute indicates the number of remaining arguments to skip, a
 
 It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends.
 
-<Callout type="info">
+<Callout type="default">
 
 If the number or parameters is _fixed_, prefer the [function] option instead.
 
@@ -628,12 +642,6 @@ Here is an example of how it might be used inside the callback:
   },
 }
 ```
-
-<Callout type="default">
-
-When [word completion] is in effect, the last argument will be the word to complete. If it pertains to the current [argument sequence], you can throw a completion message from the callback.
-
-</Callout>
 
 ## Non-niladic options
 
@@ -721,7 +729,7 @@ Note that the function option cannot have a [parameter separator], since it woul
 
 <Callout type="warning">
 
-If the data comes from the [environment], then the [parse callback] will receive a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [sequence information], which should be `NaN{:ts}` in this case.
+If the data comes from the [environment], then the [parse callback] will receive a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [argument information], which should be `NaN{:ts}` in this case.
 
 </Callout>
 
@@ -805,6 +813,7 @@ If the data comes from the [environment], then the [parse callback] will receive
 [resolve callback]: #resolve-callback
 
 {/* command attributes */}
+[option prefix]: #option-prefix
 
 {/* flag attributes */}
 
@@ -823,12 +832,13 @@ If the data comes from the [environment], then the [parse callback] will receive
 
 {/* parser references */}
 
+[parsing flags]: parser#parsing-flags
 [resulting object]: parser#option-values
 [word completion]: parser#word-completion
 [completion algorithm]: parser#completion-algorithm
 [custom callback]: parser#custom-callbacks
 [argument sequence]: parser#argument-sequence
-[sequence information]: parser#sequence-information
+[argument information]: parser#argument-information
 [`parse`]: parser#using-a-newly-created-object
 [`parseInto`]: parser#using-an-existing-object
 [`clusterPrefix`]: parser#cluster-prefix
@@ -852,6 +862,9 @@ If the data comes from the [environment], then the [parse callback] will receive
 [styling attributes]: styles#styling-attributes
 [text formatting]: styles#text-splitting
 [warning message]: styles#warning-message
+[error message]: styles#error-message
+[error phrases]: styles#error-phrases
+[text message]: styles#text-message
 
 {/* validator references */}
 

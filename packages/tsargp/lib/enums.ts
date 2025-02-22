@@ -55,8 +55,7 @@ export const enum ErrorItem {
    */
   unsatisfiedCondRequirement,
   /**
-   * Error raised when either a variadic option or a command option is specified in the middle of a
-   * cluster argument.
+   * Error raised when a variadic option is specified in the middle of a cluster argument.
    */
   invalidClusterOption,
   /**
@@ -124,6 +123,10 @@ export const enum ErrorItem {
    * Raised when a variadic option declares an inline constraint.
    */
   invalidInlineConstraint,
+  /**
+   * Raised when an option is specified without its expected parameter.
+   */
+  missingParameter,
 }
 
 /**

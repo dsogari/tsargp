@@ -67,8 +67,14 @@ export type ParsingFlags = {
   /**
    * The prefix of cluster arguments.
    * If set, then eligible arguments that have this prefix will be considered a cluster.
+   * Has precedence over {@link ParsingFlags.optionPrefix}.
    */
   readonly clusterPrefix?: string;
+  /**
+   * The prefix of option names.
+   * If set, then arguments that have this prefix will always be considered an option name.
+   */
+  readonly optionPrefix?: string;
 };
 
 /**
@@ -125,6 +131,10 @@ type ParseContext = [
    * The current cluster prefix.
    */
   clusterPrefix?: string,
+  /**
+   * The current option prefix.
+   */
+  optionPrefix?: string,
 ];
 
 /**
@@ -169,6 +179,36 @@ type RequireItemFn<T> = (
   negate: boolean,
   invert: boolean,
 ) => boolean | Promise<boolean>;
+
+/**
+ * The type of command-line argument encountered during parsing.
+ */
+const enum ArgType {
+  /**
+   * A valid option name.
+   */
+  optionName,
+  /**
+   * An invalid option name.
+   */
+  unknownOption,
+  /**
+   * A valid option parameter.
+   */
+  parameter,
+  /**
+   * A missing option parameter.
+   */
+  missingParameter,
+  /**
+   * A positional argument.
+   */
+  positional,
+  /**
+   * A cluster argument.
+   */
+  cluster,
+}
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -221,6 +261,7 @@ export class ArgumentParser<T extends Options = Options> {
       !!compIndex,
       flags?.progName,
       flags?.clusterPrefix,
+      flags?.optionPrefix,
     );
     await parseArgs(context);
     const warning = context[5];
@@ -239,6 +280,7 @@ export class ArgumentParser<T extends Options = Options> {
  * @param completing True if performing completion
  * @param progName The program name, if any
  * @param clusterPrefix The cluster prefix, if any
+ * @param optionPrefix The option prefix, if any
  * @returns The parsing context
  */
 function createContext(
@@ -248,6 +290,7 @@ function createContext(
   completing: boolean,
   progName = process?.argv[1]?.split(/[\\/]/).at(-1),
   clusterPrefix?: string,
+  optionPrefix?: string,
 ): ParseContext {
   if (!completing && progName && process?.title) {
     process.title += ' ' + progName;
@@ -259,7 +302,17 @@ function createContext(
   }
   const specifiedKeys = new Set<string>();
   const warning = new WarnMessage();
-  return [registry, values, args, specifiedKeys, completing, warning, progName, clusterPrefix];
+  return [
+    registry,
+    values,
+    args,
+    specifiedKeys,
+    completing,
+    warning,
+    progName,
+    clusterPrefix,
+    optionPrefix,
+  ];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -416,46 +469,70 @@ async function parseArgs(context: ParseContext) {
  * @returns The new parse entry
  */
 function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
-  const [registry, , args, , completing] = context;
-  const [index, info, prevVal, , marker] = prev;
+  const [registry, , args, , completing, , , , prefix] = context;
+  const [prevIndex, prevInfo, prevVal, , prevMarker] = prev;
+  const { names, positional, options } = registry;
+  const [min, max] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   const inc = prevVal !== undefined ? 1 : 0;
-  const positional = registry.positional;
-  const [min, max] = info ? getParamCount(info[1]) : [0, 0];
-  for (let i = index + 1; i < args.length; ++i) {
+  for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
     const comp = completing && i + 1 === args.length;
-    if (!info || (!marker && i - index + inc > min)) {
-      const [name, value] = arg.split(/=(.*)/, 2);
-      const key = registry.names.get(name);
-      if (key) {
+    const [name, value] = arg.split(/=(.*)/, 2);
+    const optionKey = names.get(name);
+    const isForcedName = prefix && name.startsWith(prefix);
+    const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
+    const argType = isParam
+      ? !isForcedName
+        ? ArgType.parameter
+        : !optionKey
+          ? ArgType.unknownOption
+          : !completing
+            ? ArgType.missingParameter
+            : ArgType.optionName
+      : optionKey
+        ? ArgType.optionName
+        : parseCluster(context, i)
+          ? ArgType.cluster
+          : prevInfo && i - prevIndex + inc <= max
+            ? ArgType.parameter
+            : positional && !isForcedName
+              ? ArgType.positional
+              : ArgType.unknownOption;
+    switch (argType) {
+      case ArgType.optionName: {
         if (comp && value === undefined) {
           throw new TextMessage(name);
         }
-        const marker = name === positional?.[1].positional;
-        const info: OptionInfo = marker ? positional : [key, registry.options[key], name];
-        return [i, info, value, comp, marker, true];
+        const isMarker = name === positional?.[1].positional;
+        const newInfo: OptionInfo | undefined = optionKey
+          ? isMarker
+            ? positional
+            : [optionKey, options[optionKey], name]
+          : undefined;
+        return [i, newInfo, value, comp, isMarker, true];
       }
-      if (parseCluster(context, i)) {
+      case ArgType.unknownOption:
+        if (comp) {
+          throw new TextMessage(...completeName(registry, arg));
+        }
+        if (!completing) {
+          reportUnknownName(context, name);
+        }
+        break; // ignore unknown options during completion
+      case ArgType.parameter:
+        if (comp) {
+          return [i, prevInfo, arg, comp, prevMarker, false];
+        }
+        break; // continue looking for parameters or option names
+      case ArgType.missingParameter:
+        throw ErrorMessage.create(ErrorItem.missingParameter, {}, getSymbol(prevInfo?.[2] ?? ''));
+      case ArgType.positional:
+        return [i, positional, arg, comp, false, true];
+      case ArgType.cluster:
         if (comp) {
           throw new TextMessage();
         }
-        continue;
-      }
-      if (!info || i - index + inc > max) {
-        if (!positional) {
-          if (comp) {
-            throw new TextMessage(...completeName(registry, arg));
-          }
-          if (completing) {
-            continue; // ignore unknown options during completion
-          }
-          reportUnknownName(context, name);
-        }
-        return [i, positional, arg, comp, false, true];
-      }
-    }
-    if (comp) {
-      return [i, info, arg, comp, marker, false];
+        break; // the cluster argument was canonicalized
     }
   }
   return [args.length];
@@ -742,7 +819,15 @@ async function handleCommand(
     typeof option.options === 'function' ? await option.options() : (option.options ?? {});
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const cmdContext = createContext(cmdRegistry, param, rest, comp, name, option.clusterPrefix);
+  const cmdContext = createContext(
+    cmdRegistry,
+    param,
+    rest,
+    comp,
+    name,
+    option.clusterPrefix,
+    option.optionPrefix,
+  );
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
   // comp === false, otherwise completion will have taken place by now

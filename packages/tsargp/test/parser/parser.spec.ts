@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test';
 import { type Options, OptionValues } from '../../lib/options';
-import { ArgumentParser } from '../../lib/parser';
+import { ArgumentParser, ParsingFlags } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -43,6 +43,56 @@ describe('ArgumentParser', () => {
       } as const satisfies Options;
       const parser = new ArgumentParser(options);
       expect(parser.parse([])).rejects.toThrow(`Option preferred is required.`);
+    });
+
+    describe('an option prefix is specified', () => {
+      const flags: ParsingFlags = { optionPrefix: '-' };
+
+      it('throw an error on missing parameter to single-valued option', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+          single: {
+            type: 'single',
+            names: ['-s'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-s', '-f'], flags)).rejects.toThrow(
+          `Missing parameter to option -s.`,
+        );
+      });
+
+      it('throw an error on missing parameter to function option', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+          },
+          function: {
+            type: 'function',
+            names: ['-f'],
+            paramCount: [1, 2],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-f', '-s'], flags)).rejects.toThrow(
+          `Missing parameter to option -f.`,
+        );
+      });
+
+      it('throw an error on unknown option', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-s', '-x'], flags)).rejects.toThrow(`Unknown option -x.`);
+      });
     });
 
     describe('parsing a help option', () => {

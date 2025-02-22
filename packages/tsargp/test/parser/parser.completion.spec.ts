@@ -40,6 +40,21 @@ describe('ArgumentParser', () => {
     });
 
     describe('parsing errors occur during completion', () => {
+      it('ignore a missing parameter', () => {
+        const options = {
+          single: {
+            type: 'single',
+            names: ['-s'],
+            choices: ['abc'],
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        const flags: ParsingFlags = { optionPrefix: '-' };
+        expect(parser.parse('cmd -s -s', { ...flags, compIndex: 9 })).rejects.toThrow(/^-s$/);
+        expect(parser.parse('cmd -s -s ', { ...flags, compIndex: 10 })).rejects.toThrow(/^abc$/);
+        expect(parser.parse('cmd -s -s=', { ...flags, compIndex: 10 })).rejects.toThrow(/^abc$/);
+      });
+
       it('ignore an unknown cluster letter', () => {
         const options = {
           flag: {

@@ -329,10 +329,10 @@ export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
 /**
  * A callback for custom parsing or custom completion.
  * @template P The parameter data type
- * @template I The type of argument sequence information
+ * @template I The type of argument information
  * @template R The return type
  * @param param The option parameter(s)
- * @param info The argument sequence information
+ * @param info The argument information
  * @returns The return value
  */
 export type CustomCallback<P, I, R> = (param: P, info: I) => R;
@@ -342,13 +342,13 @@ export type CustomCallback<P, I, R> = (param: P, info: I) => R;
  * @template P The parameter data type
  * @template R The result data type
  */
-export type ParseCallback<P, R = unknown> = CustomCallback<P, WithValues & WithComp, R>;
+export type ParseCallback<P, R = unknown> = CustomCallback<P, WithArgInfo & WithCompInfo, R>;
 
 /**
- * A callback for custom completion.
- * @template I The type of argument sequence information
+ * A callback for custom word completion.
+ * @template I The type of argument information
  */
-export type CompleteCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
+export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
 
 /**
  * A known value used in default values and parameter examples.
@@ -358,7 +358,7 @@ export type KnownValue = boolean | string | number | object;
 /**
  * Information about the current argument sequence in the parsing loop.
  */
-export type WithValues = {
+export type WithArgInfo = {
   /**
    * The previously parsed values.
    * It is an opaque type that should be cast to {@link OptionValues}`<typeof your_options>`.
@@ -380,7 +380,7 @@ export type WithValues = {
 /**
  * Information about word completion, to be used by custom parse callbacks.
  */
-export type WithComp = {
+export type WithCompInfo = {
   /**
    * Whether word completion is in effect.
    */
@@ -390,7 +390,7 @@ export type WithComp = {
 /**
  * Information about word completion, to be used by custom complete callbacks.
  */
-export type WithPrev = {
+export type WithPrevInfo = {
   /**
    * The parameters preceding the word being completed, if any.
    */
@@ -519,7 +519,7 @@ export type WithEnv = {
 
 /**
  * Defines attributes for options that may have parameters.
- * @template I The type of argument sequence information
+ * @template I The type of argument information for completion callbacks
  */
 export type WithParam<I> = {
   /**
@@ -548,7 +548,7 @@ export type WithParam<I> = {
   /**
    * A custom callback for word completion.
    */
-  readonly complete?: CompleteCallback<I>;
+  readonly complete?: CompletionCallback<I>;
 };
 
 /**
@@ -616,8 +616,14 @@ export type WithCommand = {
   /**
    * The prefix of cluster arguments.
    * If set, then eligible arguments that have this prefix will be considered a cluster.
+   * Has precedence over {@link WithCommand.optionPrefix}.
    */
   readonly clusterPrefix?: string;
+  /**
+   * The prefix of option names.
+   * If set, then arguments that have this prefix will always be considered an option name.
+   */
+  readonly optionPrefix?: string;
 };
 
 /**
@@ -714,7 +720,7 @@ export type SingleOption = WithType<'single'> &
   WithBasic &
   WithValue<string> &
   WithEnv &
-  WithParam<WithValues> &
+  WithParam<WithArgInfo> &
   WithSelection &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName) &
@@ -728,7 +734,7 @@ export type ArrayOption = WithType<'array'> &
   WithBasic &
   WithValue<string> &
   WithEnv &
-  WithParam<WithValues & WithPrev> &
+  WithParam<WithArgInfo & WithPrevInfo> &
   WithSelection &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName) &
@@ -742,7 +748,7 @@ export type FunctionOption = WithType<'function'> &
   WithBasic &
   WithValue<Array<string>> &
   WithEnv &
-  WithParam<WithValues & WithPrev> &
+  WithParam<WithArgInfo & WithPrevInfo> &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName);
 
@@ -789,7 +795,7 @@ export type OpaqueOption = WithType<OptionType> &
   WithMessage &
   WithValue<string & Array<string> & OpaqueOptionValues> &
   WithEnv &
-  WithParam<WithValues & WithPrev> &
+  WithParam<WithArgInfo & WithPrevInfo> &
   WithSelection &
   WithArray;
 

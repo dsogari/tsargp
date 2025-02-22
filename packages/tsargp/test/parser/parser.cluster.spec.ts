@@ -26,6 +26,23 @@ describe('ArgumentParser', () => {
       expect(parser.parse(['f'], flags)).resolves.toEqual({ flag: true });
     });
 
+    describe('an option prefix is specified', () => {
+      const flags: ParsingFlags = { clusterPrefix: '-', optionPrefix: '-' };
+
+      it('throw an error on unrecognized option name', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+            cluster: 's',
+          },
+        } as const satisfies Options;
+        const parser = new ArgumentParser(options);
+        expect(parser.parse(['-f'], flags)).resolves.toEqual({ flag: true });
+        expect(parser.parse(['-x'], flags)).rejects.toThrow(`Unknown option -x.`);
+      });
+    });
+
     describe('a cluster argument is specified', () => {
       it('parse a flag option', () => {
         const options = {
