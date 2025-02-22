@@ -36,7 +36,7 @@ By convention, we keep command-line options separate from the main script which 
 You should define the options and export them by default as a single object. Below is an example. In the documentation, you will learn about the different option types and their attributes.
 
 ```ts
-import { type Options, ... } from 'tsargp';
+import { type Options /*...*/ } from 'tsargp';
 
 export default {
   // definitions go here...
@@ -49,11 +49,11 @@ There are multiple ways to parse the command-line arguments. Below is an example
 
 ```ts
 #!/usr/bin/env node
-import { ArgumentParser } from 'tsargp';
+import { parse } from 'tsargp';
 import options from './cli.options.js';
 
 try {
-  const values = await new ArgumentParser(options).parse();
+  const values = await parse(options);
   // do something with the options' values...
 } catch (err) {
   if (err instanceof Error) {
@@ -70,12 +70,12 @@ try {
 You should check the validity of command-line options during development, to avoid headaches for end users. The documentation also shows how to check for inconsistencies in option naming, among other things.
 
 ```ts
-import { OptionValidator } from 'tsargp';
+import { validate } from 'tsargp';
 import options from './cli.options.js';
 
 describe('cli', () => {
   it('should have valid options', async () => {
-    const { warning } = await new OptionValidator(options).validate();
+    const { warning } = await validate(options);
     expect(warning).toBeUndefined(); // or check warnings that are important to your application
   });
 });

@@ -124,6 +124,14 @@ export const regex = {
    * A regular expression to match invalid option names.
    */
   name: /[\s=]/,
+  /**
+   * A regular expression to match path separators.
+   */
+  pathSep: /[\\/]/,
+  /**
+   * A regular expression to match option-parameter separators.
+   */
+  valSep: /=(.*)/,
 } as const satisfies Record<string, RegExp>;
 
 /**

@@ -58,6 +58,26 @@ describe('OptionRegistry', () => {
   });
 });
 
+describe('getOptionNames', () => {
+  // TODO
+});
+
+describe('isMessage', () => {
+  // TODO
+});
+
+describe('isNiladic', () => {
+  // TODO
+});
+
+describe('getParamCount', () => {
+  // TODO
+});
+
+describe('visitRequirements', () => {
+  // TODO
+});
+
 describe('valuesFor', () => {
   it('return an empty object', () => {
     expect(valuesFor({})).toEqual({});

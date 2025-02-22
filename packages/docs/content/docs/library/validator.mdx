@@ -6,19 +6,13 @@ import { Callout } from 'nextra/components';
 
 # Validator
 
-The `OptionValidator` component handles validation of option definitions. It can be instantiated with a set of option definitions and provides a single method to perform the validation.
-
-<Callout type="info">
-
-Messages produced by the validator can be customized via [message configuration].
-
-</Callout>
+The `validator` module handles validation of option definitions. It contains a function that accept a set of option definitions and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
 
 ## Option validation
 
 We use the term _validation_ to refer to the "sanity check" of option definitions. It is meant for use during development, whereas in production it would impose an unnecessary performance penalty on your application. In this sense, validations behave like assertions: they assert that your program will work as expected when delivered to end-users.
 
-To validate a set of option definitions, you must call the `validate` method on the validator instance. This method accepts a `ValidationFlags` argument with the following optional properties:
+To validate a set of option definitions, you must call the `validate` function. This function accepts a `ValidationFlags` argument with the following optional properties:
 
 - `noNamingIssues` - whether the validation procedure should skip detection of naming inconsistencies
 - `noRecurse` - whether the validation procedure should skip recursion into [nested options]
@@ -29,7 +23,7 @@ It returns a promise that resolves to a `ValidationResult` object with the follo
 
 <Callout type="info">
 
-This method is _asynchronous_, so you must use `await{:ts}` in order to resolve the returned promise.
+This function is _asynchronous_, so you must use `await{:ts}` in order to resolve the returned promise.
 
 </Callout>
 

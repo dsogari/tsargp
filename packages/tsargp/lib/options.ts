@@ -629,18 +629,12 @@ export type WithCommand = {
 /**
  * Defines attributes for the flag option.
  */
-export type WithFlag = {
-  /**
-   * The number of remaining arguments to skip.
-   * You may change this value inside the callback. The parser does not alter this value.
-   */
-  skipCount?: number;
-};
+export type WithFlag = unknown; // disappears in type intersection
 
 /**
  * Defines attributes common to single-valued options.
  */
-export type WithSingle = unknown;
+export type WithSingle = unknown; // disappears in type intersection
 
 /**
  * Defines attributes common to array-valued options.
@@ -671,11 +665,17 @@ export type WithFunction = {
   /**
    * The function's parameter count.
    *
-   * If negative, then the option accepts unlimited parameters.
-   * If non-negative, then the option expects exactly this number of parameters.
+   * If unspecified or negative, the option accepts unlimited parameters.
+   * If zero, the option accepts unknown number of parameters (use with {@link WithFunction.skipCount}).
+   * If positive, then the option expects exactly this number of parameters.
    * If a range, then the option expects between `min` and `max` parameters.
    */
   readonly paramCount?: number | Range;
+  /**
+   * The number of remaining arguments to skip.
+   * You may change this value inside the callback. The parser does not alter this value.
+   */
+  skipCount?: number;
 };
 
 /**
@@ -707,10 +707,9 @@ export type CommandOption = WithType<'command'> &
 export type FlagOption = WithType<'flag'> &
   WithFlag &
   WithBasic &
-  WithValue<Array<string>> &
+  WithValue<''> &
   WithEnv &
-  (WithDefault | WithRequired) &
-  (WithExample | WithParamName);
+  (WithDefault | WithRequired);
 
 /**
  * An option that has a single value and requires a single parameter.
@@ -793,7 +792,7 @@ export type OpaqueOption = WithType<OptionType> &
   WithFlag &
   WithFunction &
   WithMessage &
-  WithValue<string & Array<string> & OpaqueOptionValues> &
+  WithValue<'' & string & Array<string> & OpaqueOptionValues> &
   WithEnv &
   WithParam<WithArgInfo & WithPrevInfo> &
   WithSelection &
@@ -926,6 +925,24 @@ type DefaultDataType<T extends Option> = T extends { required: true }
     : undefined;
 
 /**
+ * The data type of an option that may have nested options.
+ * @template T The option definition type
+ */
+type OptionsDataType<T extends Option> = T extends { options: infer O }
+  ? O extends Options
+    ? OptionValues<O>
+    : O extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? R extends Promise<infer V>
+        ? V extends Options
+          ? OptionValues<V>
+          : never
+        : R extends Options
+          ? OptionValues<R>
+          : never
+      : never
+  : Record<never, never>;
+
+/**
  * The data type of an option that may have a parse callback.
  * @template T The option definition type
  * @template C The choices data type
@@ -937,11 +954,11 @@ type ParseDataType<T extends Option, C, F> = T extends { parse: (...args: any) =
     ? ElementDataType<T, D | C>
     : ElementDataType<T, R | C>
   : T extends WithType<'command'>
-    ? OpaqueOptionValues
+    ? OptionsDataType<T>
     : T extends WithType<'flag'>
       ? true
       : T extends WithType<'function'>
-        ? null
+        ? ElementDataType<T, Array<F>>
         : ElementDataType<T, F>;
 
 /**
@@ -1076,12 +1093,12 @@ export function getParamCount(option: OpaqueOption): Range {
   if (isNiladic(option.type)) {
     return [0, 0];
   }
-  const count = option.paramCount;
+  const { paramCount } = option;
   return option.type === 'function'
-    ? typeof count === 'object'
-      ? count
-      : count
-        ? [count, count]
+    ? typeof paramCount === 'object'
+      ? paramCount
+      : paramCount !== undefined && paramCount >= 0
+        ? [paramCount, paramCount]
         : [0, Infinity]
     : option.type === 'array'
       ? [0, Infinity]
@@ -1133,8 +1150,8 @@ export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
 
 /**
  * Create a parse callback for numbers that should be within a range.
- * @param min The inferior limit
- * @param max The superior limit
+ * @param min The inferior limit (should be strictly less than max)
+ * @param max The superior limit (should be strictly greater than min)
  * @param phrase The custom error phrase
  * @returns The parse callback
  */

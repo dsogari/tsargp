@@ -20,7 +20,13 @@ import type { Args } from './utils.js';
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
 import { HelpFormatter } from './formatter.js';
-import { getParamCount, isMessage, visitRequirements, OptionRegistry } from './options.js';
+import {
+  getParamCount,
+  isMessage,
+  visitRequirements,
+  OptionRegistry,
+  valuesFor,
+} from './options.js';
 import { fmt, WarnMessage, AnsiMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
   getCmdLine,
@@ -36,6 +42,7 @@ import {
   getArgs,
   readFile,
   areEqual,
+  regex,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -214,59 +221,51 @@ const enum ArgType {
 // Classes
 //--------------------------------------------------------------------------------------------------
 /**
- * Implements parsing of command-line arguments into option values.
- * @template T The type of the option definitions
+ * Parses command-line arguments into option values.
+ * @param options The option definitions
+ * @param cmdLine The command line or arguments
+ * @param flags The parsing flags
+ * @returns The options' values
  */
-export class ArgumentParser<T extends Options = Options> {
-  private readonly registry: OptionRegistry;
+export async function parse<T extends Options>(
+  options: T,
+  cmdLine?: CommandLine,
+  flags?: ParsingFlags,
+): Promise<OptionValues<T>> {
+  const values = valuesFor(options);
+  await parseInto(options, values, cmdLine, flags);
+  return values;
+}
 
-  /**
-   * Creates an argument parser based on a set of option definitions.
-   * @param options The option definitions
-   */
-  constructor(options: T) {
-    this.registry = new OptionRegistry(options);
-  }
-
-  /**
-   * Parses command-line arguments into option values.
-   * @param cmdLine The command line or arguments
-   * @param flags The parsing flags
-   * @returns The options' values
-   */
-  async parse(cmdLine?: CommandLine, flags?: ParsingFlags): Promise<OptionValues<T>> {
-    const values = {} as OptionValues<T>;
-    await this.parseInto(values, cmdLine, flags);
-    return values;
-  }
-
-  /**
-   * Parses command-line arguments into option values.
-   * @param values The options' values to parse into
-   * @param cmdLine The command line or arguments
-   * @param flags The parsing flags
-   * @returns The parsing result
-   */
-  async parseInto(
-    values: OptionValues<T>,
-    cmdLine = getCmdLine(),
-    flags?: ParsingFlags,
-  ): Promise<ParsingResult> {
-    const compIndex = flags?.compIndex ?? getCompIndex();
-    const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
-    const context = createContext(
-      this.registry,
-      values,
-      args,
-      !!compIndex,
-      flags?.progName,
-      flags?.clusterPrefix,
-      flags?.optionPrefix,
-    );
-    await parseArgs(context);
-    const warning = context[5];
-    return warning.length ? { warning } : {};
-  }
+/**
+ * Parses command-line arguments into option values.
+ * @param options The option definitions
+ * @param values The options' values to parse into
+ * @param cmdLine The command line or arguments
+ * @param flags The parsing flags
+ * @returns The parsing result
+ */
+export async function parseInto<T extends Options>(
+  options: T,
+  values: OptionValues<T>,
+  cmdLine = getCmdLine(),
+  flags?: ParsingFlags,
+): Promise<ParsingResult> {
+  const registry = new OptionRegistry(options);
+  const compIndex = flags?.compIndex ?? getCompIndex();
+  const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
+  const context = createContext(
+    registry,
+    values,
+    args,
+    !!compIndex,
+    flags?.progName,
+    flags?.clusterPrefix,
+    flags?.optionPrefix,
+  );
+  await parseArgs(context);
+  const warning = context[5];
+  return warning.length ? { warning } : {};
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -288,7 +287,7 @@ function createContext(
   values: OpaqueOptionValues,
   args: Array<string>,
   completing: boolean,
-  progName = process?.argv[1]?.split(/[\\/]/).at(-1),
+  progName = process?.argv[1]?.split(regex.pathSep).at(-1),
   clusterPrefix?: string,
   optionPrefix?: string,
 ): ParseContext {
@@ -378,10 +377,7 @@ async function parseArgs(context: ParseContext) {
     if (isNew || !info) {
       if (prev[1]) {
         // process the previous sequence
-        const breakLoop = await tryParseParams(context, prev[1], i, args.slice(k, j));
-        if (breakLoop) {
-          return; // skip requirements
-        }
+        await tryParseParams(context, prev[1], i, args.slice(k, j)); // should return false
       }
       if (!info) {
         break; // finished
@@ -422,11 +418,10 @@ async function parseArgs(context: ParseContext) {
       }
       if (!max) {
         // comp === false
-        const [breakLoop, skipCount] = await handleNiladic(context, info, j, args.slice(j + 1));
-        if (breakLoop) {
+        if (await handleNiladic(context, info, j, args.slice(j + 1))) {
           return; // skip requirements
         }
-        prev[0] += skipCount;
+        prev[0] += Math.max(0, option.skipCount ?? 0);
         prev[1] = undefined;
         continue; // fetch more
       }
@@ -436,10 +431,7 @@ async function parseArgs(context: ParseContext) {
           k = hasValue ? j : j + 1;
         } else {
           // option name with inline parameter
-          const breakLoop = await tryParseParams(context, info, j, [value]);
-          if (breakLoop) {
-            return; // skip requirements
-          }
+          await tryParseParams(context, info, j, [value]); // should return false
           prev[1] = undefined;
         }
         continue; // fetch more
@@ -477,7 +469,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
     const comp = completing && i + 1 === args.length;
-    const [name, value] = arg.split(/=(.*)/, 2);
+    const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
     const isForcedName = prefix && name.startsWith(prefix);
     const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
@@ -621,11 +613,10 @@ async function tryParseParams(
 ): Promise<boolean> {
   try {
     // use await here instead of return, in order to catch errors
-    const [breakLoop] = await parseParams(context, info, index, params);
-    return breakLoop;
+    return await parseParams(context, info, index, params);
   } catch (err) {
     // do not propagate parsing errors during completion
-    if (!context[4]) {
+    if (!context[4] || err instanceof TextMessage) {
       throw err;
     }
     return false;
@@ -638,47 +629,50 @@ async function tryParseParams(
  * @param info The option information
  * @param index The starting index of the argument sequence
  * @param params The option parameter(s)
- * @returns [True if the parsing loop should be broken, number of additional processed arguments]
+ * @returns True if the parsing loop should be broken
  */
 async function parseParams(
   context: ParseContext,
   info: OptionInfo,
   index: number,
   params: Array<string>,
-): Promise<[boolean, number]> {
+): Promise<boolean> {
   /** @ignore */
   function error(kind: ErrorItem, flags: FormattingFlags, ...args: Args) {
     return ErrorMessage.create(kind, flags, getSymbol(name), ...args);
   }
   /** @ignore */
-  function parse(param: string): unknown {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function parse1(param: any, def = param): unknown {
     // do not destructure `parse`, because the callback might need to use `this`
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return rec && param in rec ? rec[param] : (option.parse?.(param as any, seq) ?? param);
+    return option.parse ? option.parse(param, seq) : def;
+  }
+  /** @ignore */
+  function parse2(param: string): unknown {
+    return rec && param in rec ? rec[param] : parse1(param);
   }
   const [, values, , , comp] = context;
   const [key, option, name] = info;
   const breakLoop = !!option.break && !comp;
-  // if index is NaN, we are in the middle of requirements checking
+  const seq = { values, index, name, comp };
+  const { type, regex, separator, append, choices } = option;
+
+  // if index is NaN, we are in the middle of requirements checking (data comes from environment)
   if (index >= 0 && breakLoop) {
     await checkRequired(context);
   }
-  const seq = { values, index, name, comp };
-  if (option.type === 'flag') {
-    // do not destructure `parse`, because the callback might need to use `this`
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    values[key] = option.parse ? await option.parse(params as any, seq) : true;
-    const skipCount = Math.max(0, option.skipCount ?? 0);
-    return [breakLoop, skipCount];
+  if (type === 'flag') {
+    values[key] = await parse1('', true);
+    return breakLoop;
   }
-  const separator = option.separator;
   if (separator) {
+    // only available for array options
     params = params.flatMap((param) => param.split(separator));
   }
   if (index >= 0) {
     const [min, max] = getParamCount(option);
-    if (params.length < min || params.length > max) {
-      // this may happen when the sequence comes from either the positional marker or environment data
+    if (max > 0 && (params.length < min || params.length > max)) {
+      // this may happen when the sequence comes from the positional marker
       // comp === false, otherwise completion would have taken place by now
       const [alt, val] =
         min === max ? [0, min] : !min ? [2, max] : isFinite(max) ? [3, [min, max]] : [1, min];
@@ -687,20 +681,16 @@ async function parseParams(
       throw error(ErrorItem.mismatchedParamCount, flags, val);
     }
   }
-  if (option.type === 'function') {
-    // do not destructure `parse`, because the callback might need to use `this`
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    values[key] = option.parse ? await option.parse(params as any, seq) : null;
-    return [breakLoop, 0];
+  if (type === 'function') {
+    values[key] = await parse1(params);
+    return breakLoop;
   }
-  const regex = option.regex;
   if (regex) {
     const mismatch = params.find((param) => !param.match(regex));
     if (mismatch) {
       throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
     }
   }
-  const choices = option.choices;
   const [keys, rec] = isReadonlyArray<string>(choices)
     ? [choices]
     : [option.parse ? undefined : choices && getKeys(choices), choices];
@@ -710,17 +700,17 @@ async function parseParams(
       throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, keys);
     }
   }
-  if (option.type === 'single') {
-    values[key] = await parse(params[0]);
+  if (type === 'single') {
+    values[key] = await parse2(params[0]);
   } else {
-    const prev = (option.append && (values[key] as Array<unknown>)) ?? [];
+    const prev = (append && (values[key] as Array<unknown>)) ?? [];
     // do not use `map` with `Promise.all`, because the promises need to be chained
     for (const param of params) {
-      prev.push(await parse(param));
+      prev.push(await parse2(param));
     }
     values[key] = normalizeArray(option, name, prev);
   }
-  return [breakLoop, 0];
+  return breakLoop;
 }
 
 /**
@@ -760,14 +750,14 @@ function normalizeArray<T>(option: OpaqueOption, name: string, value: Array<T>):
  * @param info The option information
  * @param index The starting index of the argument sequence
  * @param rest The remaining command-line arguments
- * @returns [True if the parsing loop should be broken, number of additional processed arguments]
+ * @returns True if the parsing loop should be broken
  */
 async function handleNiladic(
   context: ParseContext,
   info: OptionInfo,
   index: number,
   rest: Array<string>,
-): Promise<[boolean, number]> {
+): Promise<boolean> {
   const comp = context[4];
   switch (info[1].type) {
     case 'help':
@@ -776,25 +766,17 @@ async function handleNiladic(
       if (!comp) {
         await handleMessage(context, info, rest);
       }
-      return [!comp, 0];
+      return !comp;
     case 'command':
+      // skip requirements checking during completion
       if (!comp) {
         await checkRequired(context);
       }
       await handleCommand(context, info, index, rest);
-      return [true, 0];
+      return true;
     default:
-      // flag option: reuse non-niladic handling
-      try {
-        // use await here instead of return, in order to catch errors
-        return await parseParams(context, info, index, rest);
-      } catch (err) {
-        // do not propagate parsing errors during completion
-        if (!comp || err instanceof TextMessage) {
-          throw err;
-        }
-        return [false, 0];
-      }
+      // flag or function option: reuse non-niladic handling
+      return await tryParseParams(context, info, index, rest);
   }
 }
 

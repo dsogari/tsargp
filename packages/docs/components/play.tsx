@@ -4,7 +4,15 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import { ArgumentParser, OptionValidator, AnsiMessage, ErrorMessage, TextMessage } from 'tsargp';
+import {
+  type Options,
+  parse,
+  parseInto,
+  validate,
+  AnsiMessage,
+  ErrorMessage,
+  TextMessage,
+} from 'tsargp';
 import { config, style, req, fg8, bg8, ul8, ul } from 'tsargp';
 import * as enums from 'tsargp/enums';
 import { type Props, Command } from './classes/command';
@@ -13,7 +21,9 @@ import { type Props, Command } from './classes/command';
 // Constants
 //--------------------------------------------------------------------------------------------------
 const tsargp = {
-  ArgumentParser,
+  parse,
+  parseInto,
+  validate,
   ErrorMessage,
   TextMessage,
   config,
@@ -48,7 +58,7 @@ type PlayProps = Props & {
 // Classes
 //--------------------------------------------------------------------------------------------------
 class PlayCommand extends Command<PlayProps> {
-  private parser: ArgumentParser | undefined;
+  private options: Options | undefined;
 
   constructor(props: PlayProps) {
     super(props, 'init', 'play');
@@ -57,12 +67,11 @@ class PlayCommand extends Command<PlayProps> {
   private async init() {
     const source = this.props.callbacks.getSource();
     const options = Function('tsargp', `'use strict';${source}`)(tsargp);
-    const validator = new OptionValidator(options);
-    const { warning } = await validator.validate();
+    const { warning } = await validate(options);
     if (warning) {
       this.println(warning.wrap(this.state.width));
     }
-    this.parser = new ArgumentParser(options);
+    this.options = options;
   }
 
   override async run(line: string, compIndex?: number) {
@@ -71,10 +80,10 @@ class PlayCommand extends Command<PlayProps> {
         if (!compIndex) {
           await this.init();
         }
-      } else if (this.parser) {
+      } else if (this.options) {
         const values = {};
         const flags = { progName: 'play', compIndex };
-        const { warning } = await this.parser.parseInto(values, line, flags);
+        const { warning } = await parseInto(this.options, values, line, flags);
         if (warning) {
           this.println(warning.wrap(this.state.width));
         }

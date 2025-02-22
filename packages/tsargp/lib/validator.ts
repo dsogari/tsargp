@@ -66,7 +66,7 @@ export type ValidationResult = {
 /**
  * The validation context.
  */
-type ValidateContext = [
+type ValidationContext = [
   /**
    * The option definitions.
    */
@@ -93,38 +93,30 @@ type ValidateContext = [
 // Classes
 //--------------------------------------------------------------------------------------------------
 /**
- * Implements validation of option definitions.
+ * Validates all options' definitions, including command options recursively.
+ * @param options The option definitions
+ * @param flags The validation flags
+ * @returns The validation result
  */
-export class OptionValidator {
-  /**
-   * Creates an option registry based on a set of option definitions.
-   * @param options The option definitions
-   */
-  constructor(readonly options: OpaqueOptions) {}
-
-  /**
-   * Validates all options' definitions, including command options recursively.
-   * @param flags The validation flags
-   * @returns The validation result
-   */
-  async validate(flags: ValidationFlags = {}): Promise<ValidationResult> {
-    const warning = new WarnMessage();
-    const visited = new Set<OpaqueOptions>();
-    const context: ValidateContext = [this.options, flags, warning, visited, ''];
-    await validate(context);
-    return warning.length ? { warning } : {};
-  }
+export async function validate(
+  options: OpaqueOptions,
+  flags: ValidationFlags = {},
+): Promise<ValidationResult> {
+  const warning = new WarnMessage();
+  const visited = new Set<OpaqueOptions>();
+  await validateOptions([options, flags, warning, visited, '']);
+  return warning.length ? { warning } : {};
 }
 
 //--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
- * Validates all options' definitions, including command options recursively.
+ * Validates all option definitions, including nested options recursively.
  * @param context The validation context
  * @throws On duplicate positional option
  */
-async function validate(context: ValidateContext) {
+async function validateOptions(context: ValidationContext) {
   const [options, flags, , , prefix] = context;
   const names = new Map<string, string>();
   const letters = new Map<string, string>();
@@ -159,7 +151,7 @@ async function validate(context: ValidateContext) {
  * @throws On invalid option name, duplicate name, invalid cluster letter or duplicate letter
  */
 function validateNames(
-  context: ValidateContext,
+  context: ValidationContext,
   nameToKey: Map<string, string>,
   letterToKey: Map<string, string>,
   key: string,
@@ -193,7 +185,7 @@ function validateNames(
  * @param context The validation context
  * @param nameToKey The map of option names to keys
  */
-function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, string>) {
+function detectNamingIssues(context: ValidationContext, nameToKey: Map<string, string>) {
   const formatFlags = { open: '', close: '' };
   const [options, , warning, , prefix] = context;
   const prefix2 = getSymbol(prefix.slice(0, -1)); // remove trailing dot
@@ -241,7 +233,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
  * @param option The option definition
  * @throws On invalid constraint definition, invalid default/example value or invalid requirements
  */
-async function validateOption(context: ValidateContext, key: string, option: OpaqueOption) {
+async function validateOption(context: ValidationContext, key: string, option: OpaqueOption) {
   const [, flags, warning, visited, prefix] = context;
   const prefixedKey = getSymbol(prefix + key);
   validateConstraints(context, prefixedKey, option);
@@ -259,7 +251,7 @@ async function validateOption(context: ValidateContext, key: string, option: Opa
       if (!visited.has(resolved)) {
         visited.add(resolved);
         // create a new context, to avoid changing the behavior of functions up in the call stack
-        await validate([resolved, flags, warning, visited, prefix + key + '.']);
+        await validateOptions([resolved, flags, warning, visited, prefix + key + '.']);
       }
     }
   }
@@ -271,7 +263,7 @@ async function validateOption(context: ValidateContext, key: string, option: Opa
  * @param key The option key
  * @param requires The option requirements
  */
-function validateRequirements(context: ValidateContext, key: string, requires: Requires) {
+function validateRequirements(context: ValidationContext, key: string, requires: Requires) {
   /** @ignore */
   function validateItem(item: Requires) {
     validateRequirements(context, key, item);
@@ -297,7 +289,7 @@ function validateRequirements(context: ValidateContext, key: string, requires: R
  * or incompatible required value
  */
 function validateRequirement(
-  context: ValidateContext,
+  context: ValidationContext,
   key: string,
   requiredKey: string,
   requiredValue?: RequiresVal[string],
@@ -327,9 +319,9 @@ function validateRequirement(
  * @param option The option definition
  * @throws On duplicate choice value, invalid parameter count or invalid inline constraint
  */
-function validateConstraints(context: ValidateContext, key: symbol, option: OpaqueOption) {
+function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
   const [, , warning] = context;
-  const choices = option.choices;
+  const { choices } = option;
   if (Array.isArray(choices)) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
@@ -339,15 +331,8 @@ function validateConstraints(context: ValidateContext, key: symbol, option: Opaq
       }
     }
   }
-  const paramCount = option.paramCount;
-  let valid;
-  if (typeof paramCount === 'object') {
-    const [min, max] = paramCount;
-    valid = min >= 0 && min < max;
-  } else {
-    valid = paramCount === undefined || paramCount > 1;
-  }
-  if (!valid) {
+  const { paramCount } = option;
+  if (typeof paramCount === 'object' && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);

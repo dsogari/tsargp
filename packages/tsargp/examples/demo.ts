@@ -1,11 +1,10 @@
 #!/usr/bin/env node
-import { ArgumentParser, valuesFor } from 'tsargp';
+import { parseInto, valuesFor } from 'tsargp';
 import options from './demo.options.js';
 
 try {
-  const parser = new ArgumentParser(options);
   const values = valuesFor(options);
-  const { warning } = await parser.parseInto(values, undefined, { clusterPrefix: '-' });
+  const { warning } = await parseInto(options, values, undefined, { clusterPrefix: '-' });
   if (warning) {
     console.error(`${warning}`);
   }
