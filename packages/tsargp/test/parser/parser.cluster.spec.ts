@@ -111,6 +111,22 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['c'], flags)).resolves.toEqual({ command: {} });
     });
+
+    it('parse two options', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          cluster: 'f',
+        },
+        single: {
+          type: 'single',
+          names: ['-s'],
+          cluster: 's',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['s', '1', 'f'], flags)).resolves.toEqual({ single: '1', flag: true });
+    });
   });
 
   describe('a variadic option is specified in middle of a cluster argument', () => {

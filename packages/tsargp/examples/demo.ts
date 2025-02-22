@@ -4,7 +4,10 @@ import options from './demo.options.js';
 
 try {
   const values = valuesFor(options);
-  const { warning } = await parseInto(options, values, undefined, { clusterPrefix: '-' });
+  const { warning } = await parseInto(options, values, undefined, {
+    clusterPrefix: '-',
+    optionPrefix: '-',
+  });
   if (warning) {
     console.error(`${warning}`);
   }

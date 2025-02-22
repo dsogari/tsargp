@@ -51,7 +51,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 ### Positional arguments
 
 1. check if positional arguments can be specified before named ones (e.g., `two -sr 0`)
-2. check if all arguments after `--` are recognized as positional (e.g., `-- -f`)
+2. check if all arguments after the positional marker are recognized as positional (e.g., `-- -f`)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -87,7 +87,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 ### Cluster arguments
 
-- check if cluster arguments can be specified (e.g., `-sn 1 -1`)
+- check if cluster arguments can be specified (e.g., `-sn 1 -1` or `-s 1 -n -1`)
 - check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`, same as above)
 
 <details>
@@ -109,7 +109,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 1. check if a string parameter matches the required regex (e.g., try `-sr A` and see that it fails)
 2. check if a string parameter matches one of the choices (e.g., try `-sc A` and see that it fails)
-3. check if a number parameter matches the required range (e.g., try `-nr -3` and see that it fails)
+3. check if a number parameter matches the required range (e.g., try `-n-3` and see that it fails)
 4. check if a number parameter matches one of the choices (e.g., try `-nc=0` and see that it fails)
 
 <details>
@@ -371,7 +371,9 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check if the `-f` option can be specified without a parameter (also, see the warning produced)
 2. check if the `-f` option can be negated with `--no-flag` (also, see the warning produced)
-3. check if the `-b` option can be specified in combination with required options (e.g. `-b yes -sc one`)
+3. check if the `-b` option cannot be specified without required options (e.g. `-b yes`)
+4. check if the `-b` option can be specified with required options (e.g. `-b yes -sc one`)
+5. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -410,12 +412,34 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
+[0m[31m[39mOption [35m-b[0m[39m requires [39m([35m-sc[0m[39m or [35m-sa[0m[39m == [[32m'a'[0m[39m, [32m'b'[0m[39m]).
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (4)</summary>
+{/* cSpell:disable */}
+
+```ansi
 {
   [90m...[0m
   [0mboolean[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
   [0mstrChoice[2m:[0m [0m[32m[0m[32m"one"[0m[0m[0m[2m,[0m
   [90m...[0m
 }
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (5)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mUnknown option [35m-s[0m[39m. Similar names are: [35m-sr[0m[39m, [35m-sc[0m[39m, [35m-sa[0m[39m.
 ```
 
 {/* cSpell:enable */}

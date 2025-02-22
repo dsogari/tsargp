@@ -331,8 +331,9 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const name = option.names?.find((name): name is string => name !== null);
     return [key, option, name];
   }
+  let i = index;
   const [registry, , args, , completing, , , prefix] = context;
-  const cluster = args[index++];
+  const cluster = args[i++];
   if (prefix === undefined || !cluster.startsWith(prefix) || cluster.length === prefix.length) {
     return false;
   }
@@ -344,10 +345,10 @@ function parseCluster(context: ParseContext, index: number): boolean {
   }
   if (unknownIndex > 0) {
     const name = getOpt(rest[0])[2];
-    args.splice(index, 0, (name !== undefined ? name + '=' : '') + rest.slice(1));
+    args.splice(index, 1, (name !== undefined ? name + '=' : '') + rest.slice(1));
     return true; // treat it as an inline parameter
   }
-  for (let j = 0; j < rest.length && (!completing || index < args.length); ++j) {
+  for (let j = 0; j < rest.length && (!completing || i < args.length); ++j) {
     const letter = rest[j];
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
@@ -355,10 +356,11 @@ function parseCluster(context: ParseContext, index: number): boolean {
       throw ErrorMessage.create(ErrorItem.invalidClusterOption, {}, letter);
     }
     if (name !== undefined) {
-      args.splice(index++, 0, name);
+      args.splice(i++, 0, name);
     }
-    index += min;
+    i += min;
   }
+  args.splice(index, 1);
   return true;
 }
 
@@ -524,6 +526,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         if (comp) {
           throw new TextMessage();
         }
+        i--; // the cluster argument was removed
         break; // the cluster argument was canonicalized
     }
   }
