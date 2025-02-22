@@ -244,7 +244,154 @@ describe('HelpFormatter', () => {
         expect(formatter.sections(sections5).wrap()).toEqual('');
       });
 
-      it('group options according to an adjacency list', () => {
+      describe('when requirements are specified', () => {
+        it('group options according to an adjacency list', () => {
+          const options = {
+            flag1: {
+              type: 'flag',
+              names: ['-f1'],
+            },
+            flag2: {
+              type: 'flag',
+              names: ['-f2'],
+            },
+            flag3: {
+              type: 'flag',
+              names: ['-f3'],
+            },
+          } as const satisfies Options;
+          const case0: HelpSections = [{ type: 'usage' }];
+          const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
+          const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
+          const case3: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } },
+          ];
+          const case4: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } },
+          ];
+          const case5: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } },
+          ];
+          const case6: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } },
+          ];
+          const case7: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } },
+          ];
+          const case8: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } },
+          ];
+          const case9: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } },
+          ];
+          const case10: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+          ];
+          const case11: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag2: 'flag3' },
+            },
+          ];
+          const case12: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag3: 'flag1' },
+            },
+          ];
+          const formatter = new HelpFormatter(options);
+          expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] [-f3]');
+          expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] [-f3]');
+          expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] [-f3]');
+          expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] [-f3]');
+          expect(formatter.sections(case4).wrap()).toEqual('[[[-f1] -f2] -f3]');
+          expect(formatter.sections(case5).wrap()).toEqual('[-f1 [-f2 [-f3]]]');
+          expect(formatter.sections(case6).wrap()).toEqual('[[-f1] -f2 [-f3]]');
+          expect(formatter.sections(case7).wrap()).toEqual('[[-f1] -f3 [-f2]]');
+          expect(formatter.sections(case8).wrap()).toEqual('[[-f1 [-f3]] -f2]');
+          expect(formatter.sections(case9).wrap()).toEqual('[-f1] [-f2 -f3]');
+          expect(formatter.sections(case10).wrap()).toEqual('[-f1 -f2 -f3]');
+          expect(formatter.sections(case11).wrap()).toEqual('[-f3 [-f2 [-f1]]]');
+          expect(formatter.sections(case12).wrap()).toEqual('[[[-f3] -f1] -f2]');
+        });
+
+        it('group options according to an adjacency list, with an always required option', () => {
+          const options = {
+            flag1: {
+              type: 'flag',
+              names: ['-f1'],
+            },
+            flag2: {
+              type: 'flag',
+              names: ['-f2'],
+            },
+            flag3: {
+              type: 'flag',
+              names: ['-f3'],
+              required: true,
+            },
+          } as const satisfies Options;
+          const case0: HelpSections = [{ type: 'usage' }];
+          const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
+          const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
+          const case3: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } },
+          ];
+          const case4: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } },
+          ];
+          const case5: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } },
+          ];
+          const case6: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } },
+          ];
+          const case7: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } },
+          ];
+          const case8: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } },
+          ];
+          const case9: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } },
+          ];
+          const case10: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+          ];
+          const case11: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag2: 'flag3' },
+            },
+          ];
+          const case12: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag3: 'flag1' },
+            },
+          ];
+          const formatter = new HelpFormatter(options);
+          expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] -f3');
+          expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] -f3');
+          expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] -f3');
+          expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] -f3');
+          expect(formatter.sections(case4).wrap()).toEqual('[[-f1] -f2] -f3');
+          expect(formatter.sections(case5).wrap()).toEqual('-f1 -f2 -f3');
+          expect(formatter.sections(case6).wrap()).toEqual('[-f1] -f2 -f3');
+          expect(formatter.sections(case7).wrap()).toEqual('[-f1] -f3 [-f2]');
+          expect(formatter.sections(case8).wrap()).toEqual('-f1 -f3 -f2');
+          expect(formatter.sections(case9).wrap()).toEqual('[-f1] -f2 -f3');
+          expect(formatter.sections(case10).wrap()).toEqual('-f1 -f2 -f3');
+          expect(formatter.sections(case11).wrap()).toEqual('-f3 [-f2 [-f1]]');
+          expect(formatter.sections(case12).wrap()).toEqual('-f3 -f1 -f2');
+        });
+      });
+
+      it('group options according to an adjacency list, with a filtered option', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -300,11 +447,11 @@ describe('HelpFormatter', () => {
             requires: { flag1: 'flag2', flag3: 'flag1' },
           },
         ];
-        const formatter = new HelpFormatter(options);
-        expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] [-f3]');
-        expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] [-f3]');
-        expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] [-f3]');
-        expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] [-f3]');
+        const formatter = new HelpFormatter(options, undefined, ['-f1', '-f2']);
+        expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2]');
+        expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2]');
+        expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]]');
+        expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2]');
         expect(formatter.sections(case4).wrap()).toEqual('[[[-f1] -f2] -f3]');
         expect(formatter.sections(case5).wrap()).toEqual('[-f1 [-f2 [-f3]]]');
         expect(formatter.sections(case6).wrap()).toEqual('[[-f1] -f2 [-f3]]');
@@ -312,81 +459,8 @@ describe('HelpFormatter', () => {
         expect(formatter.sections(case8).wrap()).toEqual('[[-f1 [-f3]] -f2]');
         expect(formatter.sections(case9).wrap()).toEqual('[-f1] [-f2 -f3]');
         expect(formatter.sections(case10).wrap()).toEqual('[-f1 -f2 -f3]');
-        expect(formatter.sections(case11).wrap()).toEqual('[-f3 [-f2 [-f1]]]');
-        expect(formatter.sections(case12).wrap()).toEqual('[[[-f3] -f1] -f2]');
-      });
-
-      it('group options according to an adjacency list, with an always required option', () => {
-        const options = {
-          flag1: {
-            type: 'flag',
-            names: ['-f1'],
-          },
-          flag2: {
-            type: 'flag',
-            names: ['-f2'],
-          },
-          flag3: {
-            type: 'flag',
-            names: ['-f3'],
-            required: true,
-          },
-        } as const satisfies Options;
-        const case0: HelpSections = [{ type: 'usage' }];
-        const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
-        const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
-        const case3: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } },
-        ];
-        const case4: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } },
-        ];
-        const case5: HelpSections = [
-          { type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } },
-        ];
-        const case6: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } },
-        ];
-        const case7: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } },
-        ];
-        const case8: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } },
-        ];
-        const case9: HelpSections = [
-          { type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } },
-        ];
-        const case10: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
-        ];
-        const case11: HelpSections = [
-          {
-            type: 'usage',
-            filter: ['flag3', 'flag2', 'flag1'],
-            requires: { flag1: 'flag2', flag2: 'flag3' },
-          },
-        ];
-        const case12: HelpSections = [
-          {
-            type: 'usage',
-            filter: ['flag3', 'flag2', 'flag1'],
-            requires: { flag1: 'flag2', flag3: 'flag1' },
-          },
-        ];
-        const formatter = new HelpFormatter(options);
-        expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] -f3');
-        expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] -f3');
-        expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] -f3');
-        expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] -f3');
-        expect(formatter.sections(case4).wrap()).toEqual('[[-f1] -f2] -f3');
-        expect(formatter.sections(case5).wrap()).toEqual('-f1 -f2 -f3');
-        expect(formatter.sections(case6).wrap()).toEqual('[-f1] -f2 -f3');
-        expect(formatter.sections(case7).wrap()).toEqual('[-f1] -f3 [-f2]');
-        expect(formatter.sections(case8).wrap()).toEqual('-f1 -f3 -f2');
-        expect(formatter.sections(case9).wrap()).toEqual('[-f1] -f2 -f3');
-        expect(formatter.sections(case10).wrap()).toEqual('-f1 -f2 -f3');
-        expect(formatter.sections(case11).wrap()).toEqual('-f3 [-f2 [-f1]]');
-        expect(formatter.sections(case12).wrap()).toEqual('-f3 -f1 -f2');
+        expect(formatter.sections(case11).wrap()).toEqual('[[-f2 [-f1]] -f3]');
+        expect(formatter.sections(case12).wrap()).toEqual('[-f2 [-f1 [-f3]]]');
       });
     });
 
