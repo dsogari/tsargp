@@ -120,7 +120,7 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, [])).resolves.not.toHaveProperty('help');
       expect(parse(options, ['-h'], { progName: 'prog' })).rejects.toThrow(
-        `Usage:\n\n  prog [-f] [-h]\n\nArgs:\n\n  -f\n\nOptions:\n\n  -h    the help option`,
+        `Usage:\n\n  prog [-f] [-h]\n\nArgs:\n\n  -f\n\nOptions:\n\n  -h    the help option\n`,
       );
     });
 
@@ -139,7 +139,7 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, [])).resolves.not.toHaveProperty('help');
       expect(parse(options, ['-h'], { progName: 'prog' })).rejects.toThrow(
-        `usage heading\n\nprog [-h]\n\ngroup  heading\n\n-h`,
+        `usage heading\n\nprog [-h]\n\ngroup  heading\n\n-h\n`,
       );
     });
 
@@ -165,7 +165,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(
-        `  -f, --flag\n  -s, --single  <param>`,
+        `  -f, --flag\n  -s, --single  <param>\n`,
       );
     });
 
@@ -175,6 +175,7 @@ describe('parse', () => {
           type: 'help',
           names: ['-h'],
           sections: [{ type: 'groups' }],
+          layout: { descr: { hidden: true } },
           useCommand: true,
           useFilter: true,
         },
@@ -201,15 +202,55 @@ describe('parse', () => {
               type: 'help',
               names: ['-h'],
               sections: [{ type: 'groups' }],
+              layout: { descr: { hidden: true } },
               useFilter: true,
             },
           }),
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-h'])).rejects.toThrow('  -h');
-      expect(parse(options, ['-h', 'cmd1'])).rejects.toThrow('  cmd1  ...');
-      expect(parse(options, ['-h', 'cmd2'])).rejects.toThrow('  -f\n  -h');
-      expect(parse(options, ['-h', 'cmd2', '-f'])).rejects.toThrow('  -f');
+      expect(parse(options, ['-h', '-h'])).rejects.toThrow('  -h\n');
+      expect(parse(options, ['-h', 'cmd1'])).rejects.toThrow('  cmd1  ...\n');
+      expect(parse(options, ['-h', 'cmd2'])).rejects.toThrow('  -f\n  -h\n');
+      expect(parse(options, ['-h', 'cmd2', '-f'])).rejects.toThrow('  -f\n');
+    });
+
+    it('throw the help message of a subcommand with a dynamic module with no help option', () => {
+      const options = {
+        help: {
+          type: 'help',
+          names: ['-h'],
+          sections: [{ type: 'groups' }],
+          layout: { descr: { hidden: true } },
+          useCommand: true,
+          useFilter: true,
+        },
+        command: {
+          type: 'command',
+          names: ['-c'],
+          options: '../data/no-help',
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      expect(parse(options, ['-h', '-c'], flags)).rejects.toThrow('  -c  ...\n');
+    });
+
+    it('throw the help message of a subcommand with a dynamic module with a help option', () => {
+      const options = {
+        help: {
+          type: 'help',
+          names: ['-h'],
+          sections: [{ type: 'groups' }],
+          useCommand: true,
+          useFilter: true,
+        },
+        command: {
+          type: 'command',
+          names: ['-c'],
+          options: '../data/with-help',
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      expect(parse(options, ['-h', '-c'], flags)).rejects.toThrow('  -f\n');
     });
   });
 
@@ -239,26 +280,63 @@ describe('parse', () => {
       expect(parse(options, ['-v'])).rejects.toThrow(/^0.1.0$/);
     });
 
-    it('throw a version message with a resolve function', () => {
+    it('throw a version message from a version file', () => {
       const options = {
         version: {
           type: 'version',
           names: ['-v'],
-          resolve: (str) => `file://${import.meta.dirname}/../data/${str}`,
+          version: '../data/with-version.json',
         },
       } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(/^0.1.0$/);
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      expect(parse(options, ['-v'], flags)).rejects.toThrow(/^0.0.0$/);
     });
 
-    it('throw an error when a package.json file cannot be found', () => {
+    it('throw a version message from a file that does not contain a version field', () => {
       const options = {
         version: {
           type: 'version',
           names: ['-v'],
-          resolve: () => `file:///abc`,
+          version: '../data/no-version.json',
         },
       } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(`Could not find a "package.json" file.`);
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      expect(parse(options, ['-v'], flags)).rejects.toThrow(/^undefined$/);
+    });
+
+    it('throw an error when a module resolution function is not specified', () => {
+      const options = {
+        version: {
+          type: 'version',
+          names: ['-v'],
+          version: '../data/with-version.json',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-v'])).rejects.toThrow('Missing module resolution function.');
+    });
+
+    it('throw an error when a version file is not valid JSON', () => {
+      const options = {
+        version: {
+          type: 'version',
+          names: ['-v'],
+          version: '../data/invalid.json',
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      expect(parse(options, ['-v'], flags)).rejects.toThrow(`JSON Parse error`);
+    });
+
+    it('throw an error when a version file cannot be found', () => {
+      const options = {
+        version: {
+          type: 'version',
+          names: ['-v'],
+          version: '../data/absent.json',
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      expect(parse(options, ['-v'], flags)).rejects.toThrow(`Could not find a version JSON file.`);
     });
   });
 
@@ -511,6 +589,19 @@ describe('parse', () => {
       expect(parse(options, ['-c', '-f2'])).resolves.toEqual({
         command: { flag1: true, flag2: true },
       });
+    });
+
+    it('handle nested option definitions loaded dynamically from a module', () => {
+      const options = {
+        command: {
+          type: 'command',
+          names: ['-c'],
+          options: '../data/with-help',
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
+      // @ts-expect-error because types are not available at this point
+      expect(parse(options, ['-c', '-f'], flags)).resolves.toEqual({ command: { flag: true } });
     });
   });
 

@@ -277,9 +277,9 @@ const helpFunctions = {
  * Implements formatting of help messages for a set of option definitions.
  */
 export class HelpFormatter {
-  protected readonly context: HelpContext;
-  protected readonly keys: ReadonlyArray<string>;
-  protected readonly groups: EntriesByGroup;
+  private readonly context: HelpContext;
+  private readonly keys: ReadonlyArray<string>;
+  private readonly groups: EntriesByGroup;
 
   /**
    * Creates a help message formatter.

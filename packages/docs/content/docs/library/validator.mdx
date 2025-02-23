@@ -12,12 +12,7 @@ The `validator` module handles validation of option definitions. It contains a f
 
 We use the term _validation_ to refer to the "sanity check" of option definitions. It is meant for use during development, whereas in production it would impose an unnecessary performance penalty on your application. In this sense, validations behave like assertions: they assert that your program will work as expected when delivered to end-users.
 
-To validate a set of option definitions, you must call the `validate` function. This function accepts a `ValidationFlags` argument with the following optional properties:
-
-- `noNamingIssues` - whether the validation procedure should skip detection of naming inconsistencies
-- `noRecurse` - whether the validation procedure should skip recursion into [nested options]
-
-It returns a promise that resolves to a `ValidationResult` object with the following properties:
+To validate a set of option definitions, you must call the `validate` function. It returns a promise that resolves to a `ValidationResult` object with the following property:
 
 - `warning` - A compilation of warning messages that represent non-impeditive issues encountered in the option definitions. You may want to inspect it to see if they are important to your application.
 
@@ -26,6 +21,26 @@ It returns a promise that resolves to a `ValidationResult` object with the follo
 This function is _asynchronous_, so you must use `await{:ts}` in order to resolve the returned promise.
 
 </Callout>
+
+## Validation flags
+
+To configure the validation procedure, you can provide a `ValidationFlags` object as the first parameter to the `validate` function. It contains the following optional properties:
+
+### Skip naming issues
+
+The `noNamingIssues` property indicates whether the validation procedure should skip detection of naming inconsistencies
+
+### Skip recurse
+
+The `noRecurse` property indicates whether the validation procedure should skip recursion into [nested options].
+
+### Resolve callback
+
+The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
+
+```ts
+import.meta.resolve.bind(import.meta);
+```
 
 ## Validation rules
 
@@ -72,7 +87,7 @@ The following restrictions will produce a warning that is returned by the valida
 {/* options references */}
 
 [subcommand]: options#command-option
-[nested options]: options#nested-options--callback
+[nested options]: options#nested-options
 [example value]: options#example-value
 [option names]: options#option-names
 [positional marker]: options#positional--marker
@@ -108,3 +123,5 @@ The following restrictions will produce a warning that is returned by the valida
 
 [B-SAT]: https://www.wikiwand.com/en/Boolean_satisfiability_problem
 [NP-complete]: https://www.wikiwand.com/en/NP-complete
+[JavaScript modules]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
+[import.meta.resolve]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve

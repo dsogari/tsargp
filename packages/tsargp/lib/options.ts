@@ -5,6 +5,7 @@ import type { HelpItem } from './enums.js';
 import type { AnsiMessage, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
+import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
 import { getEntries, getSymbol } from './utils.js';
 
@@ -351,6 +352,11 @@ export type ParseCallback<P, R = unknown> = CustomCallback<P, WithArgInfo & With
 export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
 
 /**
+ * The type of nested options for a subcommand.
+ */
+export type NestedOptions = string | Options | (() => Promissory<Options>);
+
+/**
  * A known value used in default values and parameter examples.
  */
 export type KnownValue = boolean | string | number | object;
@@ -593,15 +599,10 @@ export type WithHelp = {
  */
 export type WithVersion = {
   /**
-   * The semantic version (e.g., 0.1.0) or version information. It is not validated, but cannot be
-   * empty. It may contain inline styles.
+   * The version information as plain text (e.g., 0.1.0).
+   * It is not validated, but should not be empty or contain inline styles.
    */
   readonly version?: string;
-  /**
-   * A resolution function scoped to the module where a `package.json` file should be searched. Use
-   * `import.meta.resolve`. Use in non-browser environments only.
-   */
-  readonly resolve?: ResolveCallback;
 };
 
 /**
@@ -609,10 +610,10 @@ export type WithVersion = {
  */
 export type WithCommand = {
   /**
-   * The command's options.
-   * It can be a callback that returns the options (for use with recursive commands).
+   * The subcommand's options.
+   * It can also be a module path or a callback that returns the options.
    */
-  readonly options?: Options | (() => Promissory<Options>);
+  readonly options?: NestedOptions;
   /**
    * The prefix of cluster arguments.
    * If set, then eligible arguments that have this prefix will be considered a cluster.
@@ -686,11 +687,7 @@ export type HelpOption = WithType<'help'> & WithBasic & WithHelp & WithMessage;
 /**
  * An option that throws a version information.
  */
-export type VersionOption = WithType<'version'> &
-  WithVersion &
-  WithBasic &
-  WithMessage &
-  (WithVerInfo | WithResolve);
+export type VersionOption = WithType<'version'> & WithVersion & WithBasic & WithMessage;
 
 /**
  * An option that executes a command.
@@ -888,26 +885,6 @@ type WithRegex = {
    * @deprecated mutually exclusive with {@link WithParam.regex}
    */
   readonly choices?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with a `version` information.
- */
-type WithVerInfo = {
-  /**
-   * @deprecated mutually exclusive with {@link WithVersion.version}
-   */
-  readonly resolve?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with a `resolve` callback.
- */
-type WithResolve = {
-  /**
-   * @deprecated mutually exclusive with {@link WithVersion.resolve}
-   */
-  readonly version?: never;
 };
 
 /**
@@ -1166,4 +1143,24 @@ export function numberInRange(range: Range, phrase: string): ParseCallback<strin
     }
     throw ErrorMessage.createCustom(phrase, {}, getSymbol(info.name), param, range);
   };
+}
+
+/**
+ * Resolves the nested options of a subcommand.
+ * @param option The command option
+ * @param resolve The resolve callback
+ * @returns The nested options
+ */
+export async function getNestedOptions(
+  option: OpaqueOption,
+  resolve?: ResolveCallback,
+): Promise<OpaqueOptions> {
+  if (typeof option.options === 'string') {
+    if (!resolve) {
+      throw ErrorMessage.create(ErrorItem.missingResolveCallback);
+    }
+    return (await import(resolve(option.options))).default;
+  }
+  // do not destructure `options`, because the callback might need to use `this`
+  return typeof option.options === 'function' ? await option.options() : (option.options ?? {});
 }

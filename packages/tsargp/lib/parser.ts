@@ -26,6 +26,7 @@ import {
   visitRequirements,
   OptionRegistry,
   valuesFor,
+  getNestedOptions,
 } from './options.js';
 import { fmt, WarnMessage, AnsiMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
@@ -64,9 +65,9 @@ const defaultSections: HelpSections = [
  */
 export type ParsingFlags = {
   /**
-   * The program name.
+   * The program name. It may be changed by the parser.
    */
-  readonly progName?: string;
+  progName?: string;
   /**
    * The completion index of a raw command line.
    */
@@ -82,6 +83,11 @@ export type ParsingFlags = {
    * If set, then arguments that have this prefix will always be considered an option name.
    */
   readonly optionPrefix?: string;
+  /**
+   * A resolution function for JavaScript modules.
+   * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
+   */
+  readonly resolve?: ResolveCallback;
 };
 
 /**
@@ -131,17 +137,9 @@ type ParseContext = [
    */
   warning: WarnMessage,
   /**
-   * The current program name.
+   * The parsing flags.
    */
-  progName?: string,
-  /**
-   * The current cluster prefix.
-   */
-  clusterPrefix?: string,
-  /**
-   * The current option prefix.
-   */
-  optionPrefix?: string,
+  flags: ParsingFlags,
 ];
 
 /**
@@ -249,20 +247,12 @@ export async function parseInto<T extends Options>(
   options: T,
   values: OptionValues<T>,
   cmdLine = getCmdLine(),
-  flags?: ParsingFlags,
+  flags: ParsingFlags = {},
 ): Promise<ParsingResult> {
   const registry = new OptionRegistry(options);
   const compIndex = flags?.compIndex ?? getCompIndex();
   const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
-  const context = createContext(
-    registry,
-    values,
-    args,
-    !!compIndex,
-    flags?.progName,
-    flags?.clusterPrefix,
-    flags?.optionPrefix,
-  );
+  const context = createContext(registry, values, args, !!compIndex, flags);
   await parseArgs(context);
   const warning = context[5];
   return warning.length ? { warning } : {};
@@ -277,9 +267,7 @@ export async function parseInto<T extends Options>(
  * @param values The option values
  * @param args The command-line arguments
  * @param completing True if performing completion
- * @param progName The program name, if any
- * @param clusterPrefix The cluster prefix, if any
- * @param optionPrefix The option prefix, if any
+ * @param flags The parsing flags
  * @returns The parsing context
  */
 function createContext(
@@ -287,12 +275,13 @@ function createContext(
   values: OpaqueOptionValues,
   args: Array<string>,
   completing: boolean,
-  progName = process?.argv[1]?.split(regex.pathSep).at(-1),
-  clusterPrefix?: string,
-  optionPrefix?: string,
+  flags: ParsingFlags,
 ): ParseContext {
-  if (!completing && progName && process?.title) {
-    process.title += ' ' + progName;
+  if (!flags.progName) {
+    flags.progName = process?.argv[1]?.split(regex.pathSep).at(-1);
+  }
+  if (!completing && flags.progName && process?.title) {
+    process.title += ' ' + flags.progName;
   }
   for (const [key, option] of getEntries(registry.options)) {
     if (!(key in values) && (!isMessage(option.type) || option.saveMessage)) {
@@ -301,17 +290,7 @@ function createContext(
   }
   const specifiedKeys = new Set<string>();
   const warning = new WarnMessage();
-  return [
-    registry,
-    values,
-    args,
-    specifiedKeys,
-    completing,
-    warning,
-    progName,
-    clusterPrefix,
-    optionPrefix,
-  ];
+  return [registry, values, args, specifiedKeys, completing, warning, flags];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -332,7 +311,8 @@ function parseCluster(context: ParseContext, index: number): boolean {
     return [key, option, name];
   }
   let i = index;
-  const [registry, , args, , completing, , , prefix] = context;
+  const [registry, , args, , completing, , flags] = context;
+  const prefix = flags.clusterPrefix;
   const cluster = args[i++];
   if (prefix === undefined || !cluster.startsWith(prefix) || cluster.length === prefix.length) {
     return false;
@@ -463,10 +443,11 @@ async function parseArgs(context: ParseContext) {
  * @returns The new parse entry
  */
 function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
-  const [registry, , args, , completing, , , , prefix] = context;
+  const [registry, , args, , completing, , flags] = context;
   const [prevIndex, prevInfo, prevVal, , prevMarker] = prev;
   const { names, positional, options } = registry;
   const inc = prevVal !== undefined ? 1 : 0;
+  const prefix = flags.optionPrefix;
   const [min, max] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
@@ -797,33 +778,21 @@ async function handleCommand(
   index: number,
   rest: Array<string>,
 ) {
-  const [, values, , , comp, warning] = context;
+  const [, values, , , comp, warning, flags] = context;
   const [key, option, name] = info;
-  // do not destructure `options`, because the callback might need to use `this`
-  const cmdOptions =
-    typeof option.options === 'function' ? await option.options() : (option.options ?? {});
+  const { clusterPrefix, optionPrefix } = option;
+  const cmdOptions = await getNestedOptions(option, flags.resolve);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const cmdContext = createContext(
-    cmdRegistry,
-    param,
-    rest,
-    comp,
-    name,
-    option.clusterPrefix,
-    option.optionPrefix,
-  );
+  const cmdFlags: ParsingFlags = { progName: name, clusterPrefix, optionPrefix };
+  const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
+  const seq = { values, index, name, comp };
   // comp === false, otherwise completion will have taken place by now
-  if (option.parse) {
-    const seq = { values, index, name, comp };
-    // do not destructure `parse`, because the callback might need to use `this`
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    values[key] = await option.parse(param as any, seq as any);
-  } else {
-    values[key] = param;
-  }
+  // do not destructure `parse`, because the callback might need to use `this`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  values[key] = option.parse ? await option.parse(param as any, seq) : param;
 }
 
 /**
@@ -839,9 +808,7 @@ async function handleMessage(context: ParseContext, info: OptionInfo, rest: Arra
   const message =
     option.type === 'help'
       ? await handleHelp(context, option, rest)
-      : option.resolve
-        ? await handleVersion(option.resolve)
-        : (option.version ?? '');
+      : await handleVersion(context, option);
   if (option.saveMessage) {
     values[key] = message;
   } else {
@@ -862,47 +829,54 @@ async function handleHelp(
   rest: Array<string>,
 ): Promise<AnsiMessage> {
   let registry = context[0];
+  const { progName, resolve } = context[6];
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
       (opt) => opt.type === 'command' && !!opt.names?.includes(rest[0]),
     );
-    if (cmdOpt) {
-      if (cmdOpt.options) {
-        // do not destructure `options`, because the callback might need to use `this`
-        const resolved =
-          typeof cmdOpt.options === 'function' ? await cmdOpt.options() : cmdOpt.options;
-        const helpOpt = findValue(resolved, (opt) => opt.type === 'help');
-        if (helpOpt) {
-          registry = new OptionRegistry(resolved);
-          option = helpOpt;
-          rest.splice(0, 1); // only if the command has help; otherwise, it may be an option filter
-        }
+    if (cmdOpt?.options) {
+      const cmdOptions = await getNestedOptions(cmdOpt, resolve);
+      const helpOpt = findValue(cmdOptions, (opt) => opt.type === 'help');
+      if (helpOpt) {
+        registry = new OptionRegistry(cmdOptions);
+        option = helpOpt;
+        rest.splice(0, 1); // only if the command has help; otherwise, it may be an option filter
       }
     }
   }
   const filter = option.useFilter && rest;
   const helpFormatter = new HelpFormatter(registry.options, option.layout, filter);
-  return helpFormatter.sections(option.sections ?? defaultSections, context[6]);
+  return helpFormatter.sections(option.sections ?? defaultSections, progName);
 }
 
 /**
- * Resolve a package version using a module-resolve function.
- * @param resolve The resolve callback
+ * Resolve the version string of a version option.
+ * @param context The parsing context
+ * @param option The version option
  * @returns The version string
  */
-async function handleVersion(resolve: ResolveCallback): Promise<string> {
+async function handleVersion(context: ParseContext, option: OpaqueOption): Promise<string> {
+  const { version } = option;
+  if (!version?.endsWith('.json')) {
+    return version ?? '';
+  }
+  const { resolve } = context[6];
+  if (!resolve) {
+    throw ErrorMessage.create(ErrorItem.missingResolveCallback);
+  }
   for (
-    let path = './package.json', resolved = resolve(path), lastResolved;
+    let path = version, resolved = '', lastResolved;
     resolved !== lastResolved;
-    lastResolved = resolved, path = '../' + path, resolved = resolve(path)
+    lastResolved = resolved, path = '../' + path
   ) {
+    resolved = resolve(path);
     const data = await readFile(new URL(resolved));
     if (data !== undefined) {
       return JSON.parse(data).version;
     }
   }
-  throw ErrorMessage.create(ErrorItem.missingPackageJson);
+  throw ErrorMessage.create(ErrorItem.versionFileNotFound);
 }
 
 //--------------------------------------------------------------------------------------------------

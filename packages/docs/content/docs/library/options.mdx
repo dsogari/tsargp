@@ -238,9 +238,9 @@ You can also specify an expression, in which case it is evaluated as follows:
 
 ##### Requirement callback
 
-You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` indicating whether the requirements were satisfied.
+You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
 
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
@@ -251,12 +251,6 @@ It may be configured with a custom `toString` method to render it in error and h
 ```ts
 options.flag.requires.toString = () => 'this and that ...';
 ```
-
-<Callout type="default">
-
-The callback may perform any kind of verification, such as inspect parsed values, check the environment, etc.
-
-</Callout>
 
 #### Conditional requirements
 
@@ -304,11 +298,9 @@ Mutually exclusive with [always required].
 
 ##### Default callback
 
-If the default value is not known beforehand (e.g., if it depends on the values of other options), you can use a callback to inspect parsed values and determine the default value based on those.
+In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing parsed values (which you can inspect to determine the default), and should return the option value.
 
-It receives a single parameter which contains the parsed values, and should return the option value.
-
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
@@ -326,25 +318,17 @@ options.flag.default.toString = () => 'this and that ...';
 
 The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s).
 
-It may receive different kinds of data depending on the option type, but its second parameter always contains the current [argument information], including the option's name, argument index and any previously parsed values.
+It receives different kinds of data depending on the option type, but its second parameter always contains the current [argument information], including the option's name, argument index and any previously parsed values.
 
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
 </Callout>
 
-<Callout type="default">
-
 If you need to throw an error from the callback, we recommend using the [error message]'s `createCustom` static method. It receives a custom phrase that is formatted similarly to [error phrases].
 
-</Callout>
-
-<Callout type="default">
-
-You may also check whether an option has been specified before it by comparing its value with `undefined{:ts}`. This works because default values are only set at the _end_ of the parsing loop.
-
-</Callout>
+Within the callback, you can check whether an option has been specified before by comparing its value with `undefined{:ts}`. This works because default values are only set at the _end_ of the parsing loop.
 
 ### Environment attributes
 
@@ -443,9 +427,9 @@ The `complete` attribute, if present, specifies a custom callback for [word comp
 - `param` - the word being completed
 - `info` - the current [argument information]
 
-It should return the list of completion words. If an error is thrown, it is ignored, and the default completion message will be thrown instead.
+It should return the list of completion words. If an error is thrown, it will be ignored and the default completion message will be thrown instead.
 
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
@@ -499,9 +483,9 @@ The `layout` attribute specifies a custom [help layout].
 
 #### Help sections
 
-The `sections` attribute specifies [help sections] to be rendered in the help message. By default, two sections are included:
+The `sections` attribute specifies [help sections] to be rendered in the help message. By default, two are included:
 
-- [usage section] - with `'Usage:'{:ts}` as heading, indented by 2 spaces
+- [usage section] - with `'Usage:'{:ts}` as heading, and content indented by 2 spaces
 - [groups section] - with `'Options:'{:ts}` as the default group heading
 
 #### Enable subcommand
@@ -526,7 +510,7 @@ The two features above may be used together. For example, the invocation `cli --
 
 ### Version option
 
-The **version** option throws a version message. In addition to the sets of [basic] and [message] attributes, it has the attributes described below.
+The **version** option throws a version message. In addition to the sets of [basic] and [message] attributes, it has a single attribute described below.
 
 <Callout type="info">
 
@@ -536,23 +520,12 @@ When [word completion] is in effect, this option will be _skipped_.
 
 #### Version info
 
-The `version` attribute specifies a semantic version or version information.
+The `version` attribute specifies the version information. It accepts either of the following values:
 
-<Callout type="info">
+- unstructured text data (e.g., a semantic version)
+- the path of a JSON file from where a `version` field will be extracted
 
-Mutually exclusive with [resolve callback].
-
-</Callout>
-
-#### Resolve callback
-
-The `resolve` attribute specifies a resolution function scoped to the [module] where a `package.json` file will be searched for and read to extract its `version` field. It is meant for use in non-browser environments and should generally have [`import.meta.resolve`] as value.
-
-<Callout type="info">
-
-Mutually exclusive with [version info].
-
-</Callout>
+In the latter case, the path should generally be `'./package.json'{:ts}` and should be used in conjunction with the [resolve callback] parsing flag.
 
 ### Command option
 
@@ -570,11 +543,19 @@ When [word completion] is in effect, the parse callback will _not_ be called, si
 
 In addition to the sets of [basic] and [value] attributes, it has the attributes described below.
 
-#### Nested options | callback
+#### Nested options
 
-The `options` attribute, if present, specifies a set of option definitions for the subcommand.
+The `options` attribute, if present, specifies a set of option definitions for the subcommand. Its value can be either of:
 
-Alternatively, a callback may be used to provide the definitions, which allows the implementation of [recursive commands]. An asynchronous callback may be used to dynamically load definitions from another module, in which case you can return the result of the `import{:ts}` directive.
+- an object containing the option definitions
+- a callback that returns the option definitions (allowing the implementation of [recursive commands])
+- the path of a JavaScript module exporting the option definitions (to be used with the [resolve callback] parsing flag)
+
+<Callout type="default">
+
+The callback can be asynchronous.
+
+</Callout>
 
 <Callout type="warning">
 
@@ -584,7 +565,7 @@ All incoming arguments will be parsed using the option definitions from this att
 
 #### Cluster prefix
 
-The `clusterPrefix` property indicates whether the command accepts cluster arguments. It has the same semantics as its homonymous property in the [parsing flags], and must be used in conjunction with the [cluster letters] of the nested options.
+The `clusterPrefix` attribute, if present, indicates whether the command accepts cluster arguments. It has the same semantics as its homonymous property in the [parsing flags], and must be used in conjunction with the [cluster letters] of the nested options.
 
 <Callout type="info">
 
@@ -594,7 +575,7 @@ This attribute has precedence over [option prefix].
 
 #### Option prefix
 
-The `optionPrefix` property specifies the prefix for option names within the command. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
+The `optionPrefix` attribute, if present, specifies the prefix for option names within the command. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
 
 ### Flag option
 
@@ -814,7 +795,6 @@ When [word completion] is in effect, the last argument will be the word to compl
 {/* version attributes */}
 
 [version info]: #version-info
-[resolve callback]: #resolve-callback
 
 {/* command attributes */}
 
@@ -849,6 +829,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 [`parseInto`]: parser#using-an-existing-object
 [`clusterPrefix`]: parser#cluster-prefix
 [inline parameters]: parser#inline-parameters
+[resolve callback]: parser#resolve-callback
 
 {/* formatter references */}
 
@@ -884,7 +865,5 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 [Set]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
 [Math]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math
-[`import.meta.resolve`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve
 [short-option]: https://www.linuxtopia.org/online_books/linux_tool_guides/tar_user_guide/Short-Options.html
 [discriminant]: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
-[module]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules

@@ -1,11 +1,24 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { OpaqueOption, Requires, RequiresVal, OpaqueOptions } from './options.js';
+import type {
+  OpaqueOption,
+  Requires,
+  RequiresVal,
+  OpaqueOptions,
+  NestedOptions,
+  ResolveCallback,
+} from './options.js';
 import type { NamingRules } from './utils.js';
 
 import { ErrorItem } from './enums.js';
-import { getParamCount, getOptionNames, visitRequirements, isMessage } from './options.js';
+import {
+  getParamCount,
+  getOptionNames,
+  visitRequirements,
+  isMessage,
+  getNestedOptions,
+} from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
 
@@ -48,6 +61,11 @@ export type ValidationFlags = {
    * Whether the validation procedure should skip recursion into nested options.
    */
   readonly noRecurse?: boolean;
+  /**
+   * A resolution function for JavaScript modules.
+   * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
+   */
+  readonly resolve?: ResolveCallback;
 };
 
 /**
@@ -82,7 +100,7 @@ type ValidationContext = [
   /**
    * An internal flag to avoid cyclic recurrence.
    */
-  visited: Set<OpaqueOptions>,
+  visited: Set<NestedOptions>,
   /**
    * The current option prefix.
    */
@@ -103,7 +121,7 @@ export async function validate(
   flags: ValidationFlags = {},
 ): Promise<ValidationResult> {
   const warning = new WarnMessage();
-  const visited = new Set<OpaqueOptions>();
+  const visited = new Set<NestedOptions>();
   await validateOptions([options, flags, warning, visited, '']);
   return warning.length ? { warning } : {};
 }
@@ -237,23 +255,18 @@ async function validateOption(context: ValidationContext, key: string, option: O
   const [, flags, warning, visited, prefix] = context;
   const prefixedKey = getSymbol(prefix + key);
   validateConstraints(context, prefixedKey, option);
-  if (option.requires) {
-    validateRequirements(context, key, option.requires);
+  const { requires, requiredIf, type, options } = option;
+  if (requires) {
+    validateRequirements(context, key, requires);
   }
-  if (option.requiredIf) {
-    validateRequirements(context, key, option.requiredIf);
+  if (requiredIf) {
+    validateRequirements(context, key, requiredIf);
   }
-  if (!flags.noRecurse && option.type === 'command') {
-    if (option.options) {
-      // do not destructure `options`, because the callback might need to use `this`
-      const resolved =
-        typeof option.options === 'function' ? await option.options() : option.options;
-      if (!visited.has(resolved)) {
-        visited.add(resolved);
-        // create a new context, to avoid changing the behavior of functions up in the call stack
-        await validateOptions([resolved, flags, warning, visited, prefix + key + '.']);
-      }
-    }
+  if (!flags.noRecurse && type === 'command' && options && !visited.has(options)) {
+    visited.add(options);
+    const cmdOptions = await getNestedOptions(option, flags.resolve);
+    // create a new context, to avoid changing the behavior of functions up in the call stack
+    await validateOptions([cmdOptions, flags, warning, visited, prefix + key + '.']);
   }
 }
 

@@ -27,9 +27,9 @@ export const enum ErrorItem {
    */
   mismatchedParamCount,
   /**
-   * Error raised when it fails to find a "package.json" file when resolving the package version.
+   * Error raised when the parser fails to find a version file when handling the version option.
    */
-  missingPackageJson,
+  versionFileNotFound,
   /**
    * Error raised when an option is specified with an inline parameter, despite it being disallowed.
    */
@@ -127,6 +127,11 @@ export const enum ErrorItem {
    * Raised when an option is specified without its expected parameter.
    */
   missingParameter,
+  /**
+   * Raised when a JavaScript module needs to be loaded, but a module resolution function was not
+   * provided (either in the parsing flags or the validation flags).
+   */
+  missingResolveCallback,
 }
 
 /**

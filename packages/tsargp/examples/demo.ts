@@ -7,6 +7,7 @@ try {
   const { warning } = await parseInto(options, values, undefined, {
     clusterPrefix: '-',
     optionPrefix: '-',
+    resolve: import.meta.resolve.bind(import.meta),
   });
   if (warning) {
     console.error(`${warning}`);
