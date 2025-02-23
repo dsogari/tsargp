@@ -75,11 +75,15 @@ This column is rendered according to the following rules:
   - do this
     - if it contains a [parameter name], render this name
     - else, render the word `'param'{:ts}`
-  - and enclose the result in angle brackets `'<>'{:ts}` (if not already)
+  - and,
+    - if the result does not contain angle brackets
+    - then, enclose the result in angle brackets `'<>'{:ts}`
   - and,
     - if it requires [inline parameters], prepend an equals sign `'='{:ts}`
     - else, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
-  - and, if it can be specified without parameters, enclose the result in square brackets `'[]'{:ts}`
+  - and,
+    - if it can be specified without parameters and is not a nameless positional argument
+    - then, enclose the result in square brackets `'[]'{:ts}`
 
 The result might be something like `=<param>` or `[<param>...]`.
 
