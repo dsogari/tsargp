@@ -61,11 +61,6 @@ describe('parse', () => {
           default: [1, 'a'],
         },
       } as const satisfies Options;
-      try {
-        await parse(options, ['-c']);
-      } catch (err) {
-        console.log(err);
-      }
       expect(parse(options, ['-c'])).resolves.toEqual({ command: undefined, flag: [1, 'a'] });
     });
   });

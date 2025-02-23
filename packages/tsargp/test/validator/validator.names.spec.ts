@@ -90,13 +90,14 @@ describe('validate', () => {
         },
       },
     } as const satisfies Options;
-    const { warning } = await validate(options);
-    expect(warning).toHaveLength(3);
-    expect(warning?.message).toEqual(
-      `command: Name slot 0 has mixed naming conventions: 'lowercase: lower', 'UPPERCASE: UPPER', 'Capitalized: Capital'.\n` +
-        `command: Name slot 1 has mixed naming conventions: 'noDash: abc', '-singleDash: -def', '--doubleDash: --ghi'.\n` +
-        `command: Name slot 2 has mixed naming conventions: 'kebab-case: keb-ab', 'snake_case: sna_ke', 'colon:case: col:on'.\n`,
-    );
+    expect(validate(options)).resolves.toEqual({
+      warning: expect.objectContaining({
+        message:
+          `command: Name slot 0 has mixed naming conventions: 'lowercase: lower', 'UPPERCASE: UPPER', 'Capitalized: Capital'.\n` +
+          `command: Name slot 1 has mixed naming conventions: 'noDash: abc', '-singleDash: -def', '--doubleDash: --ghi'.\n` +
+          `command: Name slot 2 has mixed naming conventions: 'kebab-case: keb-ab', 'snake_case: sna_ke', 'colon:case: col:on'.\n`,
+      }),
+    });
   });
 
   it('return a warning on option name too similar to other names in nested options', async () => {
@@ -119,11 +120,12 @@ describe('validate', () => {
         },
       },
     } as const satisfies Options;
-    const { warning } = await validate(options);
-    expect(warning).toHaveLength(2);
-    expect(warning?.message).toEqual(
-      `command: Option name 'abc' has too similar names: 'abcd'.\n` +
-        `command: Option name 'abcde' has too similar names: 'abcd'.\n`,
-    );
+    expect(validate(options)).resolves.toEqual({
+      warning: expect.objectContaining({
+        message:
+          `command: Option name 'abc' has too similar names: 'abcd'.\n` +
+          `command: Option name 'abcde' has too similar names: 'abcd'.\n`,
+      }),
+    });
   });
 });

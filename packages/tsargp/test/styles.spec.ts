@@ -35,19 +35,19 @@ describe('AnsiString', () => {
       expect(str.styles).toEqual(['\n\n']);
     });
 
-    it('merge line feeds', () => {
+    it('merge line feed from other string', () => {
       const str1 = new AnsiString(0, 1);
       const str2 = new AnsiString().open('type').other(str1).word('script');
       expect(str2.strings).toEqual(['type', '', 'script']);
-      expect(str2.styles).toEqual(['\x1b[39m' + 'type', '\n', '\x1b[39m' + 'script']);
+      expect(str2.styles).toEqual([style(fg.default) + 'type', '\n', style(fg.default) + 'script']);
     });
   });
 
-  describe('clear', () => {
-    it('does not change the length of previous styles', () => {
+  describe('addClear', () => {
+    it('does not change the length of previous strings', () => {
       const str = new AnsiString().word('type').addClear();
       expect(str.strings).toEqual(['type']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type' + '\x1b[0m']);
+      expect(str.styles).toEqual([style(fg.default) + 'type' + style(tf.clear)]);
     });
   });
 
@@ -55,14 +55,18 @@ describe('AnsiString', () => {
     it('add words with no style', () => {
       const str = new AnsiString().word('type').word('script');
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type', 'script']);
+      expect(str.styles).toEqual([style(fg.default) + 'type', 'script']);
     });
 
-    it('add a word with style and reset to the default style', () => {
+    it('add a word with style and reset to another style', () => {
       const str = new AnsiString().word('type', style(fg8(0), bg8(0), ul8(0)));
       expect(str.strings).toEqual(['type']);
       expect(str.styles).toEqual([
-        '\x1b[39m\x1b[38;5;0;48;5;0;58;5;0m' + 'type' + '\x1b[0m\x1b[39m',
+        style(fg.default) +
+          style(fg8(0), bg8(0), ul8(0)) +
+          'type' +
+          style(tf.clear) +
+          style(fg.default),
       ]);
     });
   });
@@ -87,7 +91,7 @@ describe('AnsiString', () => {
       str1.word('script').clear().word('script');
       const str2 = new AnsiString().word('type').other(str1);
       expect(str2.strings).toEqual(['type', 'script']);
-      expect(str2.styles).toEqual(['\x1b[39m' + 'type', 'script']);
+      expect(str2.styles).toEqual([style(fg.default) + 'type', 'script']);
     });
   });
 
@@ -95,19 +99,19 @@ describe('AnsiString', () => {
     it('add an opening delimiter to the next word', () => {
       const str = new AnsiString().open('[').open('"').word('type');
       expect(str.strings).toEqual(['["type']);
-      expect(str.styles).toEqual(['\x1b[39m' + '["type']);
+      expect(str.styles).toEqual([style(fg.default) + '["type']);
     });
 
     it('avoid merging the previous word with the next word if the delimiter is empty', () => {
       const str = new AnsiString().word('type').open('').word('script');
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type', 'script']);
+      expect(str.styles).toEqual([style(fg.default) + 'type', 'script']);
     });
 
     it('add an opening delimiter at a specific position', () => {
       const str = new AnsiString().openAtPos('"', 0).word('type').openAtPos('[', 0);
       expect(str.strings).toEqual(['["type']);
-      expect(str.styles).toEqual(['[\x1b[39m' + '"type']);
+      expect(str.styles).toEqual(['[' + style(fg.default) + '"type']);
     });
   });
 
@@ -119,7 +123,7 @@ describe('AnsiString', () => {
         str2.merge = true;
         str2.other(str1);
         expect(str2.strings).toEqual(['type']);
-        expect(str2.styles).toEqual(['\x1b[39m\x1b[39m' + 'type']);
+        expect(str2.styles).toEqual([style(fg.default) + style(fg.default) + 'type']);
       });
 
       it('if the merge flag is set on the other string', () => {
@@ -128,15 +132,15 @@ describe('AnsiString', () => {
         str1.word('type');
         const str2 = new AnsiString().other(str1);
         expect(str2.strings).toEqual(['type']);
-        expect(str2.styles).toEqual(['\x1b[39m\x1b[39m' + 'type']);
+        expect(str2.styles).toEqual([style(fg.default) + style(fg.default) + 'type']);
       });
 
-      it('add the internal styles from the other string and preserve its merge flag', () => {
+      it('preserve the merge flag from the other string', () => {
         const str1 = new AnsiString().word('type');
         str1.merge = true;
         const str2 = new AnsiString().other(str1).word(']');
         expect(str2.strings).toEqual(['type]']);
-        expect(str2.styles).toEqual(['\x1b[39m\x1b[39m' + 'type]']);
+        expect(str2.styles).toEqual([style(fg.default) + style(fg.default) + 'type]']);
       });
     });
 
@@ -146,8 +150,10 @@ describe('AnsiString', () => {
         const str2 = new AnsiString().word('[');
         str2.merge = true;
         str2.add('', style(tf.clear)).other(str1);
-        expect(str2.strings).toEqual(['[' + 'type']);
-        expect(str2.styles).toEqual(['\x1b[39m' + '[' + '\x1b[0m\x1b[39m' + 'type']);
+        expect(str2.strings).toEqual(['[type']);
+        expect(str2.styles).toEqual([
+          style(fg.default) + '[' + style(tf.clear) + style(fg.default) + 'type',
+        ]);
       });
 
       it('keep current style if the merge flag is set in the other string', () => {
@@ -155,16 +161,18 @@ describe('AnsiString', () => {
         str1.merge = true;
         str1.word('type');
         const str2 = new AnsiString().word('[').add('', style(tf.clear)).other(str1);
-        expect(str2.strings).toEqual(['[' + 'type']);
-        expect(str2.styles).toEqual(['\x1b[39m' + '[' + '\x1b[0m\x1b[39m' + 'type']);
+        expect(str2.strings).toEqual(['[type']);
+        expect(str2.styles).toEqual([
+          style(fg.default) + '[' + style(tf.clear) + style(fg.default) + 'type',
+        ]);
       });
 
-      it('add the internal styles from the other string and preserve its merge flag', () => {
+      it('preserve the merge flag from the other string', () => {
         const str1 = new AnsiString().word('script');
         str1.merge = true;
         const str2 = new AnsiString().word('type').other(str1).word(']');
         expect(str2.strings).toEqual(['type', 'script]']);
-        expect(str2.styles).toEqual(['\x1b[39m' + 'type', '\x1b[39m' + 'script]']);
+        expect(str2.styles).toEqual([style(fg.default) + 'type', style(fg.default) + 'script]']);
       });
     });
 
@@ -174,40 +182,46 @@ describe('AnsiString', () => {
         str1.merge = true;
         const str2 = new AnsiString().word('type').other(str1).word('script');
         expect(str2.strings).toEqual(['type', 'script']);
-        expect(str2.styles).toEqual(['\x1b[39m' + 'type', 'script']);
+        expect(str2.styles).toEqual([style(fg.default) + 'type', 'script']);
       });
     });
 
     describe('when neither string is empty', () => {
-      it('merge the endpoint styles if the merge flag is set in the self string', () => {
+      it('merge the endpoint strings if the merge flag is set in the self string', () => {
         const str1 = new AnsiString().split('type script');
         const str2 = new AnsiString().open('[').other(str1).close(']');
         expect(str2.strings).toEqual(['[type', 'script]']);
-        expect(str2.styles).toEqual(['\x1b[39m' + '[' + '\x1b[39m' + 'type', 'script]']);
+        expect(str2.styles).toEqual([
+          style(fg.default) + '[' + style(fg.default) + 'type',
+          'script]',
+        ]);
       });
 
-      it('merge the endpoint styles if the merge flag is set in the other string', () => {
+      it('merge the endpoint strings if the merge flag is set in the other string', () => {
         const str1 = new AnsiString();
         str1.merge = true;
         str1.split('type script');
         const str2 = new AnsiString().word('[').other(str1);
         expect(str2.strings).toEqual(['[type', 'script']);
-        expect(str2.styles).toEqual(['\x1b[39m' + '[' + '\x1b[39m' + 'type', 'script']);
+        expect(str2.styles).toEqual([
+          style(fg.default) + '[' + style(fg.default) + 'type',
+          'script',
+        ]);
       });
     });
   });
 
   describe('close', () => {
-    it('add a closing delimiter when there are no internal styles', () => {
+    it('add a closing delimiter when there are no internal strings', () => {
       const str = new AnsiString().close(']');
       expect(str.strings).toEqual([']']);
-      expect(str.styles).toEqual(['\x1b[39m' + ']']);
+      expect(str.styles).toEqual([style(fg.default) + ']']);
     });
 
     it('add a closing delimiter when there are previous words', () => {
       const str = new AnsiString().word('type').close('', style(tf.clear)).close(']');
       expect(str.strings).toEqual(['type]']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type' + '\x1b[0m' + ']']);
+      expect(str.styles).toEqual([style(fg.default) + 'type' + style(tf.clear) + ']']);
     });
 
     it('add a closing delimiter to the last internal string', () => {
@@ -217,13 +231,15 @@ describe('AnsiString', () => {
         .close(']')
         .close('.');
       expect(str.strings).toEqual(['type].']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type' + '\x1b[39;49;4;3m' + '].']);
+      expect(str.styles).toEqual([
+        style(fg.default) + 'type' + style(fg.default, bg.default, ul.curly) + '].',
+      ]);
     });
 
     it('avoid merging with the next word if the delimiter is empty', () => {
       const str = new AnsiString().word('type').close('').word('script');
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type', 'script']);
+      expect(str.styles).toEqual([style(fg.default) + 'type', 'script']);
     });
   });
 
@@ -231,7 +247,7 @@ describe('AnsiString', () => {
     it('split text with emojis', () => {
       const str = new AnsiString().split(`⚠️ type script`);
       expect(str.strings).toEqual(['⚠️', 'type', 'script']);
-      expect(str.styles).toEqual(['\x1b[39m' + '⚠️', 'type', 'script']);
+      expect(str.styles).toEqual([style(fg.default) + '⚠️', 'type', 'script']);
     });
 
     it('split text with style sequences', () => {
@@ -239,20 +255,23 @@ describe('AnsiString', () => {
         `${style(tf.clear)}type ${style(tf.clear)} script${style(tf.clear)}`,
       );
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual(['\x1b[39m\x1b[0m' + 'type', '\x1b[0m' + 'script' + '\x1b[0m']);
+      expect(str.styles).toEqual([
+        style(fg.default) + style(tf.clear) + 'type',
+        style(tf.clear) + 'script' + style(tf.clear),
+      ]);
     });
 
     it('split text with paragraphs', () => {
       const str = new AnsiString().split('type\nscript\n\nis\nfun');
       expect(str.strings).toEqual(['type', 'script', '', 'is', 'fun']);
-      expect(str.styles).toEqual(['\x1b[39m' + 'type', 'script', '\n\n', 'is', 'fun']);
+      expect(str.styles).toEqual([style(fg.default) + 'type', 'script', '\n\n', 'is', 'fun']);
     });
 
     it('split text with list items', () => {
       const str = new AnsiString().split('type:\n- script\n1. is fun');
       expect(str.strings).toEqual(['type:', '', '-', 'script', '', '1.', 'is', 'fun']);
       expect(str.styles).toEqual([
-        '\x1b[39m' + 'type:',
+        style(fg.default) + 'type:',
         '\n',
         '-',
         'script',
@@ -270,7 +289,12 @@ describe('AnsiString', () => {
         });
         const str = new AnsiString().split('type' + '#0 script is #1' + 'fun', format);
         expect(str.strings).toEqual(['type' + 'abc', 'script', 'is', 'abc' + 'fun']);
-        expect(str.styles).toEqual(['\x1b[39m' + 'type' + 'abc', 'script', 'is', 'abc' + 'fun']);
+        expect(str.styles).toEqual([
+          style(fg.default) + 'type' + 'abc',
+          'script',
+          'is',
+          'abc' + 'fun',
+        ]);
         expect(format).toHaveBeenCalledTimes(2);
         expect(format).toHaveBeenCalledWith('#0');
         expect(format).toHaveBeenCalledWith('#1');
@@ -283,7 +307,7 @@ describe('AnsiString', () => {
         const str = new AnsiString().split('#0', format);
         expect(str.strings).toEqual(['-', 'item', '', '*', 'item', '', '1.', 'item']);
         expect(str.styles).toEqual([
-          '\x1b[39m' + '-',
+          style(fg.default) + '-',
           'item',
           '\n',
           '*',
@@ -300,7 +324,7 @@ describe('AnsiString', () => {
         const format = jest.fn();
         const str = new AnsiString().word('type').split('#0#0', format).word('script');
         expect(str.strings).toEqual(['type', 'script']);
-        expect(str.styles).toEqual(['\x1b[39m' + 'type', 'script']);
+        expect(str.styles).toEqual([style(fg.default) + 'type', 'script']);
         expect(format).toHaveBeenCalledTimes(2);
         expect(format).toHaveBeenCalledWith('#0');
       });
@@ -313,7 +337,7 @@ describe('AnsiString', () => {
       const bold = style(tf.bold);
       const str = new AnsiString().split(bold + '#0 is #1' + bold, format);
       expect(str.strings).toEqual(['abc', 'is', 'abc']);
-      expect(str.styles).toEqual(['\x1b[39m' + bold + 'abc', 'is', 'abc' + bold]);
+      expect(str.styles).toEqual([style(fg.default) + bold + 'abc', 'is', 'abc' + bold]);
       expect(format).toHaveBeenCalledTimes(2);
       expect(format).toHaveBeenCalledWith('#0');
       expect(format).toHaveBeenCalledWith('#1');
@@ -347,13 +371,13 @@ describe('AnsiString', () => {
       });
 
       describe('the current column is not zero', () => {
-        it('shorten the current line by removing previous styles', () => {
+        it('shorten the current line by removing previous strings', () => {
           const result = ['  '];
           new AnsiString().split('abc def').wrap(result, 2, 0, false, true);
           expect(result).toEqual(['abc', ' def']);
         });
 
-        it('shorten the current line by resizing previous styles', () => {
+        it('shorten the current line by resizing previous strings', () => {
           const result = ['   '];
           new AnsiString().split('abc def').wrap(result, 2, 0, false, true);
           expect(result).toEqual([' ', 'abc', ' def']);
@@ -375,13 +399,13 @@ describe('AnsiString', () => {
           it('adjust the current line with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString().split('abc def').wrap(result, 2, 0, true, false);
-            expect(result).toEqual([seq(cs.cha, 1), '\x1b[39m' + 'abc', ' def']);
+            expect(result).toEqual([seq(cs.cha, 1), style(fg.default) + 'abc', ' def']);
           });
 
           it('not adjust the current line when spaces are required', () => {
             const result: Array<string> = [];
             new AnsiString().split('abc def').wrap(result, 2, 0, true, true);
-            expect(result).toEqual(['\x1b[39m' + 'abc', ' def']);
+            expect(result).toEqual([style(fg.default) + 'abc', ' def']);
           });
         });
       });
@@ -421,7 +445,7 @@ describe('AnsiString', () => {
           it('adjust the current line with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc def').wrap(result, 0, 0, true, false);
-            expect(result).toEqual([seq(cs.cha, 3), '\x1b[39m' + 'abc', ' def']);
+            expect(result).toEqual([seq(cs.cha, 3), style(fg.default) + 'abc', ' def']);
           });
 
           it('keep indentation in new lines with a move sequence', () => {
@@ -429,7 +453,7 @@ describe('AnsiString', () => {
             new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, false);
             expect(result).toEqual([
               seq(cs.cha, 3),
-              '\x1b[39m' + 'abc',
+              style(fg.default) + 'abc',
               '\n\n',
               seq(cs.cha, 3),
               'def',
@@ -439,13 +463,13 @@ describe('AnsiString', () => {
           it('adjust the current line with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc def').wrap(result, 0, 0, true, true);
-            expect(result).toEqual(['  ', '\x1b[39m' + 'abc', ' def']);
+            expect(result).toEqual(['  ', style(fg.default) + 'abc', ' def']);
           });
 
           it('keep indentation in new lines with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, true);
-            expect(result).toEqual(['  ', '\x1b[39m' + 'abc', '\n\n', '  ', 'def']);
+            expect(result).toEqual(['  ', style(fg.default) + 'abc', '\n\n', '  ', 'def']);
           });
         });
       });
@@ -456,13 +480,13 @@ describe('AnsiString', () => {
         it('emit styles with move sequences', () => {
           const result: Array<string> = [];
           str.wrap(result, 0, 0, true, false);
-          expect(result).toEqual(['\x1b[39m' + 'abc' + style(tf.clear), ' def']);
+          expect(result).toEqual([style(fg.default) + 'abc' + style(tf.clear), ' def']);
         });
 
         it('emit styles with spaces', () => {
           const result: Array<string> = [];
           str.wrap(result, 0, 0, true, true);
-          expect(result).toEqual(['\x1b[39m' + 'abc' + style(tf.clear), ' def']);
+          expect(result).toEqual([style(fg.default) + 'abc' + style(tf.clear), ' def']);
         });
       });
     });
@@ -550,7 +574,7 @@ describe('AnsiString', () => {
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, false);
             expect(result).toEqual([
               seq(cs.cha, 2),
-              '\x1b[39m' + 'abc',
+              style(fg.default) + 'abc',
               `\n${seq(cs.cha, 2)}`,
               'largest',
             ]);
@@ -559,7 +583,7 @@ describe('AnsiString', () => {
           it('keep indentation in wrapped lines with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, true);
-            expect(result).toEqual([' ', '\x1b[39m' + 'abc', `\n `, 'largest']);
+            expect(result).toEqual([' ', style(fg.default) + 'abc', '\n ', 'largest']);
           });
         });
       });
@@ -581,7 +605,7 @@ describe('AnsiString', () => {
           it('align with a move sequence when breaking the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).word('abc').break().wrap(result, 0, 8, true, false);
-            expect(result).toEqual([seq(cs.cuf, 5), '\x1b[39m' + 'abc', '\n']);
+            expect(result).toEqual([seq(cs.cuf, 5), style(fg.default) + 'abc', '\n']);
           });
 
           it('align with a move sequence when wrapping the line', () => {
@@ -589,7 +613,7 @@ describe('AnsiString', () => {
             new AnsiString(0, 0, true).split('type script').wrap(result, 0, 8, true, false);
             expect(result).toEqual([
               seq(cs.cuf, 4),
-              '\x1b[39m' + 'type',
+              style(fg.default) + 'type',
               '\n',
               seq(cs.cuf, 2),
               'script',
@@ -599,13 +623,13 @@ describe('AnsiString', () => {
           it('align with spaces when breaking the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).word('abc').break().wrap(result, 0, 8, true, true);
-            expect(result).toEqual(['     ', '\x1b[39m' + 'abc', '\n']);
+            expect(result).toEqual(['     ', style(fg.default) + 'abc', '\n']);
           });
 
           it('align with spaces when wrapping the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).split('type script').wrap(result, 0, 8, true, true);
-            expect(result).toEqual(['    ', '\x1b[39m' + 'type', '\n', '  ', 'script']);
+            expect(result).toEqual(['    ', style(fg.default) + 'type', '\n', '  ', 'script']);
           });
         });
       });
@@ -813,7 +837,7 @@ describe('WarnMessage', () => {
   });
 
   describe('add', () => {
-    it('format a string message from an error phrase', () => {
+    it('format a string message with an error phrase', () => {
       const msg = new WarnMessage();
       msg.add(ErrorItem.missingRequiredOption, {}, 'abc');
       process.env['FORCE_WIDTH'] = '0';
@@ -822,7 +846,7 @@ describe('WarnMessage', () => {
   });
 
   describe('addCustom', () => {
-    it('format a string message from an error phrase', () => {
+    it('format a string message with a custom phrase', () => {
       const msg = new WarnMessage();
       msg.addCustom('#0 #1 #2', {}, 0, 'abc', false);
       process.env['FORCE_WIDTH'] = '0';
@@ -837,7 +861,7 @@ describe('ErrorMessage', () => {
   });
 
   describe('create', () => {
-    it('format a string message from an error phrase', () => {
+    it('format a string message with an error phrase', () => {
       const msg = ErrorMessage.create(ErrorItem.missingRequiredOption, {}, 'abc');
       process.env['FORCE_WIDTH'] = '0';
       expect(msg.message).toEqual(`Option 'abc' is required.\n`);
@@ -845,7 +869,7 @@ describe('ErrorMessage', () => {
   });
 
   describe('createCustom', () => {
-    it('format a string message from an error phrase', () => {
+    it('format a string message with a custom phrase', () => {
       const msg = ErrorMessage.createCustom('#0 #1 #2', {}, 0, 'abc', false);
       process.env['FORCE_WIDTH'] = '0';
       expect(msg.message).toEqual(`0 'abc' false\n`);
@@ -854,7 +878,7 @@ describe('ErrorMessage', () => {
 });
 
 describe('TextMessage', () => {
-  it('produce a string message', () => {
+  it('produce a string message with line feeds', () => {
     const msg = new TextMessage('type', 'script');
     expect(msg.message).toEqual('type\nscript');
   });

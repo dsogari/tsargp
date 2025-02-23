@@ -5,7 +5,7 @@ import { parse } from '../../lib/parser';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('a custom parse callback is specified', () => {
+  describe('a parse callback that throws is specified', () => {
     it('handle a single-valued option', () => {
       const options = {
         single: {

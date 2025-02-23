@@ -151,7 +151,7 @@ export type WithSectionKind<T extends string> = {
   readonly style?: Style;
   /**
    * The number of line breaks to insert before the section.
-   * (Defaults to 0 for the first section, 2 for others)
+   * (Defaults to 0 for the first section, 1 for others)
    */
   readonly breaks?: number;
   /**

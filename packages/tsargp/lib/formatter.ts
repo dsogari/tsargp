@@ -617,7 +617,7 @@ function formatHelpSection(
   result: AnsiMessage,
 ) {
   const { type, title, breaks, noWrap, style: sty } = section;
-  let curBreaks = breaks ?? (result.length ? 1 : 0);
+  let curBreaks = breaks ?? (result.length ? 1 : 0); // to account for the first section
   if (type === 'groups') {
     const headingStyle = sty ?? style(tf.bold);
     formatGroups(groups, section, (group, entries) => {
@@ -627,12 +627,12 @@ function formatHelpSection(
         : new AnsiString(0, curBreaks);
       result.push(heading);
       formatHelpEntries(entries, result);
-      curBreaks = entries.length ? 1 : 0; // to account for the last option description
+      curBreaks = 1; // to account for the last option description
     });
   } else {
     if (title) {
       result.push(formatText(title, sty ?? style(tf.bold), 0, curBreaks, noWrap).break());
-      curBreaks = 1;
+      curBreaks = 1; // to account for the space between title and content
     }
     const textStyle = config.styles.text;
     if (type === 'usage') {
@@ -641,7 +641,7 @@ function formatHelpSection(
       if (progName) {
         result.push(formatText(progName, textStyle, indent, curBreaks, true));
         indent = max(0, indent ?? 0) + progName.length + 1;
-        curBreaks = 0;
+        curBreaks = 0; // to avoid breaking between program name and usage text
       }
       const str = formatUsage(keys, options, section, indent, curBreaks);
       if (str.count) {

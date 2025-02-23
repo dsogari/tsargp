@@ -125,7 +125,7 @@ describe('parse', () => {
           cluster: 's',
         },
       } as const satisfies Options;
-      expect(parse(options, ['s', '1', 'f'], flags)).resolves.toEqual({ single: '1', flag: true });
+      expect(parse(options, ['s', '1', 'f'], flags)).resolves.toEqual({ flag: true, single: '1' });
     });
   });
 

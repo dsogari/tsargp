@@ -101,9 +101,7 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toEqual({ help: undefined });
       expect(parse(options, ['-h'])).resolves.toEqual({
-        help: expect.objectContaining({
-          message: expect.stringMatching(/^ {2}-h\n/),
-        }),
+        help: expect.objectContaining({ message: '  -h\n' }),
       });
     });
 
@@ -666,6 +664,7 @@ describe('parse', () => {
       },
     } as const satisfies Options;
     expect(parse(options, ['-f', '1'])).resolves.toEqual({ function: undefined });
+    expect(parse(options, ['-f', '1', '2'])).rejects.toThrow('Unknown option 2.');
     expect(parse(options, ['-f', '0'])).rejects.toThrow('Unknown option 0.');
     expect(parse(options, ['-f', '-1'])).rejects.toThrow('Unknown option -1.');
   });
@@ -728,11 +727,11 @@ describe('parseInto', () => {
         },
       } as const satisfies Options;
       const values = { flag: undefined };
-      const { warning } = await parseInto(options, values, ['-f', '-f']);
-      expect(warning).toHaveLength(1);
-      expect(warning?.message).toEqual(
-        `Option -f is deprecated and may be removed in future releases.\n`,
-      );
+      expect(parseInto(options, values, ['-f', '-f'])).resolves.toEqual({
+        warning: expect.objectContaining({
+          message: `Option -f is deprecated and may be removed in future releases.\n`,
+        }),
+      });
     });
 
     it('report multiple warnings', async () => {
@@ -749,12 +748,13 @@ describe('parseInto', () => {
         },
       } as const satisfies Options;
       const values = { flag1: undefined, flag2: undefined };
-      const { warning } = await parseInto(options, values, ['-f1', '-f2']);
-      expect(warning).toHaveLength(2);
-      expect(warning?.message).toEqual(
-        `Option -f1 is deprecated and may be removed in future releases.\n` +
-          `Option -f2 is deprecated and may be removed in future releases.\n`,
-      );
+      expect(parseInto(options, values, ['-f1', '-f2'])).resolves.toEqual({
+        warning: expect.objectContaining({
+          message:
+            `Option -f1 is deprecated and may be removed in future releases.\n` +
+            `Option -f2 is deprecated and may be removed in future releases.\n`,
+        }),
+      });
     });
 
     it('report a warning from a subcommand', async () => {
@@ -772,11 +772,11 @@ describe('parseInto', () => {
         },
       } as const satisfies Options;
       const values = { command: undefined };
-      const { warning } = await parseInto(options, values, ['-c', '-f']);
-      expect(warning).toHaveLength(1);
-      expect(warning?.message).toEqual(
-        `Option -f is deprecated and may be removed in future releases.\n`,
-      );
+      expect(parseInto(options, values, ['-c', '-f'])).resolves.toEqual({
+        warning: expect.objectContaining({
+          message: `Option -f is deprecated and may be removed in future releases.\n`,
+        }),
+      });
     });
   });
 });

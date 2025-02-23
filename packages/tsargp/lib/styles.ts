@@ -528,8 +528,7 @@ export class AnsiString {
    */
   word(word: string, sty: Style = ''): this {
     if (word) {
-      const styledText = sty ? sty + word + sgr(tf.clear) + this.defSty : word;
-      this.add(word, styledText);
+      this.add(word, sty ? sty + word + sgr(tf.clear) + this.defSty : word);
     }
     return this;
   }

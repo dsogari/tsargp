@@ -57,11 +57,11 @@ describe('validate', () => {
         paramCount: [0, 1],
       },
     } as const satisfies Options;
-    const { warning } = await validate(options);
-    expect(warning).toHaveLength(1);
-    expect(warning?.message).toEqual(
-      `Variadic option function may only appear as the last option in a cluster.\n`,
-    );
+    expect(validate(options)).resolves.toEqual({
+      warning: expect.objectContaining({
+        message: `Variadic option function may only appear as the last option in a cluster.\n`,
+      }),
+    });
   });
 
   it('return a warning on array-valued option with cluster letter', async () => {
@@ -71,10 +71,10 @@ describe('validate', () => {
         cluster: 'a',
       },
     } as const satisfies Options;
-    const { warning } = await validate(options);
-    expect(warning).toHaveLength(1);
-    expect(warning?.message).toEqual(
-      `Variadic option array may only appear as the last option in a cluster.\n`,
-    );
+    expect(validate(options)).resolves.toEqual({
+      warning: expect.objectContaining({
+        message: `Variadic option array may only appear as the last option in a cluster.\n`,
+      }),
+    });
   });
 });
