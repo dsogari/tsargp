@@ -12,7 +12,7 @@ describe('OptionRegistry', () => {
         const options = {
           flag: {
             type: 'flag',
-            names: [null, '-f'],
+            names: [null, '-f'], // should ignore null values
           },
           single: {
             type: 'single',

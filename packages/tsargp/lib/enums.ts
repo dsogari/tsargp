@@ -146,7 +146,7 @@ export const enum HelpItem {
    */
   paramCount,
   /**
-   * The parameter delimiter of a non-niladic option.
+   * The parameter delimiter of an array-valued option.
    */
   separator,
   /**

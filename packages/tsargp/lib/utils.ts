@@ -562,7 +562,7 @@ export function streamWidth(stream: 'stdout' | 'stderr'): number | undefined {
 }
 
 /**
- * Check whether styles should be omitted from ANSI strings
+ * Check whether styles should be omitted from ANSI strings.
  * @param width The terminal width (in number of columns)
  * @returns True if styles should be omitted
  * @see https://clig.dev/#output
@@ -572,9 +572,9 @@ export function omitStyles(width: number): boolean {
 }
 
 /**
- * Check whether spaces can be omitted from ANSI strings
+ * Check whether indentation spaces can be omitted from ANSI strings.
  * @param width The terminal width (in number of columns)
- * @returns True if spaces can be omitted
+ * @returns True if indentation spaces can be omitted
  */
 export function omitSpaces(width: number): boolean {
   return !getEnv('FORCE_SPACES') && !!width;

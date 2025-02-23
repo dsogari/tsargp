@@ -349,11 +349,11 @@ type AnsiContext = [
    */
   curStyle: string,
   /**
-   * Whether the last internal string should be merged with the next string.
+   * Whether the first internal string should be merged with the previous string.
    */
   mergeLeft: boolean,
   /**
-   * Whether the first internal string should be merged with the previous string.
+   * Whether the last internal string should be merged with the next string.
    */
   mergeRight: boolean,
   /**
@@ -372,7 +372,7 @@ export class AnsiString {
   /**
    * The ANSI string context.
    */
-  private readonly context: AnsiContext = [[], [], '', false, false, 0];
+  private context: AnsiContext = [[], [], '', false, false, 0];
 
   /**
    * @returns The list of internal strings without control sequences
@@ -420,22 +420,11 @@ export class AnsiString {
   }
 
   /**
-   * Removes strings from the end.
-   * @param count The number of strings
+   * Removes all strings.
    * @returns The ANSI string instance
    */
-  pop(count = 1): this {
-    if (count > 0) {
-      const len = max(0, this.count - count);
-      const [strings, styledStrings] = this.context;
-      strings.length = len;
-      styledStrings.length = len;
-      if (!len) {
-        this.context[3] = false;
-      }
-      this.context[4] = false;
-      this.context[5] = Math.max(...strings.map((str) => str.length));
-    }
+  clear(): this {
+    this.context = [[], [], '', false, false, 0];
     return this;
   }
 
@@ -446,9 +435,7 @@ export class AnsiString {
    */
   other(other: AnsiString): this {
     if (other.count) {
-      const count = this.count;
-      const [thisStrings, thisStyledStrings, thisCurStyle, , thisMergeRight, thisMaxLength] =
-        this.context;
+      const [thisStrings, thisStyledStrings] = this.context;
       const [
         otherStrings,
         otherStyledStrings,
@@ -459,18 +446,18 @@ export class AnsiString {
       ] = other.context;
       const [firstString, ...restStrings] = otherStrings;
       const [firstStyledString, ...restStyledStrings] = otherStyledStrings;
-      if (count && (thisMergeRight || otherMergeLeft)) {
-        thisStrings[count - 1] += firstString;
-        thisStyledStrings[count - 1] += thisCurStyle + firstStyledString;
+      if (firstString.length) {
+        this.add(firstString, firstStyledString, otherMergeLeft);
       } else {
+        // line feed
         thisStrings.push(firstString);
-        thisStyledStrings.push(thisCurStyle + firstStyledString);
+        thisStyledStrings.push(firstStyledString);
       }
       thisStrings.push(...restStrings);
       thisStyledStrings.push(...restStyledStrings);
       this.context[2] = otherCurStyle;
       this.context[4] = otherMergeRight;
-      this.context[5] = max(thisMaxLength, otherMaxLength);
+      this.context[5] = max(this.context[5], otherMaxLength);
     }
     return this;
   }
@@ -549,11 +536,9 @@ export class AnsiString {
 
   /**
    * Appends an SGR clear sequence.
-   * This is different from the {@link AnsiString.pop} method (we are aware of this ambiguity, but
-   * we want to keep method names short).
    * @returns The ANSI string instance
    */
-  clear(): this {
+  addClear(): this {
     return this.close('', sgr(tf.clear));
   }
 
@@ -572,6 +557,7 @@ export class AnsiString {
         if (count && (mergeRight || close)) {
           strings[count - 1] += text;
           styledStrings[count - 1] += curStyle + styledText;
+          text = strings[count - 1]; // to update maxLength
         } else {
           strings.push(text);
           styledStrings.push(curStyle + styledText);

@@ -93,7 +93,7 @@ type ValidationContext = [
 // Classes
 //--------------------------------------------------------------------------------------------------
 /**
- * Validates all options' definitions, including command options recursively.
+ * Validates a set of option definitions.
  * @param options The option definitions
  * @param flags The validation flags
  * @returns The validation result

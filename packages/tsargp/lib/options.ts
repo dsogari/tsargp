@@ -1150,16 +1150,12 @@ export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
 
 /**
  * Create a parse callback for numbers that should be within a range.
- * @param min The inferior limit (should be strictly less than max)
- * @param max The superior limit (should be strictly greater than min)
+ * @param range The numeric range
  * @param phrase The custom error phrase
  * @returns The parse callback
  */
-export function numberInRange(
-  min: number,
-  max: number,
-  phrase: string,
-): ParseCallback<string, number> {
+export function numberInRange(range: Range, phrase: string): ParseCallback<string, number> {
+  const [min, max] = range;
   return function (param, info) {
     if (info.comp) {
       return 0; // the result does not matter when completion is in effect
@@ -1168,6 +1164,6 @@ export function numberInRange(
     if (min <= num && num <= max) {
       return num; // handles NaN
     }
-    throw ErrorMessage.createCustom(phrase, {}, getSymbol(info.name), param, [min, max]);
+    throw ErrorMessage.createCustom(phrase, {}, getSymbol(info.name), param, range);
   };
 }

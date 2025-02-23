@@ -70,7 +70,7 @@ export default {
       {
         type: 'usage',
         indent: 2,
-        breaks: 1,
+        breaks: 0,
         filter: ['hello'],
         comment: `${style(fg.green)}# execute the hello command`,
         required: ['hello'],
@@ -78,7 +78,7 @@ export default {
       {
         type: 'usage',
         indent: 2,
-        breaks: 1,
+        breaks: 0,
         filter: ['help', 'version', 'helpCmd', 'hello'],
         exclude: true,
         requires: { boolean: 'strChoice' },
@@ -167,8 +167,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${config.styles.text}.`,
     group: 'Number options:',
     parse: numberInRange(
-      -2,
-      Infinity,
+      [-2, Infinity],
       'Invalid parameter to #0: #1. Value must be within the range #2.',
     ),
     default: -1.23,
@@ -176,7 +175,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     cluster: 'n',
   },
   /**
-   * A string option that has an choices constraint.
+   * A string option that has a choices constraint and disallows inline parameters.
    */
   strChoice: {
     type: 'single',
@@ -188,12 +187,12 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     inline: false,
   },
   /**
-   * A number option that has a choices constraint.
+   * A number option that has a choices constraint and requires inline parameters.
    */
   numChoice: {
     type: 'single',
     names: ['-nc', '--numChoice'],
-    synopsis: 'A number array option.',
+    synopsis: 'A number option.',
     group: 'Number options:',
     choices: ['1', '2'],
     parse: Number,
@@ -201,7 +200,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     inline: 'always',
   },
   /**
-   * A delimited string array option whose values are trimmed and converted to uppercase.
+   * A string array option with comma-delimited parameters.
    */
   strArray: {
     type: 'array',
@@ -212,7 +211,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     separator: ',',
   },
   /**
-   * A variadic number array option whose values are rounded to the nearest integer.
+   * A number array option with a default value.
    */
   numArray: {
     type: 'array',
@@ -223,7 +222,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     default: [1, 2],
   },
   /**
-   * A variadic string array option that accepts positional arguments, but no more than 3 values.
+   * A string array option that accepts positional arguments, but no more than 3 elements.
    */
   strArrayLimit: {
     type: 'array',
@@ -235,7 +234,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     limit: 3,
   },
   /**
-   * A delimited number array option whose values are unique and can be specified multiple times.
+   * A number array option that can be specified multiple times, whose elements are unique.
    */
   numArrayUnique: {
     type: 'array',

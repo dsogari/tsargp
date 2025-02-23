@@ -11,7 +11,7 @@ describe('parse', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          parse: numberInRange(1, Infinity, '#0 #1 #2.'),
+          parse: numberInRange([1, Infinity], '#0 #1 #2.'),
         },
       } as const satisfies Options;
       expect(parse(options, ['-s', '123'])).resolves.toEqual({ single: 123 });

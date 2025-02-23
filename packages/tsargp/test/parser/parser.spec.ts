@@ -102,7 +102,7 @@ describe('parse', () => {
       expect(parse(options, [])).resolves.toEqual({ help: undefined });
       expect(parse(options, ['-h'])).resolves.toEqual({
         help: expect.objectContaining({
-          message: expect.stringMatching(/^ {2}-h$/),
+          message: expect.stringMatching(/^ {2}-h\n/),
         }),
       });
     });

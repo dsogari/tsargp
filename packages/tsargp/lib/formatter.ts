@@ -84,19 +84,17 @@ type HelpFunction = (
 
 /**
  * A function to format a help groups section.
- * @template T The type of the help entry
  */
-type GroupsFunction<T> = (
+type GroupsFunction = (
   group: string,
-  entries: ReadonlyArray<T>,
+  entries: ReadonlyArray<HelpEntry>,
   section: HelpGroupsSection,
 ) => void;
 
 /**
  * A map of option groups to help entries.
- * @template T The type of the help entry
  */
-type EntriesByGroup<T> = Readonly<Record<string, ReadonlyArray<T>>>;
+type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -114,7 +112,7 @@ const defaultHelpColumn: WithColumnLayout = {
 /**
  * The complete list of help items.
  */
-export const helpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
+const allHelpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
   .fill(0)
   .map((_, index) => HelpItem.synopsis + index);
 
@@ -125,7 +123,7 @@ const defaultHelpLayout: HelpLayout = {
   names: defaultHelpColumn,
   param: { ...defaultHelpColumn, absolute: false },
   descr: { ...defaultHelpColumn, absolute: false },
-  items: helpItems,
+  items: allHelpItems,
 };
 
 /**
@@ -281,7 +279,7 @@ const helpFunctions = {
 export class HelpFormatter {
   protected readonly context: HelpContext;
   protected readonly keys: ReadonlyArray<string>;
-  protected readonly groups: EntriesByGroup<HelpEntry>;
+  protected readonly groups: EntriesByGroup;
 
   /**
    * Creates a help message formatter.
@@ -330,15 +328,14 @@ export class HelpFormatter {
 //--------------------------------------------------------------------------------------------------
 /**
  * Formats a help groups section to be included in the help message.
- * @template T The type of the help entries
  * @param groups The option groups
  * @param section The help section
  * @param formatFn The formatting function
  */
-function formatGroups<T>(
-  groups: EntriesByGroup<T>,
+function formatGroups(
+  groups: EntriesByGroup,
   section: HelpGroupsSection,
-  formatFn: GroupsFunction<T>,
+  formatFn: GroupsFunction,
 ) {
   const { filter, exclude } = section;
   const allNames = getKeys(groups);
@@ -380,18 +377,17 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
 
 /**
  * Build the help entries for a help message.
- * @template T The type of the help entries
  * @param options The option definitions
  * @param keys The option keys
  * @param buildFn The building function
  * @returns The option groups
  */
-function buildEntries<T>(
+function buildEntries(
   options: OpaqueOptions,
   keys: ReadonlyArray<string>,
-  buildFn: (option: OpaqueOption) => T,
-): EntriesByGroup<T> {
-  const groups: Record<string, Array<T>> = {};
+  buildFn: (option: OpaqueOption) => HelpEntry,
+): EntriesByGroup {
+  const groups: Record<string, Array<HelpEntry>> = {};
   for (const key of keys) {
     const option = options[key];
     const entry = buildFn(option);
@@ -411,10 +407,7 @@ function buildEntries<T>(
  * @param keys The option keys
  * @returns The option groups
  */
-function buildHelpEntries(
-  context: HelpContext,
-  keys: ReadonlyArray<string>,
-): EntriesByGroup<HelpEntry> {
+function buildHelpEntries(context: HelpContext, keys: ReadonlyArray<string>): EntriesByGroup {
   /** @ignore */
   function getNextIndent(column: HelpLayout['param'], prevIndent: number): number {
     return column.absolute && !column.hidden
@@ -443,14 +436,14 @@ function buildHelpEntries(
   for (const [names, param, descr] of getValues(groups).flat()) {
     if (descrMerge) {
       param.other(descr);
-      descr.pop(descr.count);
+      descr.clear();
     } else {
       descr.indent = descrIndent;
     }
     if (paramMerge) {
       if (names.length) {
         names[names.length - 1].other(param);
-        param.pop(param.count);
+        param.clear();
       } else {
         param.indent = namesIndent;
       }
@@ -530,7 +523,7 @@ function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, 
   }
   const len = result.strings.reduce((acc, str) => acc + (str.length && str.length + 1), -1);
   if (len < 0) {
-    return [result.pop(result.count), 0]; // this string does not contain any word
+    return [result.clear(), 0]; // this string does not contain any word
   }
   result.indent = len; // hack: save the length, since we will need it in `adjustEntries`
   return [result, len];
@@ -555,7 +548,7 @@ function formatDescription(context: HelpContext, option: OpaqueOption): AnsiStri
       helpFunctions[item](option, config.helpPhrases[item], context, result);
     }
   }
-  return (result.count === count ? result.pop(count) : result.clear()).break();
+  return (result.count === count ? result.clear() : result.addClear()).break();
 }
 
 /**
@@ -616,52 +609,50 @@ function formatHelpEntries(
  * @param result The resulting message
  */
 function formatHelpSection(
-  groups: EntriesByGroup<HelpEntry>,
+  groups: EntriesByGroup,
   keys: ReadonlyArray<string>,
   options: OpaqueOptions,
   section: HelpSection,
   progName: string,
   result: AnsiMessage,
 ) {
-  let breaks = section.breaks ?? (result.length ? 2 : 0);
-  if (section.type === 'groups') {
-    const { title, noWrap, style: sty } = section;
+  const { type, title, breaks, noWrap, style: sty } = section;
+  let curBreaks = breaks ?? (result.length ? 1 : 0);
+  if (type === 'groups') {
     const headingStyle = sty ?? style(tf.bold);
     formatGroups(groups, section, (group, entries) => {
       const title2 = group || title;
       const heading = title2
-        ? formatText(title2, headingStyle, 0, breaks, noWrap).break(2)
-        : new AnsiString(0, breaks);
+        ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
+        : new AnsiString(0, curBreaks);
       result.push(heading);
       formatHelpEntries(entries, result);
-      result[result.length - 1].pop(); // remove trailing break
-      breaks = 2;
+      curBreaks = entries.length ? 1 : 0; // to account for the last option description
     });
   } else {
-    const { title, noWrap, style: sty } = section;
     if (title) {
-      result.push(formatText(title, sty ?? style(tf.bold), 0, breaks, noWrap));
-      breaks = 2;
+      result.push(formatText(title, sty ?? style(tf.bold), 0, curBreaks, noWrap).break());
+      curBreaks = 1;
     }
     const textStyle = config.styles.text;
-    if (section.type === 'usage') {
+    if (type === 'usage') {
       const count = result.length;
       let { indent } = section;
       if (progName) {
-        result.push(formatText(progName, textStyle, indent, breaks, true));
+        result.push(formatText(progName, textStyle, indent, curBreaks, true));
         indent = max(0, indent ?? 0) + progName.length + 1;
-        breaks = 0;
+        curBreaks = 0;
       }
-      const str = formatUsage(keys, options, section, indent, breaks);
+      const str = formatUsage(keys, options, section, indent, curBreaks);
       if (str.count) {
-        result.push(str);
+        result.push(str.break());
       } else {
-        result.length = count;
+        result.length = count; // skip usage if there are no options
       }
     } else {
       const { text, indent } = section;
       if (text) {
-        result.push(formatText(text, textStyle, indent, breaks, noWrap));
+        result.push(formatText(text, textStyle, indent, curBreaks, noWrap).break());
       }
     }
   }
@@ -689,7 +680,7 @@ function formatText(
   } else {
     result.split(text);
   }
-  return result.clear(); // to simplify client code
+  return result.addClear(); // to simplify client code
 }
 
 /**
@@ -720,12 +711,12 @@ function formatUsage(
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
   if (result.count === count) {
-    return result.pop(count);
+    return result.clear(); // skip comment if there are no options
   }
   if (comment) {
     result.split(comment);
   }
-  return result.clear();
+  return result.addClear();
 }
 
 /**
@@ -929,6 +920,7 @@ function formatRequiredKey(
 /**
  * Formats a requirement expression to be included in the description.
  * Assumes that the options were validated.
+ * @template T The type of requirement item
  * @param items The expression items
  * @param result The resulting string
  * @param negate True if the requirement should be negated

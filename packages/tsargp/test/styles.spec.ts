@@ -28,9 +28,24 @@ describe('AnsiString', () => {
     });
   });
 
+  describe('break', () => {
+    it('add line feeds', () => {
+      const str = new AnsiString(0, 2);
+      expect(str.strings).toEqual(['']);
+      expect(str.styles).toEqual(['\n\n']);
+    });
+
+    it('merge line feeds', () => {
+      const str1 = new AnsiString(0, 1);
+      const str2 = new AnsiString().open('type').other(str1).word('script');
+      expect(str2.strings).toEqual(['type', '', 'script']);
+      expect(str2.styles).toEqual(['\x1b[39m' + 'type', '\n', '\x1b[39m' + 'script']);
+    });
+  });
+
   describe('clear', () => {
     it('does not change the length of previous styles', () => {
-      const str = new AnsiString().word('type').clear();
+      const str = new AnsiString().word('type').addClear();
       expect(str.strings).toEqual(['type']);
       expect(str.styles).toEqual(['\x1b[39m' + 'type' + '\x1b[0m']);
     });
@@ -52,45 +67,27 @@ describe('AnsiString', () => {
     });
   });
 
-  describe('pop', () => {
-    describe('when the string does not become empty', () => {
-      it('remove the last internal string', () => {
-        const str = new AnsiString().split('type script').pop();
-        expect(str.strings).toEqual(['type']);
-        expect(str.styles).toEqual(['\x1b[39m' + 'type']);
-      });
-
-      it('clear the right merge flag', () => {
-        const str = new AnsiString().word('type').word('script');
-        str.merge = true;
-        str.pop().word('script');
-        expect(str.strings).toEqual(['type', 'script']);
-        expect(str.styles).toEqual(['\x1b[39m' + 'type', 'script']);
-      });
+  describe('clear', () => {
+    it('removes all strings', () => {
+      const str = new AnsiString().split('type script').clear();
+      expect(str.count).toEqual(0);
+      expect(str.strings).toBeEmpty();
+      expect(str.styles).toBeEmpty();
     });
 
-    describe('when the string becomes empty', () => {
-      it('if the popped count is greater than the total count', () => {
-        const str = new AnsiString().split('type script').pop(3);
-        expect(str.count).toEqual(0);
-        expect(str.strings).toBeEmpty();
-        expect(str.styles).toBeEmpty();
-      });
+    it('clear the first style', () => {
+      const str = new AnsiString().word('type').clear().word('script');
+      expect(str.strings).toEqual(['script']);
+      expect(str.styles).toEqual(['script']);
+    });
 
-      it('clear the first style', () => {
-        const str = new AnsiString().word('type').pop().word('script');
-        expect(str.strings).toEqual(['script']);
-        expect(str.styles).toEqual(['script']);
-      });
-
-      it('clear the left merge flag', () => {
-        const str1 = new AnsiString();
-        str1.merge = true;
-        str1.word('script').pop().word('script');
-        const str2 = new AnsiString().word('type').other(str1);
-        expect(str2.strings).toEqual(['type', 'script']);
-        expect(str2.styles).toEqual(['\x1b[39m' + 'type', 'script']);
-      });
+    it('clear the left merge flag', () => {
+      const str1 = new AnsiString();
+      str1.merge = true;
+      str1.word('script').clear().word('script');
+      const str2 = new AnsiString().word('type').other(str1);
+      expect(str2.strings).toEqual(['type', 'script']);
+      expect(str2.styles).toEqual(['\x1b[39m' + 'type', 'script']);
     });
   });
 
@@ -511,6 +508,13 @@ describe('AnsiString', () => {
         it('avoid adding a line break when the largest word does not fit, if the string starts with a line break', () => {
           const result: Array<string> = [];
           new AnsiString().break().split('abc largest').wrap(result, 2, 5, false, true);
+          expect(result).toEqual(['\n', 'abc', '\n', 'largest']);
+        });
+
+        it('add a line break when a merged word does not fit the width', () => {
+          const result: Array<string> = [];
+          const str = new AnsiString().word('gest');
+          new AnsiString().word('abc').open('lar').other(str).wrap(result, 2, 5, false, true);
           expect(result).toEqual(['\n', 'abc', '\n', 'largest']);
         });
       });

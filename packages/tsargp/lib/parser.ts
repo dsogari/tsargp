@@ -360,7 +360,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
     }
     i += min;
   }
-  args.splice(index, 1);
+  args.splice(index, 1); // remove cluster argument (to account for parameter count verification)
   return true;
 }
 
@@ -466,14 +466,14 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , , , prefix] = context;
   const [prevIndex, prevInfo, prevVal, , prevMarker] = prev;
   const { names, positional, options } = registry;
-  const [min, max] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   const inc = prevVal !== undefined ? 1 : 0;
+  const [min, max] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
     const comp = completing && i + 1 === args.length;
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
-    const isForcedName = prefix && name.startsWith(prefix);
+    const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
     const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
     const argType = isParam
       ? !isForcedName
@@ -505,6 +505,12 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
           : undefined;
         return [i, newInfo, value, comp, isMarker, true];
       }
+      case ArgType.cluster:
+        if (comp) {
+          throw new TextMessage();
+        }
+        i--; // the cluster argument was removed
+        break; // the cluster argument was canonicalized
       case ArgType.unknownOption:
         if (comp) {
           throw new TextMessage(...completeName(registry, arg));
@@ -513,6 +519,8 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
           reportUnknownName(context, name);
         }
         break; // ignore unknown options during completion
+      case ArgType.positional:
+        return [i, positional, arg, comp, false, true];
       case ArgType.parameter:
         if (comp) {
           return [i, prevInfo, arg, comp, prevMarker, false];
@@ -520,14 +528,6 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         break; // continue looking for parameters or option names
       case ArgType.missingParameter:
         throw ErrorMessage.create(ErrorItem.missingParameter, {}, getSymbol(prevInfo?.[2] ?? ''));
-      case ArgType.positional:
-        return [i, positional, arg, comp, false, true];
-      case ArgType.cluster:
-        if (comp) {
-          throw new TextMessage();
-        }
-        i--; // the cluster argument was removed
-        break; // the cluster argument was canonicalized
     }
   }
   return [args.length];
