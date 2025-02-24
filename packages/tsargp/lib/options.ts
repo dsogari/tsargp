@@ -354,7 +354,7 @@ export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<s
 /**
  * The type of nested options for a subcommand.
  */
-export type NestedOptions = string | Options | (() => Promissory<Options>);
+export type NestedOptions = string | Promissory<Options> | (() => Promissory<Options>);
 
 /**
  * A known value used in default values and parameter examples.
@@ -566,9 +566,18 @@ export type WithSelection = {
    */
   readonly regex?: RegExp;
   /**
-   * The choices of parameter values, or a mapping of parameter values to option values.
+   * The allowed parameter values.
    */
-  readonly choices?: ReadonlyArray<string> | Readonly<Record<string, unknown>>;
+  readonly choices?: ReadonlyArray<string>;
+  /**
+   * The mapping of parameter values to option values.
+   */
+  readonly mapping?: Readonly<Record<string, unknown>>;
+  /**
+   * Whether {@link WithSelection.choices} and {@link WithSelection.mapping} keys are
+   * case-insensitive.
+   */
+  readonly caseInsensitive?: true;
 };
 
 /**
@@ -895,69 +904,71 @@ type DefaultDataType<T extends Option> = T extends { required: true }
   ? never
   : T extends { default: infer D }
     ? D extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? R extends Promise<infer V>
-        ? V
-        : R
-      : D
+      ? Awaited<R>
+      : Awaited<D>
     : undefined;
+
+/**
+ * The data type of the option values for nested options.
+ * @template T The option definition type
+ */
+type NestedOptionsDataType<T> = T extends Options ? OptionValues<T> : never;
 
 /**
  * The data type of an option that may have nested options.
  * @template T The option definition type
  */
 type OptionsDataType<T extends Option> = T extends { options: infer O }
-  ? O extends Options
-    ? OptionValues<O>
+  ? O extends string
+    ? Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
     : O extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? R extends Promise<infer V>
-        ? V extends Options
-          ? OptionValues<V>
-          : never
-        : R extends Options
-          ? OptionValues<R>
-          : never
-      : never
+      ? NestedOptionsDataType<Awaited<R>>
+      : NestedOptionsDataType<Awaited<O>>
   : Record<never, never>;
 
 /**
  * The data type of an option that may have a parse callback.
  * @template T The option definition type
- * @template C The choices data type
- * @template F The fallback data type
+ * @template V The fallback data type
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ParseDataType<T extends Option, C, F> = T extends { parse: (...args: any) => infer R }
-  ? R extends Promise<infer D>
-    ? ElementDataType<T, D | C>
-    : ElementDataType<T, R | C>
-  : T extends WithType<'command'>
-    ? OptionsDataType<T>
-    : T extends WithType<'flag'>
-      ? true
-      : T extends WithType<'function'>
-        ? ElementDataType<T, Array<F>>
-        : ElementDataType<T, F>;
+type ParseDataType<T extends Option, V> = T extends { parse: (...args: any) => infer R }
+  ? Awaited<R>
+  : V;
 
 /**
  * The data type of an option that may have choices.
  * @template T The option definition type
  */
-type ChoiceDataType<T extends Option> = T extends { choices: infer C }
-  ? C extends ReadonlyArray<infer K>
-    ? ParseDataType<T, never, K>
-    : C extends Readonly<Record<string, infer V>>
-      ? V extends Promise<infer D>
-        ? ParseDataType<T, D, D>
-        : ParseDataType<T, V, V>
-      : ParseDataType<T, never, string>
-  : ParseDataType<T, never, string>;
+type ChoicesKeyType<T extends Option> = T extends {
+  choices: ReadonlyArray<infer K extends string>;
+  caseInsensitive?: undefined;
+}
+  ? K
+  : string;
 
 /**
- * The data type of a single-valued option or the array element of an array-valued option.
+ * The data type of an option that may have selection constraints.
  * @template T The option definition type
- * @template E The element data type
  */
-type ElementDataType<T extends Option, E> = T extends WithType<'array'> ? Array<E> : E;
+type SelectionDataType<T extends Option, K = ChoicesKeyType<T>> = T extends { mapping: infer M }
+  ? ParseDataType<T, Exclude<K, keyof M>> | M[K & keyof M]
+  : ParseDataType<T, K>;
+
+/**
+ * The data type of an option that may have a value.
+ * @template T The option definition type
+ */
+type ValueDataType<T extends Option> =
+  T extends WithType<'command'>
+    ? ParseDataType<T, OptionsDataType<T>>
+    : T extends WithType<'flag'>
+      ? ParseDataType<T, true>
+      : T extends WithType<'single'>
+        ? SelectionDataType<T>
+        : T extends WithType<'array'>
+          ? Array<SelectionDataType<T>>
+          : ParseDataType<T, Array<string>>;
 
 /**
  * The data type of an option that throws a message.
@@ -975,7 +986,7 @@ type OptionDataType<T extends Option> =
     ? MessageDataType<T, AnsiMessage>
     : T extends WithType<'version'>
       ? MessageDataType<T, string>
-      : ChoiceDataType<T> | DefaultDataType<T>;
+      : ValueDataType<T> | DefaultDataType<T>;
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -1162,5 +1173,5 @@ export async function getNestedOptions(
     return (await import(resolve(option.options))).default;
   }
   // do not destructure `options`, because the callback might need to use `this`
-  return typeof option.options === 'function' ? await option.options() : (option.options ?? {});
+  return await (typeof option.options === 'function' ? option.options() : (option.options ?? {}));
 }

@@ -49,7 +49,7 @@ describe('validate', () => {
     expect(validate(options)).rejects.toThrow(`Option flag2 has duplicate cluster letter 'f'.`);
   });
 
-  it('return a warning on variadic function option with cluster letter', async () => {
+  it('return a warning on variadic function option with cluster letter', () => {
     const options = {
       function: {
         type: 'function',
@@ -64,7 +64,7 @@ describe('validate', () => {
     });
   });
 
-  it('return a warning on array-valued option with cluster letter', async () => {
+  it('return a warning on array-valued option with cluster letter', () => {
     const options = {
       array: {
         type: 'array',

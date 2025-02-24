@@ -288,6 +288,38 @@ describe('parse', () => {
       expect(parse(options, 'cmd -a 1 1', { compIndex: 10 })).rejects.toThrow(/^$/);
     });
 
+    it('handle a single-valued option with case-insensitive choices', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          choices: ['one', 'two'],
+          caseInsensitive: true,
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -s O', { compIndex: 8 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd -s T', { compIndex: 8 })).rejects.toThrow(/^two$/);
+      expect(parse(options, 'cmd -s=O', { compIndex: 8 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd -s=T', { compIndex: 8 })).rejects.toThrow(/^two$/);
+    });
+
+    it('handle an array-valued option with choices', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          choices: ['one', 'two'],
+          caseInsensitive: true,
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -a O', { compIndex: 8 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd -a T', { compIndex: 8 })).rejects.toThrow(/^two$/);
+      expect(parse(options, 'cmd -a=O', { compIndex: 8 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd -a=T', { compIndex: 8 })).rejects.toThrow(/^two$/);
+      expect(parse(options, 'cmd -a 1 O', { compIndex: 10 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd -a 1 T', { compIndex: 10 })).rejects.toThrow(/^two$/);
+    });
+
     it('handle a flag option that wants to break the parsing loop', () => {
       const options = {
         flag: {

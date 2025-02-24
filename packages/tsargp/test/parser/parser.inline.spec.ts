@@ -90,6 +90,28 @@ describe('parse', () => {
       expect(options.single.parse).not.toHaveBeenCalled();
     });
 
+    it('throw an error on function option specified with inline parameter', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          cluster: 'f',
+          paramCount: 0,
+          parse: jest.fn(),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-f='])).rejects.toThrow(
+        `Option -f does not accept inline parameters.`,
+      );
+      expect(parse(options, ['-f=1'])).rejects.toThrow(
+        `Option -f does not accept inline parameters.`,
+      );
+      expect(parse(options, ['-f1'], flags)).rejects.toThrow(
+        `Option -f does not accept inline parameters.`,
+      );
+      expect(options.function.parse).not.toHaveBeenCalled();
+    });
+
     it('throw an error on command option specified with inline parameter', () => {
       const options = {
         command: {

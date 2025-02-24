@@ -46,7 +46,7 @@ describe('parse', () => {
       });
     });
 
-    it('set default values before calling the parse callback of command option', async () => {
+    it('set default values before calling the parse callback of command option', () => {
       const options = {
         command: {
           type: 'command',
@@ -114,23 +114,23 @@ describe('parse', () => {
       );
     });
 
-    it('handle a function option', () => {
+    it('handle a function option with an asynchronous callback', () => {
       const options = {
         function: {
           type: 'function',
           names: ['-f'],
-          default: () => true,
+          default: async () => true,
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toEqual({ function: true });
     });
 
-    it('handle a command option', () => {
+    it('handle a command option with a promise', () => {
       const options = {
         command: {
           type: 'command',
           names: ['-c'],
-          default: () => false,
+          default: Promise.resolve(false),
           parse: jest.fn(),
         },
       } as const satisfies Options;

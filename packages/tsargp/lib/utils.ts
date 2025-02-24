@@ -443,7 +443,7 @@ export function mergeValues<T extends Record<string, unknown>>(
   const result: Record<string, unknown> = {};
   for (const [key, val] of getEntries(template)) {
     result[key] =
-      Array.isArray(val) || typeof val !== 'object'
+      isArray(val) || typeof val !== 'object'
         ? (source[key] ?? val)
         : { ...val, ...(source[key] as object) };
   }
@@ -525,15 +525,6 @@ export function getEntries<T>(rec: Readonly<Record<string, T>>): Array<[string, 
  * @returns True if the value is an array
  */
 export function isArray<T = unknown>(value: unknown): value is Array<T> {
-  return Array.isArray(value);
-}
-
-/**
- * Checks if a value is an array.
- * @param value The value
- * @returns True if the value is an array
- */
-export function isReadonlyArray<T = unknown>(value: unknown): value is ReadonlyArray<T> {
   return Array.isArray(value);
 }
 

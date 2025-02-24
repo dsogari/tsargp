@@ -24,7 +24,7 @@ import { getParamCount, getOptionNames, visitRequirements } from './options.js';
 import {
   mergeValues,
   getSymbol,
-  isReadonlyArray,
+  isArray,
   getKeys,
   escapeRegExp,
   getValues,
@@ -175,9 +175,8 @@ const helpFunctions = {
   },
   [HelpItem.choices]: (option, phrase, _context, result) => {
     const { choices } = option;
-    const values = isReadonlyArray<string>(choices) ? choices : choices && getKeys(choices);
-    if (values?.length) {
-      result.format(phrase, { open: '{', close: '}' }, values);
+    if (choices?.length) {
+      result.format(phrase, { open: '{', close: '}' }, choices);
     }
   },
   [HelpItem.regex]: (option, phrase, _context, result) => {
@@ -848,7 +847,7 @@ function formatParam(
     .open(inline ? '=' : '');
   if (example !== undefined) {
     let value = example;
-    if (separator && isReadonlyArray(value)) {
+    if (separator && isArray(value)) {
       const sep = typeof separator === 'string' ? separator : separator.source;
       value = value.join(sep);
     }

@@ -335,7 +335,7 @@ function validateRequirement(
 function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
   const [, , warning] = context;
   const { choices } = option;
-  if (Array.isArray(choices)) {
+  if (choices) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));

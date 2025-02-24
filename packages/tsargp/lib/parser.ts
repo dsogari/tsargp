@@ -36,7 +36,6 @@ import {
   getCompIndex,
   getEntries,
   getSymbol,
-  isReadonlyArray,
   getKeys,
   isArray,
   findValue,
@@ -44,6 +43,7 @@ import {
   readFile,
   areEqual,
   regex,
+  escapeRegExp,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -569,10 +569,11 @@ async function completeParameter(
       words = [];
     }
   } else {
-    const choices = option.choices;
-    words = isReadonlyArray<string>(choices) ? choices.slice() : choices ? getKeys(choices) : [];
+    const { choices, caseInsensitive } = option;
+    words = choices?.slice() ?? [];
     if (comp) {
-      words = words.filter((word) => word.startsWith(comp));
+      const regex = RegExp('^' + escapeRegExp(comp), caseInsensitive ? 'i' : '');
+      words = words.filter((word) => !!word.match(regex));
     }
   }
   return words;
@@ -633,13 +634,13 @@ async function parseParams(
   }
   /** @ignore */
   function parse2(param: string): unknown {
-    return rec && param in rec ? rec[param] : parse1(param);
+    return map?.get(caseInsensitive ? param.toLowerCase() : param) ?? parse1(param);
   }
   const [, values, , , comp] = context;
   const [key, option, name] = info;
   const breakLoop = !!option.break && !comp;
   const seq = { values, index, name, comp };
-  const { type, regex, separator, append, choices } = option;
+  const { type, regex, separator, append, choices, mapping, caseInsensitive } = option;
 
   // if index is NaN, we are in the middle of requirements checking (data comes from environment)
   if (index >= 0 && breakLoop) {
@@ -675,15 +676,17 @@ async function parseParams(
       throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
     }
   }
-  const [keys, rec] = isReadonlyArray<string>(choices)
-    ? [choices]
-    : [option.parse ? undefined : choices && getKeys(choices), choices];
-  if (keys) {
-    const mismatch = params.find((param) => !keys.includes(param));
+  if (choices) {
+    const regex = RegExp(`^(${choices.join('|')})`, caseInsensitive ? 'i' : '');
+    const mismatch = params.find((param) => !param.match(regex));
     if (mismatch) {
-      throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, keys);
+      throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, choices);
     }
   }
+  const entries = mapping && getEntries(mapping);
+  const map =
+    entries &&
+    new Map(caseInsensitive ? entries.map(([key, val]) => [key.toLowerCase(), val]) : entries);
   if (type === 'single') {
     values[key] = await parse2(params[0]);
   } else {
@@ -916,8 +919,9 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
-    const value =
-      typeof option.default === 'function' ? await option.default(values) : option.default;
+    const value = await (typeof option.default === 'function'
+      ? option.default(values)
+      : option.default);
     values[key] =
       option.type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
   }
