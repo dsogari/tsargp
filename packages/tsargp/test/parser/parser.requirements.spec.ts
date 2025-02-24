@@ -334,7 +334,7 @@ describe('parse', () => {
           positional: true,
           preferredName: 'preferred',
           requires(values) {
-            return !!this.positional && values['flag1'] === values['flag2']; // test `this`
+            return !!this.positional && values['flag1'] === values['flag2']; // test access to `this`
           },
         },
       } as const satisfies Options;
@@ -640,7 +640,7 @@ describe('parse', () => {
           positional: true,
           preferredName: 'preferred',
           requiredIf(values) {
-            return !!this.positional && values['flag1'] === values['flag2']; // test `this`
+            return !!this.positional && values['flag1'] === values['flag2']; // test access to `this`
           },
         },
       } as const satisfies Options;

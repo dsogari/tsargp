@@ -358,7 +358,7 @@ describe('parse', () => {
           type: 'flag',
           names: ['-f'],
           async parse() {
-            throw Error(this.type); // test `this`
+            throw Error(this.type); // test access to `this`
           },
         },
       } as const satisfies Options;
@@ -466,11 +466,11 @@ describe('parse', () => {
           type: 'command',
           names: ['-c'],
           async parse() {
-            throw Error(this.type); // test `this`
+            throw Error(this.type); // test access to `this`
           },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-c'])).rejects.toThrow('command');
+      expect(parse(options, ['-c'])).rejects.toThrow(/^command$/);
     });
 
     it('set the option value with the result of the parse callback', () => {
@@ -554,7 +554,7 @@ describe('parse', () => {
             return {
               flag: {
                 type: 'flag',
-                names: this.names, // test `this`
+                names: this.names, // test access to `this`
               },
             };
           },
@@ -750,7 +750,7 @@ describe('parse', () => {
         names: ['-f'],
         paramCount: 0,
         parse(param) {
-          this.skipCount = Number(param[0]); // test `this`
+          this.skipCount = Number(param[0]); // test access to `this`
         },
       },
     } as const satisfies Options;

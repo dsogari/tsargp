@@ -56,7 +56,7 @@ describe('parse', () => {
         type: 'array',
         names: ['-a'],
         parse(param) {
-          return param === this.type; // test `this`
+          return param === this.type; // test access to `this`
         },
       },
     } as const satisfies Options;

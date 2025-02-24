@@ -485,7 +485,7 @@ describe('parse', () => {
           paramCount: 2,
           parse: jest.fn(),
           complete() {
-            return [this.type]; // test `this`
+            return [this.type]; // test access to `this`
           },
         },
       } as const satisfies Options;

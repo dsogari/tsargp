@@ -18,6 +18,10 @@ describe('HelpFormatter', () => {
           names: ['-f'],
           group: 'group',
         },
+        single: {
+          type: 'single',
+          names: ['-s'],
+        },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format('group');
       expect(message.wrap()).toEqual(`  -f\n`);

@@ -533,7 +533,7 @@ The **command** option -- a.k.a. subcommand -- lets you specify a set of option 
 
 It will supply the [parse callback] of the subcommand with the parsed values and subsequently exit the parsing loop. The option value will be either the result of the callback, if specified, or the parsed values themselves.
 
-Values of _ancestor_ commands (i.e. non-immediate parents) cannot be accessed from within the callback. For this purpose, you will need to wait until the parser returns from the parsing loop.
+Values of _ancestor_ commands (i.e. non-immediate parents) cannot be accessed from within the callback. For this purpose, you will need to wait until the parsing procedure returns.
 
 <Callout type="info">
 
@@ -638,7 +638,7 @@ The `separator` attribute, if present, specifies a delimiter by which to split t
 
 <Callout type="info">
 
-When _not_ using this attribute, we recommend disabling [inline parameters] through the [inline constraint].
+When _not_ using this attribute, we recommend setting the [inline constraint] to `false{:ts}`.
 
 </Callout>
 
@@ -654,11 +654,11 @@ Due to the nature of JavaScript's [Set], the order of elements is preserved (i.e
 
 #### Append values
 
-The `append` attribute, if present, indicates that the option allows appending elements to its value if specified multiple times on the command line. Value constraints, if enabled, are applied after appendage.
+The `append` attribute, if present, indicates that the option allows appending elements to its value when specified multiple times on the command line. Any [duplicates] are removed after appendage, if enabled.
 
 #### Element count limit
 
-The `limit` attribute, if present, indicates the maximum allowed number of elements. Any [argument sequence] that causes the option value to _exceed_ the given limit (after removing duplicates) will cause an error to be raised.
+The `limit` attribute, if present, indicates the maximum allowed number of elements. Any [argument sequence] that causes the option value to _exceed_ the given limit (after removing any [duplicates]) will cause an error to be raised.
 
 ### Function option
 
@@ -807,7 +807,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 {/* array attributes */}
 
 [parameter separator]: #parameter-separator
-[remove duplicates]: #remove-duplicates
+[duplicates]: #remove-duplicates
 [append values]: #append-values
 [element count limit]: #element-count-limit
 

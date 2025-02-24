@@ -10,7 +10,11 @@ The `Style` type is a string literal consisting of Select Graphic Rendition ([SG
 
 ## Styling attributes
 
-The `style` function accepts a list of styling attributes and creates a `Style` that can be used in any part of the API that expects this type. It can also be embedded directly in text attributes, such as the [option synopsis], [deprecation notice], [help section] texts and custom phrases.
+The `style` function accepts a list of styling attributes and creates a `Style` that can be used in any part of the API that expects this type. It can also be embedded directly in text attributes, such as:
+
+- [option synopsis] and [deprecation notice]
+- [help section] titles and texts
+- [error phrases] and [help phrases]
 
 Styles are cumulative, i.e., they can be combined with previous styles depending on the kind of styling attribute. For instance, if the style of an option's description is `tf.bold{:ts}` and the style of number values is `fg.green{:ts}`, then any number value (except those embedded in text attributes) that appears in the option description will be rendered in **bold** intensity with <span style={{color: 'green'}}>green</span> foreground color.
 
@@ -134,7 +138,7 @@ During splitting, numeric placeholders prefixed with a hashtag `#` may be extrac
 
 <Callout type="info">
 
-This particular feature is only available in _custom phrases_, not in text attributes of option definitions.
+This particular feature is only available in _phrases_, not in other text attributes.
 
 </Callout>
 
@@ -186,7 +190,7 @@ Another paragraph
 
 Splitted text is always wrapped according to a configured _width_, i.e., the number of terminal columns by which to limit each line of text.
 
-When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string will avoid wrapping and instead suppress some control sequences that would otherwise be used to render the text in a terminal.
+When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string will by default avoid wrapping and instead suppress some control sequences that would otherwise be used to render the text in a terminal.
 
 The following features are supported in text wrapping.
 
@@ -216,26 +220,28 @@ All messages produced by the library are instances of one of these classes. So y
 
 The `AnsiMessage` class wraps a list of ANSI strings. It is the type used for help messages.
 
-The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable (if present), or the `columns` property of the standard _output_ stream (i.e., `process.stdout{:ts}`). Therefore, this kind of message should be printed with `console.log{:ts}` or equivalent.
+The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable, if present, or the `columns` property of the standard _output_ stream (i.e., `process.stdout{:ts}`). Therefore, this kind of message should be printed with `console.log{:ts}` or equivalent.
 
 <Callout type="info">
 
-When redirecting the output of a command (e.g., writing to a file or piping to another command), the associated stream will not have a `columns` property, thus defaulting to zero.
+When redirecting the output of a command (e.g., writing to a file or piping to another command), the associated stream may not have a `columns` property, thus defaulting to zero.
 
 </Callout>
 
-This class provides an additional `wrap` method to get a traditional string. It accepts two optional parameters:
+This class provides an additional `wrap` method to get a traditional string. It accepts the following optional parameters:
 
-- `width` - the desired terminal width (or zero to avoid wrapping)
+- `width` - the desired terminal width (defaults to `0{:ts}`, i.e., avoid wrapping)
 - `emitStyles` - whether styles should be emitted
+- `emitSpaces` - whether spaces should be emitted instead of move sequences
 
-The default value of `emitStyles` depends on a few environment variables:
+The default value of the latter two parameters depend on a few environment variables:
 
 - `FORCE_COLOR` - force _emission_ of styles regardless of the terminal width
 - `NO_COLOR` - force _omission_ of styles regardless of the terminal width
 - `TERM` - set to `'dumb'{:ts}` to achieve the same behavior as `NO_COLOR`
+- `FORCE_SPACES` - force _emission_ of spaces when the terminal width is non-zero
 
-Generally, you should not alter the returned string after being wrapped, as this will mess up the disposition of text in the terminal. If you do need to, you can either _prepend_ text ending with a line feed character (`'\n'{:ts}`), or _append_ text starting with a line feed, as this will preserve the disposition of wrapped text.
+Generally, you should not alter the returned string after being wrapped, as this will mess up the disposition of text in the terminal. If you do need to, you can either _prepend_ text ending with a line feed `'\n'{:ts}`, or _append_ text starting with a line feed, as this will preserve the disposition of wrapped text.
 
 <Callout type="default">
 
@@ -247,11 +253,21 @@ Alternatively, you can retrieve the underlying ANSI strings from the list and ma
 
 The `WarnMessage` class is a specialization of the ANSI message, used for warnings.
 
-The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable (if present), or the `columns` property of the standard _error_ stream (i.e., `process.stderr{:ts}`). Therefore, this kind of message should be printed with `console.error{:ts}` or equivalent.
+The default terminal width used by this class is the value of the `'FORCE_WIDTH'{:ts}` environment variable, if present, or the `columns` property of the standard _error_ stream (i.e., `process.stderr{:ts}`). Therefore, this kind of message should be printed with `console.error{:ts}` or equivalent.
+
+It also offers two methods that used by the library:
+
+- `add` - appends a ANSI message formatted from one of the [error phrases]
+- `addCustom` - appends a ANSI message formatted from a custom phrase
 
 ### Error message
 
 The `ErrorMessage` class is a specialization of the standard `Error` class, used for errors. It has the same semantics as the warning message, so it should be printed with `console.error{:ts}` or equivalent.
+
+Similarly to the warning message, it offers two static methods that used by the library:
+
+- `create` - creates an error message formatted from one of the [error phrases]
+- `createCustom` - creates an error message formatted from a custom phrase
 
 ### Text message
 
@@ -323,7 +339,7 @@ Connective words cannot contain [inline styles] or line breaks.
 
 #### Error phrases
 
-The `errorPhrases` property specifies custom phrases to use for error and warning messages that may be produced by both the parser and validator. It has the following optional settings, whose keys are enumerators from `ErrorItem`:
+The `errorPhrases` property specifies custom phrases to use for error and warning messages. It has the following optional settings, whose keys are enumerators from `ErrorItem`:
 
 | Error item                   | Raised when                                                                  | Default phrase                                                                                       | Placeholders                                                                               |
 | ---------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |

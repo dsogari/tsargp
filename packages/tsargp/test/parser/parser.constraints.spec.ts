@@ -210,7 +210,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-a', '1', '2', '1'])).resolves.toEqual({ array: ['1', '2'] });
-      expect(parse(options, ['-a', '1,2,1,2'])).resolves.toEqual({ array: ['1', '2'] });
+      expect(parse(options, ['-a', '2,1,1,2'])).resolves.toEqual({ array: ['2', '1'] });
     });
   });
 });

@@ -52,6 +52,11 @@ class Editor extends Component<Props> {
   private readonly ref = createRef<HTMLDivElement>();
 
   /**
+   * The editor extensions.
+   */
+  private readonly extensions = [basicSetup, javascript()];
+
+  /**
    * The editor view.
    */
   private editorView: EditorView | undefined;
@@ -67,12 +72,19 @@ class Editor extends Component<Props> {
 
   override componentDidMount() {
     if (this.ref.current) {
-      const selection = this.props.initialSel;
+      const doc = this.props.initialDoc;
+      const sel = this.props.initialSel;
       this.editorView = new EditorView({
-        extensions: [basicSetup, javascript()],
+        extensions: this.extensions,
         parent: this.ref.current,
-        doc: this.props.initialDoc,
-        selection: selection && { anchor: selection[0], head: selection[1] },
+        doc,
+        selection:
+          doc && sel
+            ? {
+                anchor: Math.max(0, Math.min(doc.length, sel[0])), // sanitize anchor
+                head: sel[1] && Math.max(0, Math.min(doc.length, sel[1])), // sanitize head
+              }
+            : undefined,
       });
     }
   }

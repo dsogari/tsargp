@@ -55,7 +55,8 @@ export default {
 You may also want to customize the help layout, e.g.:
 
 ```ts
-import { type Options, HelpItem, style, tf } from 'tsargp';
+import { type Options, HelpItem, style, tf, config } from 'tsargp';
+config.helpPhrases[HelpItem.synopsis] = '💡 #0'; // option synopsis with emoji
 export default {
   help: {
     // ...
@@ -63,10 +64,7 @@ export default {
       names: { indent: 4 }, // indent option names by 4 spaces
       descr: { breaks: 1 }, // line feed before option descriptions
       param: { hidden: true }, // hide option parameter/examples
-      items: [HelpItem.synopsis, HelpItem.required, HelpItem.deprecated],
-      phrases: {
-        [HelpItem.synopsis]: '💡 #0', // option synopsis with emoji
-      },
+      items: [HelpItem.synopsis, HelpItem.deprecated],
     },
     styles: {
       descr: style(tf.italic), // italic description for this option
@@ -102,24 +100,24 @@ Since this guide was first written, the [enable subcommand] attribute has been i
 
 </Callout>
 
-Another way to offer help is by defining a "help" command. This method still uses the help option from the previous example, but increments it by providing a new syntax to obtain help for _subcommands_. For example, to present help for a subcommand called `cmd`, the following invocations would be equivalent:
+Another way to offer help is by defining a "help" [subcommand]. This method still uses the [help option] from the previous example, but increments it by providing a new syntax to obtain help for subcommands. For example, to present help for a subcommand called `cmd`, the following invocations would be equivalent:
 
 ```sh
 cli help cmd
 cli cmd --help
 ```
 
-To achieve this, we have to define a [subcommand]. We can start with the option definitions for the subcommand:
+To achieve this, we have to define a "helper" subcommand that accepts the name of a subcommand for which the actual help message should be produced. Let's start with the option definitions for the subcommands:
 
 ```ts
-import type { Options } from 'tsargp';
+import { type Options } from 'tsargp';
 
 const cmd1Opts = {
-  // option definitions for cmd1, including its 'help'...
+  // option definitions for cmd1, including its '--help'...
 } as const satisfies Options;
 
 const cmd2Opts = {
-  // option definitions for cmd2, including its 'help'...
+  // option definitions for cmd2, including its '--help'...
 } as const satisfies Options;
 
 const helpOpts = {
@@ -137,8 +135,8 @@ const helpOpts = {
 Now we can define the main command options:
 
 ```ts
-import type { Options, OptionValues } from 'tsargp';
-import { ArgumentParser } from 'tsargp';
+import { type Options, type OptionValues, parse } from 'tsargp';
+
 export default {
   cmd1: {
     type: 'command',
@@ -160,20 +158,13 @@ export default {
     async parse(param) {
       const vals = param as OptionValues<typeof helpOpts>;
       const opts = vals.name === 'cmd1' ? cmd1Opts : cmd2Opts;
-      // this will throw the help message
-      await new ArgumentParser(opts).parse(['--help'], { progName: '' });
+      await parse(opts, ['--help'], { progName: vals.name }); // will throw the help message
     },
   },
 } as const satisfies Options;
 ```
 
-The `progName` configuration flag is set in order to avoid appending the script name twice to the process title.
-
-<Callout type="info">
-
-Keep in mind that, when word completion is in effect, the subcommand's [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [`compIndex`] flag for the delegated `parse` call.
-
-</Callout>
+Since we are using a delegated `parse` call, we deliberately set the [program name] flag to the name of the target subcommand. Also, keep in mind that when word completion is in effect, the [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [completion index] flag.
 
 {/* options references */}
 
@@ -185,4 +176,5 @@ Keep in mind that, when word completion is in effect, the subcommand's [parse ca
 
 {/* parser references */}
 
-[`compIndex`]: ../library/parser#completion-index
+[program name]: ../library/parser#program-name
+[completion index]: ../library/parser#completion-index

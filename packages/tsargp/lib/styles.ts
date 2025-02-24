@@ -757,7 +757,7 @@ export class AnsiMessage extends Array<AnsiString> {
  */
 export class WarnMessage extends AnsiMessage {
   /**
-   * Appends a ANSI message formatted with an error phrase.
+   * Appends a ANSI message formatted from an error phrase.
    * @param kind The error kind
    * @param flags The formatting flags
    * @param args The error arguments
@@ -767,7 +767,7 @@ export class WarnMessage extends AnsiMessage {
   }
 
   /**
-   * Appends a ANSI string formatted with a custom phrase.
+   * Appends a ANSI string formatted from a custom phrase.
    * @param phrase The phrase
    * @param flags The formatting flags
    * @param args The phrase arguments

@@ -482,7 +482,7 @@ function formatNames(
   indent = max(0, indent);
   let len = 0;
   option.names.forEach((name, i) => {
-    if (name !== null) {
+    if (name) {
       if (str) {
         str.close(sep);
         len += sepLen;
@@ -574,7 +574,7 @@ function getNameWidths(context: HelpContext): Array<number> | number {
           slotWidths[i] = max(slotWidths[i] ?? 0, name?.length ?? 0);
         });
       } else {
-        const len = names.reduce((acc, name) => acc + sepLen + (name?.length ?? -sepLen), -sepLen);
+        const len = names.reduce((acc, name) => acc + sepLen + (name?.length || -sepLen), -sepLen);
         maxWidth = max(maxWidth, len);
       }
     }

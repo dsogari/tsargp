@@ -22,10 +22,11 @@ class CodeEditor extends Editor {}
 export default function Code(props: Props): JSX.Element {
   /** @ignore */
   function getHash(): string {
-    return compress(props.callbacks.getSource?.() ?? '');
+    return compress(props.callbacks.getSource());
   }
   const hash = window.location.hash;
   const initialDoc = hash ? decompress(hash.slice(1)) : props.initialDoc;
+  const editor = <CodeEditor {...{ ...props, initialDoc }} />;
   const spanRef = createRef<HTMLSpanElement>();
   const onClickShare = () => {
     window.location.hash = getHash();
@@ -57,7 +58,7 @@ export default function Code(props: Props): JSX.Element {
       <span ref={spanRef} style={{ display: 'none' }}>
         URL copied to clipboard!
       </span>
-      <CodeEditor {...{ ...props, initialDoc }} />
+      {editor}
       <style jsx>{`
         button {
           background-color: rgba(40, 40, 40);
