@@ -13,18 +13,19 @@ import { FileTree, Steps, Tabs } from 'nextra/components';
 | Usability-wise       | Functionality-wise     | Presentation-wise       |
 | -------------------- | ---------------------- | ----------------------- |
 | Zero-dependency      | Word completion        | Help message formatting |
-| Fully declarative    | Run-time validation    | Text wrapping/alignment |
+| Fully declarative    | Option validation      | Text wrapping/alignment |
 | Type-checked         | Option requirements    | Paragraphs and lists    |
+| Highly configurable  | Value constraints      | Custom error phrases    |
 | Browser-compatible   | Name suggestions       | [SGR] colors and styles |
 | 30KB minified        | Subcommands            | Option grouping/hiding  |
-| ESM-native           | Asynchronous callbacks | Help sections/usage     |
+| ESM-native           | Asynchronous callbacks | Usage strings           |
 | Online documentation | GNU's _short-options_  |                         |
 
 ## Motivation
 
 Why use this library when there are already many good argument parsers on npm?
 
-The most distinctive feature is the _declarative_-ness of its API. Very few libraries that we know of support this (at the time of writing, it's worth mentioning [meow], [yargs] and [oclif]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
+One of the most distinctive features is the _declarative_ API. Very few libraries that we know of support this (at the time of writing, it's worth mentioning [meow], [yargs] and [oclif]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
 
 Moreover, by relying on TypeScript, it ensures that values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a choice constraint in its definition. Even JSDoc comments are preserved in IntelliSense!
 
@@ -79,10 +80,10 @@ By convention, we keep command-line options separate from the main script which 
 
 ### Define command-line options
 
-You should define the options and export them by default as a single object. Below is an example. In the documentation, you will learn about the different option types and their attributes.
+You should define the available options and export them by default as a single object. Below is an example. In the documentation, you will learn about the different option types and their attributes.
 
 ```ts copy filename="cli.options.ts" {4}
-import { type Options, ... } from 'tsargp';
+import { type Options /*...*/ } from 'tsargp';
 
 export default {
   // definitions go here...
@@ -91,15 +92,15 @@ export default {
 
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is an example. In the documentation, you will learn how to parse them into an existing object or class instance, specify parsing flags, and print warnings.
+There are multiple ways to parse the command-line arguments. Below is just an example. The documentation shows how to parse them into an existing object or class instance, specify parsing flags, and print warnings.
 
 ```ts copy filename="cli.ts" {3}
 #!/usr/bin/env node
-import { ArgumentParser } from 'tsargp';
+import { parse } from 'tsargp';
 import options from './cli.options.js';
 
 try {
-  const values = await new ArgumentParser(options).parse();
+  const values = await parse(options);
   // do something with the options' values...
 } catch (err) {
   if (err instanceof Error) {
@@ -113,15 +114,15 @@ try {
 
 ### Validate options in test script
 
-You should check the validity of command-line options during development, to avoid headaches for end users. The documentation also shows how to check for inconsistencies in option naming, among other things.
+You should check the validity of command-line options during development. The documentation also shows how to check for inconsistencies in option naming, among other things.
 
 ```ts copy filename="cli.options.spec.ts" {2}
-import { OptionValidator } from 'tsargp';
+import { validate } from 'tsargp';
 import options from './cli.options.js';
 
 describe('cli', () => {
   it('should have valid options', async () => {
-    const { warning } = await new OptionValidator(options).validate();
+    const { warning } = await validate(options);
     expect(warning).toBeUndefined(); // or check warnings that are important to your application
   });
 });

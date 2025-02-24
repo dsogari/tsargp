@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import { Callout, Steps } from 'nextra/components';
+import { Callout } from 'nextra/components';
 
 export const Play = dynamic(() => import('@components/play'), { ssr: false });
 export const Code = dynamic(() => import('@components/code'), { ssr: false });
@@ -7,7 +7,10 @@ export const callbacks = {}; // will hold the editor callbacks
 
 {/* prettier-ignore-start */}
 
-export const initialDoc = `const {ErrorItem, HelpItem, config, req, tf, fg, bg, ul, style, fg8, bg8, ul8} = tsargp;
+export const initialDoc = `const {
+  ErrorMessage, TextMessage, ErrorItem, HelpItem,
+  parse, parseInto, validate, config, req, tf, fg, bg, ul, style, fg8, bg8, ul8,
+} = tsargp;
 
 return {
   // Define your options here. Only plain JavaScript is allowed.
@@ -20,7 +23,7 @@ return {
 
 {/* prettier-ignore-end */}
 
-<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[100]} />
+<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[163]} />
 
 <Callout type="default">
 
@@ -32,20 +35,18 @@ Call `init` once to validate the option definitions. After that, you can `play` 
 
 <Play callbacks={callbacks} />
 
-<details>
-  <summary>Disclaimer</summary>
+<Callout type="info">
 
-Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
+Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion all work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
 
 ```sh copy
 npm i -g tsargp && complete -C tsargp tsargp
 ```
 
-</details>
+</Callout>
 
 ## Things to try out
 
-<Steps>
 ### Validation errors
 
 - check if an error is reported for duplicate option names
@@ -57,5 +58,3 @@ npm i -g tsargp && complete -C tsargp tsargp
 - check if a warning is reported for option names too similar to each other (e.g. `-help1` and `-help2`)
 - check if a warning is reported for option names with mixed naming conventions (e.g. `-h` and `--b`)
 - check if a warning is reported for a variadic option with cluster letters
-
-</Steps>

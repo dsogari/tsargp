@@ -4,7 +4,7 @@ export type * from './styles.js';
 export * from './config.js';
 export * from './enums.js';
 export * from './formatter.js';
-export { req, valuesFor } from './options.js';
+export { req, valuesFor, numberInRange } from './options.js';
 export * from './parser.js';
 export {
   seq,

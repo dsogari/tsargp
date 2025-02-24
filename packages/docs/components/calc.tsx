@@ -4,7 +4,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import { ArgumentParser, ErrorMessage, AnsiMessage } from 'tsargp';
+import { parse, ErrorMessage, AnsiMessage } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { calc as options } from 'tsargp/examples';
 
@@ -12,15 +12,13 @@ import { calc as options } from 'tsargp/examples';
 // Classes
 //--------------------------------------------------------------------------------------------------
 class CalcCommand extends Command {
-  private readonly parser = new ArgumentParser(options);
-
   constructor(props: Props) {
     super(props, 'calc');
   }
 
   override async run(line: string, compIndex?: number) {
     try {
-      const values = await this.parser.parse(line, { compIndex });
+      const values = await parse(options, line, { compIndex });
       const result = values.add ?? values.sub ?? values.mult ?? values.div ?? NaN;
       this.println(`${result}`);
     } catch (err) {

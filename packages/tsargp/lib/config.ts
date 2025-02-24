@@ -21,7 +21,7 @@ export const config: MessageConfig = {
     symbol: style(fg.magenta),
     value: style(fg.brightBlack),
     url: style(fg.cyan),
-    text: '',
+    text: style(fg.default),
   },
   connectives: {
     and: 'and',
@@ -51,7 +51,7 @@ export const config: MessageConfig = {
     [ErrorItem.missingRequiredOption]: 'Option #0 is required.',
     [ErrorItem.mismatchedParamCount]:
       'Wrong number of parameters to option #0: requires (exactly|at least|at most|between) #1.',
-    [ErrorItem.missingPackageJson]: 'Could not find a "package.json" file.',
+    [ErrorItem.versionFileNotFound]: 'Could not find a version JSON file.',
     [ErrorItem.disallowedInlineParameter]:
       '(Option|Positional marker) #0 does not accept inline parameters.',
     [ErrorItem.choiceConstraintViolation]: 'Invalid parameter to #0: #1. Value must be one of: #2.',
@@ -80,6 +80,8 @@ export const config: MessageConfig = {
     [ErrorItem.variadicWithClusterLetter]:
       'Variadic option #0 may only appear as the last option in a cluster.',
     [ErrorItem.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
+    [ErrorItem.missingParameter]: 'Missing parameter to option #0.',
+    [ErrorItem.missingResolveCallback]: 'Missing module resolution function.',
   },
   helpPhrases: {
     [HelpItem.synopsis]: '#0',
@@ -248,11 +250,11 @@ export type MessageConfig = {
    */
   readonly connectives: ConnectiveWords;
   /**
-   * The custom error phrases.
+   * The error phrases.
    */
   readonly errorPhrases: Record<ErrorItem, string>;
   /**
-   * The custom help phrases.
+   * The help phrases.
    */
   readonly helpPhrases: Record<HelpItem, string>;
 };

@@ -2,10 +2,12 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
-import type { AnsiMessage, ErrorFormatter, Style } from './styles.js';
+import type { AnsiMessage, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
-import { getEntries } from './utils.js';
+import { ErrorItem } from './enums.js';
+import { ErrorMessage } from './styles.js';
+import { getEntries, getSymbol } from './utils.js';
 
 export { requirementExpressions as req };
 
@@ -140,12 +142,6 @@ export type WithSectionKind<T extends string> = {
    * The kind of section.
    */
   readonly type: T;
-};
-
-/**
- * Defines attributes for a help section with wrapping.
- */
-export type WithSectionTitle = {
   /**
    * The section heading or default group heading. May contain inline styles.
    */
@@ -156,7 +152,7 @@ export type WithSectionTitle = {
   readonly style?: Style;
   /**
    * The number of line breaks to insert before the section.
-   * (Defaults to 0 for the first section, else 2)
+   * (Defaults to 0 for the first section, 1 for others)
    */
   readonly breaks?: number;
   /**
@@ -220,16 +216,12 @@ export type WithSectionUsage = {
 /**
  * A help text section.
  */
-export type HelpTextSection = WithSectionKind<'text'> &
-  WithSectionTitle &
-  WithSectionText &
-  WithSectionIndent;
+export type HelpTextSection = WithSectionKind<'text'> & WithSectionText & WithSectionIndent;
 
 /**
  * A help usage section.
  */
 export type HelpUsageSection = WithSectionKind<'usage'> &
-  WithSectionTitle &
   WithSectionUsage &
   WithSectionIndent &
   WithSectionFilter;
@@ -237,7 +229,7 @@ export type HelpUsageSection = WithSectionKind<'usage'> &
 /**
  * A help groups section.
  */
-export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionTitle & WithSectionFilter;
+export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter;
 
 /**
  * A help section.
@@ -338,10 +330,10 @@ export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
 /**
  * A callback for custom parsing or custom completion.
  * @template P The parameter data type
- * @template I The type of argument sequence information
+ * @template I The type of argument information
  * @template R The return type
  * @param param The option parameter(s)
- * @param info The argument sequence information
+ * @param info The argument information
  * @returns The return value
  */
 export type CustomCallback<P, I, R> = (param: P, info: I) => R;
@@ -349,15 +341,20 @@ export type CustomCallback<P, I, R> = (param: P, info: I) => R;
 /**
  * A callback for custom parsing.
  * @template P The parameter data type
- * @template I The type of argument sequence information
+ * @template R The result data type
  */
-export type ParseCallback<P, I> = CustomCallback<P, I, unknown>;
+export type ParseCallback<P, R = unknown> = CustomCallback<P, WithArgInfo & WithCompInfo, R>;
 
 /**
- * A callback for custom completion.
- * @template I The type of argument sequence information
+ * A callback for custom word completion.
+ * @template I The type of argument information
  */
-export type CompleteCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
+export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
+
+/**
+ * The type of nested options for a subcommand.
+ */
+export type NestedOptions = string | Options | (() => Promissory<Options>);
 
 /**
  * A known value used in default values and parameter examples.
@@ -367,7 +364,7 @@ export type KnownValue = boolean | string | number | object;
 /**
  * Information about the current argument sequence in the parsing loop.
  */
-export type WithValues = {
+export type WithArgInfo = {
   /**
    * The previously parsed values.
    * It is an opaque type that should be cast to {@link OptionValues}`<typeof your_options>`.
@@ -389,7 +386,7 @@ export type WithValues = {
 /**
  * Information about word completion, to be used by custom parse callbacks.
  */
-export type WithComp = {
+export type WithCompInfo = {
   /**
    * Whether word completion is in effect.
    */
@@ -399,21 +396,11 @@ export type WithComp = {
 /**
  * Information about word completion, to be used by custom complete callbacks.
  */
-export type WithPrev = {
+export type WithPrevInfo = {
   /**
    * The parameters preceding the word being completed, if any.
    */
   prev: Array<string>;
-};
-
-/**
- * A utility to format ANSI strings, to be used by custom callbacks.
- */
-export type WithFormat = {
-  /**
-   * Creates a formatted message.
-   */
-  format: ErrorFormatter['format'];
 };
 
 /**
@@ -483,9 +470,8 @@ export type WithMessage = {
 /**
  * Defines attributes common to options that have values.
  * @template P The type of parse parameter
- * @template I The type of argument sequence information
  */
-export type WithValue<P, I> = {
+export type WithValue<P> = {
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
    */
@@ -513,7 +499,7 @@ export type WithValue<P, I> = {
   /**
    * A custom callback for parsing the option parameter(s).
    */
-  readonly parse?: ParseCallback<P, I>;
+  readonly parse?: ParseCallback<P>;
 };
 
 /**
@@ -539,7 +525,7 @@ export type WithEnv = {
 
 /**
  * Defines attributes for options that may have parameters.
- * @template I The type of argument sequence information
+ * @template I The type of argument information for completion callbacks
  */
 export type WithParam<I> = {
   /**
@@ -568,7 +554,7 @@ export type WithParam<I> = {
   /**
    * A custom callback for word completion.
    */
-  readonly complete?: CompleteCallback<I>;
+  readonly complete?: CompletionCallback<I>;
 };
 
 /**
@@ -613,15 +599,10 @@ export type WithHelp = {
  */
 export type WithVersion = {
   /**
-   * The semantic version (e.g., 0.1.0) or version information. It is not validated, but cannot be
-   * empty. It may contain inline styles.
+   * The version information as plain text (e.g., 0.1.0).
+   * It is not validated, but should not be empty or contain inline styles.
    */
   readonly version?: string;
-  /**
-   * A resolution function scoped to the module where a `package.json` file should be searched. Use
-   * `import.meta.resolve`. Use in non-browser environments only.
-   */
-  readonly resolve?: ResolveCallback;
 };
 
 /**
@@ -629,32 +610,32 @@ export type WithVersion = {
  */
 export type WithCommand = {
   /**
-   * The command's options.
-   * It can be a callback that returns the options (for use with recursive commands).
+   * The subcommand's options.
+   * It can also be a module path or a callback that returns the options.
    */
-  readonly options?: Options | (() => Promissory<Options>);
+  readonly options?: NestedOptions;
   /**
    * The prefix of cluster arguments.
    * If set, then eligible arguments that have this prefix will be considered a cluster.
+   * Has precedence over {@link WithCommand.optionPrefix}.
    */
   readonly clusterPrefix?: string;
+  /**
+   * The prefix of option names.
+   * If set, then arguments that have this prefix will always be considered an option name.
+   */
+  readonly optionPrefix?: string;
 };
 
 /**
  * Defines attributes for the flag option.
  */
-export type WithFlag = {
-  /**
-   * The number of remaining arguments to skip.
-   * You may change this value inside the callback. The parser does not alter this value.
-   */
-  skipCount?: number;
-};
+export type WithFlag = unknown; // disappears in type intersection
 
 /**
  * Defines attributes common to single-valued options.
  */
-export type WithSingle = unknown;
+export type WithSingle = unknown; // disappears in type intersection
 
 /**
  * Defines attributes common to array-valued options.
@@ -685,11 +666,17 @@ export type WithFunction = {
   /**
    * The function's parameter count.
    *
-   * If negative, then the option accepts unlimited parameters.
-   * If non-negative, then the option expects exactly this number of parameters.
+   * If unspecified or negative, the option accepts unlimited parameters.
+   * If zero, the option accepts unknown number of parameters (use with {@link WithFunction.skipCount}).
+   * If positive, then the option expects exactly this number of parameters.
    * If a range, then the option expects between `min` and `max` parameters.
    */
   readonly paramCount?: number | Range;
+  /**
+   * The number of remaining arguments to skip.
+   * You may change this value inside the callback. The parser does not alter this value.
+   */
+  skipCount?: number;
 };
 
 /**
@@ -700,11 +687,7 @@ export type HelpOption = WithType<'help'> & WithBasic & WithHelp & WithMessage;
 /**
  * An option that throws a version information.
  */
-export type VersionOption = WithType<'version'> &
-  WithVersion &
-  WithBasic &
-  WithMessage &
-  (WithVerInfo | WithResolve);
+export type VersionOption = WithType<'version'> & WithVersion & WithBasic & WithMessage;
 
 /**
  * An option that executes a command.
@@ -712,7 +695,7 @@ export type VersionOption = WithType<'version'> &
 export type CommandOption = WithType<'command'> &
   WithCommand &
   WithBasic &
-  WithValue<OpaqueOptionValues, WithValues & WithFormat> &
+  WithValue<OpaqueOptionValues> &
   (WithDefault | WithRequired);
 
 /**
@@ -721,10 +704,9 @@ export type CommandOption = WithType<'command'> &
 export type FlagOption = WithType<'flag'> &
   WithFlag &
   WithBasic &
-  WithValue<Array<string>, WithValues & WithFormat & WithComp> &
+  WithValue<''> &
   WithEnv &
-  (WithDefault | WithRequired) &
-  (WithExample | WithParamName);
+  (WithDefault | WithRequired);
 
 /**
  * An option that has a single value and requires a single parameter.
@@ -732,9 +714,9 @@ export type FlagOption = WithType<'flag'> &
 export type SingleOption = WithType<'single'> &
   WithSingle &
   WithBasic &
-  WithValue<string, WithValues & WithFormat & WithComp> &
+  WithValue<string> &
   WithEnv &
-  WithParam<WithValues> &
+  WithParam<WithArgInfo> &
   WithSelection &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName) &
@@ -746,9 +728,9 @@ export type SingleOption = WithType<'single'> &
 export type ArrayOption = WithType<'array'> &
   WithArray &
   WithBasic &
-  WithValue<string, WithValues & WithFormat & WithComp> &
+  WithValue<string> &
   WithEnv &
-  WithParam<WithValues & WithPrev> &
+  WithParam<WithArgInfo & WithPrevInfo> &
   WithSelection &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName) &
@@ -760,9 +742,9 @@ export type ArrayOption = WithType<'array'> &
 export type FunctionOption = WithType<'function'> &
   WithFunction &
   WithBasic &
-  WithValue<Array<string>, WithValues & WithFormat & WithComp> &
+  WithValue<Array<string>> &
   WithEnv &
-  WithParam<WithValues & WithPrev> &
+  WithParam<WithArgInfo & WithPrevInfo> &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName);
 
@@ -807,9 +789,9 @@ export type OpaqueOption = WithType<OptionType> &
   WithFlag &
   WithFunction &
   WithMessage &
-  WithValue<string & Array<string> & OpaqueOptionValues, WithValues & WithFormat & WithComp> &
+  WithValue<'' & string & Array<string> & OpaqueOptionValues> &
   WithEnv &
-  WithParam<WithValues & WithPrev> &
+  WithParam<WithArgInfo & WithPrevInfo> &
   WithSelection &
   WithArray;
 
@@ -906,26 +888,6 @@ type WithRegex = {
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a `version` information.
- */
-type WithVerInfo = {
-  /**
-   * @deprecated mutually exclusive with {@link WithVersion.version}
-   */
-  readonly resolve?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with a `resolve` callback.
- */
-type WithResolve = {
-  /**
-   * @deprecated mutually exclusive with {@link WithVersion.resolve}
-   */
-  readonly version?: never;
-};
-
-/**
  * The data type of an option that may have a default value.
  * @template T The option definition type
  */
@@ -940,6 +902,24 @@ type DefaultDataType<T extends Option> = T extends { required: true }
     : undefined;
 
 /**
+ * The data type of an option that may have nested options.
+ * @template T The option definition type
+ */
+type OptionsDataType<T extends Option> = T extends { options: infer O }
+  ? O extends Options
+    ? OptionValues<O>
+    : O extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
+      ? R extends Promise<infer V>
+        ? V extends Options
+          ? OptionValues<V>
+          : never
+        : R extends Options
+          ? OptionValues<R>
+          : never
+      : never
+  : Record<never, never>;
+
+/**
  * The data type of an option that may have a parse callback.
  * @template T The option definition type
  * @template C The choices data type
@@ -951,11 +931,11 @@ type ParseDataType<T extends Option, C, F> = T extends { parse: (...args: any) =
     ? ElementDataType<T, D | C>
     : ElementDataType<T, R | C>
   : T extends WithType<'command'>
-    ? OpaqueOptionValues
+    ? OptionsDataType<T>
     : T extends WithType<'flag'>
       ? true
       : T extends WithType<'function'>
-        ? null
+        ? ElementDataType<T, Array<F>>
         : ElementDataType<T, F>;
 
 /**
@@ -1090,12 +1070,12 @@ export function getParamCount(option: OpaqueOption): Range {
   if (isNiladic(option.type)) {
     return [0, 0];
   }
-  const count = option.paramCount;
+  const { paramCount } = option;
   return option.type === 'function'
-    ? typeof count === 'object'
-      ? count
-      : count
-        ? [count, count]
+    ? typeof paramCount === 'object'
+      ? paramCount
+      : paramCount !== undefined && paramCount >= 0
+        ? [paramCount, paramCount]
         : [0, Infinity]
     : option.type === 'array'
       ? [0, Infinity]
@@ -1143,4 +1123,44 @@ export function visitRequirements<T>(
  */
 export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
   return {} as OptionValues<T>;
+}
+
+/**
+ * Create a parse callback for numbers that should be within a range.
+ * @param range The numeric range
+ * @param phrase The custom error phrase
+ * @returns The parse callback
+ */
+export function numberInRange(range: Range, phrase: string): ParseCallback<string, number> {
+  const [min, max] = range;
+  return function (param, info) {
+    if (info.comp) {
+      return 0; // the result does not matter when completion is in effect
+    }
+    const num = Number(param);
+    if (min <= num && num <= max) {
+      return num; // handles NaN
+    }
+    throw ErrorMessage.createCustom(phrase, {}, getSymbol(info.name), param, range);
+  };
+}
+
+/**
+ * Resolves the nested options of a subcommand.
+ * @param option The command option
+ * @param resolve The resolve callback
+ * @returns The nested options
+ */
+export async function getNestedOptions(
+  option: OpaqueOption,
+  resolve?: ResolveCallback,
+): Promise<OpaqueOptions> {
+  if (typeof option.options === 'string') {
+    if (!resolve) {
+      throw ErrorMessage.create(ErrorItem.missingResolveCallback);
+    }
+    return (await import(resolve(option.options))).default;
+  }
+  // do not destructure `options`, because the callback might need to use `this`
+  return typeof option.options === 'function' ? await option.options() : (option.options ?? {});
 }

@@ -27,9 +27,9 @@ export const enum ErrorItem {
    */
   mismatchedParamCount,
   /**
-   * Error raised when it fails to find a "package.json" file when resolving the package version.
+   * Error raised when the parser fails to find a version file when handling the version option.
    */
-  missingPackageJson,
+  versionFileNotFound,
   /**
    * Error raised when an option is specified with an inline parameter, despite it being disallowed.
    */
@@ -55,8 +55,7 @@ export const enum ErrorItem {
    */
   unsatisfiedCondRequirement,
   /**
-   * Error raised when either a variadic option or a command option is specified in the middle of a
-   * cluster argument.
+   * Error raised when a variadic option is specified in the middle of a cluster argument.
    */
   invalidClusterOption,
   /**
@@ -124,6 +123,15 @@ export const enum ErrorItem {
    * Raised when a variadic option declares an inline constraint.
    */
   invalidInlineConstraint,
+  /**
+   * Raised when an option is specified without its expected parameter.
+   */
+  missingParameter,
+  /**
+   * Raised when a JavaScript module needs to be loaded, but a module resolution function was not
+   * provided (either in the parsing flags or the validation flags).
+   */
+  missingResolveCallback,
 }
 
 /**
@@ -139,13 +147,13 @@ export const enum HelpItem {
    */
   cluster,
   /**
-   * The parameter delimiter of a non-niladic option.
-   */
-  separator,
-  /**
    * The parameter count of a variadic or polyadic option.
    */
   paramCount,
+  /**
+   * The parameter delimiter of an array-valued option.
+   */
+  separator,
   /**
    * Whether the option accepts positional arguments.
    */

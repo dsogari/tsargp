@@ -7,13 +7,7 @@ import { Callout } from 'nextra/components';
 
 # Formatter
 
-The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set of option definitions and provides methods to render help messages in ANSI format.
-
-<Callout type="info">
-
-Messages produced by the formatter can be customized via [message configuration].
-
-</Callout>
+The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set of option definitions and provides methods to render help messages in ANSI format. The messages produced by the formatter can also be customized via [message configuration].
 
 ## Help message
 
@@ -75,11 +69,15 @@ This column is rendered according to the following rules:
   - do this
     - if it contains a [parameter name], render this name
     - else, render the word `'param'{:ts}`
-  - and enclose the result in angle brackets `'<>'{:ts}` (if not already)
+  - and,
+    - if the result does not contain angle brackets
+    - then, enclose the result in angle brackets `'<>'{:ts}`
   - and,
     - if it requires [inline parameters], prepend an equals sign `'='{:ts}`
     - else, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
-  - and, if it can be specified without parameters, enclose the result in square brackets `'[]'{:ts}`
+  - and,
+    - if it can be specified without parameters and is not a nameless positional argument
+    - then, enclose the result in square brackets `'[]'{:ts}`
 
 The result might be something like `=<param>` or `[<param>...]`.
 
@@ -97,12 +95,12 @@ All help sections share a set of properties:
 
 - `title` - the section heading or the default [option group] heading (defaults to none)
 - `style` - the style of the section heading or [option group] headings (defaults to `tf.bold{:ts}`)
-- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, `2{:ts}` for others)
+- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, `1{:ts}` for others)
 - `noWrap` - true to disable wrapping of provided texts (defaults to `false{:ts}`)
 
-<Callout type="info">
+<Callout type="warning">
 
-Even if `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to the [text formatting] rules.
+When `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to [text formatting] rules. This also means that they will appear in redirected command outputs.
 
 </Callout>
 
@@ -126,18 +124,17 @@ The usage text is a concise representation of a program's command-line. Here is 
 {/* cSpell:disable */}
 
 ```ansi
-demo.js [([95m-h[0m|[95m--help[0m)] [([95m-v[0m|[95m--version[0m)] [32m# get help[0m
-demo.js [0m[95mhello[0m [90m...[0m [32m# execute the hello command[0m
-demo.js [([95m-f[0m|[95m--flag[0m|[95m--no-flag[0m)]
-        [([95m-b[0m|[95m--boolean[0m) [90m<boolean>[0m]
-        [([95m-s[0m|[95m--stringRegex[0m) [90m<my str>[0m]
-        [([95m-n[0m|[95m--numberRange[0m) [90m<my num>[0m]
-        [([95m-se[0m|[95m--stringEnum[0m) [32m'one'[0m]
-        [([95m-ne[0m|[95m--numberEnum[0m) [33m1[0m]
-        [([95m-ss[0m|[95m--strings[0m) [90m[<strings>][0m]
-        [([95m-ns[0m|[95m--numbers[0m) [90m<numbers>...[0m]
-        [[([95m--stringsEnum[0m|[95m--[0m)] [32m'one'[0m [32m'two'[0m]
-        [[95m--numbersEnum[0m [32m'1,2'[0m]
+[39mdemo.js[0m [[39m([35m-h[0m[39m|[35m--help[0m[39m)] [([35m-v[0m[39m|[35m--version[0m[39m)] [32m# get help[0m
+[39mdemo.js[0m [39m[35mhello[0m[39m [90m...[0m[39m [32m# execute the hello command[0m
+[39mdemo.js[0m [[39m([35m-f[0m[39m|[35m--no-flag[0m[39m)]
+        [[([35m-b[0m[39m|[35m--boolean[0m[39m) [90m<param>[0m[39m] ([35m-sc[0m[39m|[35m--strChoice[0m[39m) [32m'one'[0m[39m]
+        [([35m-sr[0m[39m|[35m--strRegex[0m[39m) [90m<my str>[0m[39m]
+        [([35m-nr[0m[39m|[35m--numRange[0m[39m) [90m<my num>[0m[39m]
+        [([35m-nc[0m[39m|[35m--numChoice[0m[39m)=[33m1[0m[39m]
+        [([35m-sa[0m[39m|[35m--strArray[0m[39m) [90m[<param>...][0m[39m]
+        [([35m-na[0m[39m|[35m--numArray[0m[39m) [90m[<param>...][0m[39m]
+        [[([35m--strArrayLimit[0m[39m|[35m--[0m[39m)] [32m'one'[0m[39m[90m...[0m[39m]
+        [[35m--numArrayUnique[0m[39m [32m'1,2'[0m[39m[90m...[0m[39m][0m
 ```
 
 {/* cSpell:enable */}
@@ -284,8 +281,8 @@ Below is an extract of a help message produced with the above configuration:
                              [0mA number option. Values must be one of {[33m1[0m, [33m2[0m}.[0m
   [95m-ns[0m,   [95m--numbers[0m
             [90m[<param>...][0m
-                      [0mA numbers option. Accepts multiple parameters. Values
-                    must be in the range [[33m0[0m, [33mInfinity[0m]. Defaults to [[33m1[0m, [33m2[0m].[0m
+                        [0mA number array option. Accepts multiple parameters.
+                                                        Defaults to [[33m1[0m, [33m2[0m].[0m
 ```
 
 {/* cSpell:enable */}

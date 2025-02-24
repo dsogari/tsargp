@@ -15,8 +15,6 @@
     "ValuesOf",
     "Args",
     "Promissory",
-    "HelpEntry",
-    "HelpContext",
     "NiladicOptionType",
     "OptionDataType",
     "WithRequired",
@@ -24,8 +22,6 @@
     "WithExample",
     "WithParamName",
     "WithChoices",
-    "WithRegex",
-    "WithVerInfo",
-    "WithResolve"
+    "WithRegex"
   ]
 }

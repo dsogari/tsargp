@@ -4,7 +4,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import { ArgumentParser, ErrorMessage, AnsiMessage, valuesFor } from 'tsargp';
+import { parseInto, ErrorMessage, AnsiMessage, valuesFor } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { demo as options } from 'tsargp/examples';
 
@@ -15,8 +15,6 @@ delete options.version;
 // Classes
 //--------------------------------------------------------------------------------------------------
 class DemoCommand extends Command {
-  private readonly parser = new ArgumentParser(options);
-
   constructor(props: Props) {
     super(props, 'tsargp');
   }
@@ -25,7 +23,7 @@ class DemoCommand extends Command {
     try {
       const values = valuesFor(options);
       const flags = { progName: 'tsargp', compIndex, clusterPrefix: '-' };
-      const { warning } = await this.parser.parseInto(values, line, flags);
+      const { warning } = await parseInto(options, values, line, flags);
       if (warning) {
         this.println(warning.wrap(this.state.width));
       }

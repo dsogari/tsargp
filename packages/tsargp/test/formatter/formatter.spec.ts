@@ -18,6 +18,10 @@ describe('HelpFormatter', () => {
           names: ['-f'],
           group: 'group',
         },
+        single: {
+          type: 'single',
+          names: ['-s'],
+        },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format('group');
       expect(message.wrap()).toEqual(`  -f\n`);
@@ -212,7 +216,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  [<param>...]  Values can be delimited with ','. Accepts multiple parameters.\n`,
+        `  -a  [<param>...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
       );
     });
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections } from '../../lib/options';
 import { HelpFormatter } from '../../lib/formatter';
+import { tf } from '../../lib/enums';
+import { style } from '../../lib/styles';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -19,13 +21,26 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [
-        { type: 'text', title: 'section  title', text: 'section  text', noWrap: true },
-        { type: 'usage', title: 'section  title', noWrap: true },
-        { type: 'groups', title: 'section  title', noWrap: true },
+        {
+          type: 'text',
+          title: `section ${style(tf.clear)} title`,
+          text: `section ${style(tf.clear)} text`,
+          noWrap: true,
+        },
+        { type: 'usage', title: `section ${style(tf.clear)} title`, noWrap: true },
+        { type: 'groups', title: `section ${style(tf.clear)} title`, noWrap: true },
       ];
       const message = new HelpFormatter(options).sections(sections);
       expect(message.wrap()).toEqual(
-        'section  title\n\nsection  text\n\nsection  title\n\n[-f]\n\nsection  title\n\n  -f',
+        'section ' +
+          '\x1b[0m' +
+          ' title\n\nsection ' +
+          '\x1b[0m' +
+          ' text\n\nsection ' +
+          '\x1b[0m' +
+          ' title\n\n[-f]\n\nsection ' +
+          '\x1b[0m' +
+          ' title\n\n  -f\n',
       );
     });
 
@@ -39,31 +54,31 @@ describe('HelpFormatter', () => {
       it('render the section content', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'text', text: 'text' }];
-        expect(formatter.sections(sections).wrap()).toEqual('text');
+        expect(formatter.sections(sections).wrap()).toEqual('text\n');
       });
 
       it('indent the section content', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'text', text: 'text', indent: 2 }];
-        expect(formatter.sections(sections).wrap()).toEqual('  text');
+        expect(formatter.sections(sections).wrap()).toEqual('  text\n');
       });
 
       it('break the section content', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'text', text: 'text', breaks: 1 }];
-        expect(formatter.sections(sections).wrap()).toEqual('\ntext');
+        expect(formatter.sections(sections).wrap()).toEqual('\ntext\n');
       });
 
       it('render the section heading, but avoid indenting it', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'text', title: 'title', indent: 2 }];
-        expect(formatter.sections(sections).wrap()).toEqual('title');
+        expect(formatter.sections(sections).wrap()).toEqual('title\n');
       });
 
       it('break the section heading', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'text', title: 'title', breaks: 1 }];
-        expect(formatter.sections(sections).wrap()).toEqual('\ntitle');
+        expect(formatter.sections(sections).wrap()).toEqual('\ntitle\n');
       });
     });
 
@@ -74,34 +89,55 @@ describe('HelpFormatter', () => {
         expect(formatter.sections(sections).wrap()).toEqual('');
       });
 
-      it('render the program name', () => {
+      it('skip the program name and comment when there are no options', () => {
         const formatter = new HelpFormatter({});
+        const sections: HelpSections = [{ type: 'usage', comment: 'comment' }];
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('');
+      });
+
+      it('render the program name', () => {
+        const formatter = new HelpFormatter({
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        });
         const sections: HelpSections = [{ type: 'usage' }];
-        expect(formatter.sections(sections, 'prog').wrap()).toEqual('prog');
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('prog [-f]\n');
       });
 
       it('indent the program name', () => {
-        const formatter = new HelpFormatter({});
+        const formatter = new HelpFormatter({
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        });
         const sections: HelpSections = [{ type: 'usage', indent: 2 }];
-        expect(formatter.sections(sections, 'prog').wrap()).toEqual('  prog');
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('  prog [-f]\n');
       });
 
       it('break the program name', () => {
-        const formatter = new HelpFormatter({});
+        const formatter = new HelpFormatter({
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+        });
         const sections: HelpSections = [{ type: 'usage', breaks: 1 }];
-        expect(formatter.sections(sections, 'prog').wrap()).toEqual('\nprog');
+        expect(formatter.sections(sections, 'prog').wrap()).toEqual('\nprog [-f]\n');
       });
 
       it('render the section heading, but avoid indenting it', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'usage', title: 'title', indent: 2 }];
-        expect(formatter.sections(sections).wrap()).toEqual('title');
+        expect(formatter.sections(sections).wrap()).toEqual('title\n');
       });
 
       it('break the section heading', () => {
         const formatter = new HelpFormatter({});
         const sections: HelpSections = [{ type: 'usage', title: 'title', breaks: 1 }];
-        expect(formatter.sections(sections).wrap()).toEqual('\ntitle');
+        expect(formatter.sections(sections).wrap()).toEqual('\ntitle\n');
       });
 
       it('render a flag option', () => {
@@ -118,7 +154,7 @@ describe('HelpFormatter', () => {
         } as const satisfies Options;
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'usage' }];
-        expect(formatter.sections(sections).wrap()).toEqual('[-f1] (-f2|--flag)');
+        expect(formatter.sections(sections).wrap()).toEqual('[-f1] (-f2|--flag)\n');
       });
 
       it('render a single-valued option', () => {
@@ -147,7 +183,7 @@ describe('HelpFormatter', () => {
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections).wrap()).toEqual(
-          '[-s1 <param>] -s2 <param> [[-s3] <param>] [-s4=true]',
+          '[-s1 <param>] -s2 <param> [[-s3] <param>] [-s4=true]\n',
         );
       });
 
@@ -164,7 +200,6 @@ describe('HelpFormatter', () => {
           },
           array3: {
             type: 'array',
-            names: ['-a3'],
             positional: true,
           },
           array4: {
@@ -177,11 +212,11 @@ describe('HelpFormatter', () => {
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections).wrap()).toEqual(
-          '[-a1 [<param>...]] -a2 [<param>...] [[-a3] [<param>...]] [-a4=true]',
+          '[-a1 [<param>...]] -a2 [<param>...] [<param>...] [-a4=true]\n',
         );
       });
 
-      it('include and exclude an option', () => {
+      it('filter, include and exclude options', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -191,19 +226,172 @@ describe('HelpFormatter', () => {
             type: 'flag',
             names: ['-f2'],
           },
+          flag3: {
+            type: 'flag',
+            names: ['-f3'],
+          },
         } as const satisfies Options;
-        const formatter = new HelpFormatter(options);
+        const formatter = new HelpFormatter(options, undefined, ['-f1', '-f2']);
         const sections1: HelpSections = [{ type: 'usage', filter: ['flag1'] }];
         const sections2: HelpSections = [{ type: 'usage', filter: ['flag1'], exclude: true }];
         const sections3: HelpSections = [{ type: 'usage', filter: ['flag1'], required: ['flag1'] }];
         const sections4: HelpSections = [{ type: 'usage', filter: ['flag2', 'flag1'] }];
-        expect(formatter.sections(sections1).wrap()).toEqual('[-f1]');
-        expect(formatter.sections(sections2).wrap()).toEqual('[-f2]');
-        expect(formatter.sections(sections3).wrap()).toEqual('-f1');
-        expect(formatter.sections(sections4).wrap()).toEqual('[-f2] [-f1]');
+        const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
+        expect(formatter.sections(sections1).wrap()).toEqual('[-f1]\n');
+        expect(formatter.sections(sections2).wrap()).toEqual('[-f2]\n');
+        expect(formatter.sections(sections3).wrap()).toEqual('-f1\n');
+        expect(formatter.sections(sections4).wrap()).toEqual('[-f2] [-f1]\n');
+        expect(formatter.sections(sections5).wrap()).toEqual(''); // usage was skipped
       });
 
-      it('group options according to an adjacency list', () => {
+      describe('when requirements are specified', () => {
+        it('group options according to an adjacency list', () => {
+          const options = {
+            flag1: {
+              type: 'flag',
+              names: ['-f1'],
+            },
+            flag2: {
+              type: 'flag',
+              names: ['-f2'],
+            },
+            flag3: {
+              type: 'flag',
+              names: ['-f3'],
+            },
+          } as const satisfies Options;
+          const case0: HelpSections = [{ type: 'usage' }];
+          const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
+          const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
+          const case3: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } },
+          ];
+          const case4: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } },
+          ];
+          const case5: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } },
+          ];
+          const case6: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } },
+          ];
+          const case7: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } },
+          ];
+          const case8: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } },
+          ];
+          const case9: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } },
+          ];
+          const case10: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+          ];
+          const case11: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag2: 'flag3' },
+            },
+          ];
+          const case12: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag3: 'flag1' },
+            },
+          ];
+          const formatter = new HelpFormatter(options);
+          expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] [-f3]\n');
+          expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] [-f3]\n');
+          expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] [-f3]\n');
+          expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] [-f3]\n');
+          expect(formatter.sections(case4).wrap()).toEqual('[[[-f1] -f2] -f3]\n');
+          expect(formatter.sections(case5).wrap()).toEqual('[-f1 [-f2 [-f3]]]\n');
+          expect(formatter.sections(case6).wrap()).toEqual('[[-f1] -f2 [-f3]]\n');
+          expect(formatter.sections(case7).wrap()).toEqual('[[-f1] -f3 [-f2]]\n');
+          expect(formatter.sections(case8).wrap()).toEqual('[[-f1 [-f3]] -f2]\n');
+          expect(formatter.sections(case9).wrap()).toEqual('[-f1] [-f2 -f3]\n');
+          expect(formatter.sections(case10).wrap()).toEqual('[-f1 -f2 -f3]\n');
+          expect(formatter.sections(case11).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
+          expect(formatter.sections(case12).wrap()).toEqual('[[[-f3] -f1] -f2]\n');
+        });
+
+        it('group options according to an adjacency list, with an always required option', () => {
+          const options = {
+            flag1: {
+              type: 'flag',
+              names: ['-f1'],
+            },
+            flag2: {
+              type: 'flag',
+              names: ['-f2'],
+            },
+            flag3: {
+              type: 'flag',
+              names: ['-f3'],
+              required: true,
+            },
+          } as const satisfies Options;
+          const case0: HelpSections = [{ type: 'usage' }];
+          const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
+          const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
+          const case3: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } },
+          ];
+          const case4: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } },
+          ];
+          const case5: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } },
+          ];
+          const case6: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } },
+          ];
+          const case7: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } },
+          ];
+          const case8: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } },
+          ];
+          const case9: HelpSections = [
+            { type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } },
+          ];
+          const case10: HelpSections = [
+            { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+          ];
+          const case11: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag2: 'flag3' },
+            },
+          ];
+          const case12: HelpSections = [
+            {
+              type: 'usage',
+              filter: ['flag3', 'flag2', 'flag1'],
+              requires: { flag1: 'flag2', flag3: 'flag1' },
+            },
+          ];
+          const formatter = new HelpFormatter(options);
+          expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] -f3\n');
+          expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] -f3\n');
+          expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] -f3\n');
+          expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] -f3\n');
+          expect(formatter.sections(case4).wrap()).toEqual('[[-f1] -f2] -f3\n');
+          expect(formatter.sections(case5).wrap()).toEqual('-f1 -f2 -f3\n');
+          expect(formatter.sections(case6).wrap()).toEqual('[-f1] -f2 -f3\n');
+          expect(formatter.sections(case7).wrap()).toEqual('[-f1] -f3 [-f2]\n');
+          expect(formatter.sections(case8).wrap()).toEqual('-f1 -f3 -f2\n');
+          expect(formatter.sections(case9).wrap()).toEqual('[-f1] -f2 -f3\n');
+          expect(formatter.sections(case10).wrap()).toEqual('-f1 -f2 -f3\n');
+          expect(formatter.sections(case11).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
+          expect(formatter.sections(case12).wrap()).toEqual('-f3 -f1 -f2\n');
+        });
+      });
+
+      it('group options according to an adjacency list, with a filtered option', () => {
         const options = {
           flag1: {
             type: 'flag',
@@ -259,93 +447,20 @@ describe('HelpFormatter', () => {
             requires: { flag1: 'flag2', flag3: 'flag1' },
           },
         ];
-        const formatter = new HelpFormatter(options);
-        expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] [-f3]');
-        expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] [-f3]');
-        expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] [-f3]');
-        expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] [-f3]');
-        expect(formatter.sections(case4).wrap()).toEqual('[[[-f1] -f2] -f3]');
-        expect(formatter.sections(case5).wrap()).toEqual('[-f1 [-f2 [-f3]]]');
-        expect(formatter.sections(case6).wrap()).toEqual('[[-f1] -f2 [-f3]]');
-        expect(formatter.sections(case7).wrap()).toEqual('[[-f1] -f3 [-f2]]');
-        expect(formatter.sections(case8).wrap()).toEqual('[[-f1 [-f3]] -f2]');
-        expect(formatter.sections(case9).wrap()).toEqual('[-f1] [-f2 -f3]');
-        expect(formatter.sections(case10).wrap()).toEqual('[-f1 -f2 -f3]');
-        expect(formatter.sections(case11).wrap()).toEqual('[-f3 [-f2 [-f1]]]');
-        expect(formatter.sections(case12).wrap()).toEqual('[[[-f3] -f1] -f2]');
-      });
-
-      it('group options according to an adjacency list, with an always required option', () => {
-        const options = {
-          flag1: {
-            type: 'flag',
-            names: ['-f1'],
-          },
-          flag2: {
-            type: 'flag',
-            names: ['-f2'],
-          },
-          flag3: {
-            type: 'flag',
-            names: ['-f3'],
-            required: true,
-          },
-        } as const satisfies Options;
-        const case0: HelpSections = [{ type: 'usage' }];
-        const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
-        const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
-        const case3: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } },
-        ];
-        const case4: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } },
-        ];
-        const case5: HelpSections = [
-          { type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } },
-        ];
-        const case6: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } },
-        ];
-        const case7: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } },
-        ];
-        const case8: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } },
-        ];
-        const case9: HelpSections = [
-          { type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } },
-        ];
-        const case10: HelpSections = [
-          { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
-        ];
-        const case11: HelpSections = [
-          {
-            type: 'usage',
-            filter: ['flag3', 'flag2', 'flag1'],
-            requires: { flag1: 'flag2', flag2: 'flag3' },
-          },
-        ];
-        const case12: HelpSections = [
-          {
-            type: 'usage',
-            filter: ['flag3', 'flag2', 'flag1'],
-            requires: { flag1: 'flag2', flag3: 'flag1' },
-          },
-        ];
-        const formatter = new HelpFormatter(options);
-        expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2] -f3');
-        expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2] -f3');
-        expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]] -f3');
-        expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2] -f3');
-        expect(formatter.sections(case4).wrap()).toEqual('[[-f1] -f2] -f3');
-        expect(formatter.sections(case5).wrap()).toEqual('-f1 -f2 -f3');
-        expect(formatter.sections(case6).wrap()).toEqual('[-f1] -f2 -f3');
-        expect(formatter.sections(case7).wrap()).toEqual('[-f1] -f3 [-f2]');
-        expect(formatter.sections(case8).wrap()).toEqual('-f1 -f3 -f2');
-        expect(formatter.sections(case9).wrap()).toEqual('[-f1] -f2 -f3');
-        expect(formatter.sections(case10).wrap()).toEqual('-f1 -f2 -f3');
-        expect(formatter.sections(case11).wrap()).toEqual('-f3 [-f2 [-f1]]');
-        expect(formatter.sections(case12).wrap()).toEqual('-f3 -f1 -f2');
+        const formatter = new HelpFormatter(options, undefined, ['-f1', '-f2']);
+        expect(formatter.sections(case0).wrap()).toEqual('[-f1] [-f2]\n');
+        expect(formatter.sections(case1).wrap()).toEqual('[[-f1] -f2]\n');
+        expect(formatter.sections(case2).wrap()).toEqual('[-f1 [-f2]]\n');
+        expect(formatter.sections(case3).wrap()).toEqual('[-f1 -f2]\n');
+        expect(formatter.sections(case4).wrap()).toEqual('[[[-f1] -f2] -f3]\n');
+        expect(formatter.sections(case5).wrap()).toEqual('[-f1 [-f2 [-f3]]]\n');
+        expect(formatter.sections(case6).wrap()).toEqual('[[-f1] -f2 [-f3]]\n');
+        expect(formatter.sections(case7).wrap()).toEqual('[[-f1] -f3 [-f2]]\n');
+        expect(formatter.sections(case8).wrap()).toEqual('[[-f1 [-f3]] -f2]\n');
+        expect(formatter.sections(case9).wrap()).toEqual('[-f1] [-f2 -f3]\n');
+        expect(formatter.sections(case10).wrap()).toEqual('[-f1 -f2 -f3]\n');
+        expect(formatter.sections(case11).wrap()).toEqual('[[-f2 [-f1]] -f3]\n');
+        expect(formatter.sections(case12).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
       });
     });
 
@@ -365,7 +480,7 @@ describe('HelpFormatter', () => {
         } as const satisfies Options;
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'groups' }];
-        expect(formatter.sections(sections).wrap()).toEqual('  -f');
+        expect(formatter.sections(sections).wrap()).toEqual('  -f\n');
       });
 
       it('render the default group with a custom heading', () => {
@@ -377,7 +492,7 @@ describe('HelpFormatter', () => {
         } as const satisfies Options;
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'groups', title: 'title' }];
-        expect(formatter.sections(sections).wrap()).toEqual('title\n\n  -f');
+        expect(formatter.sections(sections).wrap()).toEqual('title\n\n  -f\n');
       });
 
       it('break the default group', () => {
@@ -389,7 +504,7 @@ describe('HelpFormatter', () => {
         } as const satisfies Options;
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'groups', breaks: 1 }];
-        expect(formatter.sections(sections).wrap()).toEqual('\n  -f');
+        expect(formatter.sections(sections).wrap()).toEqual('\n  -f\n');
       });
 
       it('break the default group heading', () => {
@@ -401,7 +516,7 @@ describe('HelpFormatter', () => {
         } as const satisfies Options;
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'groups', title: 'title', breaks: 1 }];
-        expect(formatter.sections(sections).wrap()).toEqual('\ntitle\n\n  -f');
+        expect(formatter.sections(sections).wrap()).toEqual('\ntitle\n\n  -f\n');
       });
 
       it('include and exclude an group', () => {
@@ -421,9 +536,11 @@ describe('HelpFormatter', () => {
         const sections1: HelpSections = [{ type: 'groups', filter: ['group1'] }];
         const sections2: HelpSections = [{ type: 'groups', filter: ['group1'], exclude: true }];
         const sections3: HelpSections = [{ type: 'groups', filter: ['group2', 'group1'] }];
-        expect(formatter.sections(sections1).wrap()).toEqual('group1\n\n  -f1');
-        expect(formatter.sections(sections2).wrap()).toEqual('group2\n\n  -f2');
-        expect(formatter.sections(sections3).wrap()).toEqual('group2\n\n  -f2\n\ngroup1\n\n  -f1');
+        expect(formatter.sections(sections1).wrap()).toEqual('group1\n\n  -f1\n');
+        expect(formatter.sections(sections2).wrap()).toEqual('group2\n\n  -f2\n');
+        expect(formatter.sections(sections3).wrap()).toEqual(
+          'group2\n\n  -f2\n\ngroup1\n\n  -f1\n',
+        );
       });
     });
   });

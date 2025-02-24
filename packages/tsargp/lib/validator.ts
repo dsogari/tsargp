@@ -1,12 +1,25 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import type { OpaqueOption, Requires, RequiresVal, OpaqueOptions } from './options.js';
-import type { Args, NamingRules } from './utils.js';
+import type {
+  OpaqueOption,
+  Requires,
+  RequiresVal,
+  OpaqueOptions,
+  NestedOptions,
+  ResolveCallback,
+} from './options.js';
+import type { NamingRules } from './utils.js';
 
 import { ErrorItem } from './enums.js';
-import { getParamCount, getOptionNames, visitRequirements, isMessage } from './options.js';
-import { WarnMessage, ErrorFormatter } from './styles.js';
+import {
+  getParamCount,
+  getOptionNames,
+  visitRequirements,
+  isMessage,
+  getNestedOptions,
+} from './options.js';
+import { ErrorMessage, WarnMessage } from './styles.js';
 import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -48,6 +61,11 @@ export type ValidationFlags = {
    * Whether the validation procedure should skip recursion into nested options.
    */
   readonly noRecurse?: boolean;
+  /**
+   * A resolution function for JavaScript modules.
+   * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
+   */
+  readonly resolve?: ResolveCallback;
 };
 
 /**
@@ -66,15 +84,11 @@ export type ValidationResult = {
 /**
  * The validation context.
  */
-type ValidateContext = [
+type ValidationContext = [
   /**
    * The option definitions.
    */
   options: OpaqueOptions,
-  /**
-   * The error formatter instance.
-   */
-  formatter: ErrorFormatter,
   /**
    * The validation flags.
    */
@@ -86,7 +100,7 @@ type ValidateContext = [
   /**
    * An internal flag to avoid cyclic recurrence.
    */
-  visited: Set<OpaqueOptions>,
+  visited: Set<NestedOptions>,
   /**
    * The current option prefix.
    */
@@ -97,41 +111,31 @@ type ValidateContext = [
 // Classes
 //--------------------------------------------------------------------------------------------------
 /**
- * Implements validation of option definitions.
+ * Validates a set of option definitions.
+ * @param options The option definitions
+ * @param flags The validation flags
+ * @returns The validation result
  */
-export class OptionValidator extends ErrorFormatter {
-  /**
-   * Creates an option registry based on a set of option definitions.
-   * @param options The option definitions
-   */
-  constructor(readonly options: OpaqueOptions) {
-    super();
-  }
-
-  /**
-   * Validates all options' definitions, including command options recursively.
-   * @param flags The validation flags
-   * @returns The validation result
-   */
-  async validate(flags: ValidationFlags = {}): Promise<ValidationResult> {
-    const warning = new WarnMessage();
-    const visited = new Set<OpaqueOptions>();
-    const context: ValidateContext = [this.options, this, flags, warning, visited, ''];
-    await validate(context);
-    return warning.length ? { warning } : {};
-  }
+export async function validate(
+  options: OpaqueOptions,
+  flags: ValidationFlags = {},
+): Promise<ValidationResult> {
+  const warning = new WarnMessage();
+  const visited = new Set<NestedOptions>();
+  await validateOptions([options, flags, warning, visited, '']);
+  return warning.length ? { warning } : {};
 }
 
 //--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
- * Validates all options' definitions, including command options recursively.
+ * Validates all option definitions, including nested options recursively.
  * @param context The validation context
  * @throws On duplicate positional option
  */
-async function validate(context: ValidateContext) {
-  const [options, formatter, flags, , , prefix] = context;
+async function validateOptions(context: ValidationContext) {
+  const [options, flags, , , prefix] = context;
   const names = new Map<string, string>();
   const letters = new Map<string, string>();
   let positional = ''; // to check for duplicate positional options
@@ -140,7 +144,7 @@ async function validate(context: ValidateContext) {
     await validateOption(context, key, option);
     if (option.positional !== undefined) {
       if (positional) {
-        throw formatter.error(
+        throw ErrorMessage.create(
           ErrorItem.duplicatePositionalOption,
           {},
           getSymbol(prefix + key),
@@ -165,30 +169,30 @@ async function validate(context: ValidateContext) {
  * @throws On invalid option name, duplicate name, invalid cluster letter or duplicate letter
  */
 function validateNames(
-  context: ValidateContext,
+  context: ValidationContext,
   nameToKey: Map<string, string>,
   letterToKey: Map<string, string>,
   key: string,
   option: OpaqueOption,
 ) {
-  const [, formatter, , , , prefix] = context;
+  const [, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + key);
   const names = getOptionNames(option);
   for (const name of names) {
     if (name.match(regex.name)) {
-      throw formatter.error(ErrorItem.invalidOptionName, {}, prefixedKey, name);
+      throw ErrorMessage.create(ErrorItem.invalidOptionName, {}, prefixedKey, name);
     }
     if (nameToKey.has(name)) {
-      throw formatter.error(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
+      throw ErrorMessage.create(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
     }
     nameToKey.set(name, key);
   }
   for (const letter of option.cluster ?? '') {
     if (letter.match(regex.name)) {
-      throw formatter.error(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
+      throw ErrorMessage.create(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
     }
     if (letterToKey.has(letter)) {
-      throw formatter.error(ErrorItem.duplicateClusterLetter, {}, prefixedKey, letter);
+      throw ErrorMessage.create(ErrorItem.duplicateClusterLetter, {}, prefixedKey, letter);
     }
     letterToKey.set(letter, key);
   }
@@ -199,19 +203,16 @@ function validateNames(
  * @param context The validation context
  * @param nameToKey The map of option names to keys
  */
-function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, string>) {
-  /** @ignore */
-  function warn(kind: ErrorItem, ...args: Args) {
-    warning.push(formatter.create(kind, { open: '', close: '' }, ...args));
-  }
-  const [options, formatter, , warning, , prefix] = context;
+function detectNamingIssues(context: ValidationContext, nameToKey: Map<string, string>) {
+  const formatFlags = { open: '', close: '' };
+  const [options, , warning, , prefix] = context;
   const prefix2 = getSymbol(prefix.slice(0, -1)); // remove trailing dot
   const visited = new Set<string>();
   for (const name of nameToKey.keys()) {
     if (!visited.has(name)) {
       const similar = findSimilar(name, nameToKey.keys(), 0.8);
       if (similar.length) {
-        warn(ErrorItem.tooSimilarOptionNames, prefix2, name, similar);
+        warning.add(ErrorItem.tooSimilarOptionNames, formatFlags, prefix2, name, similar);
         for (const similarName of similar) {
           visited.add(similarName);
         }
@@ -237,7 +238,7 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
     for (const entries of getValues(match).map(getEntries)) {
       if (entries.length > 1) {
         const list = entries.map(([rule, name]) => rule + ': ' + name);
-        warn(ErrorItem.mixedNamingConvention, prefix2, i, list);
+        warning.add(ErrorItem.mixedNamingConvention, formatFlags, prefix2, i, list);
       }
     }
   });
@@ -250,27 +251,22 @@ function detectNamingIssues(context: ValidateContext, nameToKey: Map<string, str
  * @param option The option definition
  * @throws On invalid constraint definition, invalid default/example value or invalid requirements
  */
-async function validateOption(context: ValidateContext, key: string, option: OpaqueOption) {
-  const [, formatter, flags, warning, visited, prefix] = context;
+async function validateOption(context: ValidationContext, key: string, option: OpaqueOption) {
+  const [, flags, warning, visited, prefix] = context;
   const prefixedKey = getSymbol(prefix + key);
   validateConstraints(context, prefixedKey, option);
-  if (option.requires) {
-    validateRequirements(context, key, option.requires);
+  const { requires, requiredIf, type, options } = option;
+  if (requires) {
+    validateRequirements(context, key, requires);
   }
-  if (option.requiredIf) {
-    validateRequirements(context, key, option.requiredIf);
+  if (requiredIf) {
+    validateRequirements(context, key, requiredIf);
   }
-  if (!flags.noRecurse && option.type === 'command') {
-    if (option.options) {
-      // do not destructure `options`, because the callback might need to use `this`
-      const resolved =
-        typeof option.options === 'function' ? await option.options() : option.options;
-      if (!visited.has(resolved)) {
-        visited.add(resolved);
-        // create a new context, to avoid changing the behavior of functions up in the call stack
-        await validate([resolved, formatter, flags, warning, visited, prefix + key + '.']);
-      }
-    }
+  if (!flags.noRecurse && type === 'command' && options && !visited.has(options)) {
+    visited.add(options);
+    const cmdOptions = await getNestedOptions(option, flags.resolve);
+    // create a new context, to avoid changing the behavior of functions up in the call stack
+    await validateOptions([cmdOptions, flags, warning, visited, prefix + key + '.']);
   }
 }
 
@@ -280,7 +276,7 @@ async function validateOption(context: ValidateContext, key: string, option: Opa
  * @param key The option key
  * @param requires The option requirements
  */
-function validateRequirements(context: ValidateContext, key: string, requires: Requires) {
+function validateRequirements(context: ValidationContext, key: string, requires: Requires) {
   /** @ignore */
   function validateItem(item: Requires) {
     validateRequirements(context, key, item);
@@ -306,26 +302,26 @@ function validateRequirements(context: ValidateContext, key: string, requires: R
  * or incompatible required value
  */
 function validateRequirement(
-  context: ValidateContext,
+  context: ValidationContext,
   key: string,
   requiredKey: string,
   requiredValue?: RequiresVal[string],
 ) {
-  const [options, formatter, , , , prefix] = context;
+  const [options, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + requiredKey);
   if (requiredKey === key) {
-    throw formatter.error(ErrorItem.invalidSelfRequirement, {}, prefixedKey);
+    throw ErrorMessage.create(ErrorItem.invalidSelfRequirement, {}, prefixedKey);
   }
   if (!(requiredKey in options)) {
-    throw formatter.error(ErrorItem.unknownRequiredOption, {}, prefixedKey);
+    throw ErrorMessage.create(ErrorItem.unknownRequiredOption, {}, prefixedKey);
   }
   const option = options[requiredKey];
   if (isMessage(option.type)) {
-    throw formatter.error(ErrorItem.invalidRequiredOption, {}, prefixedKey);
+    throw ErrorMessage.create(ErrorItem.invalidRequiredOption, {}, prefixedKey);
   }
   const noValue = {};
   if ((requiredValue ?? noValue) === noValue && (option.required || option.default !== undefined)) {
-    throw formatter.error(ErrorItem.invalidRequiredValue, {}, prefixedKey);
+    throw ErrorMessage.create(ErrorItem.invalidRequiredValue, {}, prefixedKey);
   }
 }
 
@@ -336,35 +332,27 @@ function validateRequirement(
  * @param option The option definition
  * @throws On duplicate choice value, invalid parameter count or invalid inline constraint
  */
-function validateConstraints(context: ValidateContext, key: symbol, option: OpaqueOption) {
-  const [, formatter, , warning] = context;
-  const choices = option.choices;
+function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
+  const [, , warning] = context;
+  const { choices } = option;
   if (Array.isArray(choices)) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
       if (dup) {
-        throw formatter.error(ErrorItem.duplicateChoiceValue, {}, key, dup);
+        throw ErrorMessage.create(ErrorItem.duplicateChoiceValue, {}, key, dup);
       }
     }
   }
-  const paramCount = option.paramCount;
-  let valid;
-  if (typeof paramCount === 'object') {
-    const [min, max] = paramCount;
-    valid = min >= 0 && min < max;
-  } else {
-    valid = paramCount === undefined || paramCount > 1;
-  }
-  // handles NaN
-  if (!valid) {
-    throw formatter.error(ErrorItem.invalidParamCount, {}, key, paramCount);
+  const { paramCount } = option;
+  if (typeof paramCount === 'object' && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
+    throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);
   if (max > 1 && !option.separator && !option.append && option.inline) {
-    throw formatter.error(ErrorItem.invalidInlineConstraint, {}, key);
+    throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, key);
   }
   if (min < max && option.cluster) {
-    warning.push(formatter.create(ErrorItem.variadicWithClusterLetter, {}, key));
+    warning.add(ErrorItem.variadicWithClusterLetter, {}, key);
   }
 }

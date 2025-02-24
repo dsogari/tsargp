@@ -28,6 +28,17 @@ describe('HelpFormatter', () => {
       expect(message.wrap()).toEqual('\n');
     });
 
+    it('handle an option with empty or null names', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['', null],
+        },
+      } as const satisfies Options;
+      const message = new HelpFormatter(options).format();
+      expect(message.wrap()).toEqual('\n');
+    });
+
     it('handle an option with no description', () => {
       const options = {
         flag: {
@@ -54,16 +65,22 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap(0, true)).toEqual(
-        '\x1b[3G\x1b[1m' +
+        '  \x1b[39m\x1b[1m' +
           '-f' +
-          '\x1b[0m' +
+          '\x1b[0m\x1b[39m' +
           ', ' +
           '\x1b[1m' +
           '--flag' +
-          '\x1b[0m\x1b[17G' +
-          '\x1b[2mA flag option. ' +
-          'Defaults to \x1b[33m1\x1b[0m\x1b[2m.' +
-          '\x1b[0m\n\x1b[0m',
+          '\x1b[0m\x1b[39m' +
+          '    ' +
+          '\x1b[2m\x1b[39m' +
+          'A flag option. Defaults to ' +
+          '\x1b[33m' +
+          '1' +
+          '\x1b[0m\x1b[2m' +
+          '.' +
+          '\x1b[0m' +
+          '\n',
       );
     });
 
@@ -77,15 +94,18 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap(0, true)).toEqual(
-        '\x1b[3G\x1b[35m' +
+        '  \x1b[39m\x1b[35m' +
           '-f' +
-          '\x1b[0m\x1b[9G' +
+          '\x1b[0m\x1b[39m' +
+          '    ' +
+          '\x1b[39m\x1b[39m' +
           'A ' +
           '\x1b[1m' +
           'flag' +
           '\x1b[0m' +
           ' option' +
-          '\x1b[0m\n\x1b[0m',
+          '\x1b[0m' +
+          '\n',
       );
     });
 
@@ -247,7 +267,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', null, '--flag'],
+          names: ['-f', '', '--flag'],
           synopsis: 'A flag option',
         },
         flag2: {
@@ -272,7 +292,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', null, '--flag'],
+          names: ['-f', '', '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -288,7 +308,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', null, '--flag'],
+          names: ['-f', '', '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -304,7 +324,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', null, '--flag'],
+          names: ['-f', '', '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -325,7 +345,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', null, '--flag'],
+          names: ['-f', '', '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -365,7 +385,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const layout: PartialHelpLayout = { descr: { align: 'right' } };
       const message = new HelpFormatter(options, layout).format();
-      expect(message.wrap(14, false)).toEqual('  -f    A flag\n        option\n');
+      expect(message.wrap(14, false, true)).toEqual('  -f    A flag\n        option\n');
     });
 
     it('merge option parameters with option names', () => {

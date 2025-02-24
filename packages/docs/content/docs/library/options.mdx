@@ -37,8 +37,8 @@ Each type of option expects different number of parameters on the command line:
 - **variadic** - variable number of parameters
 - **delimited** - values can be delimited with a [parameter separator]
 - **appended** - can be specified multiple times and [append values]
-- **configurable** - can be configured with a certain [parameter count]
-- **inline** - allows parameters to be inlined with an option name
+- **configurable** - can be configured with a [parameter count]
+- **inline** - allows parameters to be [inlined] with an option name
 
 <Callout type="info">
 
@@ -50,7 +50,7 @@ When a single-valued option is specified multiple times on the command line, its
 
 The data type of an option value in the [resulting object] depends on the option type. You can check the effective data type of the option values for a set of option definitions by inspecting the IntelliSense output of:
 
-- the result of the parser's [`parse`] method
+- the result of the [`parse`] function
 - the result of the `valuesFor` function
 - a type alias for `OptionValues<typeof your_options>{:ts}`
 
@@ -97,15 +97,15 @@ This attribute is not validated, so it can be any string.
 
 #### Option synopsis
 
-The `synopsis` attribute, if present, specifies a brief summary of the option's purpose, which will be formatted in the help message according to [text formatting] rules.
+The `synopsis` attribute, if present, specifies a brief summary of the option's purpose. It will be formatted in the help message according to [text formatting] rules.
 
 #### Deprecation notice
 
-The `deprecated` attribute, if present, specifies the reason for the option being deprecated, which will be formatted in the help message according to [text formatting] rules.
+The `deprecated` attribute, if present, specifies the reason for the option being deprecated. It will be formatted in the help message according to [text formatting] rules.
 
 <Callout type="default">
 
-Deprecated options specified on the command line generate a [warning message], which you may want to print in the terminal. It can be obtained by destructuring the result of the parser's [`parseInto`] method.
+Deprecated options specified on the command line generate a [warning message], which you may want to print in the terminal. It can be obtained by destructuring the result of the [`parseInto`] function.
 
 </Callout>
 
@@ -129,7 +129,7 @@ The `styles` attribute, if present, specifies custom [styling attributes] for ea
 
 #### Hyperlink
 
-The `link` attribute, if present, specifies the URL of an external resource or media that will be included in the help message.
+The `link` attribute, if present, specifies the URL of an external resource or media. It will be included in the option's description in the help message.
 
 ### Message attributes
 
@@ -145,7 +145,7 @@ All options that may have a value share a set of attributes, which are described
 
 #### Cluster letters
 
-The `cluster` attribute, if present, specifies letters that can be used to combine options into a single command-line argument. This feature is also known as [short-option] style, and can be enabled via the parser's [`clusterPrefix`] configuration flag.
+The `cluster` attribute, if present, specifies letters that can be used to combine options into a single command-line argument. This feature is also known as the [short-option] style, and can be enabled via the [`clusterPrefix`] parsing flag.
 
 <Callout type="info">
 
@@ -210,7 +210,7 @@ When using this attribute, we recommend also setting [preferred name] to some ex
 
 #### Forward requirements
 
-The `requires` attribute, if present, specifies requirements that must be satisfied _if_ the option is specified on the command line. It can be either:
+The `requires` attribute, if present, specifies requirements that must be satisfied _if_ the option is specified, either on the command line or through the [environment]. Its value can be either:
 
 - an option **key**;
 - an object that maps option keys to required **values**;
@@ -238,9 +238,9 @@ You can also specify an expression, in which case it is evaluated as follows:
 
 ##### Requirement callback
 
-You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` indicating whether the requirements were satisfied.
+You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
 
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
@@ -251,12 +251,6 @@ It may be configured with a custom `toString` method to render it in error and h
 ```ts
 options.flag.requires.toString = () => 'this and that ...';
 ```
-
-<Callout type="default">
-
-The callback may perform any kind of verification, such as inspecting parsed values, checking the environment, etc.
-
-</Callout>
 
 #### Conditional requirements
 
@@ -288,7 +282,7 @@ And if they were defined in the `requiredIf` attribute, they would mean:
 
 <Callout type="info">
 
-An option is considered specified if it either appears on the command line or exists in the [environment].
+An option is considered specified if it either appears on the command line or its data exists in the [environment].
 
 </Callout>
 
@@ -304,11 +298,9 @@ Mutually exclusive with [always required].
 
 ##### Default callback
 
-If the default value is not known beforehand (e.g., if it depends on the values of other options), you can use a callback to inspect parsed values and determine the default value based on those.
+In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing parsed values (which you can inspect to determine the default), and should return the option value.
 
-It receives a single parameter which contains the parsed values, and should return the option value.
-
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
@@ -326,19 +318,17 @@ options.flag.default.toString = () => 'this and that ...';
 
 The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s).
 
-It may receive different kinds of information depending on the option type, but its second parameter always contains the current [sequence information], including the option's name, argument index and any previously parsed values.
+It receives different kinds of data depending on the option type, but its second parameter always contains the current [argument information], including the option's name, argument index and any previously parsed values.
 
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
 </Callout>
 
-<Callout type="default">
+If you need to throw an error from the callback, we recommend using the [error message]'s `createCustom` static method. It receives a custom phrase that is formatted similarly to [error phrases].
 
-Inside the callback you may check whether an option has been specified before it by comparing its value with `undefined{:ts}`. This works because default values are only set at the _end_ of the parsing loop.
-
-</Callout>
+Within the callback, you can check whether an option has been specified before by comparing its value with `undefined{:ts}`. This works because default values are only set at the _end_ of the parsing loop.
 
 ### Environment attributes
 
@@ -348,7 +338,7 @@ Options that may read data from the environment share some attributes, as descri
 
 The `stdin` attribute, if present, indicates that the option accepts data from the standard input. It will only have effect if the option is _not_ specified on the command line, otherwise the input stream will remain untouched.
 
-The parser only reads _readily_ available data, i.e., it does not wait for _new_ input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For that effect, you should use the [default callback] in conjunction with third-party prompting libraries.
+The parser only reads _readily_ available data, i.e., it does not wait for _new_ input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use the [default callback] in conjunction with third-party prompting libraries.
 
 <Callout type="info">
 
@@ -358,7 +348,7 @@ This attribute has precedence over [data sources].
 
 <Callout type="default">
 
-You can omit the [option names] or completely [hide] the option from the help message, if you want its value to be read _exclusively_ from the standard input.
+You can omit the [option names] or [hide] the option from the help message, if you want its value to be read _exclusively_ from the standard input.
 
 </Callout>
 
@@ -420,6 +410,12 @@ When using this attribute, we recommend also setting [preferred name] to some ex
 
 </Callout>
 
+<Callout type="info">
+
+This attribute is validated against the same regex as the [option names].
+
+</Callout>
+
 #### Inline constraint
 
 The `inline` attribute, if present, indicates the option's treatment of [inline parameters]. It can be either `false{:ts}` to disallow, or `'always'{:ts}` to _always_ require inline parameters. By default, parameters are allowed (but not required) to be inlined with option names.
@@ -429,11 +425,11 @@ The `inline` attribute, if present, indicates the option's treatment of [inline 
 The `complete` attribute, if present, specifies a custom callback for [word completion], which can be used to make better suggestions than the built-in algorithm would for the option. It receives two parameters:
 
 - `param` - the word being completed
-- `info` - the current [sequence information]
+- `info` - the current [argument information]
 
-It should return the list of completion words. If an error is thrown, it is ignored, and the default completion message will be thrown instead.
+It should return the list of completion words. If an error is thrown, it will be ignored and the default completion message will be thrown instead.
 
-<Callout type="info">
+<Callout type="default">
 
 This callback can be asynchronous.
 
@@ -487,9 +483,9 @@ The `layout` attribute specifies a custom [help layout].
 
 #### Help sections
 
-The `sections` attribute specifies [help sections] to be rendered in the help message. By default, two sections are included:
+The `sections` attribute specifies [help sections] to be rendered in the help message. By default, two are included:
 
-- [usage section] - with `'Usage:'{:ts}` as heading, indented by 2 spaces
+- [usage section] - with `'Usage:'{:ts}` as heading, and content indented by 2 spaces
 - [groups section] - with `'Options:'{:ts}` as the default group heading
 
 #### Enable subcommand
@@ -514,7 +510,7 @@ The two features above may be used together. For example, the invocation `cli --
 
 ### Version option
 
-The **version** option throws a version message. In addition to the sets of [basic] and [message] attributes, it has the attributes described below.
+The **version** option throws a version message. In addition to the sets of [basic] and [message] attributes, it has a single attribute described below.
 
 <Callout type="info">
 
@@ -524,23 +520,12 @@ When [word completion] is in effect, this option will be _skipped_.
 
 #### Version info
 
-The `version` attribute specifies a semantic version or version information.
+The `version` attribute specifies the version information. It accepts either of the following values:
 
-<Callout type="info">
+- unstructured text data (e.g., a semantic version)
+- the path of a JSON file from where a `version` field will be extracted
 
-Mutually exclusive with [resolve callback].
-
-</Callout>
-
-#### Resolve callback
-
-The `resolve` attribute specifies a resolution function scoped to the [module] where a `package.json` file will be searched for and read to extract its `version` field. It is meant for use in non-browser environments and should generally have [`import.meta.resolve`] as value.
-
-<Callout type="info">
-
-Mutually exclusive with [version info].
-
-</Callout>
+In the latter case, the path should generally be `'./package.json'{:ts}` and should be used in conjunction with the [resolve callback] parsing flag.
 
 ### Command option
 
@@ -548,7 +533,7 @@ The **command** option -- a.k.a. subcommand -- lets you specify a set of option 
 
 It will supply the [parse callback] of the subcommand with the parsed values and subsequently exit the parsing loop. The option value will be either the result of the callback, if specified, or the parsed values themselves.
 
-Values of _ancestor_ commands (i.e. non-immediate parents) cannot be accessed from within the callback. For this purpose, you will need to wait until the parser returns from the parsing loop.
+Values of _ancestor_ commands (i.e. non-immediate parents) cannot be accessed from within the callback. For this purpose, you will need to wait until the parsing procedure returns.
 
 <Callout type="info">
 
@@ -558,11 +543,19 @@ When [word completion] is in effect, the parse callback will _not_ be called, si
 
 In addition to the sets of [basic] and [value] attributes, it has the attributes described below.
 
-#### Nested options | callback
+#### Nested options
 
-The `options` attribute, if present, specifies a set of option definitions for the subcommand.
+The `options` attribute, if present, specifies a set of option definitions for the subcommand. Its value can be either of:
 
-Alternatively, a callback may be used to provide the definitions, which allows the implementation of [recursive commands]. An asynchronous callback may be used to dynamically load definitions from another module, in which case you can return the result of the `import{:ts}` directive.
+- an object containing the option definitions
+- a callback that returns the option definitions (allowing the implementation of [recursive commands])
+- the path of a JavaScript module exporting the option definitions (to be used with the [resolve callback] parsing flag)
+
+<Callout type="default">
+
+The callback can be asynchronous.
+
+</Callout>
 
 <Callout type="warning">
 
@@ -572,17 +565,21 @@ All incoming arguments will be parsed using the option definitions from this att
 
 #### Cluster prefix
 
-The `clusterPrefix` property indicates whether the command accepts cluster arguments. This must be used in conjunction with the [cluster letters] of the nested options.
-
-### Flag option
-
-The **flag** option accepts no parameter, but has a value that will be either the result of the [parse callback], if specified, or `true{:ts}`. The callback receives a `string[]{:ts}` as first parameter, which holds _all_ the remaining command-line arguments, and should return the option value.
+The `clusterPrefix` attribute, if present, indicates whether the command accepts cluster arguments. It has the same semantics as its homonymous property in the [parsing flags], and must be used in conjunction with the [cluster letters] of the nested options.
 
 <Callout type="info">
 
-Altering the string array inside the parse callback will have _no_ effect on the original command-line arguments, as it is just a copy.
+This attribute has precedence over [option prefix].
 
 </Callout>
+
+#### Option prefix
+
+The `optionPrefix` attribute, if present, specifies the prefix for option names within the command. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
+
+### Flag option
+
+The **flag** option accepts no parameter, but has a value that will be either the result of the [parse callback], if specified, or `true{:ts}`. The callback receives an empty string as its first parameter.
 
 <Callout type="default">
 
@@ -595,43 +592,10 @@ This option has the following sets of attributes:
 - [basic] attributes
 - [value] attributes
 - [environment] attributes
-- the attribute described below
 
 <Callout type="info">
 
-Previous versions of the library also provided a `negationNames` attribute, which specified alternate option names to turn the option value `false{:ts}` (e.g., _--no-flag_). This can now be achieved by inspecting the `name` property of the [sequence information] in the callback.
-
-</Callout>
-
-#### Skip count
-
-The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parse callback]. This value is meant to be changed by the callback.
-
-It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends.
-
-<Callout type="info">
-
-If the number or parameters is _fixed_, prefer the [function] option instead.
-
-</Callout>
-
-Here is an example of how it might be used inside the callback:
-
-```ts {6}
-{
-  // other attributes...
-  parse(params) {
-    const index = params.findIndex((val) => !val.startsWith('{')); // find first non-JSON param
-    const count = index >= 0 ? index : params.length; // count how many there are
-    this.skipCount = count; // <<-- tell the parser to skip them
-    return params.slice(0, count).map((val) => JSON.parse(val)); // return the parsed values
-  },
-}
-```
-
-<Callout type="default">
-
-When [word completion] is in effect, the last argument will be the word to complete. If it pertains to the current [argument sequence], you can throw a completion message from the callback.
+Old library versions provided an attribute to indicate alternate option names to turn the option value `false{:ts}` (e.g., _--no-flag_). This can now be achieved by inspecting the `name` property of the [argument information].
 
 </Callout>
 
@@ -674,7 +638,7 @@ The `separator` attribute, if present, specifies a delimiter by which to split t
 
 <Callout type="info">
 
-When _not_ using this attribute, we recommend disabling [inline parameters] through the [inline constraint].
+When _not_ using this attribute, we recommend setting the [inline constraint] to `false{:ts}`.
 
 </Callout>
 
@@ -690,17 +654,17 @@ Due to the nature of JavaScript's [Set], the order of elements is preserved (i.e
 
 #### Append values
 
-The `append` attribute, if present, indicates that the option allows appending elements to its value if specified multiple times on the command line. Value constraints, if enabled, are applied after appendage.
+The `append` attribute, if present, indicates that the option allows appending elements to its value when specified multiple times on the command line. Any [duplicates] are removed after appendage, if enabled.
 
 #### Element count limit
 
-The `limit` attribute, if present, indicates the maximum allowed number of elements. Any [argument sequence] that causes the option value to _exceed_ the given limit (after removing duplicates) will cause an error to be raised.
+The `limit` attribute, if present, indicates the maximum allowed number of elements. Any [argument sequence] that causes the option value to _exceed_ the given limit (after removing any [duplicates]) will cause an error to be raised.
 
 ### Function option
 
-The **function** option exists solely for the purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parse callback], if specified, or `null{:ts}`.
+The **function** option exists for the sole purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parse callback], if specified, or the parsed values themselves.
 
-The parse callback receives a `string[]{:ts}` as first parameter, which contains the option parameters, and should return the option value.
+The parse callback receives a `string[]{:ts}` as first parameter, which contains the option parameters. As a special case, this array may contain _all_ the remaining command-line arguments (see [parameter count] for details). It should return the option value.
 
 This option has the following sets of attributes:
 
@@ -708,20 +672,48 @@ This option has the following sets of attributes:
 - [value] attributes
 - [environment] attributes
 - [parameter] attributes
-- the attribute described below
+- the attributes described below
 
 #### Parameter count
 
 The `paramCount` attribute, if present, specifies the number of parameters that the option expects. It can have either of the following values:
 
-- a positive **number**: the option expects exactly this amount (must be greater than one)
-- a numeric **range**: the option expects between a minimum and a maximum count
+- **unspecified** or **negative**: the option accepts _unlimited_ parameters
+- **zero**: the option accepts _unknown_ number of parameters (see below)
+- **positive**: the option expects _exactly_ this amount
+- **range**: the option expects between a _minimum_ and a _maximum_ count
 
-Note that the function option cannot have a [parameter separator], since it would conflict with the parameter count. To see why, consider the case where the minimum count is 2. Then, the second parameter would always be treated as such, regardless of whether it is the name of another option, _even if the previous argument had two delimited parameters_. This is because the parser does not look for delimiters when trying to form an [argument sequence].
+In the special case of zero, the parse callback will receive all remaining command-line arguments. It should be used in conjunction with the [skip count] attribute. Note that altering the string array inside the callback would have _no_ effect on the original arguments, as it is just a copy.
+
+Note that this option cannot have a [parameter separator], since it would conflict with the parameter count. To see why, consider the case where the minimum count is 2. Then, the second argument following the option would always be treated as a parameter, regardless of whether it is the name of another option, _even if the previous argument had two delimited parameters_. This is because the parser does not look for delimiters when forming an [argument sequence].
 
 <Callout type="warning">
 
-If the data comes from the [environment], then the [parse callback] will receive a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [sequence information], which should be `NaN{:ts}` in this case.
+If the data comes from the [environment], then the [parse callback] will receive an array with a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [argument information], which should be `NaN{:ts}` in this case.
+
+</Callout>
+
+#### Skip count
+
+The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parse callback]. This value is meant to be changed by the callback, and only works when the [parameter count] is zero.
+
+It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends. Here is an example of how it might be used inside the callback:
+
+```ts {6}
+{
+  // other attributes...
+  parse(params) {
+    const index = params.findIndex((val) => !val.startsWith('{')); // find first non-JSON param
+    const count = index >= 0 ? index : params.length; // count how many there are
+    this.skipCount = count; // <<-- tell the parser to skip them
+    return params.slice(0, count).map((val) => JSON.parse(val)); // return the parsed values
+  },
+}
+```
+
+<Callout type="info">
+
+When [word completion] is in effect, the last argument will be the word to complete (you can check if this is the case by inspecting the `comp` property of the [argument information]). If it pertains to the current argument sequence, you can throw completion words from the callback as an instance of the [text message].
 
 </Callout>
 
@@ -789,6 +781,7 @@ If the data comes from the [environment], then the [parse callback] will receive
 [positional]: #positional--marker
 [inline constraint]: #inline-constraint
 [complete callback]: #complete-callback
+[inlined]: #inline-constraint
 
 {/* selection attributes */}
 
@@ -802,9 +795,10 @@ If the data comes from the [environment], then the [parse callback] will receive
 {/* version attributes */}
 
 [version info]: #version-info
-[resolve callback]: #resolve-callback
 
 {/* command attributes */}
+
+[option prefix]: #option-prefix
 
 {/* flag attributes */}
 
@@ -813,26 +807,29 @@ If the data comes from the [environment], then the [parse callback] will receive
 {/* array attributes */}
 
 [parameter separator]: #parameter-separator
-[remove duplicates]: #remove-duplicates
+[duplicates]: #remove-duplicates
 [append values]: #append-values
 [element count limit]: #element-count-limit
 
 {/* function attributes */}
 
 [parameter count]: #parameter-count
+[skip count]: #skip-count
 
 {/* parser references */}
 
+[parsing flags]: parser#parsing-flags
 [resulting object]: parser#option-values
 [word completion]: parser#word-completion
 [completion algorithm]: parser#completion-algorithm
 [custom callback]: parser#custom-callbacks
 [argument sequence]: parser#argument-sequence
-[sequence information]: parser#sequence-information
+[argument information]: parser#argument-information
 [`parse`]: parser#using-a-newly-created-object
 [`parseInto`]: parser#using-an-existing-object
 [`clusterPrefix`]: parser#cluster-prefix
 [inline parameters]: parser#inline-parameters
+[resolve callback]: parser#resolve-callback
 
 {/* formatter references */}
 
@@ -852,6 +849,9 @@ If the data comes from the [environment], then the [parse callback] will receive
 [styling attributes]: styles#styling-attributes
 [text formatting]: styles#text-splitting
 [warning message]: styles#warning-message
+[error message]: styles#error-message
+[error phrases]: styles#error-phrases
+[text message]: styles#text-message
 
 {/* validator references */}
 
@@ -865,7 +865,5 @@ If the data comes from the [environment], then the [parse callback] will receive
 
 [Set]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
 [Math]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math
-[`import.meta.resolve`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve
 [short-option]: https://www.linuxtopia.org/online_books/linux_tool_guides/tar_user_guide/Short-Options.html
 [discriminant]: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
-[module]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules

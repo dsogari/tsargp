@@ -1,84 +1,450 @@
 import dynamic from 'next/dynamic';
-import { Steps } from 'nextra/components';
+import { Callout } from 'nextra/components';
 
 export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 <Demo />
 
-<details>
-  <summary>Disclaimer</summary>
+<Callout type="info">
 
-Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
+Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion all work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
 
 ```sh copy
 npm i -g tsargp && complete -C tsargp tsargp
 ```
 
-</details>
+</Callout>
 
 ## Try it out
 
-<Steps>
 ### Basic commands
 
-- `tsargp -h` print the help message
-- `tsargp` view the options' default values
-- `tsargp ...` play with option values
 - `clear` clear the screen
+- `tsargp -h` print the help message
+- `tsargp ...` play with option values
+- `tsargp` view the options' default values
+
+<details>
+  <summary>Expected output</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [0mboolean[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [0mstrRegex[2m:[0m [0m[32m[0m[32m"123456789"[0m[0m[0m[2m,[0m
+  [0mnumRange[2m:[0m [0m[33m-1.23[0m[0m[2m,[0m
+  [0mstrArray[2m:[0m [ [0m[32m"one"[0m[0m ][0m[2m,[0m
+  [0mnumArray[2m:[0m [ [0m[33m1[0m[0m[2m,[0m [0m[33m2[0m ][0m[2m,[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Word completion
 
 - check if completion works by pressing `<Tab>` (it behaves slightly differently than a real bash)
 - check if option names get completed (e.g., `<Tab>`, `--<Tab>`, `--h<Tab>`)
-- check if option parameters get completed (e.g., `-b <Tab>`, `-se <Tab>`, `-ne=<Tab>`)
+- check if option parameters get completed (e.g., `-b <Tab>`, `-sc <Tab>`, `-nc=<Tab>`)
 
 ### Positional arguments
 
-- check if positional arguments can be specified before named ones (e.g., `two -s 0`)
-- check if all arguments after `--` are recognized as positional (e.g., `-- -f`)
+1. check if positional arguments can be specified before named ones (e.g., `two -sr 0`)
+2. check if arguments after the positional marker are recognized as positional (e.g., `-- -f`)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mstrRegex[2m:[0m [0m[32m[0m[32m"0"[0m[0m[0m[2m,[0m
+  [0mstrArrayLimit[2m:[0m [ [0m[32m"two"[0m[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mstrArrayLimit[2m:[0m [ [0m[32m"-f"[0m[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Cluster arguments
 
-- check if cluster arguments can be specified (e.g., `-sn 1 -1`)
-- check if cluster arguments can be specified with inline parameters (e.g., `-s1` or `-n-1`)
+- check if cluster arguments can be specified (e.g., `-sn 1 -1` or `-s 1 -n -1`)
+- check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`, same as above)
+
+<details>
+  <summary>Expected output</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [0mstrRegex[2m:[0m [0m[32m[0m[32m"1"[0m[0m[0m[2m,[0m
+  [0mnumRange[2m:[0m [0m[33m-1[0m[0m[2m,[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Value constraints
 
-- check if a string parameter matches the required regex (e.g., try `-s A` and see that it fails)
-- check if a string parameter matches one of the choices (e.g., try `-se A` and see that it fails)
-- check if a number parameter matches the required range (e.g., try `-n 1` and see that it fails)
-- check if a number parameter matches one of the choices (e.g., try `-ne=0` and see that it fails)
+1. check if a string parameter matches the required regex (e.g., try `-sr A` and see that it fails)
+2. check if a string parameter matches one of the choices (e.g., try `-sc A` and see that it fails)
+3. check if a number parameter matches the required range (e.g., try `-n-3` and see that it fails)
+4. check if a number parameter matches one of the choices (e.g., try `-nc=0` and see that it fails)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mInvalid parameter to [35m-sr[0m[39m: [32m'A'[0m[39m. Value must match the regex [31m/^\d+$/[0m[39m.
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mInvalid parameter to [35m-sc[0m[39m: [32m'A'[0m[39m. Value must be one of: [32m'one'[0m[39m, [32m'two'[0m[39m.
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mInvalid parameter to [35m-nr[0m[39m: [32m'-3'[0m[39m. Value must be within the range [[33m-2[0m[39m, [33mInfinity[0m[39m].
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (4)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mInvalid parameter to [35m-nc[0m[39m: [32m'0'[0m[39m. Value must be one of: [32m'1'[0m[39m, [32m'2'[0m[39m.
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Array constraints
 
-- check if the element count is limited to a certain amount (e.g., `-- a b c d`)
-- check if duplicate values get removed (e.g., `--numbersUnique 1,2,1,2`)
+1. check if the element count is limited to a certain amount (e.g., `-- a b c d`)
+2. check if duplicate values get removed (e.g., `--numArrayUnique 1,2,1,2`)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m--strArrayLimit[0m[39m has too many values: [33m4[0m[39m. Should have at most [33m3[0m[39m.[0m[0m
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mnumArrayUnique[2m:[0m [ [0m[33m1[0m[0m[2m,[0m [0m[33m2[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Value replacement
 
 When an option is specified more than once, the retained value is usually the last occurrence.
 
-- check if values get overridden for a single-valued option (e.g., `-s 1 -n 1 -s 2 -n 2`)
-- check if values get overridden for an array-valued option (e.g., `abc -- def`)
-- check if values get _appended_ for an array-valued option that is configured that way (e.g., `--numbersUnique 1 --numbersUnique 2`)
+1. check if values get overridden for a single-valued option (e.g., `-sr 1 -nr 1 -sr 2 -nr 2`)
+2. check if values get overridden for an array-valued option (e.g., `abc -- def`)
+3. check if values get _appended_ for an array-valued option that is configured that way (e.g., `--numArrayUnique 1 --numArrayUnique 2`)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mstrRegex[2m:[0m [0m[32m[0m[32m"2"[0m[0m[0m[2m,[0m
+  [0mnumRange[2m:[0m [0m[33m2[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mstrArrayLimit[2m:[0m [ [0m[32m"def"[0m[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mnumArrayUnique[2m:[0m [ [0m[33m1[0m[0m[2m,[0m [0m[33m2[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Inline parameters
 
-- check if parameters can be inlined with option names (e.g., `-ss=abc`)
-- check if inline parameters can contain equal signs (e.g., `-ss==a=b`)
-- check if inline parameters are disallowed for an option (e.g., `-se=one`)
-- check if inline parameters are required for an option (e.g., `-ne 1`)
+1. check if parameters can be inlined with option names (e.g., `-sa=abc`)
+2. check if inline parameters can contain equal signs (e.g., `-sa==a=b`)
+3. check if inline parameters are disallowed for an option (e.g., `-sc=one`)
+4. check if inline parameters are required for an option (e.g., `-nc 1`)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mstrArray[2m:[0m [ [0m[32m"abc"[0m[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mstrArray[2m:[0m [ [0m[32m"=a=b"[0m[0m ][0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m-sc[0m[39m does not accept inline parameters.
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (4)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m-nc[0m[39m requires an inline parameter.
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Help option
 
-- check if the help option accepts option filters (e.g., `-h -b -ne`)
-- check if the help option accepts a subcommand name (e.g., `-h hello`)
-- check if the above can be combined (e.g., `-h hello -h`)
+1. check if the help option accepts option filters (e.g., `-h -f`)
+2. check if the help option accepts a subcommand name (e.g., `-h hello`)
+3. check if the above can be combined (e.g., `-h hello -h`)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[1mArgument parser for TypeScript.[0m
+
+  [39m[38;5;138m-f[0m[39m, [38;5;138m--no-flag[0m[39m       [3;9m[39mA flag option. Deprecated for [39msome reason.[0m
+
+[1mUsage:[0m
+  [39mdemo.js[0m [[39m([35m-f[0m[39m|[35m--no-flag[0m[39m)][0m
+
+[90m...[0m
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[1mUsage:[0m
+
+  [39mdemo.js[0m [[39m[90m<param>...[0m[39m] [([35m-h[0m[39m|[35m--help[0m[39m)] [[35mhello[0m[39m [90m...[0m[39m][0m
+
+[1mArguments:[0m
+
+  [39m[90m<param>...[0m[39m              [39mAccepts multiple parameters. Accepts positional arguments. Reads data from
+                          standard input. Defaults to [[32m'world'[0m[39m].[0m
+
+[90m...[0m
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[1mUsage:[0m
+
+  [39mdemo.js[0m [[39m([35m-h[0m[39m|[35m--help[0m[39m)][0m
+
+[1mOptions:[0m
+
+  [39m[35m-h[0m[39m, [35m--help[0m[39m    [39m[39mThe help option for the hello command. Prints this help message. Uses the remaining
+                arguments as option filter.[0m
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Miscellaneous
 
-- check if the `-f` option can be specified without a parameter, and negated with `--no-flag`
-- check if the `-b` option can be specified in combination with required options
+1. check if the `-f` option can be specified without a parameter (also, see the warning produced)
+2. check if the `-f` option can be negated with `--no-flag` (also, see the warning produced)
+3. check if the `-b` option cannot be specified without required options (e.g. `-b yes`)
+4. check if the `-b` option can be specified with required options (e.g. `-b yes -sc one`)
+5. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m-f[0m[39m is deprecated and may be removed in future releases.
+[0m
+{
+  [0mflag[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m--no-flag[0m[39m is deprecated and may be removed in future releases.
+[0m
+{
+  [0mflag[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m-b[0m[39m requires [39m([35m-sc[0m[39m or [35m-sa[0m[39m == [[32m'a'[0m[39m, [32m'b'[0m[39m]).
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (4)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mboolean[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
+  [0mstrChoice[2m:[0m [0m[32m[0m[32m"one"[0m[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (5)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mUnknown option [35m-s[0m[39m. Similar names are: [35m-sr[0m[39m, [35m-sc[0m[39m, [35m-sa[0m[39m.
+```
+
+{/* cSpell:enable */}
+
+</details>
 
 ### Subcommands
 
@@ -102,5 +468,3 @@ With the console panel open, slide the screen splitter until the terminal width 
 - check if styles can be omitted with `NO_COLOR` (e.g., `NO_COLOR=1 ...`)
 - check if styles are emitted with `FORCE_COLOR` (e.g., `NO_COLOR=1 FORCE_COLOR=1 ...`)
 - check if styles are emitted when resetting (e.g., `NO_COLOR= FORCE_COLOR= ...`)
-
-</Steps>
