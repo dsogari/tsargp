@@ -42,42 +42,39 @@ Every option definition produces a help entry in its respective group in the hel
 
 ### Names column
 
-This column contains the options' names separated by commas. The names are listed in the same order as was specified in the [names] attribute.
+This column contains the options' names separated by commas. The names are listed in the same order as was specified in the [names] attribute. The [positional] marker, if present, is also appended to this list.
 
 #### Name slots
 
-Depending on the column's [alignment] setting, each option name may reserve a "slot" in the respective position in this column. The width of a name slot will be the length of the longest name in that slot, among all options. Empty strings or `null{:ts}`s can be specified in order to skip a slot.
+Depending on the column's [alignment] setting, each option name may reserve a "slot" in the respective position in this column. The width of a name slot will be the length of the longest name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
 
-For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `''{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as:
+For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `null{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as:
 
 ```
 -f, -ff      --flag
 ```
 
-Note how the empty string produced whitespace between its neighbors, and the commas were suppressed.
+Note how the absent name produced whitespace between its neighbors, and the commas were suppressed.
+
+<Callout type="info">
+
+Empty strings will also be suppressed, but names containing spaces will appear unquoted.
+
+</Callout>
 
 ### Parameter column
 
 This column is rendered according to the following rules:
 
 - if the option is [niladic], do nothing
-- else, if it is a [subcommand], render an ellipsis `'...'{:ts}`
 - else, if it contains an [example value], render this value
-  - and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
-  - else, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
 - otherwise
-  - do this
-    - if it contains a [parameter name], render this name
-    - else, render the word `'param'{:ts}`
-  - and,
-    - if the result does not contain angle brackets
-    - then, enclose the result in angle brackets `'<>'{:ts}`
-  - and,
-    - if it requires [inline parameters], prepend an equals sign `'='{:ts}`
-    - else, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
-  - and,
-    - if it can be specified without parameters and is not a nameless positional argument
-    - then, enclose the result in square brackets `'[]'{:ts}`
+  - if it contains a [parameter name], render this name
+  - else, render the word `'param'{:ts}`
+  - and enclose the result in angle brackets `'<>'{:ts}` (if this was not already the case)
+- and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
+- and, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
+- and, if it can be specified without parameters and is not a nameless positional argument, enclose the result in square brackets `'[]'{:ts}`
 
 The result might be something like `=<param>` or `[<param>...]`.
 
@@ -323,10 +320,12 @@ This is inherently different from what a text search utility like `grep` would p
 
 [option group]: options#group--hide
 [names]: options#option-names
+[positional]: options#positional--marker
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#niladic-options
 [subcommand]: options#command-option
+[function option]: options#function-option
 
 {/* parser references */}
 

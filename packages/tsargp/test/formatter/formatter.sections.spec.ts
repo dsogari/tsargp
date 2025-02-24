@@ -212,7 +212,40 @@ describe('HelpFormatter', () => {
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections).wrap()).toEqual(
-          '[-a1 [<param>...]] -a2 [<param>...] [<param>...] [-a4=true]\n',
+          '[-a1 [<param>...]] -a2 [<param>...] [<param>...] [-a4[=true]]\n',
+        );
+      });
+
+      it('render a function option', () => {
+        const options = {
+          function1: {
+            type: 'function',
+            names: ['-f1'],
+            paramCount: 0,
+          },
+          function2: {
+            type: 'function',
+            names: ['-f2'],
+            required: true,
+            paramCount: [0, 1],
+          },
+          function3: {
+            type: 'function',
+            positional: true,
+            paramCount: 2,
+          },
+          function4: {
+            type: 'function',
+            names: ['-f4'],
+            example: true,
+            inline: 'always',
+            paramCount: [0, 1],
+          },
+        } as const satisfies Options;
+        const formatter = new HelpFormatter(options);
+        const sections: HelpSections = [{ type: 'usage' }];
+        expect(formatter.sections(sections).wrap()).toEqual(
+          '[-f1 ...] -f2 [<param>] [<param>...] [-f4[=true]]\n',
         );
       });
 

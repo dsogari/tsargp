@@ -5,17 +5,17 @@ import { validate } from '../../lib/validator';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
-  it('throw an error on option with invalid cluster letter (space)', () => {
+  it('accept an option with a phantom cluster letter', () => {
     const options = {
       flag: {
         type: 'flag',
         cluster: ' ',
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(`Option flag has invalid cluster letter ' '.`);
+    expect(validate(options)).resolves.toEqual({});
   });
 
-  it('throw an error on option with invalid cluster letter (equals sign)', () => {
+  it('throw an error on option with invalid cluster letter', () => {
     const options = {
       flag: {
         type: 'flag',

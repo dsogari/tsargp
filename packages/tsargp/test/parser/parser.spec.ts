@@ -90,6 +90,18 @@ describe('parse', () => {
   });
 
   describe('parsing a help option', () => {
+    it('handles an option with empty name', () => {
+      const options = {
+        help: {
+          type: 'help',
+          names: [''],
+          sections: [{ type: 'groups' }],
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.not.toHaveProperty('help');
+      expect(parse(options, [''])).rejects.toThrow(`\n`);
+    });
+
     it('save the help message when the option explicitly asks so', () => {
       const options = {
         help: {
@@ -341,6 +353,17 @@ describe('parse', () => {
   });
 
   describe('parsing a flag option', () => {
+    it('handle empty names or names with spaces', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['', ' '],
+        },
+      } as const satisfies Options;
+      expect(parse(options, [''])).resolves.toEqual({ flag: true });
+      expect(parse(options, [' '])).resolves.toEqual({ flag: true });
+    });
+
     it('handle an asynchronous callback', () => {
       const options = {
         flag: {
@@ -618,6 +641,18 @@ describe('parse', () => {
       );
     });
 
+    it('handle empty names or names with spaces', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['', ' '],
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['', '0'])).resolves.toEqual({ single: '0' });
+      expect(parse(options, [' ', '1'])).resolves.toEqual({ single: '1' });
+      expect(parse(options, ['=123'])).resolves.toEqual({ single: '123' });
+    });
+
     it('replace the option value with the parameter', () => {
       const options = {
         single: {
@@ -652,6 +687,18 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-a'])).resolves.toEqual({ array: [] });
+    });
+
+    it('handle empty names or names with spaces', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['', ' '],
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['', '0', '1'])).resolves.toEqual({ array: ['0', '1'] });
+      expect(parse(options, [' ', '1', '2'])).resolves.toEqual({ array: ['1', '2'] });
+      expect(parse(options, ['=123'])).resolves.toEqual({ array: ['123'] });
     });
 
     it('replace the option value with the parameters', () => {
@@ -717,6 +764,18 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['-f'])).resolves.toEqual({ function: [] });
     });
+  });
+
+  it('handle empty names or names with spaces', () => {
+    const options = {
+      function: {
+        type: 'function',
+        names: ['', ' '],
+      },
+    } as const satisfies Options;
+    expect(parse(options, ['', '0', '1'])).resolves.toEqual({ function: ['0', '1'] });
+    expect(parse(options, [' ', '1', '2'])).resolves.toEqual({ function: ['1', '2'] });
+    expect(parse(options, ['=123'])).resolves.toEqual({ function: ['123'] });
   });
 
   it('replace the option value with the parameters', () => {

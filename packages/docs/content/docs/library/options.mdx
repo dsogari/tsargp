@@ -6,7 +6,7 @@ import { Callout } from 'nextra/components';
 
 # Options
 
-A command line interface can be composed of subcommands and options (also known as _flags_). The options allow a calling application or user to configure the command that will run. **tsargp** offers a selection of option types that should suit most applications. In the next sections, we present the available types and describe them in detail.
+A command-line interface can be composed of subcommands and options (also known as _flags_). The options allow a calling application or user to configure the command that will run. **tsargp** offers a selection of option types that should suit most applications. In the next sections, we present the available types and describe them in detail.
 
 ## Option types
 
@@ -42,7 +42,7 @@ Each type of option expects different number of parameters on the command line:
 
 <Callout type="info">
 
-When a single-valued option is specified multiple times on the command line, its value is replaced each time. This is also the default behavior of an array-valued option, unless [append values] is set.
+When an option is specified multiple times on the command line, its value gets replaced each time. The only exception is the case of an array-valued option with [append values] set.
 
 </Callout>
 
@@ -56,7 +56,7 @@ The data type of an option value in the [resulting object] depends on the option
 
 <Callout type="info">
 
-Except for help and version options, which do not have values, the initial value of any option is `undefined{:ts}`.
+The initial value of any option is `undefined{:ts}`, except for help and version options without the [save message] attribute.
 
 </Callout>
 
@@ -77,7 +77,11 @@ All options share a set of attributes in addition to their type. They are descri
 
 #### Option names
 
-The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). Names must not contain whitespace or the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. A name can also be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
+The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
+
+- A name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator.
+- A name can contain whitespace or even be an empty string. (However, this will look strange in help messages.)
+- A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 <Callout type="default">
 
@@ -111,7 +115,7 @@ Deprecated options specified on the command line generate a [warning message], w
 
 #### Group | hide
 
-The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. You can use the value `null{:ts}` instead, to completely hide it from the help message.
+The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. Alternatively, you can use the value `null{:ts}` to completely hide it from the help message.
 
 <Callout type="default">
 
@@ -145,11 +149,11 @@ All options that may have a value share a set of attributes, which are described
 
 #### Cluster letters
 
-The `cluster` attribute, if present, specifies letters that can be used to combine options into a single command-line argument. This feature is also known as the [short-option] style, and can be enabled via the [`clusterPrefix`] parsing flag.
+The `cluster` attribute, if present, specifies letters that can be used to combine options into a single command-line argument. This feature is also known as the [short-option] style, and can be enabled via the [cluster prefix] parsing flag.
 
 <Callout type="info">
 
-This attribute is validated against the same regex as the [option names].
+Cluster letters should _not_ be included in the list of [option names], although they are subject to the same restrictions.
 
 </Callout>
 
@@ -172,17 +176,18 @@ They would be transformed into their "canonical" form, i.e.:
 cli --flag --str 'my string' --num 1 2 3
 ```
 
-Notes about this feature:
+##### Cluster parsing rules
+
+The following rules apply to cluster arguments:
 
 - the _order_ of options in a cluster is preserved when converting to the canonical form
 - variadic options and subcommands are supported, but they must come _last_ in a cluster
 - if word completion is attempted for a cluster, the default completion message is thrown
 - if a nameless positional option appears in a cluster, its argument will be treated as positional
-- the cluster prefix can be the empty string, similarly to how the `tar` command works
 
-##### Inline parameters
+##### Cluster inline parameters
 
-Cluster arguments may be considered to have an inline parameter if they contain at least one unknown letter that is _not_ the first. For example, using the same option definitions as above, the command line `cli -s'my str' -n123{:sh}` would be parsed as `cli --str 'my str' --num 123{:sh}`.
+Cluster arguments may be considered to have an inline parameter if they contain at least one unknown letter that is _not the first_. For example, using the same option definitions as above, the command line `cli -s'my str' -n123{:sh}` would be parsed as `cli --str 'my str' --num 123{:sh}`.
 
 Notice how the parameters appear "glued" to the cluster letter, with no intervening space, and they contain characters that are not valid cluster letters. However, the first letter _must_ be valid for the argument to be considered a cluster argument.
 
@@ -217,14 +222,14 @@ The `requires` attribute, if present, specifies requirements that must be satisf
 - a requirement **expression**; or
 - a requirement **callback**
 
-In the case of an option key, the referenced option must also be present on the command line. In the case of an object, every referenced option must have the corresponding value, which can be any value accepted by that option, or one of the special values:
+An option key means that the referenced option must also be specified (either on the command line or through the [environment]). In the case of an object, every referenced option must have the corresponding value, which can be any value accepted by that option, or one of the special values:
 
 - `undefined{:ts}` to signify _presence_
 - `null{:ts}` to signify _absence_
 
 <Callout type="info">
 
-You cannot reference options from a [subcommand] (parent or child) in a requirement. Option keys must always refer to options in the same level of option definitions.
+You cannot reference options from a [subcommand] (parent or child) in a requirement. Option keys must always refer to options in the same level of definitions.
 
 </Callout>
 
@@ -254,7 +259,7 @@ options.flag.requires.toString = () => 'this and that ...';
 
 #### Conditional requirements
 
-The `requiredIf` attribute is reciprocal to the previous one: if present, it specifies requirements which must be satisfied for the affected option to be _considered_ required.
+The `requiredIf` attribute is reciprocal to the previous one: if present, it specifies requirements that must be satisfied for the affected option to be _considered_ required.
 
 <Callout type="info">
 
@@ -272,17 +277,17 @@ req.all(
 );
 ```
 
-If they were defined in the `requires` attribute, they would mean:
+If they were declared in the `requires` attribute, they would mean:
 
 > _If this option is specified, then the following must hold true: `option1` must be present AND (`option2` must be absent OR `option3` must have a value different than `[2]`) AND `option1` must have the same value as `option3`._
 
-And if they were defined in the `requiredIf` attribute, they would mean:
+And if they were declared in the `requiredIf` attribute, they would mean:
 
 > _If `option1` is present AND (`option2` is absent OR `option3` has a value different than `[2]`) AND `option1` has the same value as `option3`, then this option is considered required and must be specified._
 
 <Callout type="info">
 
-An option is considered specified if it either appears on the command line or its data exists in the [environment].
+An option is considered specified if either it appears on the command line or its data exists in the [environment].
 
 </Callout>
 
@@ -318,7 +323,7 @@ options.flag.default.toString = () => 'this and that ...';
 
 The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s).
 
-It receives different kinds of data depending on the option type, but its second parameter always contains the current [argument information], including the option's name, argument index and any previously parsed values.
+Depending on the option type, the callback receives a different kind of data in its first parameter. But its second parameter always contains the current [argument information], which includes the option's name, argument index and any previously parsed values.
 
 <Callout type="default">
 
@@ -338,7 +343,7 @@ Options that may read data from the environment share some attributes, as descri
 
 The `stdin` attribute, if present, indicates that the option accepts data from the standard input. It will only have effect if the option is _not_ specified on the command line, otherwise the input stream will remain untouched.
 
-The parser only reads _readily_ available data, i.e., it does not wait for _new_ input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use the [default callback] in conjunction with third-party prompting libraries.
+The parser only reads _readily_ available data, without waiting for new input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use the [default callback] in conjunction with third-party prompting libraries.
 
 <Callout type="info">
 
@@ -404,15 +409,15 @@ The `positional` attribute, if present, indicates that the option accepts _posit
 
 If set to `true{:ts}`, then any argument not recognized as an option name will be considered positional. If set to a string, then it acts as a positional marker, in which case all arguments that appear _beyond_ the marker will be considered positional.
 
-<Callout type="default">
+<Callout type="info">
 
-When using this attribute, we recommend also setting [preferred name] to some explanatory name.
+The positional marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
 
 </Callout>
 
-<Callout type="info">
+<Callout type="default">
 
-This attribute is validated against the same regex as the [option names].
+When using this attribute, we recommend also setting [preferred name] to some explanatory name.
 
 </Callout>
 
@@ -565,7 +570,7 @@ All incoming arguments will be parsed using the option definitions from this att
 
 #### Cluster prefix
 
-The `clusterPrefix` attribute, if present, indicates whether the command accepts cluster arguments. It has the same semantics as its homonymous property in the [parsing flags], and must be used in conjunction with the [cluster letters] of the nested options.
+The `clusterPrefix` attribute, if present, indicates whether the command accepts cluster arguments. It has the same semantics as the [cluster prefix] parsing flag, and must be used in conjunction with the [cluster letters] of the nested options.
 
 <Callout type="info">
 
@@ -818,7 +823,6 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 {/* parser references */}
 
-[parsing flags]: parser#parsing-flags
 [resulting object]: parser#option-values
 [word completion]: parser#word-completion
 [completion algorithm]: parser#completion-algorithm
@@ -827,7 +831,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 [argument information]: parser#argument-information
 [`parse`]: parser#using-a-newly-created-object
 [`parseInto`]: parser#using-an-existing-object
-[`clusterPrefix`]: parser#cluster-prefix
+[cluster prefix]: parser#cluster-prefix
 [inline parameters]: parser#inline-parameters
 [resolve callback]: parser#resolve-callback
 

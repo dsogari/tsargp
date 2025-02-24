@@ -45,7 +45,7 @@ export default {
 
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is an example. In the documentation, you will learn how to parse them into an existing object or class instance, specify parsing flags, and print warnings.
+There are multiple ways to parse the command-line arguments. Below is an example. In the documentation, you will learn how to parse them into an existing object or class instance, specify parsing flags, and emit warnings.
 
 ```ts
 #!/usr/bin/env node
@@ -74,9 +74,9 @@ import { validate } from 'tsargp';
 import options from './cli.options.js';
 
 describe('cli', () => {
-  it('should have valid options', async () => {
-    const { warning } = await validate(options);
-    expect(warning).toBeUndefined(); // or check warnings that are important to your application
+  it('should have valid options', () => {
+    expect(validate(options)).resolves.toEqual({});
+    // or check warnings that are important to your application
   });
 });
 ```

@@ -482,7 +482,7 @@ function formatNames(
   indent = max(0, indent);
   let len = 0;
   option.names.forEach((name, i) => {
-    if (name) {
+    if (name !== null) {
       if (str) {
         str.close(sep);
         len += sepLen;
@@ -519,7 +519,7 @@ function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, 
   const result = new AnsiString(0, breaks);
   if (!hidden) {
     const names = getOptionNames(option);
-    formatParam(option, names, result);
+    formatParam(option, names, result, false);
   }
   const len = result.strings.reduce((acc, str) => acc + (str.length && str.length + 1), -1);
   if (len < 0) {
@@ -574,7 +574,7 @@ function getNameWidths(context: HelpContext): Array<number> | number {
           slotWidths[i] = max(slotWidths[i] ?? 0, name?.length ?? 0);
         });
       } else {
-        const len = names.reduce((acc, name) => acc + sepLen + (name?.length || -sepLen), -sepLen);
+        const len = names.reduce((acc, name) => acc + sepLen + (name?.length ?? -sepLen), -sepLen);
         maxWidth = max(maxWidth, len);
       }
     }
@@ -749,7 +749,7 @@ function formatUsageOption(
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
     formatUsageNames(option, names, result);
-    formatParam(option, names, result);
+    formatParam(option, names, result, true);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -826,41 +826,42 @@ function formatUsageNames(option: OpaqueOption, names: ReadonlyArray<string>, re
  * @param option The option definition
  * @param names The valid option names
  * @param result The resulting string
+ * @param isUsage True if the result appears in a usage
  */
-function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result: AnsiString) {
+function formatParam(
+  option: OpaqueOption,
+  names: ReadonlyArray<string>,
+  result: AnsiString,
+  isUsage: boolean,
+) {
+  const { type, inline, example, separator, styles, positional, paramName } = option;
   const [min, max] = getParamCount(option);
-  const equals = option.inline ? '=' : '';
-  const ellipsis = max > 1 && !equals ? '...' : '';
-  if (equals) {
-    result.merge = true;
+  const optional = !min && max && !(positional && !names.length) && (!example || isUsage);
+  const ellipsis =
+    type === 'command' || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
+  if (inline) {
+    result.merge = true; // to merge with names column, if required
   }
-  let param;
-  let example = option.example;
+  result
+    .open('', styles?.param ?? config.styles.value)
+    .open(optional ? '[' : '') // do not use openAtPos
+    .open(inline ? '=' : '');
   if (example !== undefined) {
-    const separator = option.separator;
-    if (separator && isReadonlyArray(example)) {
+    let value = example;
+    if (separator && isReadonlyArray(value)) {
       const sep = typeof separator === 'string' ? separator : separator.source;
-      example = example.join(sep);
+      value = value.join(sep);
     }
-    fmt.v(example, result.open(equals), { sep: '', open: '', close: '' });
-    if (ellipsis) {
-      param = ellipsis;
-      result.merge = true;
-    }
+    fmt.v(value, result, { sep: '', open: '', close: '' });
+    result.close(ellipsis);
+  } else if (max) {
+    let param = paramName ?? 'param';
+    param = param.includes('<') ? param : `<${param}>`;
+    result.word(param + ellipsis);
   } else {
-    const type = option.type;
-    if (type === 'command') {
-      param = '...';
-    } else if (max) {
-      const param0 = option.paramName ?? 'param';
-      const param1 = param0.includes('<') ? param0 : `<${param0}>`;
-      const param2 = equals + param1 + ellipsis;
-      param = min <= 0 && !(option.positional && !names.length) ? `[${param2}]` : param2;
-    }
+    result.word(ellipsis);
   }
-  if (param) {
-    result.word(param, option.styles?.param ?? config.styles.value);
-  }
+  result.close(optional ? ']' : '').close('', result.defSty);
 }
 
 /**

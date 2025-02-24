@@ -59,7 +59,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    version: './package.json',
+    version: '../../package.json',
   },
   /**
    * A flag option that is deprecated for some reason.

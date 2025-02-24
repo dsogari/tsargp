@@ -865,16 +865,10 @@ async function handleVersion(context: ParseContext, option: OpaqueOption): Promi
   if (!resolve) {
     throw ErrorMessage.create(ErrorItem.missingResolveCallback);
   }
-  for (
-    let path = version, resolved = '', lastResolved;
-    resolved !== lastResolved;
-    lastResolved = resolved, path = '../' + path
-  ) {
-    resolved = resolve(path);
-    const data = await readFile(new URL(resolved));
-    if (data !== undefined) {
-      return JSON.parse(data).version;
-    }
+  const path = new URL(resolve(version));
+  const data = await readFile(path);
+  if (data !== undefined) {
+    return JSON.parse(data).version;
   }
   throw ErrorMessage.create(ErrorItem.versionFileNotFound);
 }
@@ -889,7 +883,7 @@ async function handleVersion(context: ParseContext, option: OpaqueOption): Promi
  */
 async function checkRequired(context: ParseContext) {
   const keys = getKeys(context[0].options);
-  // we may need to serialize the following call
+  // TODO: we may need to serialize the following calls to avoid data races in client code
   await Promise.all(keys.map((key) => checkDefaultValue(context, key)));
   await Promise.all(keys.map((key) => checkRequiredOption(context, key)));
 }

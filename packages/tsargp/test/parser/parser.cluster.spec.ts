@@ -12,17 +12,6 @@ describe('parse', () => {
     expect(parse({}, ['-x'], flags)).rejects.toThrow(`Unknown option -x.`);
   });
 
-  it('parse a cluster argument with empty cluster prefix', () => {
-    const options = {
-      flag: {
-        type: 'flag',
-        names: [''], // test empty name
-        cluster: 'f',
-      },
-    } as const satisfies Options;
-    expect(parse(options, ['f'], flags)).resolves.toEqual({ flag: true });
-  });
-
   describe('an option prefix is specified', () => {
     const flags: ParsingFlags = { clusterPrefix: '-', optionPrefix: '-' };
 
@@ -40,16 +29,30 @@ describe('parse', () => {
   });
 
   describe('a cluster argument is specified', () => {
+    it('parse a flag option with empty name', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: [''],
+          cluster: 'fF ',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['f'], flags)).resolves.toEqual({ flag: true });
+      expect(parse(options, ['F'], flags)).resolves.toEqual({ flag: true });
+      expect(parse(options, [' '], flags)).resolves.toEqual({ flag: true });
+    });
+
     it('parse a flag option', () => {
       const options = {
         flag: {
           type: 'flag',
           names: ['-f'],
-          cluster: 'f',
+          cluster: 'fF ',
         },
       } as const satisfies Options;
       expect(parse(options, ['f'], flags)).resolves.toEqual({ flag: true });
-      expect(parse(options, ['ff'], flags)).resolves.toEqual({ flag: true });
+      expect(parse(options, ['F'], flags)).resolves.toEqual({ flag: true });
+      expect(parse(options, [' '], flags)).resolves.toEqual({ flag: true });
     });
 
     it('parse a single-valued option', () => {
@@ -57,11 +60,12 @@ describe('parse', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          cluster: 's',
+          cluster: 'sS ',
         },
       } as const satisfies Options;
       expect(parse(options, ['s', '1'], flags)).resolves.toEqual({ single: '1' });
-      expect(parse(options, ['ss', '1', '2'], flags)).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['sS', '1', '2'], flags)).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['s ', '1', '2'], flags)).resolves.toEqual({ single: '2' });
     });
 
     it('parse an array-valued option', () => {
@@ -69,10 +73,12 @@ describe('parse', () => {
         array: {
           type: 'array',
           names: ['-a'],
-          cluster: 'a',
+          cluster: 'aA ',
         },
       } as const satisfies Options;
       expect(parse(options, ['a', '1', '2'], flags)).resolves.toEqual({ array: ['1', '2'] });
+      expect(parse(options, ['A', '1', '2'], flags)).resolves.toEqual({ array: ['1', '2'] });
+      expect(parse(options, [' ', '1', '2'], flags)).resolves.toEqual({ array: ['1', '2'] });
     });
 
     it('parse a variadic function option', () => {
@@ -80,10 +86,12 @@ describe('parse', () => {
         function: {
           type: 'function',
           names: ['-f'],
-          cluster: 'f',
+          cluster: 'fF ',
         },
       } as const satisfies Options;
       expect(parse(options, ['f'], flags)).resolves.toEqual({ function: [] });
+      expect(parse(options, ['F', '1'], flags)).resolves.toEqual({ function: ['1'] });
+      expect(parse(options, [' ', '1'], flags)).resolves.toEqual({ function: ['1'] });
     });
 
     it('parse a polyadic function option', () => {
@@ -91,12 +99,15 @@ describe('parse', () => {
         function: {
           type: 'function',
           names: ['-f'],
-          cluster: 'f',
+          cluster: 'fF ',
           paramCount: 2,
         },
       } as const satisfies Options;
       expect(parse(options, ['f', '1', '2'], flags)).resolves.toEqual({ function: ['1', '2'] });
-      expect(parse(options, ['ff', '1', '2', '3', '4'], flags)).resolves.toEqual({
+      expect(parse(options, ['fF', '1', '2', '3', '4'], flags)).resolves.toEqual({
+        function: ['3', '4'],
+      });
+      expect(parse(options, ['f ', '1', '2', '3', '4'], flags)).resolves.toEqual({
         function: ['3', '4'],
       });
     });
@@ -106,10 +117,12 @@ describe('parse', () => {
         command: {
           type: 'command',
           names: ['-c'],
-          cluster: 'c',
+          cluster: 'cC ',
         },
       } as const satisfies Options;
       expect(parse(options, ['c'], flags)).resolves.toEqual({ command: {} });
+      expect(parse(options, ['C'], flags)).resolves.toEqual({ command: {} });
+      expect(parse(options, [' '], flags)).resolves.toEqual({ command: {} });
     });
 
     it('parse two options', () => {

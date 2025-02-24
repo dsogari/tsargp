@@ -20,7 +20,7 @@ import {
   getNestedOptions,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
-import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
+import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -179,7 +179,7 @@ function validateNames(
   const prefixedKey = getSymbol(prefix + key);
   const names = getOptionNames(option);
   for (const name of names) {
-    if (name.match(regex.name)) {
+    if (name.includes('=')) {
       throw ErrorMessage.create(ErrorItem.invalidOptionName, {}, prefixedKey, name);
     }
     if (nameToKey.has(name)) {
@@ -188,7 +188,7 @@ function validateNames(
     nameToKey.set(name, key);
   }
   for (const letter of option.cluster ?? '') {
-    if (letter.match(regex.name)) {
+    if (letter.includes('=')) {
       throw ErrorMessage.create(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
     }
     if (letterToKey.has(letter)) {
@@ -349,7 +349,7 @@ function validateConstraints(context: ValidationContext, key: symbol, option: Op
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);
-  if (max > 1 && !option.separator && !option.append && option.inline) {
+  if ((!max || max > 1) && !option.separator && !option.append && option.inline) {
     throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, key);
   }
   if (min < max && option.cluster) {

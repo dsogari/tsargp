@@ -13,7 +13,7 @@ describe('validate', () => {
           requires: () => false,
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
 
     it('throw an error on option required by itself with req.not', () => {
@@ -114,7 +114,7 @@ describe('validate', () => {
           type: 'flag',
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
   });
 
@@ -126,7 +126,7 @@ describe('validate', () => {
           requiredIf: () => false,
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
 
     it('throw an error on option required by itself with req.not', () => {
@@ -227,7 +227,7 @@ describe('validate', () => {
           type: 'flag',
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
   });
 });

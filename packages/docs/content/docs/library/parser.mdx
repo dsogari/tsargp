@@ -74,6 +74,12 @@ When invoking the parsing procedure with a raw command line, and this flag is se
 
 The `clusterPrefix` property specifies the prefix for cluster arguments. If set, then eligible arguments starting with this prefix may be considered a cluster. This must be used in conjunction with the [cluster letters] attribute.
 
+<Callout type="default">
+
+The cluster prefix can be the empty string, thus behaving similarly to GNU's [tar] command.
+
+</Callout>
+
 <Callout type="info">
 
 Option names have precedence over the cluster prefix. For example, if the prefix is a single dash and there's an option named `'-flag'{:ts}`, then an argument with this name will _not_ be considered a cluster argument. On the other hand, the cluster prefix has precedence over the [option prefix].
@@ -259,7 +265,7 @@ Other option names are not used, not only because they would pollute the output 
 [subcommand]: options#command-option
 [break loop]: options#break-loop
 [cluster letters]: options#cluster-letters
-[cluster inline parameters]: options#inline-parameters
+[cluster inline parameters]: options#cluster-inline-parameters
 [preferred name]: options#preferred-name
 [requirement callback]: options#requirement-callback
 [default callback]: options#default-callback
@@ -288,3 +294,4 @@ Other option names are not used, not only because they would pollute the output 
 [callback hell]: http://callbackhell.com/
 [JavaScript modules]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 [import.meta.resolve]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve
+[tar]: https://man7.org/linux/man-pages/man1/tar.1.html

@@ -121,10 +121,6 @@ export const regex = {
    */
   regex: /[\\^$.*+?()[\]{}|]/g,
   /**
-   * A regular expression to match invalid option names.
-   */
-  name: /[\s=]/,
-  /**
    * A regular expression to match path separators.
    */
   pathSep: /[\\/]/,

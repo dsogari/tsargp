@@ -31,18 +31,11 @@ Moreover, by relying on TypeScript, it ensures that values resulting from argume
 
 ## Installation
 
-<Tabs items={['npm', 'pnpm', 'Bun', 'Yarn']}>
+<Tabs items={['Node.js', 'Bun', 'Deno']}>
   <Tabs.Tab>
 
     ```sh copy
     npm add tsargp
-    ```
-
-  </Tabs.Tab>
-  <Tabs.Tab>
-
-    ```sh copy
-    pnpm add tsargp
     ```
 
   </Tabs.Tab>
@@ -56,7 +49,7 @@ Moreover, by relying on TypeScript, it ensures that values resulting from argume
   <Tabs.Tab>
 
     ```sh copy
-    yarn add tsargp
+    deno add npm:tsargp
     ```
 
   </Tabs.Tab>
@@ -92,7 +85,7 @@ export default {
 
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is just an example. The documentation shows how to parse them into an existing object or class instance, specify parsing flags, and print warnings.
+There are multiple ways to parse the command-line arguments. Below is just an example. The documentation shows how to parse them into an existing object or class instance, specify parsing flags, and emit warnings.
 
 ```ts copy filename="cli.ts" {3}
 #!/usr/bin/env node
@@ -121,9 +114,9 @@ import { validate } from 'tsargp';
 import options from './cli.options.js';
 
 describe('cli', () => {
-  it('should have valid options', async () => {
-    const { warning } = await validate(options);
-    expect(warning).toBeUndefined(); // or check warnings that are important to your application
+  it('should have valid options', () => {
+    expect(validate(options)).resolves.toEqual({});
+    // or check warnings that are important to your application
   });
 });
 ```

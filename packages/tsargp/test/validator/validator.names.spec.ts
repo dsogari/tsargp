@@ -5,24 +5,25 @@ import { validate } from '../../lib/validator';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
-  it('accept an option with no name', () => {
+  it('accept an option with phantom names', () => {
     const options = {
-      flag: {
-        type: 'flag',
-        names: [null], // should ignore null values
+      single: {
+        type: 'single',
+        names: [null, '', ' '],
+        positional: '  ',
       },
     } as const satisfies Options;
-    expect(validate(options)).resolves.toMatchObject({});
+    expect(validate(options)).resolves.toEqual({});
   });
 
   it('throw an error on option with invalid name', () => {
     const options = {
       flag: {
         type: 'flag',
-        names: [' '],
+        names: ['='],
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(`Option flag has invalid name ' '.`);
+    expect(validate(options)).rejects.toThrow(`Option flag has invalid name '='.`);
   });
 
   it('throw an error on option with invalid positional marker', () => {
