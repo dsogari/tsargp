@@ -243,13 +243,7 @@ You can also specify an expression, in which case it is evaluated as follows:
 
 ##### Requirement callback
 
-You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` (or a promise thereof) indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
 
 It may be configured with a custom `toString` method to render it in error and help messages, e.g.:
 
@@ -303,13 +297,7 @@ Mutually exclusive with [always required].
 
 ##### Default callback
 
-In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing parsed values (which you can inspect to determine the default), and should return the option value.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing the parsed values, and should return the default option value (or a promise thereof).
 
 When rendering a help message, the formatter disregards any value returned by the callback, as it may depend on the values parsed from command-line arguments, which are not available when processing the help option.
 
@@ -321,15 +309,9 @@ options.flag.default.toString = () => 'this and that ...';
 
 #### Parse callback
 
-The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s).
+The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s). It should return the option value (or a promise thereof).
 
 Depending on the option type, the callback receives a different kind of data in its first parameter. But its second parameter always contains the current [argument information], which includes the option's name, argument index and any previously parsed values.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
 
 If you need to throw an error from the callback, we recommend using the [error message]'s `createCustom` static method. It receives a custom phrase that is formatted similarly to [error phrases].
 
@@ -405,7 +387,7 @@ Mutually exclusive with [example value].
 
 #### Positional | marker
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. There may be at most _one_ option with this setting.
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. There may be at most _one_ option with this setting in the same level of definitions.
 
 If set to `true{:ts}`, then any argument not recognized as an option name will be considered positional. If set to a string, then it acts as a positional marker, in which case all arguments that appear _beyond_ the marker will be considered positional.
 
@@ -432,17 +414,11 @@ The `complete` attribute, if present, specifies a custom callback for [word comp
 - `param` - the word being completed
 - `info` - the current [argument information]
 
-It should return the list of completion words. If an error is thrown, it will be ignored and the default completion message will be thrown instead.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+It should return the list of completion words (or a promise thereof). If an error is thrown, it will be ignored and the default completion message will be thrown instead.
 
 ### Selection attributes
 
-Both single- and array-valued options can have additional parameter constraints, for which they share a set of attributes as described below.
+Both single- and array-valued options can have additional parameter constraints, for which they share the set of attributes described below.
 
 #### Regular expression
 
@@ -456,15 +432,21 @@ Mutually exclusive with [parameter choices].
 
 #### Parameter choices
 
-The `choices` attribute, if present, specifies string values that the option accepts as parameter. Any parameter that does not equal one of these values will cause an error to be raised. They are also considered by the [completion algorithm] when a parameter is being completed.
-
-Alternatively, this attribute accepts a record that maps parameter values to option values. In this case, if a parameter fails to match one of the choices and the option has a [parse callback], it will be called for that parameter; otherwise, an error wil be raised.
+The `choices` attribute, if present, specifies string values that the option accepts as parameter(s). Any parameter that does not match one of these values (while respecting the [case insensitive] attribute) will cause an error to be raised. They are also considered by the [completion algorithm] when a parameter is being completed.
 
 <Callout type="info">
 
 Mutually exclusive with [regular expression].
 
 </Callout>
+
+#### Parameter mapping
+
+The `mapping` attribute, if present, specifies a record that maps parameter values to option values. In this case, if a parameter matches one of the keys (while respecting the [case insensitive] attribute), it will get mapped to the corresponding value; otherwise it will be forwarded to the [parse callback], if specified.
+
+#### Case insensitive
+
+The `caseInsensitive` attribute, if present, indicates that either the list of [parameter choices] or the [parameter mapping] keys are to be evaluated in a case-insensitive manner. This includes parsing of option parameters and performing [word completion].
 
 ## Niladic options
 
@@ -505,7 +487,7 @@ If a subcommand with the specified name does not exist or does not have its own 
 
 #### Enable option filter
 
-The `useFilter` attribute is an opt-in feature that allows the remaining arguments to be used as [option filter]. For example, the invocation `cli --help flag` would only include in the help message those options whose names, synopsis or environment [data sources] match the regex `/flag/i{:ts}`.
+The `useFilter` attribute is an opt-in feature that allows the remaining arguments to be used as [option filter]. For example, the invocation `cli --help flag` would only include in the help message those options whose [names], [synopsis] or environment [data sources] match the regex `/flag/i{:ts}`.
 
 <Callout type="default">
 
@@ -528,7 +510,7 @@ When [word completion] is in effect, this option will be _skipped_.
 The `version` attribute specifies the version information. It accepts either of the following values:
 
 - unstructured text data (e.g., a semantic version)
-- the path of a JSON file from where a `version` field will be extracted
+- the path of a JSON file whence a `version` field will be extracted
 
 In the latter case, the path should generally be `'./package.json'{:ts}` and should be used in conjunction with the [resolve callback] parsing flag.
 
@@ -552,15 +534,11 @@ In addition to the sets of [basic] and [value] attributes, it has the attributes
 
 The `options` attribute, if present, specifies a set of option definitions for the subcommand. Its value can be either of:
 
-- an object containing the option definitions
-- a callback that returns the option definitions (allowing the implementation of [recursive commands])
-- the path of a JavaScript module exporting the option definitions (to be used with the [resolve callback] parsing flag)
+- an object containing the option definitions (or a promise thereof)
+- a callback that returns the option definitions (or a promise thereof)
+- the path of a JavaScript module exporting the option definitions
 
-<Callout type="default">
-
-The callback can be asynchronous.
-
-</Callout>
+A callback allows the implementation of [recursive commands], whereas a module path allows a [dynamic import]. The latter case should be used in conjunction with the [resolve callback] parsing flag. In either case, it is only evaluated once the affected option is parsed from the command line.
 
 <Callout type="warning">
 
@@ -588,7 +566,7 @@ The **flag** option accepts no parameter, but has a value that will be either th
 
 <Callout type="default">
 
-If you need a boolean-valued option that accepts a single parameter, use the [single] option instead. And to make the parameter optional, use the [function] option with a [parameter count] of `[0, 1]{:ts}`.
+If you need a boolean-valued option that accepts a single parameter, use the [single] option instead. To make the parameter optional, use the [function] option with a [parameter count] of `[0, 1]{:ts}`.
 
 </Callout>
 
@@ -610,7 +588,7 @@ Non-niladic options accept one or more parameters on the command line.
 
 ### Single-valued option
 
-The **single** option accepts a single parameter. Its value can be either the result of the [parse callback], one of the [parameter choices] or the parameter itself (by default).
+The **single** option accepts a single parameter. Its value can be either the result of the [parse callback], one of the [parameter choices], one of the [parameter mapping] values or the parameter itself (by default).
 
 The parse callback receives a `string{:ts}` as first parameter, which is the option parameter, and should return the option value.
 
@@ -624,7 +602,7 @@ This option has the following sets of attributes:
 
 ### Array-valued option
 
-The **array** option accepts multiple (zero or more) parameters. Its value is an array whose elements can be either the result of the [parse callback], one of the [parameter choices] or the parameters themselves (by default).
+The **array** option accepts multiple (zero or more) parameters. Its value is an array whose elements can be either the result of the [parse callback], one of the [parameter choices], one of the [parameter mapping] values or the parameters themselves (by default).
 
 The parse callback receives a `string{:ts}` as first parameter, which is a single option parameter, and should likewise return the value of a single array element. The resulting array may be normalized according to value constraints.
 
@@ -669,7 +647,7 @@ The `limit` attribute, if present, indicates the maximum allowed number of eleme
 
 The **function** option exists for the sole purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parse callback], if specified, or the parsed values themselves.
 
-The parse callback receives a `string[]{:ts}` as first parameter, which contains the option parameters. As a special case, this array may contain _all_ the remaining command-line arguments (see [parameter count] for details). It should return the option value.
+The parse callback receives a `string[]{:ts}` as first parameter, which contains the option parameters, and should return the option value. As a special case, this array may contain _all_ the remaining command-line arguments (see [parameter count] for details).
 
 This option has the following sets of attributes:
 
@@ -748,9 +726,10 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 {/* basic attributes */}
 
+[names]: #option-names
 [option names]: #option-names
 [preferred name]: #preferred-name
-[option synopsis]: #option-synopsis
+[synopsis]: #option-synopsis
 [deprecation notice]: #deprecation-notice
 [group]: #group--hide
 [hide]: #group--hide
@@ -792,6 +771,8 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 [regular expression]: #regular-expression
 [parameter choices]: #parameter-choices
+[parameter mapping]: #parameter-mapping
+[case insensitive]: #case-insensitive
 
 {/* help attributes */}
 
@@ -871,3 +852,4 @@ When [word completion] is in effect, the last argument will be the word to compl
 [Math]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math
 [short-option]: https://www.linuxtopia.org/online_books/linux_tool_guides/tar_user_guide/Short-Options.html
 [discriminant]: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
+[dynamic import]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import

@@ -227,7 +227,7 @@ describe('HelpFormatter', () => {
             type: 'function',
             names: ['-f2'],
             required: true,
-            paramCount: [0, 1],
+            paramCount: [1, 2],
           },
           function3: {
             type: 'function',
@@ -245,7 +245,7 @@ describe('HelpFormatter', () => {
         const formatter = new HelpFormatter(options);
         const sections: HelpSections = [{ type: 'usage' }];
         expect(formatter.sections(sections).wrap()).toEqual(
-          '[-f1 ...] -f2 [<param>] [<param>...] [-f4[=true]]\n',
+          '[-f1 ...] -f2 <param>... [<param>...] [-f4[=true]]\n',
         );
       });
 

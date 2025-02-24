@@ -51,6 +51,31 @@ describe('parse', () => {
       expect(options.single.parse).toHaveBeenCalledTimes(2);
     });
 
+    it('handle an array-valued option with value from positional argument', () => {
+      const options = {
+        array: {
+          type: 'array',
+          positional: true,
+          preferredName: 'preferred',
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['1', '2'])).resolves.toEqual({ array: ['1', '2'] });
+      expect(options.array.parse).toHaveBeenCalledWith('1', {
+        values: { array: ['1', '2'] }, // should have been { single: undefined } at the time of call
+        index: 0,
+        name: 'preferred',
+        comp: false,
+      });
+      expect(options.array.parse).toHaveBeenCalledWith('2', {
+        values: { array: ['1', '2'] }, // should have been { single: undefined } at the time of call
+        index: 0,
+        name: 'preferred',
+        comp: false,
+      });
+      expect(options.array.parse).toHaveBeenCalledTimes(2);
+    });
+
     it('handle a single-valued option with a parse callback that throws', () => {
       const options = {
         single: {

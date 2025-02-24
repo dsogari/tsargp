@@ -32,12 +32,12 @@ describe('HelpFormatter', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['', null],
+          names: ['', ' ', null],
           synopsis: 'A phantom option.',
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual('      A phantom option.\n');
+      expect(message.wrap()).toEqual('  ,      A phantom option.\n');
     });
 
     it('handle an option with no description', () => {
@@ -268,7 +268,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', ' ', '--flag'],
+          names: ['-f', null, '--flag'],
           synopsis: 'A flag option',
         },
         flag2: {
@@ -282,7 +282,7 @@ describe('HelpFormatter', () => {
         const layout: PartialHelpLayout = { names: { align: 'left' } };
         const message = new HelpFormatter(options, layout).format();
         expect(message.wrap()).toEqual(
-          `  -f   --flag    A flag option\n  --flag2        A flag option\n`,
+          `  -f --flag    A flag option\n  --flag2      A flag option\n`,
         );
       } finally {
         config.connectives.optionSep = ',';
@@ -293,7 +293,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', ' ', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -302,14 +302,14 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { align: 'left' } };
       const message = new HelpFormatter(options, layout).format();
-      expect(message.wrap()).toEqual('  -f,  , --flag\n  --flag2\n');
+      expect(message.wrap()).toEqual('  -f, --flag\n  --flag2\n');
     });
 
     it('align option names to the right boundary', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', ' ', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -318,14 +318,14 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { align: 'right' } };
       const message = new HelpFormatter(options, layout).format();
-      expect(message.wrap()).toEqual('  -f,  , --flag\n        --flag2\n');
+      expect(message.wrap()).toEqual('  -f, --flag\n     --flag2\n');
     });
 
     it('align option names within slots without separator', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', ' ', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -346,7 +346,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', ' ', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -355,7 +355,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const layout: PartialHelpLayout = { names: { align: 'slot' } };
       const message = new HelpFormatter(options, layout).format();
-      expect(message.wrap()).toEqual('  -f,  ,       --flag\n      --flag2\n');
+      expect(message.wrap()).toEqual('  -f           --flag\n      --flag2\n');
     });
 
     it('align option parameters to the right boundary', () => {

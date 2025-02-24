@@ -56,7 +56,7 @@ const multiOpts = {
 } as const satisfies Options;
 ```
 
-Since this option accepts [positional] arguments, we do not want to give it a name. However, we give it a [preferred name] that will be displayed in error messages, as well as a separate [group] for it to be displayed in the help message. This option is optional and [defaults] to an empty array. We [parse] the parameters as numbers.
+Since this option accepts [positional] arguments, we do not want to give it a name. However, we set a [preferred name] that will be displayed in error messages, as well as a separate [group] for it to be displayed in the help message. This option is optional and [defaults] to an empty array. We [parse] the parameters as numbers.
 
 Now let's define a similar option for the parameters of a dual-argument operation. It has the same definition as above, with additional constraints: it is [required] and accepts [at most] two values.
 

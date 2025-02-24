@@ -7,7 +7,7 @@ import { Callout } from 'nextra/components';
 
 # Formatter
 
-The `HelpFormatter` component handles formatting of help messages. It can be instantiated with a set of option definitions and provides methods to render help messages in ANSI format. The messages produced by the formatter can also be customized via [message configuration].
+The `formatter` module handles formatting of help messages. It provides a `HelpFormatter` class that can be instantiated with a set of option definitions and provides methods to render help messages in ANSI format. The messages produced by the formatter can also be customized via [message configuration].
 
 ## Help message
 
@@ -92,12 +92,12 @@ All help sections share a set of properties:
 
 - `title` - the section heading or the default [option group] heading (defaults to none)
 - `style` - the style of the section heading or [option group] headings (defaults to `tf.bold{:ts}`)
-- `breaks` - the number of line breaks to insert before the section (defaults to `0{:ts}` for the first section, `1{:ts}` for others)
+- `breaks` - the number of line feeds to insert before the section (defaults to `0{:ts}` for the first section, `1{:ts}` for others)
 - `noWrap` - true to disable wrapping of provided texts (defaults to `false{:ts}`)
 
 <Callout type="warning">
 
-When `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to [text formatting] rules. This also means that they will appear in redirected command outputs.
+When `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to [text formatting] rules. This also means that they would appear in redirected command outputs.
 
 </Callout>
 
@@ -121,17 +121,17 @@ The usage text is a concise representation of a program's command-line. Here is 
 {/* cSpell:disable */}
 
 ```ansi
-[39mdemo.js[0m [[39m([35m-h[0m[39m|[35m--help[0m[39m)] [([35m-v[0m[39m|[35m--version[0m[39m)] [32m# get help[0m
-[39mdemo.js[0m [39m[35mhello[0m[39m [90m...[0m[39m [32m# execute the hello command[0m
-[39mdemo.js[0m [[39m([35m-f[0m[39m|[35m--no-flag[0m[39m)]
-        [[([35m-b[0m[39m|[35m--boolean[0m[39m) [90m<param>[0m[39m] ([35m-sc[0m[39m|[35m--strChoice[0m[39m) [32m'one'[0m[39m]
-        [([35m-sr[0m[39m|[35m--strRegex[0m[39m) [90m<my str>[0m[39m]
-        [([35m-nr[0m[39m|[35m--numRange[0m[39m) [90m<my num>[0m[39m]
-        [([35m-nc[0m[39m|[35m--numChoice[0m[39m)=[33m1[0m[39m]
-        [([35m-sa[0m[39m|[35m--strArray[0m[39m) [90m[<param>...][0m[39m]
-        [([35m-na[0m[39m|[35m--numArray[0m[39m) [90m[<param>...][0m[39m]
-        [[([35m--strArrayLimit[0m[39m|[35m--[0m[39m)] [32m'one'[0m[39m[90m...[0m[39m]
-        [[35m--numArrayUnique[0m[39m [32m'1,2'[0m[39m[90m...[0m[39m][0m
+  [39mdemo.js[0m [[39m([35m-h[0m[39m|[35m--help[0m[39m)] [([35m-v[0m[39m|[35m--version[0m[39m)] [32m# get help[0m
+  [39mdemo.js[0m [39m[35mhello[0m[39m [90m...[39m [32m# execute the hello command[0m
+  [39mdemo.js[0m [[39m([35m-f[0m[39m|[35m--no-flag[0m[39m)]
+          [[([35m-b[0m[39m|[35m--boolean[0m[39m) [90m<param>[39m] ([35m-sc[0m[39m|[35m--strChoice[0m[39m) [90m[32m'one'[0m[90m[39m]
+          [([35m-sr[0m[39m|[35m--strRegex[0m[39m) [90m<my str>[39m]
+          [([35m-nr[0m[39m|[35m--numRange[0m[39m) [90m<my num>[39m]
+          [([35m-nc[0m[39m|[35m--numChoice[0m[39m)[90m=[33m1[0m[90m[39m]
+          [([35m-sa[0m[39m|[35m--strArray[0m[39m) [90m[<param>...][39m]
+          [([35m-na[0m[39m|[35m--numArray[0m[39m) [90m[<param>...][39m]
+          [[([35m--strArrayLimit[0m[39m|[35m--[0m[39m)] [90m[[32m'one'[0m[90m...][39m]
+          [[35m--numArrayUnique[0m[39m [90m[[32m'1,2'[0m[90m...][39m][0m
 ```
 
 {/* cSpell:enable */}
@@ -198,7 +198,7 @@ The `names`, `param` and `descr` properties can be used to customize the layout 
 
 - `align` - text alignment for the column (may be one of `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` - level of indentation for the column (must be non-negative if `absolute` is `true{:ts}`, defaults to `2{:ts}`)
-- `breaks` - number of line breaks to insert before each entry in the column (defaults to `0{:ts}`)
+- `breaks` - number of line feeds to insert before each entry in the column (defaults to `0{:ts}`)
 - `hidden` - whether the column should be hidden (defaults to `false{:ts}`)
 - `absolute` - whether the indentation level should be relative to the beginning of the line instead of the end of the previous column (not available for the `names` column, defaults to `false{:ts}`)
 
@@ -296,7 +296,7 @@ You might want to use this to limit the amount of information in the help messag
 
 ## Option filter
 
-The formatter constructor accepts a third optional parameter: a list of patterns that indicate which options should be rendered in the help message. The filter matches options' names, synopsis and environment data sources. If multiple patterns are provided, any matched one will suffice to include an option in the message.
+The formatter constructor accepts a third optional parameter: a list of patterns that indicate which options should be rendered in the help message. The filter matches options' [names], [synopsis] and environment [data sources]. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
 <Callout type="info">
 
@@ -318,6 +318,8 @@ This is inherently different from what a text search utility like `grep` would p
 
 {/* options references */}
 
+[synopsis]: options#option-synopsis
+[data sources]: options#data-sources
 [option group]: options#group--hide
 [names]: options#option-names
 [positional]: options#positional--marker

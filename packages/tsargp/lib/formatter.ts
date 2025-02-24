@@ -841,26 +841,29 @@ function formatParam(
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
-  result
-    .open('', styles?.param ?? config.styles.value)
-    .open(optional ? '[' : '') // do not use openAtPos
-    .open(inline ? '=' : '');
-  if (example !== undefined) {
-    let value = example;
-    if (separator && isArray(value)) {
-      const sep = typeof separator === 'string' ? separator : separator.source;
-      value = value.join(sep);
+  const saved = result.defSty;
+  try {
+    result.defSty = styles?.param ?? config.styles.value;
+    result
+      .open('', result.defSty)
+      .open(optional ? '[' : '') // do not use openAtPos
+      .open(inline ? '=' : '');
+    if (example !== undefined) {
+      let value = example;
+      if (separator && isArray(value)) {
+        const sep = typeof separator === 'string' ? separator : separator.source;
+        value = value.join(sep);
+      }
+      fmt.v(value, result, { sep: '', open: '', close: '' });
+      result.close(ellipsis);
+    } else {
+      const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName ?? 'param'}>`;
+      result.word(param + ellipsis);
     }
-    fmt.v(value, result, { sep: '', open: '', close: '' });
-    result.close(ellipsis);
-  } else if (max) {
-    let param = paramName ?? 'param';
-    param = param.includes('<') ? param : `<${param}>`;
-    result.word(param + ellipsis);
-  } else {
-    result.word(ellipsis);
+    result.close(optional ? ']' : '').close('', saved);
+  } finally {
+    result.defSty = saved;
   }
-  result.close(optional ? ']' : '').close('', result.defSty);
 }
 
 /**
