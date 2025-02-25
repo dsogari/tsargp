@@ -5,7 +5,7 @@ import { parse } from '../../lib/parser';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('a custom parse callback is specified', () => {
+  describe('a parsing callback is specified', () => {
     it('handle a flag option with value from environment variable', () => {
       const options = {
         flag: {
@@ -76,7 +76,7 @@ describe('parse', () => {
       expect(options.array.parse).toHaveBeenCalledTimes(2);
     });
 
-    it('handle a single-valued option with a parse callback that throws', () => {
+    it('handle a single-valued option with a parsing callback that throws', () => {
       const options = {
         single: {
           type: 'single',
@@ -89,7 +89,7 @@ describe('parse', () => {
       expect(parse(options, ['-s', 'a'])).rejects.toThrow(`-s 'a' [1, Infinity]`);
     });
 
-    it('handle an array-valued option with a parse callback', () => {
+    it('handle an array-valued option with a parsing callback', () => {
       const options = {
         array: {
           type: 'array',

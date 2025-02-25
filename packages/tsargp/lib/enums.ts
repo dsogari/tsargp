@@ -23,7 +23,7 @@ export const enum ErrorItem {
    */
   missingRequiredOption,
   /**
-   * Raised when an option is specified without one of its expected parameter(s).
+   * Error raised when an option is specified without one of its expected parameter(s).
    */
   missingParameter,
   /**
@@ -120,12 +120,12 @@ export const enum ErrorItem {
    */
   variadicWithClusterLetter,
   /**
-   * Raised when a variadic option declares an inline constraint.
+   * Error raised when a variadic option declares an inline constraint.
    */
   invalidInlineConstraint,
   /**
-   * Raised when a JavaScript module needs to be loaded, but a module resolution function was not
-   * provided (either in the parsing flags or the validation flags).
+   * Error raised when a JavaScript module needs to be loaded, but a module resolution function was
+   * not provided (either in the parsing flags or the validation flags).
    */
   missingResolveCallback,
 }

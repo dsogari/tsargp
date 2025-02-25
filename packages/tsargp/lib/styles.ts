@@ -177,7 +177,7 @@ const formatFunctions = {
       close: flags.close ?? connectives.objectClose,
       custom: (entry) => {
         const [key, val] = entry as [string, unknown];
-        if (key.match(regex.id)) {
+        if (regex.id.test(key)) {
           result.word(key);
         } else {
           this['s'](key, result, flags);

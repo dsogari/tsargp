@@ -6,7 +6,7 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
   describe('parsing a command option', () => {
-    it('handle a an asynchronous parse callback', () => {
+    it('handle a an asynchronous parsing callback', () => {
       const options = {
         command: {
           type: 'command',
@@ -17,7 +17,7 @@ describe('parse', () => {
       expect(parse(options, ['-c'])).resolves.toEqual({ command: 'abc' });
     });
 
-    it('handle an asynchronous parse callback that throws', () => {
+    it('handle an asynchronous parsing callback that throws', () => {
       const options = {
         command: {
           type: 'command',
@@ -30,7 +30,7 @@ describe('parse', () => {
       expect(parse(options, ['-c'])).rejects.toThrow(/^command$/);
     });
 
-    it('set the option value with the result of the parse callback', () => {
+    it('set the option value with the result of the parsing callback', () => {
       const options = {
         command: {
           type: 'command',

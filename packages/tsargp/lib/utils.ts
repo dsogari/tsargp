@@ -128,6 +128,18 @@ export const regex = {
    * A regular expression to match option-parameter separators.
    */
   valSep: /=(.*)/,
+  /**
+   * A regular expression to match kebab-case words.
+   */
+  kebab: /[^-]+-[^-]+/,
+  /**
+   * A regular expression to match snake_case words.
+   */
+  snake: /[^_]+_[^_]+/,
+  /**
+   * A regular expression to match colon:case words.
+   */
+  colon: /[^:]+:[^:]+/,
 } as const satisfies Record<string, RegExp>;
 
 /**

@@ -10,7 +10,7 @@ describe('parse', () => {
     expect(parse({}, 'cmd', { compIndex: 4 })).rejects.toThrow(/^$/);
   });
 
-  it('ignore the last parse callback when completing an option name', () => {
+  it('ignore the last parsing callback when completing an option name', () => {
     const options = {
       single: {
         type: 'single',
@@ -22,7 +22,7 @@ describe('parse', () => {
     expect(options.single.parse).not.toHaveBeenCalled();
   });
 
-  it('be able to throw completion words from a parse callback', () => {
+  it('be able to throw completion words from a parsing callback', () => {
     const options = {
       flag: {
         type: 'flag',
@@ -97,7 +97,7 @@ describe('parse', () => {
       expect(parse(options, 'cmd -s a -s ', { compIndex: 12 })).rejects.toThrow(/^abc$/);
     });
 
-    it('ignore an error thrown by a parse callback of a flag option', () => {
+    it('ignore an error thrown by a parsing callback of a flag option', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -117,7 +117,7 @@ describe('parse', () => {
       expect(options.flag.parse).toHaveBeenCalled();
     });
 
-    it('ignore an error thrown by a parse callback of a single-valued option', () => {
+    it('ignore an error thrown by a parsing callback of a single-valued option', () => {
       const options = {
         single: {
           type: 'single',
@@ -137,7 +137,7 @@ describe('parse', () => {
       expect(options.single.parse).toHaveBeenCalled();
     });
 
-    it('ignore an error thrown by a parse callback of an array-valued option', () => {
+    it('ignore an error thrown by a parsing callback of an array-valued option', () => {
       const options = {
         array: {
           type: 'array',
@@ -157,7 +157,7 @@ describe('parse', () => {
       expect(options.array.parse).toHaveBeenCalled();
     });
 
-    it('ignore an error thrown by a parse callback of a function option', () => {
+    it('ignore an error thrown by a parsing callback of a function option', () => {
       const options = {
         function: {
           type: 'function',
@@ -306,7 +306,7 @@ describe('parse', () => {
           type: 'single',
           names: ['-s'],
           choices: ['one', 'two'],
-          caseInsensitive: true,
+          normalize: (param) => param.toLowerCase(),
         },
       } as const satisfies Options;
       expect(parse(options, 'cmd -s O', { compIndex: 8 })).rejects.toThrow(/^one$/);
@@ -321,7 +321,7 @@ describe('parse', () => {
           type: 'array',
           names: ['-a'],
           choices: ['one', 'two'],
-          caseInsensitive: true,
+          normalize: (param) => param.toLowerCase(),
         },
       } as const satisfies Options;
       expect(parse(options, 'cmd -a O', { compIndex: 8 })).rejects.toThrow(/^one$/);
@@ -444,8 +444,8 @@ describe('parse', () => {
     });
   });
 
-  describe('a complete callback is specified', () => {
-    it('ignore an error thrown by the complete callback', () => {
+  describe('a completion callback is specified', () => {
+    it('ignore an error thrown by the completion callback', () => {
       const options = {
         single: {
           type: 'single',

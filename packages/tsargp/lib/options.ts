@@ -303,29 +303,36 @@ export type RequiresEntry = readonly [key: string, value: unknown];
  * - a requirement expression; or
  * - a requirement callback
  */
-export type Requires = string | RequiresVal | RequiresExp | RequiresCallback;
+export type Requires = string | RequiresVal | RequiresExp | RequirementCallback;
 
 /**
  * A callback to check option requirements.
  * @param values The option values
  * @returns True if the requirements were satisfied
  */
-export type RequiresCallback = (values: OpaqueOptionValues) => Promissory<boolean>;
+export type RequirementCallback = (values: OpaqueOptionValues) => Promissory<boolean>;
 
 /**
- * A module-relative resolution function (i.e., scoped to a module).
+ * A JavaScript module resolution function.
  * To be used in non-browser environments only.
- * @param specifier The path specifier
+ * @param specifier The module specifier
  * @returns The resolved path
  */
-export type ResolveCallback = (specifier: string) => string;
+export type ModuleResolutionCallback = (specifier: string) => string;
 
 /**
  * A callback for default values.
  * @param values The parsed values
  * @returns The default value
  */
-export type DefaultCallback = (values: OpaqueOptionValues) => unknown;
+export type DefaultValueCallback = (values: OpaqueOptionValues) => unknown;
+
+/**
+ * A normalization function applied to parameters before they get validated and/or parsed.
+ * @param param The option parameter
+ * @returns The normalized parameter
+ */
+export type NormalizationCallback = (param: string) => string;
 
 /**
  * A callback for custom parsing or custom completion.
@@ -343,7 +350,7 @@ export type CustomCallback<P, I, R> = (param: P, info: I) => R;
  * @template P The parameter data type
  * @template R The result data type
  */
-export type ParseCallback<P, R = unknown> = CustomCallback<P, WithArgInfo & WithCompInfo, R>;
+export type ParsingCallback<P, R = unknown> = CustomCallback<P, WithArgInfo & WithCompInfo, R>;
 
 /**
  * A callback for custom word completion.
@@ -384,7 +391,7 @@ export type WithArgInfo = {
 };
 
 /**
- * Information about word completion, to be used by custom parse callbacks.
+ * Information about word completion, to be used by custom parsing callbacks.
  */
 export type WithCompInfo = {
   /**
@@ -394,7 +401,7 @@ export type WithCompInfo = {
 };
 
 /**
- * Information about word completion, to be used by custom complete callbacks.
+ * Information about word completion, to be used by completion callbacks.
  */
 export type WithPrevInfo = {
   /**
@@ -495,11 +502,11 @@ export type WithValue<P> = {
    * the command-line nor as an environment variable. You may use a callback to inspect parsed
    * values and determine the default value based on those values.
    */
-  readonly default?: KnownValue | DefaultCallback;
+  readonly default?: KnownValue | DefaultValueCallback;
   /**
    * A custom callback for parsing the option parameter(s).
    */
-  readonly parse?: ParseCallback<P>;
+  readonly parse?: ParsingCallback<P>;
 };
 
 /**
@@ -558,7 +565,7 @@ export type WithParam<I> = {
 };
 
 /**
- * Defines attributes for options that may have parameter constraints.
+ * Defines attributes for options that may have parameter selection constraints.
  */
 export type WithSelection = {
   /**
@@ -574,10 +581,9 @@ export type WithSelection = {
    */
   readonly mapping?: Readonly<Record<string, unknown>>;
   /**
-   * Whether {@link WithSelection.choices} and {@link WithSelection.mapping} keys are
-   * case-insensitive.
+   * A normalization function applied to parameters before they get validated and/or parsed.
    */
-  readonly caseInsensitive?: true;
+  readonly normalize?: NormalizationCallback;
 };
 
 /**
@@ -881,8 +887,7 @@ type WithParamName = {
  */
 type WithChoices = {
   /**
-   * @deprecated mutually exclusive with {@link WithSelection.choices} and
-   * {@link WithSelection.caseInsensitive}
+   * @deprecated mutually exclusive with {@link WithSelection.choices}
    */
   readonly regex?: never;
 };
@@ -895,10 +900,6 @@ type WithRegex = {
    * @deprecated mutually exclusive with {@link WithSelection.regex}
    */
   readonly choices?: never;
-  /**
-   * @deprecated mutually exclusive with {@link WithSelection.regex}
-   */
-  readonly caseInsensitive?: never;
 };
 
 /**
@@ -914,49 +915,40 @@ type DefaultDataType<T extends Option> = T extends { required: true }
     : undefined;
 
 /**
- * The data type of the option values for nested options.
- * @template T The option definition type
- */
-type NestedOptionsDataType<T> = T extends Options ? OptionValues<T> : never;
-
-/**
  * The data type of an option that may have nested options.
  * @template T The option definition type
  */
 type OptionsDataType<T extends Option> = T extends { options: infer O }
   ? O extends string
     ? Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    : O extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? NestedOptionsDataType<Awaited<R>>
-      : NestedOptionsDataType<Awaited<O>>
+    : O extends (() => infer R extends Promissory<Options>)
+      ? OptionValues<Awaited<R>>
+      : O extends Promissory<Options>
+        ? OptionValues<Awaited<O>>
+        : never
   : Record<never, never>;
 
 /**
- * The data type of an option that may have a parse callback.
+ * The data type of an option that may have a parsing callback.
  * @template T The option definition type
- * @template V The fallback data type
+ * @template F The fallback data type
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ParseDataType<T extends Option, V> = T extends { parse: (...args: any) => infer R }
+type ParseDataType<T extends Option, F> = T extends { parse: (...args: any) => infer R }
   ? Awaited<R>
-  : V;
+  : F;
 
 /**
  * The data type of an option that may have choices.
  * @template T The option definition type
  */
-type ChoicesKeyType<T extends Option> = T extends {
-  choices: ReadonlyArray<infer K extends string>;
-  caseInsensitive?: undefined;
-}
-  ? K
-  : string;
+type ChoiceDataType<T extends Option> = T extends { choices: ReadonlyArray<infer K> } ? K : string;
 
 /**
  * The data type of an option that may have selection constraints.
  * @template T The option definition type
  */
-type SelectionDataType<T extends Option, K = ChoicesKeyType<T>> = T extends { mapping: infer M }
+type SelectionDataType<T extends Option, K = ChoiceDataType<T>> = T extends { mapping: infer M }
   ? ParseDataType<T, Exclude<K, keyof M>> | M[K & keyof M]
   : ParseDataType<T, K>;
 
@@ -1116,7 +1108,7 @@ export function visitRequirements<T>(
   allFn: (req: RequiresAll) => T,
   oneFn: (req: RequiresOne) => T,
   valFn: (req: RequiresVal) => T,
-  cbkFn: (req: RequiresCallback) => T,
+  cbkFn: (req: RequirementCallback) => T,
 ): T {
   return typeof requires === 'string'
     ? keyFn(requires)
@@ -1142,12 +1134,12 @@ export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
 }
 
 /**
- * Create a parse callback for numbers that should be within a range.
+ * Create a parsing callback for numbers that should be within a range.
  * @param range The numeric range
  * @param phrase The custom error phrase
- * @returns The parse callback
+ * @returns The parsing callback
  */
-export function numberInRange(range: Range, phrase: string): ParseCallback<string, number> {
+export function numberInRange(range: Range, phrase: string): ParsingCallback<string, number> {
   const [min, max] = range;
   return function (param, info) {
     if (info.comp) {
@@ -1164,12 +1156,12 @@ export function numberInRange(range: Range, phrase: string): ParseCallback<strin
 /**
  * Resolves the nested options of a subcommand.
  * @param option The command option
- * @param resolve The resolve callback
+ * @param resolve The resolution callback
  * @returns The nested options
  */
 export async function getNestedOptions(
   option: OpaqueOption,
-  resolve?: ResolveCallback,
+  resolve?: ModuleResolutionCallback,
 ): Promise<OpaqueOptions> {
   if (typeof option.options === 'string') {
     if (!resolve) {

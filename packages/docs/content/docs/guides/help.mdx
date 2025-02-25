@@ -166,12 +166,12 @@ export default {
 } as const satisfies Options;
 ```
 
-Since we are using a delegated `parse` call, we deliberately set the [program name] flag to the name of the target subcommand. Also, keep in mind that when word completion is in effect, the [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [completion index] flag.
+Since we are using a delegated `parse` call, we deliberately set the [program name] flag to the name of the target subcommand. Also, keep in mind that when word completion is in effect, the [parsing callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [completion index] flag.
 
 {/* options references */}
 
 [parameter choices]: ../library/options#parameter-choices
-[parse callback]: ../library/options#parse-callback
+[parsing callback]: ../library/options#parsing-callback
 [help option]: ../library/options#help-option
 [subcommand]: ../library/options#command-option
 [enable subcommand]: ../library/options#enable-subcommand

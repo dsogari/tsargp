@@ -12,7 +12,7 @@ import type {
   OpaqueOption,
   OpaqueOptions,
   Requires,
-  RequiresCallback,
+  RequirementCallback,
   RequiresEntry,
 } from './options.js';
 import type { FormattingFlags, Style } from './styles.js';
@@ -356,11 +356,12 @@ function formatGroups(
 function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): Array<string> {
   /** @ignore */
   function exclude(option: OpaqueOption): 0 | boolean {
+    const { names, synopsis, sources } = option;
     return (
       regexp &&
-      !option.names?.find((name) => name?.match(regexp)) &&
-      !option.synopsis?.match(regexp) &&
-      !option.sources?.find((name) => `${name}`.match(regexp))
+      !names?.find((name) => !!name && regexp.test(name)) &&
+      (!synopsis || !regexp.test(synopsis)) &&
+      !sources?.find((name) => regexp.test(`${name}`))
     );
   }
   const escaped = filter.map(escapeRegExp).join('|');
@@ -843,15 +844,15 @@ function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result:
       .open(optional ? '[' : '') // do not use openAtPos
       .open(inline ? '=' : '');
     if (example !== undefined) {
-      let value = example;
-      if (separator && isArray(value)) {
+      let param = example;
+      if (separator && isArray(param)) {
         const sep = typeof separator === 'string' ? separator : separator.source;
-        value = value.join(sep);
+        param = param.join(sep);
       }
-      fmt.v(value, result, { sep: '', open: '', close: '' });
+      fmt.v(param, result, { sep: '', open: '', close: '' });
       result.close(ellipsis);
     } else {
-      const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName ?? 'param'}>`;
+      const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName || 'param'}>`;
       result.word(param + ellipsis);
     }
     result.close(optional ? ']' : '').close('', saved);
@@ -977,7 +978,11 @@ function formatRequiredValue(
  * @param result The resulting string
  * @param negate True if the requirement should be negated
  */
-function formatRequiresCallback(callback: RequiresCallback, result: AnsiString, negate: boolean) {
+function formatRequiresCallback(
+  callback: RequirementCallback,
+  result: AnsiString,
+  negate: boolean,
+) {
   if (negate) {
     result.word(config.connectives.not);
   }

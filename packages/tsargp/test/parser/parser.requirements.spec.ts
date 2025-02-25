@@ -54,7 +54,7 @@ describe('parse', () => {
     expect(parse(options, ['-f1'])).resolves.toEqual({ flag1: true, flag2: true });
   });
 
-  it('evaluate the required value of an option that has a parse callback', () => {
+  it('evaluate the required value of an option that has a parsing callback', () => {
     const options = {
       flag: {
         type: 'flag',

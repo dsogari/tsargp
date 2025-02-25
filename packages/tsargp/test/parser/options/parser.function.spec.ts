@@ -66,7 +66,7 @@ describe('parse', () => {
       expect(parse(options, ['-f', '0', '-f', '1'])).resolves.toEqual({ function: ['1'] });
     });
 
-    it('replace the option value with the result of the parse callback', () => {
+    it('replace the option value with the result of the parsing callback', () => {
       const options = {
         function: {
           type: 'function',

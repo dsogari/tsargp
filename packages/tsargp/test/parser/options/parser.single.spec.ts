@@ -58,7 +58,7 @@ describe('parse', () => {
       expect(parse(options, ['-s', '0', '-s', '1'])).resolves.toEqual({ single: '1' });
     });
 
-    it('replace the option value with the result of the parse callback', () => {
+    it('replace the option value with the result of the parsing callback', () => {
       const options = {
         single: {
           type: 'single',

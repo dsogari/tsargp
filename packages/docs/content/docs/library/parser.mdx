@@ -80,7 +80,7 @@ The cluster prefix can be the empty string, thus behaving similarly to GNU's [ta
 
 The `optionPrefix` property specifies the prefix for option names. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
 
-### Resolve callback
+### Resolution callback
 
 The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
 
@@ -97,9 +97,9 @@ The set of features supported by the parser are described below.
 Custom parsing operations are supported through the following kinds of callbacks:
 
 - [requirement callback]
-- [default callback]
-- [parse callback]
-- [complete callback]
+- [default value callback]
+- [parsing callback]
+- [completion callback]
 
 All of these can be asynchronous, in which case the parser awaits their resolution, either because it needs their result or to avoid data races when reading and modifying the option values.
 
@@ -128,8 +128,8 @@ The information gathered by the parser is saved in an object that is passed as p
   - the option's [preferred name], if the sequence comes from positional arguments
   - an environment [data source], if the data comes from the environment
   - `'0'{:ts}`, if the data comes from the standard input
-- `comp` - True if performing [word completion]. Only available for the [parse callback].
-- `prev` - The option parameters preceding the word being completed, if any. Only available for the [complete callback] of array-valued and function options.
+- `comp` - True if performing [word completion]. Only available for the [parsing callback].
+- `prev` - The option parameters preceding the word being completed, if any. Only available for the [completion callback] of array-valued and function options.
 
 ### Word completion
 
@@ -161,7 +161,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If there is no positional option, the available option names are filtered by the prefix _comp_ and returned; else
    - _comp_ is treated as a parameter of the positional option; go to step 2
 2. Else, _comp_ is the parameter of a non-niladic option. Then, either of the following is executed and its result is combined with that of step 3:
-   - If the option has a [complete callback], it is called with _comp_; else
+   - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
 3. If the option was specified neither with a [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
@@ -176,7 +176,7 @@ Since the completion builtins always expect a list of words as a result, the lib
 
 - parsing errors, such as unknown option names, are suppressed
 - message-valued options (help and version) are skipped
-- [parse callback] of subcommands do not get executed
+- [parsing callback] of subcommands do not get executed
 - option requirements are not verified
 - cluster arguments are immediately completed with the default completion message
 
@@ -190,7 +190,7 @@ Other arguments are processed as usual, which means that a completion callback c
 
 When the parser evaluates option requirements, it compares an option's value against any value required by other options. Generally, this analysis is performed after _all_ arguments have been parsed, but it may be performed in two additional situations:
 
-- before calling the [parse callback] of an option that has [break loop] set
+- before calling the [parsing callback] of an option that has [break loop] set
 - before handling a [subcommand]
 
 <Callout type="info">
@@ -263,9 +263,9 @@ Other option names are not used, not only because they would pollute the output 
 [cluster inline parameters]: options#cluster-inline-parameters
 [preferred name]: options#preferred-name
 [requirement callback]: options#requirement-callback
-[default callback]: options#default-callback
-[parse callback]: options#parse-callback
-[complete callback]: options#complete-callback
+[default value callback]: options#default-value-callback
+[parsing callback]: options#parsing-callback
+[completion callback]: options#completion-callback
 [positional marker]: options#positional--marker
 [environment]: options#environment-attributes
 [data source]: options#data-sources

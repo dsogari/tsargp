@@ -40,7 +40,7 @@ describe('parse', () => {
       expect(parse(options, ['-a', '0', '-a', '1'])).resolves.toEqual({ array: ['1'] });
     });
 
-    it('replace the option value with the result of the parse callback', () => {
+    it('replace the option value with the result of the parsing callback', () => {
       const options = {
         array: {
           type: 'array',

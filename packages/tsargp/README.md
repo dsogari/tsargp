@@ -75,8 +75,8 @@ import options from './cli.options.js';
 
 describe('cli', () => {
   it('should have valid options', () => {
-    expect(validate(options)).resolves.toEqual({});
-    // or check warnings that are important to your application
+    expect(validate(options)).resolves.toEqual({}); // no errors or warnings
+    // ...or you can ignore warnings that are not important to your application
   });
 });
 ```

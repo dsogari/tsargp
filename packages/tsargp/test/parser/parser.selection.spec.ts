@@ -6,37 +6,63 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
   describe('a regex constraint is specified', () => {
-    it('handle a single-valued option', () => {
+    it('handle a single-valued option with case-sensitive selection', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
-          regex: /\d+/s,
+          regex: /^[a-z]+$/s,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-s', '123'])).resolves.toEqual({ single: '123' });
-      expect(parse(options, ['-s', 'abc'])).rejects.toThrow(
-        `Invalid parameter to -s: 'abc'. Value must match the regex /\\d+/s.`,
+      expect(parse(options, ['-s', 'abc'])).resolves.toEqual({ single: 'abc' });
+      expect(parse(options, ['-s', 'Abc'])).rejects.toThrow(
+        `Invalid parameter to -s: 'Abc'. Value must match the regex /^[a-z]+$/s.`,
       );
     });
 
-    it('handle an array-valued option', () => {
+    it('handle a single-valued option with case-insensitive selection', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          regex: /^[a-z]+$/s,
+          normalize: (param) => param.toLowerCase(),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-s', 'Abc'])).resolves.toEqual({ single: 'abc' });
+    });
+
+    it('handle an array-valued option with case-sensitive selection', () => {
       const options = {
         array: {
           type: 'array',
           names: ['-a'],
-          regex: /\d+/s,
+          regex: /^[a-z]+$/s,
           separator: ',',
         },
       } as const satisfies Options;
-      expect(parse(options, ['-a', '1', '2'])).resolves.toEqual({ array: ['1', '2'] });
-      expect(parse(options, ['-a', '1,2'])).resolves.toEqual({ array: ['1', '2'] });
-      expect(parse(options, ['-a', '123', 'abc'])).rejects.toThrow(
-        `Invalid parameter to -a: 'abc'. Value must match the regex /\\d+/s.`,
+      expect(parse(options, ['-a', 'a', 'b'])).resolves.toEqual({ array: ['a', 'b'] });
+      expect(parse(options, ['-a', 'a,b'])).resolves.toEqual({ array: ['a', 'b'] });
+      expect(parse(options, ['-a', 'a', 'B'])).rejects.toThrow(
+        `Invalid parameter to -a: 'B'. Value must match the regex /^[a-z]+$/s.`,
       );
-      expect(parse(options, ['-a', '123,abc'])).rejects.toThrow(
-        `Invalid parameter to -a: 'abc'. Value must match the regex /\\d+/s.`,
+      expect(parse(options, ['-a', 'a,B'])).rejects.toThrow(
+        `Invalid parameter to -a: 'B'. Value must match the regex /^[a-z]+$/s.`,
       );
+    });
+
+    it('handle an array-valued option with case-insensitive selection', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          regex: /^[a-z]+$/s,
+          normalize: (param) => param.toLowerCase(),
+          separator: ',',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-a', 'a', 'B'])).resolves.toEqual({ array: ['a', 'b'] });
+      expect(parse(options, ['-a', 'a,B'])).resolves.toEqual({ array: ['a', 'b'] });
     });
   });
 
@@ -119,11 +145,11 @@ describe('parse', () => {
           names: ['-s'],
           choices: ['one', 'abc'],
           mapping: { one: 'two' },
-          caseInsensitive: true,
+          normalize: (param) => param.toLowerCase(),
         },
       } as const satisfies Options;
       expect(parse(options, ['-s', 'One'])).resolves.toEqual({ single: 'two' });
-      expect(parse(options, ['-s', 'Abc'])).resolves.toEqual({ single: 'Abc' });
+      expect(parse(options, ['-s', 'Abc'])).resolves.toEqual({ single: 'abc' });
       expect(parse(options, ['-s', 'Two'])).rejects.toThrow(
         `Invalid parameter to -s: 'Two'. Value must be one of: 'one', 'abc'.`,
       );
@@ -152,11 +178,11 @@ describe('parse', () => {
           names: ['-a'],
           choices: ['one', 'abc'],
           mapping: { one: 'two' },
-          caseInsensitive: true,
+          normalize: (param) => param.toLowerCase(),
           separator: ',',
         },
       } as const satisfies Options;
-      expect(parse(options, ['-a', 'One', 'Abc'])).resolves.toEqual({ array: ['two', 'Abc'] });
+      expect(parse(options, ['-a', 'One', 'Abc'])).resolves.toEqual({ array: ['two', 'abc'] });
       expect(parse(options, ['-a', 'One,Two'])).rejects.toThrow(
         `Invalid parameter to -a: 'Two'. Value must be one of: 'one', 'abc'.`,
       );

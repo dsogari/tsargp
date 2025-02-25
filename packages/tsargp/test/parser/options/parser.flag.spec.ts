@@ -53,7 +53,7 @@ describe('parse', () => {
       expect(parse(options, ['-no-f'])).resolves.toEqual({ flag: false });
     });
 
-    it('replace the option value with the result of the parse callback', () => {
+    it('replace the option value with the result of the parsing callback', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -103,7 +103,7 @@ describe('parse', () => {
       expect(options.flag2.parse).not.toHaveBeenCalled();
     });
 
-    it('expose parsed values to the parse callback', () => {
+    it('expose parsed values to the parsing callback', () => {
       const options = {
         flag1: {
           type: 'flag',

@@ -11,8 +11,8 @@ import type {
   Range,
   Requires,
   RequiresEntry,
-  ResolveCallback,
-  RequiresCallback,
+  ModuleResolutionCallback,
+  RequirementCallback,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -43,7 +43,6 @@ import {
   readFile,
   areEqual,
   regex,
-  escapeRegExp,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -87,7 +86,7 @@ export type ParsingFlags = {
    * A resolution function for JavaScript modules.
    * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
    */
-  readonly resolve?: ResolveCallback;
+  readonly resolve?: ModuleResolutionCallback;
 };
 
 /**
@@ -583,11 +582,10 @@ async function completeParameter(
       words = [];
     }
   } else {
-    const { choices, caseInsensitive } = option;
+    const { choices, normalize } = option;
     words = choices?.slice() ?? [];
     if (comp) {
-      const regex = RegExp('^' + escapeRegExp(comp), caseInsensitive ? 'i' : '');
-      words = words.filter((word) => !!word.match(regex));
+      words = words.filter((word) => !!word.startsWith(normalize?.(comp) ?? comp));
     }
   }
   return words;
@@ -648,13 +646,14 @@ async function parseParams(
   }
   /** @ignore */
   function parse2(param: string): unknown {
-    return map?.get(caseInsensitive ? param.toLowerCase() : param) ?? parse1(param);
+    const normalized = normalize?.(param) ?? param;
+    return mapping && normalized in mapping ? mapping[normalized] : parse1(normalized);
   }
   const [, values, , , comp] = context;
   const [key, option, name] = info;
   const breakLoop = !!option.break && !comp;
   const seq = { values, index, name, comp };
-  const { type, regex, separator, append, choices, mapping, caseInsensitive } = option;
+  const { type, regex, separator, append, choices, mapping, normalize } = option;
 
   // if index is NaN, we are in the middle of requirements checking (data comes from environment)
   if (index >= 0 && breakLoop) {
@@ -682,22 +681,17 @@ async function parseParams(
     return breakLoop;
   }
   if (regex) {
-    const mismatch = params.find((param) => !param.match(regex));
+    const mismatch = params.find((param) => !regex.test(normalize?.(param) ?? param));
     if (mismatch) {
       throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
     }
   }
   if (choices) {
-    const regex = RegExp(`^(${choices.join('|')})`, caseInsensitive ? 'i' : '');
-    const mismatch = params.find((param) => !param.match(regex));
+    const mismatch = params.find((param) => !choices.includes(normalize?.(param) ?? param));
     if (mismatch) {
       throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, choices);
     }
   }
-  const entries = mapping && getEntries(mapping);
-  const map =
-    entries &&
-    new Map(caseInsensitive ? entries.map(([key, val]) => [key.toLowerCase(), val]) : entries);
   if (type === 'single') {
     values[key] = await parse2(params[0]);
   } else {
@@ -1107,7 +1101,7 @@ async function checkRequireItems<T>(
 async function checkRequiresCallback(
   context: ParseContext,
   option: OpaqueOption,
-  callback: RequiresCallback,
+  callback: RequirementCallback,
   error: AnsiString,
   negate: boolean,
   invert: boolean,

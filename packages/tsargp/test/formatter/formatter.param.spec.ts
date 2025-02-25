@@ -166,6 +166,18 @@ describe('HelpFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <my_param>\n`);
     });
 
+    it('handle a single-valued option with an empty parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          paramName: '',
+        },
+      } as const satisfies Options;
+      const message = new HelpFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -s  <param>\n`);
+    });
+
     it('handle a single-valued option with a parameter name with angle brackets', () => {
       const options = {
         single: {

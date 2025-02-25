@@ -7,7 +7,7 @@ import type {
   RequiresVal,
   OpaqueOptions,
   NestedOptions,
-  ResolveCallback,
+  ModuleResolutionCallback,
 } from './options.js';
 import type { NamingRules } from './utils.js';
 
@@ -20,7 +20,7 @@ import {
   getNestedOptions,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
-import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules } from './utils.js';
+import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -40,9 +40,9 @@ const namingConventions = {
     '--doubleDash': (name) => name[0] === '-' && name[1] === '-',
   },
   delimiters: {
-    'kebab-case': (name) => !!name.match(/[^-]+-[^-]+/),
-    snake_case: (name) => !!name.match(/[^_]+_[^_]+/),
-    'colon:case': (name) => !!name.match(/[^:]+:[^:]+/),
+    'kebab-case': (name) => regex.kebab.test(name),
+    snake_case: (name) => regex.snake.test(name),
+    'colon:case': (name) => regex.colon.test(name),
   },
 } as const satisfies NamingRules;
 
@@ -65,7 +65,7 @@ export type ValidationFlags = {
    * A resolution function for JavaScript modules.
    * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
    */
-  readonly resolve?: ResolveCallback;
+  readonly resolve?: ModuleResolutionCallback;
 };
 
 /**
