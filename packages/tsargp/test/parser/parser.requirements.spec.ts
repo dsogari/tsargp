@@ -54,7 +54,7 @@ describe('parse', () => {
     expect(parse(options, ['-f1'])).resolves.toEqual({ flag1: true, flag2: true });
   });
 
-  it('evaluate the required value of an option that has a parse callback', () => {
+  it('evaluate the required value of an option that has a parsing callback', () => {
     const options = {
       flag: {
         type: 'flag',
@@ -319,7 +319,7 @@ describe('parse', () => {
       ).rejects.toThrow(`Option -f requires (-s != {a: 1, b: [2]} or -a != ['a', 2, {b: 'c'}]).`);
     });
 
-    it('throw an error on requirement not satisfied with a callback', () => {
+    it('throw an error on requirement not satisfied with an asynchronous callback', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -333,7 +333,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requires(values) {
+          async requires(values) {
             return !!this.positional && values['flag1'] === values['flag2']; // test access to `this`
           },
         },
@@ -625,7 +625,7 @@ describe('parse', () => {
       ).resolves.toMatchObject({});
     });
 
-    it('throw an error on requirement not satisfied with a callback', () => {
+    it('throw an error on requirement not satisfied with an asynchronous callback', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -639,7 +639,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requiredIf(values) {
+          async requiredIf(values) {
             return !!this.positional && values['flag1'] === values['flag2']; // test access to `this`
           },
         },
@@ -653,7 +653,7 @@ describe('parse', () => {
       );
     });
 
-    it('throw an error on requirement not satisfied with a negated callback 1', () => {
+    it('throw an error on requirement not satisfied with a negated callback', () => {
       const options = {
         flag1: {
           type: 'flag',

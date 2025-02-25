@@ -7,7 +7,7 @@ import type {
   RequiresVal,
   OpaqueOptions,
   NestedOptions,
-  ResolveCallback,
+  ModuleResolutionCallback,
 } from './options.js';
 import type { NamingRules } from './utils.js';
 
@@ -40,9 +40,9 @@ const namingConventions = {
     '--doubleDash': (name) => name[0] === '-' && name[1] === '-',
   },
   delimiters: {
-    'kebab-case': (name) => !!name.match(/[^-]+-[^-]+/),
-    snake_case: (name) => !!name.match(/[^_]+_[^_]+/),
-    'colon:case': (name) => !!name.match(/[^:]+:[^:]+/),
+    'kebab-case': (name) => regex.kebab.test(name),
+    snake_case: (name) => regex.snake.test(name),
+    'colon:case': (name) => regex.colon.test(name),
   },
 } as const satisfies NamingRules;
 
@@ -65,7 +65,7 @@ export type ValidationFlags = {
    * A resolution function for JavaScript modules.
    * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
    */
-  readonly resolve?: ResolveCallback;
+  readonly resolve?: ModuleResolutionCallback;
 };
 
 /**
@@ -179,7 +179,7 @@ function validateNames(
   const prefixedKey = getSymbol(prefix + key);
   const names = getOptionNames(option);
   for (const name of names) {
-    if (name.match(regex.name)) {
+    if (name.includes('=')) {
       throw ErrorMessage.create(ErrorItem.invalidOptionName, {}, prefixedKey, name);
     }
     if (nameToKey.has(name)) {
@@ -188,7 +188,7 @@ function validateNames(
     nameToKey.set(name, key);
   }
   for (const letter of option.cluster ?? '') {
-    if (letter.match(regex.name)) {
+    if (letter.includes('=')) {
       throw ErrorMessage.create(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
     }
     if (letterToKey.has(letter)) {
@@ -335,7 +335,7 @@ function validateRequirement(
 function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
   const [, , warning] = context;
   const { choices } = option;
-  if (Array.isArray(choices)) {
+  if (choices) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
@@ -349,7 +349,7 @@ function validateConstraints(context: ValidationContext, key: symbol, option: Op
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);
-  if (max > 1 && !option.separator && !option.append && option.inline) {
+  if ((!max || max > 1) && !option.separator && !option.append && option.inline) {
     throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, key);
   }
   if (min < max && option.cluster) {

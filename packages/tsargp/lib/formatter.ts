@@ -12,7 +12,7 @@ import type {
   OpaqueOption,
   OpaqueOptions,
   Requires,
-  RequiresCallback,
+  RequirementCallback,
   RequiresEntry,
 } from './options.js';
 import type { FormattingFlags, Style } from './styles.js';
@@ -24,7 +24,7 @@ import { getParamCount, getOptionNames, visitRequirements } from './options.js';
 import {
   mergeValues,
   getSymbol,
-  isReadonlyArray,
+  isArray,
   getKeys,
   escapeRegExp,
   getValues,
@@ -175,9 +175,8 @@ const helpFunctions = {
   },
   [HelpItem.choices]: (option, phrase, _context, result) => {
     const { choices } = option;
-    const values = isReadonlyArray<string>(choices) ? choices : choices && getKeys(choices);
-    if (values?.length) {
-      result.format(phrase, { open: '{', close: '}' }, values);
+    if (choices?.length) {
+      result.format(phrase, { open: '{', close: '}' }, choices);
     }
   },
   [HelpItem.regex]: (option, phrase, _context, result) => {
@@ -357,11 +356,12 @@ function formatGroups(
 function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): Array<string> {
   /** @ignore */
   function exclude(option: OpaqueOption): 0 | boolean {
+    const { names, synopsis, sources } = option;
     return (
       regexp &&
-      !option.names?.find((name) => name?.match(regexp)) &&
-      !option.synopsis?.match(regexp) &&
-      !option.sources?.find((name) => `${name}`.match(regexp))
+      !names?.find((name) => !!name && regexp.test(name)) &&
+      (!synopsis || !regexp.test(synopsis)) &&
+      !sources?.find((name) => regexp.test(`${name}`))
     );
   }
   const escaped = filter.map(escapeRegExp).join('|');
@@ -482,7 +482,7 @@ function formatNames(
   indent = max(0, indent);
   let len = 0;
   option.names.forEach((name, i) => {
-    if (name) {
+    if (name !== null) {
       if (str) {
         str.close(sep);
         len += sepLen;
@@ -574,7 +574,7 @@ function getNameWidths(context: HelpContext): Array<number> | number {
           slotWidths[i] = max(slotWidths[i] ?? 0, name?.length ?? 0);
         });
       } else {
-        const len = names.reduce((acc, name) => acc + sepLen + (name?.length || -sepLen), -sepLen);
+        const len = names.reduce((acc, name) => acc + sepLen + (name?.length ?? -sepLen), -sepLen);
         maxWidth = max(maxWidth, len);
       }
     }
@@ -828,38 +828,36 @@ function formatUsageNames(option: OpaqueOption, names: ReadonlyArray<string>, re
  * @param result The resulting string
  */
 function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result: AnsiString) {
+  const { type, inline, example, separator, styles, positional, paramName } = option;
   const [min, max] = getParamCount(option);
-  const equals = option.inline ? '=' : '';
-  const ellipsis = max > 1 && !equals ? '...' : '';
-  if (equals) {
-    result.merge = true;
+  const optional = !min && max && !(positional && !names.length);
+  const ellipsis =
+    type === 'command' || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
+  if (inline) {
+    result.merge = true; // to merge with names column, if required
   }
-  let param;
-  let example = option.example;
-  if (example !== undefined) {
-    const separator = option.separator;
-    if (separator && isReadonlyArray(example)) {
-      const sep = typeof separator === 'string' ? separator : separator.source;
-      example = example.join(sep);
+  const saved = result.defSty;
+  try {
+    result.defSty = styles?.param ?? config.styles.value;
+    result
+      .open('', result.defSty)
+      .open(optional ? '[' : '') // do not use openAtPos
+      .open(inline ? '=' : '');
+    if (example !== undefined) {
+      let param = example;
+      if (separator && isArray(param)) {
+        const sep = typeof separator === 'string' ? separator : separator.source;
+        param = param.join(sep);
+      }
+      fmt.v(param, result, { sep: '', open: '', close: '' });
+      result.close(ellipsis);
+    } else {
+      const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName || 'param'}>`;
+      result.word(param + ellipsis);
     }
-    fmt.v(example, result.open(equals), { sep: '', open: '', close: '' });
-    if (ellipsis) {
-      param = ellipsis;
-      result.merge = true;
-    }
-  } else {
-    const type = option.type;
-    if (type === 'command') {
-      param = '...';
-    } else if (max) {
-      const param0 = option.paramName ?? 'param';
-      const param1 = param0.includes('<') ? param0 : `<${param0}>`;
-      const param2 = equals + param1 + ellipsis;
-      param = min <= 0 && !(option.positional && !names.length) ? `[${param2}]` : param2;
-    }
-  }
-  if (param) {
-    result.word(param, option.styles?.param ?? config.styles.value);
+    result.close(optional ? ']' : '').close('', saved);
+  } finally {
+    result.defSty = saved;
   }
 }
 
@@ -892,7 +890,7 @@ function formatRequirements(
     (req) => formatRequiresExp(req.items, result, negate, true, custom1),
     (req) => formatRequiresExp(req.items, result, negate, false, custom1),
     (req) => formatRequiresExp(getEntries(req), result, negate, true, custom2),
-    (req) => formatRequiresCallback(req, result, negate),
+    (req) => formatRequirementCallback(req, result, negate),
   );
 }
 
@@ -980,7 +978,11 @@ function formatRequiredValue(
  * @param result The resulting string
  * @param negate True if the requirement should be negated
  */
-function formatRequiresCallback(callback: RequiresCallback, result: AnsiString, negate: boolean) {
+function formatRequirementCallback(
+  callback: RequirementCallback,
+  result: AnsiString,
+  negate: boolean,
+) {
   if (negate) {
     result.word(config.connectives.not);
   }

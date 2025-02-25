@@ -28,15 +28,16 @@ describe('HelpFormatter', () => {
       expect(message.wrap()).toEqual('\n');
     });
 
-    it('handle an option with empty or null names', () => {
+    it('handle an option with phantom names', () => {
       const options = {
         flag: {
           type: 'flag',
-          names: ['', null],
+          names: ['', ' ', null],
+          synopsis: 'A phantom option.',
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual('\n');
+      expect(message.wrap()).toEqual('  ,      A phantom option.\n');
     });
 
     it('handle an option with no description', () => {
@@ -267,7 +268,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', '', '--flag'],
+          names: ['-f', null, '--flag'],
           synopsis: 'A flag option',
         },
         flag2: {
@@ -292,7 +293,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', '', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -308,7 +309,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', '', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -324,7 +325,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', '', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',
@@ -345,7 +346,7 @@ describe('HelpFormatter', () => {
       const options = {
         flag1: {
           type: 'flag',
-          names: ['-f', '', '--flag'],
+          names: ['-f', null, '--flag'],
         },
         flag2: {
           type: 'flag',

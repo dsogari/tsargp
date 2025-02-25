@@ -6,7 +6,7 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
   describe('a default value is specified', () => {
-    it('set default values before calling the parse callback of an option that breaks the parsing loop', () => {
+    it('set default values before calling the parsing callback of an option that breaks the parsing loop', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -25,7 +25,7 @@ describe('parse', () => {
       expect(parse(options, ['-f1'])).resolves.toEqual({ flag1: undefined, flag2: true });
     });
 
-    it('avoid setting default values before calling the parse callback of an option that does not break the parsing loop', () => {
+    it('avoid setting default values before calling the parsing callback of an option that does not break the parsing loop', () => {
       const options = {
         flag1: {
           type: 'function',
@@ -46,7 +46,7 @@ describe('parse', () => {
       });
     });
 
-    it('set default values before calling the parse callback of command option', async () => {
+    it('set default values before calling the parsing callback of command option', () => {
       const options = {
         command: {
           type: 'command',
@@ -65,7 +65,7 @@ describe('parse', () => {
     });
   });
 
-  describe('a default callback is specified', () => {
+  describe('a default value callback is specified', () => {
     it('handle a flag option', () => {
       const options = {
         flag: {
@@ -114,23 +114,23 @@ describe('parse', () => {
       );
     });
 
-    it('handle a function option', () => {
+    it('handle a function option with an asynchronous callback', () => {
       const options = {
         function: {
           type: 'function',
           names: ['-f'],
-          default: () => true,
+          default: async () => true,
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toEqual({ function: true });
     });
 
-    it('handle a command option', () => {
+    it('handle a command option with a promise', () => {
       const options = {
         command: {
           type: 'command',
           names: ['-c'],
-          default: () => false,
+          default: Promise.resolve(false),
           parse: jest.fn(),
         },
       } as const satisfies Options;

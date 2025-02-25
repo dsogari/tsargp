@@ -88,7 +88,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 ### Cluster arguments
 
 - check if cluster arguments can be specified (e.g., `-sn 1 -1` or `-s 1 -n -1`)
-- check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`, same as above)
+- check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`, same result as above)
 
 <details>
   <summary>Expected output</summary>
@@ -96,8 +96,10 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 ```ansi
 {
+  [90m...[0m
   [0mstrRegex[2m:[0m [0m[32m[0m[32m"1"[0m[0m[0m[2m,[0m
   [0mnumRange[2m:[0m [0m[33m-1[0m[0m[2m,[0m
+  [90m...[0m
 }
 ```
 
@@ -105,12 +107,13 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 </details>
 
-### Value constraints
+### Selection constraints
 
 1. check if a string parameter matches the required regex (e.g., try `-sr A` and see that it fails)
 2. check if a string parameter matches one of the choices (e.g., try `-sc A` and see that it fails)
 3. check if a number parameter matches the required range (e.g., try `-n-3` and see that it fails)
 4. check if a number parameter matches one of the choices (e.g., try `-nc=0` and see that it fails)
+5. check if a boolean parameter gets normalized and mapped correctly (e.g., `-b No -sc one` )
 
 <details>
   <summary>Expected output (1)</summary>
@@ -151,6 +154,21 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 ```ansi
 [0m[31m[39mInvalid parameter to [35m-nc[0m[39m: [32m'0'[0m[39m. Value must be one of: [32m'1'[0m[39m, [32m'2'[0m[39m.
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (5)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mboolean[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [90m...[0m
+}
 ```
 
 {/* cSpell:enable */}
@@ -367,13 +385,45 @@ When an option is specified more than once, the retained value is usually the la
 
 </details>
 
+### Requirements
+
+1. check th the `-b` option cannot be specified without required options (e.g., try `-b yes` and see that it fails)
+2. check if the `-b` option can be specified with required options (e.g., `-b yes -sc one`)
+3. check if the `-b` option can be specified through an environment variable (e.g., `BOOLEAN=yes tsargp -sc one`, same result as above)
+
+<details>
+  <summary>Expected output (1)</summary>
+{/* cSpell:disable */}
+
+```ansi
+[0m[31m[39mOption [35m-b[0m[39m requires [39m([35m-sc[0m[39m or [35m-sa[0m[39m == [[32m'a'[0m[39m, [32m'b'[0m[39m]).
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (2)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mboolean[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
+  [0mstrChoice[2m:[0m [0m[32m[0m[32m"one"[0m[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+
 ### Miscellaneous
 
 1. check if the `-f` option can be specified without a parameter (also, see the warning produced)
 2. check if the `-f` option can be negated with `--no-flag` (also, see the warning produced)
-3. check if the `-b` option cannot be specified without required options (e.g. `-b yes`)
-4. check if the `-b` option can be specified with required options (e.g. `-b yes -sc one`)
-5. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
+3. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -409,33 +459,6 @@ When an option is specified more than once, the retained value is usually the la
 </details>
 <details>
   <summary>Expected output (3)</summary>
-{/* cSpell:disable */}
-
-```ansi
-[0m[31m[39mOption [35m-b[0m[39m requires [39m([35m-sc[0m[39m or [35m-sa[0m[39m == [[32m'a'[0m[39m, [32m'b'[0m[39m]).
-```
-
-{/* cSpell:enable */}
-
-</details>
-<details>
-  <summary>Expected output (4)</summary>
-{/* cSpell:disable */}
-
-```ansi
-{
-  [90m...[0m
-  [0mboolean[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
-  [0mstrChoice[2m:[0m [0m[32m[0m[32m"one"[0m[0m[0m[2m,[0m
-  [90m...[0m
-}
-```
-
-{/* cSpell:enable */}
-
-</details>
-<details>
-  <summary>Expected output (5)</summary>
 {/* cSpell:disable */}
 
 ```ansi

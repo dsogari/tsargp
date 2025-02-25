@@ -68,7 +68,7 @@ describe('HelpFormatter', () => {
       });
     });
 
-    describe('a default callback is specified', () => {
+    describe('a default value callback is specified', () => {
       it('handle a callback without toString method', () => {
         const options = {
           flag: {

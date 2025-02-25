@@ -13,7 +13,7 @@ describe('validate', () => {
           requires: () => false,
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
 
     it('throw an error on option required by itself with req.not', () => {
@@ -72,6 +72,19 @@ describe('validate', () => {
       expect(validate(options)).rejects.toThrow(`Invalid option version in requirement.`);
     });
 
+    it('accept a command option required to be present', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          requires: 'command',
+        },
+        command: {
+          type: 'command',
+        },
+      } as const satisfies Options;
+      expect(validate(options)).resolves.toEqual({});
+    });
+
     it('throw an error on option required to be present despite being always required', () => {
       const options = {
         flag1: {
@@ -114,7 +127,7 @@ describe('validate', () => {
           type: 'flag',
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
   });
 
@@ -126,7 +139,7 @@ describe('validate', () => {
           requiredIf: () => false,
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
 
     it('throw an error on option required by itself with req.not', () => {
@@ -185,6 +198,19 @@ describe('validate', () => {
       expect(validate(options)).rejects.toThrow(`Invalid option version in requirement.`);
     });
 
+    it('accept an option required if a command option is present', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          requiredIf: 'command',
+        },
+        command: {
+          type: 'command',
+        },
+      } as const satisfies Options;
+      expect(validate(options)).resolves.toEqual({});
+    });
+
     it('throw an error on option required if another is be present despite being always required', () => {
       const options = {
         flag1: {
@@ -227,7 +253,7 @@ describe('validate', () => {
           type: 'flag',
         },
       } as const satisfies Options;
-      expect(validate(options)).resolves.toMatchObject({});
+      expect(validate(options)).resolves.toEqual({});
     });
   });
 });

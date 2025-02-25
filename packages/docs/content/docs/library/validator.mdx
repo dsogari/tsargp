@@ -6,7 +6,7 @@ import { Callout } from 'nextra/components';
 
 # Validator
 
-The `validator` module handles validation of option definitions. It contains functions that accept a set of option definitions and perform the validation. They may also produce error and warning messages, which can be customized via [message configuration].
+The `validator` module handles validation of option definitions. It contains functions that accept a set of definitions and perform the validation. They may also produce error and warning messages, which can be customized via [message configuration].
 
 ## Option validation
 
@@ -23,12 +23,6 @@ It returns a promise that resolves to a `ValidationResult` object containing the
 
 The warnings represent non-impeditive issues encountered in the option definitions. You may want to inspect it to see if they are important to your application.
 
-<Callout type="info">
-
-This function is _asynchronous_, so you must use `await{:ts}` in order to resolve the returned promise.
-
-</Callout>
-
 ## Validation flags
 
 To configure the validation procedure, you can provide a `ValidationFlags` object as the first parameter to the `validate` function. It contains the following optional properties:
@@ -41,7 +35,7 @@ The `noNamingIssues` property indicates whether the validation procedure should 
 
 The `noRecurse` property indicates whether the validation procedure should skip recursion into [nested options].
 
-### Resolve callback
+### Resolution callback
 
 The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
 
@@ -57,7 +51,7 @@ There are two kinds of validation rules, depending on whether they generate an e
 
 The following restrictions will raise an error on any option definition that fails to satisfy it, with an explanatory message that may include the option's key.
 
-- **Invalid option name** - An option name or [positional marker] must not contain whitespace or the equals sign `'='{:ts}`, since this character can be used as option-parameter separator on the command-line. Any other Unicode character is allowed.
+- **Invalid option name** - An option name or [positional marker] must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator on the command-line. Any other Unicode character is allowed (including whitespace).
 - **Duplicate option name** - An option should not have duplicate names, and there cannot be two options with the same name.
 - **Invalid cluster letter** - Cluster letters are subject to the same restrictions as option names.
 - **Duplicate cluster letter** - An option should not have duplicate cluster letters, and there cannot be two options with the same letter.
@@ -104,7 +98,6 @@ The following restrictions will produce a warning that is returned by the valida
 [parameter choices]: options#parameter-choices
 [regular expression]: options#regular-expression
 [element count limit]: options#element-count-limit
-[default callbacks]: options#default-callback
 [positional]: options#positional--marker
 [always required]: options#always-required
 [required]: options#disable--require-inline

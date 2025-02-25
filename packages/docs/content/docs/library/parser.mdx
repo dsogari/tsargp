@@ -20,7 +20,7 @@ The `parse` function returns a promise that resolves to the option values. It ac
 - `cmdLine` - the command line or list of command-line arguments (optional)
 - `flags` - an object containing the [parsing flags] (optional)
 
-Normally you should _not_ need to pass these parameters, as they have sensible default values. The command line defaults to the value of either the `COMP_LINE` or `BUFFER` environment variables (whichever is present) or to the process arguments:
+Normally you should _not_ need to pass the optional parameters, as they have sensible default values. The command line defaults to the value of either the `COMP_LINE` or `BUFFER` environment variables (whichever is present) or to the process arguments:
 
 ```ts
 process.env['COMP_LINE'] ?? process.env['BUFFER'] ?? process.argv.slice(2);
@@ -28,19 +28,13 @@ process.env['COMP_LINE'] ?? process.env['BUFFER'] ?? process.argv.slice(2);
 
 If you feel the need to configure the parsing procedure, make sure to first understand how [word completion] works.
 
-<Callout type="info">
-
-This function is asynchronous, so you must use `await{:ts}` in order to resolve the returned promise.
-
-</Callout>
-
 ### Using an existing object
 
 The `parseInto` function is more flexible, as it allows you to pass an existing object or class instance, which will be filled with the parsed values. It accepts the same parameters as the previous one, except for an additional parameter:
 
 - `values` - the option values to parse into (required)
 
-Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of the option values for a given set of option definitions. You can use the `valuesFor` function to create a fresh object for this purpose.
+Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of option definitions. You can use the `valuesFor` function to create a fresh object for this purpose.
 
 This function returns a promise that resolves to a `ParsingResult` object containing the following property:
 
@@ -62,7 +56,7 @@ This flag is ignored when [word completion] is in effect.
 
 ### Completion index
 
-The `compIndex` property is the cursor position in a command line for which the user pressed `Tab`. It defaults to the value of the `COMP_POINT` or `CURSOR` environment variables, or to the length of the `BUFFER` variable (whichever is present, otherwise undefined):
+The `compIndex` property is the cursor position in a command line for which the user pressed `<Tab>`. It defaults to the value of the `COMP_POINT` or `CURSOR` environment variables, or to the length of the `BUFFER` variable (whichever is present, otherwise undefined):
 
 ```ts
 Number(process.env['COMP_POINT'] ?? process.env['CURSOR']) || process.env['BUFFER']?.length;
@@ -74,9 +68,11 @@ When invoking the parsing procedure with a raw command line, and this flag is se
 
 The `clusterPrefix` property specifies the prefix for cluster arguments. If set, then eligible arguments starting with this prefix may be considered a cluster. This must be used in conjunction with the [cluster letters] attribute.
 
-<Callout type="info">
-
 Option names have precedence over the cluster prefix. For example, if the prefix is a single dash and there's an option named `'-flag'{:ts}`, then an argument with this name will _not_ be considered a cluster argument. On the other hand, the cluster prefix has precedence over the [option prefix].
+
+<Callout type="default">
+
+The cluster prefix can be the empty string, in which case it behaves similarly to GNU's [tar] command.
 
 </Callout>
 
@@ -84,7 +80,7 @@ Option names have precedence over the cluster prefix. For example, if the prefix
 
 The `optionPrefix` property specifies the prefix for option names. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
 
-### Resolve callback
+### Resolution callback
 
 The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
 
@@ -101,13 +97,13 @@ The set of features supported by the parser are described below.
 Custom parsing operations are supported through the following kinds of callbacks:
 
 - [requirement callback]
-- [default callback]
-- [parse callback]
-- [complete callback]
+- [default value callback]
+- [parsing callback]
+- [completion callback]
 
 All of these can be asynchronous, in which case the parser awaits their resolution, either because it needs their result or to avoid data races when reading and modifying the option values.
 
-Note that there is no synchronous version of the parsing procedure. This is a design choice: in order to support a fully synchronous `parse` function using the same code base, the parser would have to deal with returned promises in a way that would make it hard to maintain (remember the classic [callback hell]).
+Note that there is no synchronous version of the parsing procedure. This is a design choice: in order to support a fully synchronous `parse` function using the same code base, the parser would have to deal with returned promises in a way that would make it hard to maintain -- remember the classic [callback hell].
 
 Besides, the asynchronous version has the benefit of allowing us to perform some operations, such as [requirements checking], concurrently. This should not be a drawback for most applications, since argument parsing is usually done at the top-level of a module or script, where the `await{:ts}` directive is readily available.
 
@@ -124,13 +120,16 @@ The same is true for function options with a variable [parameter count]. For exa
 The information gathered by the parser is saved in an object that is passed as parameter to some of the [custom callbacks]. It contains details about the current argument sequence in the parsing loop:
 
 - `values` - The previously parsed values. It has an opaque type that should be cast to `OptionValues<typeof your_options>{:ts}`.
-- `index` - The index of the occurrence of the option name, or of the first option parameter. It will be `NaN{:ts}` if the data comes from the [environment].
+- `index` - The starting index of the argument sequence. It will point to one of the following:
+  - the occurrence of the option's name
+  - the first option parameter, if the sequence comes from positional arguments
+  - `NaN{:ts}`, if the data comes from the [environment]
 - `name` - The option name as specified on the command line, or one of the following:
-  - the option's [preferred name] if the sequence comes from positional arguments
-  - an environment [data source] if the data comes from the environment
-  - `'0'{:ts}` if the data comes from the standard input
-- `comp` - True if performing [word completion]. Only available for the [parse callback].
-- `prev` - The option parameters preceding the word being completed, if any. Only available for the [complete callback] of array-valued and function options.
+  - the option's [preferred name], if the sequence comes from positional arguments
+  - an environment [data source], if the data comes from the environment
+  - `'0'{:ts}`, if the data comes from the standard input
+- `comp` - True if performing [word completion]. Only available for the [parsing callback].
+- `prev` - The option parameters preceding the word being completed, if any. Only available for the [completion callback] of array-valued and function options.
 
 ### Word completion
 
@@ -155,21 +154,21 @@ The parser ignores any errors thrown by callbacks during completion. If an error
 
 #### Completion algorithm
 
-The completion algorithm implemented by the library is explained below. In what follows, _comp_ is the word being completed, i.e., the command-line argument ending at the completion index (it may be an empty string):
+The completion algorithm implemented by the library is explained below. In what follows, _comp_ is the word being completed, i.e., the command-line argument ending at the [completion index] (it may be an empty string):
 
 1. If _comp_ is expected to be an option name:
    - If _comp_ is a known option name, that name is returned; else
    - If there is no positional option, the available option names are filtered by the prefix _comp_ and returned; else
    - _comp_ is treated as a parameter of the positional option; go to step 2
 2. Else, _comp_ is the parameter of a non-niladic option. Then, either of the following is executed and its result is combined with that of step 3:
-   - If the option has a [complete callback], it is called with _comp_; else
+   - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
-3. If the option was specified neither with a [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available option names are filtered by the prefix _comp_ and returned:
+3. If the option was specified neither with a [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
-If all of the above results in an empty list, the default completion (usually file completion, if enabled) will be attempted by the completion builtin.
+If all of the above results in an empty list, the default completion (usually file completion, if enabled) will be attempted by the completion builtins.
 
 #### Altered parsing behavior
 
@@ -177,7 +176,7 @@ Since the completion builtins always expect a list of words as a result, the lib
 
 - parsing errors, such as unknown option names, are suppressed
 - message-valued options (help and version) are skipped
-- [parse callback] of subcommands do not get executed
+- [parsing callback] of subcommands do not get executed
 - option requirements are not verified
 - cluster arguments are immediately completed with the default completion message
 
@@ -191,7 +190,7 @@ Other arguments are processed as usual, which means that a completion callback c
 
 When the parser evaluates option requirements, it compares an option's value against any value required by other options. Generally, this analysis is performed after _all_ arguments have been parsed, but it may be performed in two additional situations:
 
-- before calling the [parse callback] of an option that has [break loop] set
+- before calling the [parsing callback] of an option that has [break loop] set
 - before handling a [subcommand]
 
 <Callout type="info">
@@ -214,9 +213,9 @@ This syntax cannot be used with the positional marker.
 
 </Callout>
 
-As is the case with standalone parameters, inline parameters do not conflict with option names, and so they may contain characters that are not valid in option names, such as whitespace or the equals sign. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
+As is the case with standalone parameters, inline parameters do not conflict with option names, and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
-Cluster arguments may also have inline parameters, but their syntax is different. A cluster argument is considered to have an inline parameter if it contains an unknown letter that is not the first one in the cluster. In this case, the first letter _must_ be an option and the rest its parameter. See [cluster inline parameters] for details about this syntax.
+Cluster arguments may also have inline parameters, but their syntax is different. A cluster argument is considered to have an inline parameter if it contains an unknown letter that is _not the first_ one in the cluster. In this case, the first letter _must_ correspond to an option and the rest its parameter. See [cluster inline parameters] for further details.
 
 ### Process title
 
@@ -251,20 +250,22 @@ Other option names are not used, not only because they would pollute the output 
 [inline parameter]: #inline-parameters
 [custom callbacks]: #custom-callbacks
 [program name]: #program-name
+[completion index]: #completion-index
 
 {/* options references */}
 
+[option names]: options#option-names
 [parameter count]: options#parameter-count
 [parameter choices]: options#parameter-choices
 [subcommand]: options#command-option
 [break loop]: options#break-loop
 [cluster letters]: options#cluster-letters
-[cluster inline parameters]: options#inline-parameters
+[cluster inline parameters]: options#cluster-inline-parameters
 [preferred name]: options#preferred-name
 [requirement callback]: options#requirement-callback
-[default callback]: options#default-callback
-[parse callback]: options#parse-callback
-[complete callback]: options#complete-callback
+[default value callback]: options#default-value-callback
+[parsing callback]: options#parsing-callback
+[completion callback]: options#completion-callback
 [positional marker]: options#positional--marker
 [environment]: options#environment-attributes
 [data source]: options#data-sources
@@ -288,3 +289,4 @@ Other option names are not used, not only because they would pollute the output 
 [callback hell]: http://callbackhell.com/
 [JavaScript modules]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 [import.meta.resolve]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve
+[tar]: https://man7.org/linux/man-pages/man1/tar.1.html

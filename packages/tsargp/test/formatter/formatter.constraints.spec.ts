@@ -18,7 +18,7 @@ describe('HelpFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <param>  Values must match the regex /\\d+/s.\n`);
     });
 
-    it('handle a single-valued option with a choices array constraint', () => {
+    it('handle a single-valued option with a choices constraint', () => {
       const options = {
         single: {
           type: 'single',
@@ -28,18 +28,6 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(`  -s  <param>  Values must be one of {'one', 'two'}.\n`);
-    });
-
-    it('handle a single-valued option with a choices record constraint', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          choices: { one: 'two' },
-        },
-      } as const satisfies Options;
-      const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -s  <param>  Values must be one of {'one'}.\n`);
     });
 
     it('handle an array-valued option with a limit constraint', () => {

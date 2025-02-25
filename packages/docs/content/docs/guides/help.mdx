@@ -56,7 +56,9 @@ You may also want to customize the help layout, e.g.:
 
 ```ts
 import { type Options, HelpItem, style, tf, config } from 'tsargp';
+
 config.helpPhrases[HelpItem.synopsis] = '💡 #0'; // option synopsis with emoji
+
 export default {
   help: {
     // ...
@@ -100,14 +102,14 @@ Since this guide was first written, the [enable subcommand] attribute has been i
 
 </Callout>
 
-Another way to offer help is by defining a "help" [subcommand]. This method still uses the [help option] from the previous example, but increments it by providing a new syntax to obtain help for subcommands. For example, to present help for a subcommand called `cmd`, the following invocations would be equivalent:
+Another way to offer help is by defining a "help" [subcommand]. This method complements the [help option] from the previous example by providing a new syntax to obtain help for subcommands. For example, to present help for a subcommand called `cmd`, the following invocations would be equivalent:
 
 ```sh
 cli help cmd
 cli cmd --help
 ```
 
-To achieve this, we have to define a "helper" subcommand that accepts the name of a subcommand for which the actual help message should be produced. Let's start with the option definitions for the subcommands:
+To achieve this, we have to define a "helper" subcommand that accepts the name of another subcommand for which the help message should be produced. Let's start with the option definitions for the subcommands:
 
 ```ts
 import { type Options } from 'tsargp';
@@ -164,12 +166,12 @@ export default {
 } as const satisfies Options;
 ```
 
-Since we are using a delegated `parse` call, we deliberately set the [program name] flag to the name of the target subcommand. Also, keep in mind that when word completion is in effect, the [parse callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [completion index] flag.
+Since we are using a delegated `parse` call, we deliberately set the [program name] flag to the name of the target subcommand. Also, keep in mind that when word completion is in effect, the [parsing callback] will _not_ be executed. Conversely, if it _is_ executed, you need not worry about the [completion index] flag.
 
 {/* options references */}
 
 [parameter choices]: ../library/options#parameter-choices
-[parse callback]: ../library/options#parse-callback
+[parsing callback]: ../library/options#parsing-callback
 [help option]: ../library/options#help-option
 [subcommand]: ../library/options#command-option
 [enable subcommand]: ../library/options#enable-subcommand

@@ -6,7 +6,7 @@ import { Callout } from 'nextra/components';
 
 # Options
 
-A command line interface can be composed of subcommands and options (also known as _flags_). The options allow a calling application or user to configure the command that will run. **tsargp** offers a selection of option types that should suit most applications. In the next sections, we present the available types and describe them in detail.
+A command-line interface can be composed of subcommands and options (also known as _flags_). The options allow a calling application or user to configure the command that will run. **tsargp** offers a selection of option types that should suit most applications. In the next sections, we present the available types and describe them in detail.
 
 ## Option types
 
@@ -42,7 +42,7 @@ Each type of option expects different number of parameters on the command line:
 
 <Callout type="info">
 
-When a single-valued option is specified multiple times on the command line, its value is replaced each time. This is also the default behavior of an array-valued option, unless [append values] is set.
+When an option is specified multiple times on the command line, its value gets replaced each time. The only exception is the case of an array-valued option with [append values] set.
 
 </Callout>
 
@@ -56,7 +56,7 @@ The data type of an option value in the [resulting object] depends on the option
 
 <Callout type="info">
 
-Except for help and version options, which do not have values, the initial value of any option is `undefined{:ts}`.
+The initial value of any option is `undefined{:ts}`, except for help and version options without the [save message] attribute.
 
 </Callout>
 
@@ -77,7 +77,11 @@ All options share a set of attributes in addition to their type. They are descri
 
 #### Option names
 
-The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). Names must not contain whitespace or the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. A name can also be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
+The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
+
+- A name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator.
+- A name can contain whitespace or even be an empty string. (However, this may look strange in help messages.)
+- A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 <Callout type="default">
 
@@ -111,7 +115,7 @@ Deprecated options specified on the command line generate a [warning message], w
 
 #### Group | hide
 
-The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. You can use the value `null{:ts}` instead, to completely hide it from the help message.
+The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. Alternatively, you can use the value `null{:ts}` to completely hide it from the help message.
 
 <Callout type="default">
 
@@ -145,11 +149,11 @@ All options that may have a value share a set of attributes, which are described
 
 #### Cluster letters
 
-The `cluster` attribute, if present, specifies letters that can be used to combine options into a single command-line argument. This feature is also known as the [short-option] style, and can be enabled via the [`clusterPrefix`] parsing flag.
+The `cluster` attribute, if present, specifies letters that can be used to combine options into a single command-line argument. This feature is also known as the [short-option] style, and can be enabled via the [cluster prefix] parsing flag.
 
 <Callout type="info">
 
-This attribute is validated against the same regex as the [option names].
+Cluster letters should _not_ be included in the list of [option names], although they are subject to the same restrictions.
 
 </Callout>
 
@@ -172,17 +176,18 @@ They would be transformed into their "canonical" form, i.e.:
 cli --flag --str 'my string' --num 1 2 3
 ```
 
-Notes about this feature:
+##### Cluster parsing rules
+
+The following rules apply to cluster arguments:
 
 - the _order_ of options in a cluster is preserved when converting to the canonical form
 - variadic options and subcommands are supported, but they must come _last_ in a cluster
 - if word completion is attempted for a cluster, the default completion message is thrown
 - if a nameless positional option appears in a cluster, its argument will be treated as positional
-- the cluster prefix can be the empty string, similarly to how the `tar` command works
 
-##### Inline parameters
+##### Cluster inline parameters
 
-Cluster arguments may be considered to have an inline parameter if they contain at least one unknown letter that is _not_ the first. For example, using the same option definitions as above, the command line `cli -s'my str' -n123{:sh}` would be parsed as `cli --str 'my str' --num 123{:sh}`.
+Cluster arguments may be considered to have an inline parameter if they contain at least one unknown letter that is _not the first_. For example, using the same option definitions as above, the command line `cli -s'my str' -n123{:sh}` would be parsed as `cli --str 'my str' --num 123{:sh}`.
 
 Notice how the parameters appear "glued" to the cluster letter, with no intervening space, and they contain characters that are not valid cluster letters. However, the first letter _must_ be valid for the argument to be considered a cluster argument.
 
@@ -217,14 +222,14 @@ The `requires` attribute, if present, specifies requirements that must be satisf
 - a requirement **expression**; or
 - a requirement **callback**
 
-In the case of an option key, the referenced option must also be present on the command line. In the case of an object, every referenced option must have the corresponding value, which can be any value accepted by that option, or one of the special values:
+An option key means that the referenced option must also be specified (either on the command line or through the [environment]). In the case of an object, every referenced option must have the corresponding value, which can be any value accepted by that option, or one of the special values:
 
 - `undefined{:ts}` to signify _presence_
 - `null{:ts}` to signify _absence_
 
 <Callout type="info">
 
-You cannot reference options from a [subcommand] (parent or child) in a requirement. Option keys must always refer to options in the same level of option definitions.
+You cannot reference options from a [subcommand] (parent or child) in a requirement. Option keys must always refer to options in the same level of definitions.
 
 </Callout>
 
@@ -238,13 +243,7 @@ You can also specify an expression, in which case it is evaluated as follows:
 
 ##### Requirement callback
 
-You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+You can also specify a custom callback to evaluate requirements. It receives a single parameter which contains the parsed values, and should return a `boolean{:ts}` (or a promise thereof) indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
 
 It may be configured with a custom `toString` method to render it in error and help messages, e.g.:
 
@@ -254,7 +253,7 @@ options.flag.requires.toString = () => 'this and that ...';
 
 #### Conditional requirements
 
-The `requiredIf` attribute is reciprocal to the previous one: if present, it specifies requirements which must be satisfied for the affected option to be _considered_ required.
+The `requiredIf` attribute is reciprocal to the previous one: if present, it specifies requirements that must be satisfied for the affected option to be _considered_ required.
 
 <Callout type="info">
 
@@ -272,23 +271,23 @@ req.all(
 );
 ```
 
-If they were defined in the `requires` attribute, they would mean:
+If they were declared in the `requires` attribute, they would mean:
 
 > _If this option is specified, then the following must hold true: `option1` must be present AND (`option2` must be absent OR `option3` must have a value different than `[2]`) AND `option1` must have the same value as `option3`._
 
-And if they were defined in the `requiredIf` attribute, they would mean:
+And if they were declared in the `requiredIf` attribute, they would mean:
 
 > _If `option1` is present AND (`option2` is absent OR `option3` has a value different than `[2]`) AND `option1` has the same value as `option3`, then this option is considered required and must be specified._
 
 <Callout type="info">
 
-An option is considered specified if it either appears on the command line or its data exists in the [environment].
+An option is considered specified if it either appears on the command line or has data coming from the [environment].
 
 </Callout>
 
 #### Default value
 
-The `default` attribute, if present, specifies a value to be used at the end of the parsing loop, in case the option is specified neither on the command line nor in the [environment].
+The `default` attribute, if present, specifies a value (or a promise thereof) to be used at the end of the parsing loop, in case the option is specified neither on the command line nor in the [environment].
 
 <Callout type="info">
 
@@ -296,15 +295,9 @@ Mutually exclusive with [always required].
 
 </Callout>
 
-##### Default callback
+##### Default value callback
 
-In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing parsed values (which you can inspect to determine the default), and should return the option value.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing the parsed values, and should return the default option value (or a promise thereof).
 
 When rendering a help message, the formatter disregards any value returned by the callback, as it may depend on the values parsed from command-line arguments, which are not available when processing the help option.
 
@@ -314,17 +307,11 @@ On the other hand, the callback can be configured with a custom `toString` metho
 options.flag.default.toString = () => 'this and that ...';
 ```
 
-#### Parse callback
+#### Parsing callback
 
-The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s).
+The `parse` attribute, if present, specifies a [custom callback] to parse the option's parameter(s). It should return the option value (or a promise thereof).
 
-It receives different kinds of data depending on the option type, but its second parameter always contains the current [argument information], including the option's name, argument index and any previously parsed values.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+Depending on the option type, the callback receives a different kind of data in its first parameter. But its second parameter always contains the current [argument information], which includes the option's name, argument index and any previously parsed values.
 
 If you need to throw an error from the callback, we recommend using the [error message]'s `createCustom` static method. It receives a custom phrase that is formatted similarly to [error phrases].
 
@@ -338,7 +325,7 @@ Options that may read data from the environment share some attributes, as descri
 
 The `stdin` attribute, if present, indicates that the option accepts data from the standard input. It will only have effect if the option is _not_ specified on the command line, otherwise the input stream will remain untouched.
 
-The parser only reads _readily_ available data, i.e., it does not wait for _new_ input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use the [default callback] in conjunction with third-party prompting libraries.
+The parser only reads _readily_ available data, without waiting for new input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use a [default value callback] in conjunction with third-party prompting libraries.
 
 <Callout type="info">
 
@@ -366,7 +353,7 @@ If data is found in a source, the affected option will be considered as if speci
 
 #### Break loop
 
-The `break` attribute indicates whether the parser should exit the parsing loop after returning from a [parse callback].
+The `break` attribute indicates whether the parser should exit the parsing loop after returning from a [parsing callback].
 
 <Callout type="warning">
 
@@ -400,7 +387,7 @@ Mutually exclusive with [example value].
 
 #### Positional | marker
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. There may be at most _one_ option with this setting.
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. There may be at most _one_ option with this setting in the same level of definitions.
 
 If set to `true{:ts}`, then any argument not recognized as an option name will be considered positional. If set to a string, then it acts as a positional marker, in which case all arguments that appear _beyond_ the marker will be considered positional.
 
@@ -412,7 +399,7 @@ When using this attribute, we recommend also setting [preferred name] to some ex
 
 <Callout type="info">
 
-This attribute is validated against the same regex as the [option names].
+The positional marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
 
 </Callout>
 
@@ -420,28 +407,22 @@ This attribute is validated against the same regex as the [option names].
 
 The `inline` attribute, if present, indicates the option's treatment of [inline parameters]. It can be either `false{:ts}` to disallow, or `'always'{:ts}` to _always_ require inline parameters. By default, parameters are allowed (but not required) to be inlined with option names.
 
-#### Complete callback
+#### Completion callback
 
 The `complete` attribute, if present, specifies a custom callback for [word completion], which can be used to make better suggestions than the built-in algorithm would for the option. It receives two parameters:
 
 - `param` - the word being completed
 - `info` - the current [argument information]
 
-It should return the list of completion words. If an error is thrown, it will be ignored and the default completion message will be thrown instead.
-
-<Callout type="default">
-
-This callback can be asynchronous.
-
-</Callout>
+It should return the list of completion words (or a promise thereof). If an error is thrown, it will be ignored and the default completion message will be thrown instead.
 
 ### Selection attributes
 
-Both single- and array-valued options can have additional parameter constraints, for which they share a set of attributes as described below.
+Both single- and array-valued options can have additional parameter constraints, for which they share the set of attributes described below.
 
 #### Regular expression
 
-The `regex` attribute, if present, specifies a regular expression that the option's parameter(s) should match. Any parameter that does _not_ match the regex will cause an error to be raised.
+The `regex` attribute, if present, specifies a regular expression that the option's parameter(s) should match. Any parameter that does _not_ match the regex (after applying any [normalization]) will cause an error to be raised.
 
 <Callout type="info">
 
@@ -451,15 +432,21 @@ Mutually exclusive with [parameter choices].
 
 #### Parameter choices
 
-The `choices` attribute, if present, specifies string values that the option accepts as parameter. Any parameter that does not equal one of these values will cause an error to be raised. They are also considered by the [completion algorithm] when a parameter is being completed.
-
-Alternatively, this attribute accepts a record that maps parameter values to option values. In this case, if a parameter fails to match one of the choices and the option has a [parse callback], it will be called for that parameter; otherwise, an error wil be raised.
+The `choices` attribute, if present, specifies string values that the option accepts as parameter(s). Any parameter that does not match one of these values (after applying any [normalization]) will cause an error to be raised. They are also considered by the [completion algorithm] when a parameter is being completed.
 
 <Callout type="info">
 
 Mutually exclusive with [regular expression].
 
 </Callout>
+
+#### Parameter mapping
+
+The `mapping` attribute, if present, specifies a record that maps parameter values to option values. In this case, if a parameter matches one of the keys (after applying any [normalization]), it will get mapped to the corresponding value; otherwise it will be forwarded to the [parsing callback], if specified.
+
+#### Parameter normalization
+
+The `normalize` attribute, if present, specifies a normalization function applied to parameters before they get validated and/or parsed. This includes parsing of option parameters and performing [word completion].
 
 ## Niladic options
 
@@ -500,7 +487,7 @@ If a subcommand with the specified name does not exist or does not have its own 
 
 #### Enable option filter
 
-The `useFilter` attribute is an opt-in feature that allows the remaining arguments to be used as [option filter]. For example, the invocation `cli --help flag` would only include in the help message those options whose names, synopsis or environment [data sources] match the regex `/flag/i{:ts}`.
+The `useFilter` attribute is an opt-in feature that allows the remaining arguments to be used as [option filter]. For example, the invocation `cli --help flag` would only include in the help message those options whose [names], [synopsis] or environment [data sources] match the regex `/flag/i{:ts}`.
 
 <Callout type="default">
 
@@ -523,21 +510,21 @@ When [word completion] is in effect, this option will be _skipped_.
 The `version` attribute specifies the version information. It accepts either of the following values:
 
 - unstructured text data (e.g., a semantic version)
-- the path of a JSON file from where a `version` field will be extracted
+- the path of a JSON file whence a `version` field will be extracted
 
-In the latter case, the path should generally be `'./package.json'{:ts}` and should be used in conjunction with the [resolve callback] parsing flag.
+In the latter case, the path should generally be `'./package.json'{:ts}` and should be used in conjunction with the [resolution callback] parsing flag.
 
 ### Command option
 
 The **command** option -- a.k.a. subcommand -- lets you specify a set of option definitions for which the parser should process the remaining arguments.
 
-It will supply the [parse callback] of the subcommand with the parsed values and subsequently exit the parsing loop. The option value will be either the result of the callback, if specified, or the parsed values themselves.
+It will supply the [parsing callback] of the subcommand with the parsed values and subsequently exit the parsing loop. The option value will be either the result of the callback, if specified, or the parsed values themselves.
 
 Values of _ancestor_ commands (i.e. non-immediate parents) cannot be accessed from within the callback. For this purpose, you will need to wait until the parsing procedure returns.
 
 <Callout type="info">
 
-When [word completion] is in effect, the parse callback will _not_ be called, since completion will have occurred before it has a chance to execute.
+When [word completion] is in effect, the parsing callback will _not_ be called, since completion will have occurred before it has a chance to execute.
 
 </Callout>
 
@@ -547,15 +534,11 @@ In addition to the sets of [basic] and [value] attributes, it has the attributes
 
 The `options` attribute, if present, specifies a set of option definitions for the subcommand. Its value can be either of:
 
-- an object containing the option definitions
-- a callback that returns the option definitions (allowing the implementation of [recursive commands])
-- the path of a JavaScript module exporting the option definitions (to be used with the [resolve callback] parsing flag)
+- an object containing the option definitions (or a promise thereof)
+- a callback that returns the option definitions (or a promise thereof)
+- the path of a JavaScript module exporting the option definitions
 
-<Callout type="default">
-
-The callback can be asynchronous.
-
-</Callout>
+A callback allows the implementation of [recursive commands], whereas a module path allows a [dynamic import]. The latter case should be used in conjunction with the [resolution callback] parsing flag. In either case, it is only evaluated once the affected option is parsed from the command line.
 
 <Callout type="warning">
 
@@ -565,7 +548,7 @@ All incoming arguments will be parsed using the option definitions from this att
 
 #### Cluster prefix
 
-The `clusterPrefix` attribute, if present, indicates whether the command accepts cluster arguments. It has the same semantics as its homonymous property in the [parsing flags], and must be used in conjunction with the [cluster letters] of the nested options.
+The `clusterPrefix` attribute, if present, indicates whether the command accepts cluster arguments. It has the same semantics as the [cluster prefix] parsing flag, and must be used in conjunction with the [cluster letters] of the nested options.
 
 <Callout type="info">
 
@@ -579,11 +562,11 @@ The `optionPrefix` attribute, if present, specifies the prefix for option names 
 
 ### Flag option
 
-The **flag** option accepts no parameter, but has a value that will be either the result of the [parse callback], if specified, or `true{:ts}`. The callback receives an empty string as its first parameter.
+The **flag** option accepts no parameter, but has a value that will be either the result of the [parsing callback], if specified, or `true{:ts}`. The callback receives an empty string as its first parameter.
 
 <Callout type="default">
 
-If you need a boolean-valued option that accepts a single parameter, use the [single] option instead. And to make the parameter optional, use the [function] option with a [parameter count] of `[0, 1]{:ts}`.
+If you need a boolean-valued option that accepts a single parameter, use the [single] option instead. To make the parameter optional, use the [function] option with a [parameter count] of `[0, 1]{:ts}`.
 
 </Callout>
 
@@ -605,9 +588,9 @@ Non-niladic options accept one or more parameters on the command line.
 
 ### Single-valued option
 
-The **single** option accepts a single parameter. Its value can be either the result of the [parse callback], one of the [parameter choices] or the parameter itself (by default).
+The **single** option accepts a single parameter. Its value can be either the result of the [parsing callback], one of the [parameter choices], one of the [parameter mapping] values or the parameter itself (by default).
 
-The parse callback receives a `string{:ts}` as first parameter, which is the option parameter, and should return the option value.
+The parsing callback receives a `string{:ts}` as first parameter, which is the option parameter, and should return the option value.
 
 This option has the following sets of attributes:
 
@@ -619,9 +602,9 @@ This option has the following sets of attributes:
 
 ### Array-valued option
 
-The **array** option accepts multiple (zero or more) parameters. Its value is an array whose elements can be either the result of the [parse callback], one of the [parameter choices] or the parameters themselves (by default).
+The **array** option accepts multiple (zero or more) parameters. Its value is an array whose elements can be either the result of the [parsing callback], one of the [parameter choices], one of the [parameter mapping] values or the parameters themselves (by default).
 
-The parse callback receives a `string{:ts}` as first parameter, which is a single option parameter, and should likewise return the value of a single array element. The resulting array may be normalized according to value constraints.
+The parsing callback receives a `string{:ts}` as first parameter, which is a single option parameter, and should likewise return the value of a single array element. The resulting array may be normalized according to value constraints.
 
 This option has the following sets of attributes:
 
@@ -662,9 +645,9 @@ The `limit` attribute, if present, indicates the maximum allowed number of eleme
 
 ### Function option
 
-The **function** option exists for the sole purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parse callback], if specified, or the parsed values themselves.
+The **function** option exists for the sole purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parsing callback], if specified, or the parsed values themselves.
 
-The parse callback receives a `string[]{:ts}` as first parameter, which contains the option parameters. As a special case, this array may contain _all_ the remaining command-line arguments (see [parameter count] for details). It should return the option value.
+The callback receives a `string[]{:ts}` as first parameter, which contains the option parameters, and should return the option value. As a special case, this array may contain _all_ the remaining command-line arguments (see [parameter count] for details).
 
 This option has the following sets of attributes:
 
@@ -683,19 +666,19 @@ The `paramCount` attribute, if present, specifies the number of parameters that 
 - **positive**: the option expects _exactly_ this amount
 - **range**: the option expects between a _minimum_ and a _maximum_ count
 
-In the special case of zero, the parse callback will receive all remaining command-line arguments. It should be used in conjunction with the [skip count] attribute. Note that altering the string array inside the callback would have _no_ effect on the original arguments, as it is just a copy.
+In the special case of zero, the parsing callback will receive all remaining command-line arguments. It should be used in conjunction with the [skip count] attribute. Note that altering the string array inside the callback would have _no_ effect on the original arguments, as it is just a copy.
 
 Note that this option cannot have a [parameter separator], since it would conflict with the parameter count. To see why, consider the case where the minimum count is 2. Then, the second argument following the option would always be treated as a parameter, regardless of whether it is the name of another option, _even if the previous argument had two delimited parameters_. This is because the parser does not look for delimiters when forming an [argument sequence].
 
 <Callout type="warning">
 
-If the data comes from the [environment], then the [parse callback] will receive an array with a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [argument information], which should be `NaN{:ts}` in this case.
+If the data comes from the [environment], then the [parsing callback] will receive an array with a _single_ element as parameter, which may be less than the expected count. You should inspect the `index` property of the [argument information], which should be `NaN{:ts}` in this case.
 
 </Callout>
 
 #### Skip count
 
-The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parse callback]. This value is meant to be changed by the callback, and only works when the [parameter count] is zero.
+The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parsing callback]. This value is meant to be changed by the callback, and only works when the [parameter count] is zero.
 
 It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends. Here is an example of how it might be used inside the callback:
 
@@ -743,9 +726,10 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 {/* basic attributes */}
 
+[names]: #option-names
 [option names]: #option-names
 [preferred name]: #preferred-name
-[option synopsis]: #option-synopsis
+[synopsis]: #option-synopsis
 [deprecation notice]: #deprecation-notice
 [group]: #group--hide
 [hide]: #group--hide
@@ -763,8 +747,8 @@ When [word completion] is in effect, the last argument will be the word to compl
 [forward requirements]: #forward-requirements
 [conditional requirements]: #conditional-requirements
 [default value]: #default-value
-[default callback]: #default-callback
-[parse callback]: #parse-callback
+[default value callback]: #default-value-callback
+[parsing callback]: #parsing-callback
 
 {/* environment attributes */}
 
@@ -780,13 +764,14 @@ When [word completion] is in effect, the last argument will be the word to compl
 [parameter name]: #parameter-name
 [positional]: #positional--marker
 [inline constraint]: #inline-constraint
-[complete callback]: #complete-callback
 [inlined]: #inline-constraint
 
 {/* selection attributes */}
 
 [regular expression]: #regular-expression
 [parameter choices]: #parameter-choices
+[parameter mapping]: #parameter-mapping
+[normalization]: #parameter-normalization
 
 {/* help attributes */}
 
@@ -818,7 +803,6 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 {/* parser references */}
 
-[parsing flags]: parser#parsing-flags
 [resulting object]: parser#option-values
 [word completion]: parser#word-completion
 [completion algorithm]: parser#completion-algorithm
@@ -827,9 +811,9 @@ When [word completion] is in effect, the last argument will be the word to compl
 [argument information]: parser#argument-information
 [`parse`]: parser#using-a-newly-created-object
 [`parseInto`]: parser#using-an-existing-object
-[`clusterPrefix`]: parser#cluster-prefix
+[cluster prefix]: parser#cluster-prefix
 [inline parameters]: parser#inline-parameters
-[resolve callback]: parser#resolve-callback
+[resolution callback]: parser#resolution-callback
 
 {/* formatter references */}
 
@@ -867,3 +851,4 @@ When [word completion] is in effect, the last argument will be the word to compl
 [Math]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math
 [short-option]: https://www.linuxtopia.org/online_books/linux_tool_guides/tar_user_guide/Short-Options.html
 [discriminant]: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
+[dynamic import]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import

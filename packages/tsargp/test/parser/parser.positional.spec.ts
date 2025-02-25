@@ -69,10 +69,13 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['0'])).rejects.toThrow(
-        'Wrong number of parameters to option preferred: requires exactly 2.',
+        'Missing parameter(s) to option preferred: requires exactly 2.',
       );
       expect(parse(options, ['0', '1', '2'])).rejects.toThrow(
-        'Wrong number of parameters to option preferred: requires exactly 2.',
+        'Missing parameter(s) to option preferred: requires exactly 2.',
+      );
+      expect(parse(options, ['-f', '0', '1', '2'])).rejects.toThrow(
+        'Missing parameter(s) to option preferred: requires exactly 2.',
       );
       expect(parse(options, ['0', '-f'])).resolves.toEqual({
         flag: undefined,
@@ -94,7 +97,19 @@ describe('parse', () => {
   });
 
   describe('parameters are specified after a positional marker', () => {
-    it('throw an error on wrong number of parameters to single-valued option', () => {
+    it('ignore the option prefix after the positional marker ', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          positional: '--',
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { optionPrefix: '-' };
+      expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: '-s' });
+    });
+
+    it('throw an error on missing parameter to single-valued option', () => {
       const options = {
         single: {
           type: 'single',
@@ -104,10 +119,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['--'])).rejects.toThrow(
-        `Wrong number of parameters to option preferred: requires exactly 1.`,
-      );
-      expect(parse(options, ['--', '1', '2'])).rejects.toThrow(
-        `Wrong number of parameters to option preferred: requires exactly 1.`,
+        `Missing parameter(s) to option preferred: requires exactly 1.`,
       );
     });
 
@@ -122,10 +134,13 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['--'])).rejects.toThrow(
-        `Wrong number of parameters to option preferred: requires exactly 2.`,
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
+      );
+      expect(parse(options, ['--', '1'])).rejects.toThrow(
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
       );
       expect(parse(options, ['--', '1', '2', '3'])).rejects.toThrow(
-        `Wrong number of parameters to option preferred: requires exactly 2.`,
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
       );
     });
 
@@ -139,6 +154,8 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['--', '-s'])).resolves.toEqual({ single: '-s' });
       expect(parse(options, ['0', '--', '-s'])).resolves.toEqual({ single: '-s' });
+      expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['--', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
     });
 
     it('handle an array-valued option', () => {
@@ -152,6 +169,21 @@ describe('parse', () => {
       expect(parse(options, ['--'])).resolves.toEqual({ array: [] });
       expect(parse(options, ['--', '0', '-a'])).resolves.toEqual({ array: ['0', '-a'] });
       expect(parse(options, ['0', '--', '-a'])).resolves.toEqual({ array: ['-a'] });
+    });
+
+    it('handle a function option', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          positional: '--',
+          paramCount: 2,
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['--', '1', '2', '3', '4'])).resolves.toEqual({ function: ['3', '4'] });
+      expect(parse(options, ['--', '1', '2', '3', '4', '-f', '-f'])).resolves.toEqual({
+        function: ['-f', '-f'],
+      });
     });
   });
 });

@@ -8,11 +8,10 @@ import type {
   OptionValues,
   OpaqueOption,
   OpaqueOptionValues,
-  Range,
   Requires,
   RequiresEntry,
-  ResolveCallback,
-  RequiresCallback,
+  ModuleResolutionCallback,
+  RequirementCallback,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -36,7 +35,6 @@ import {
   getCompIndex,
   getEntries,
   getSymbol,
-  isReadonlyArray,
   getKeys,
   isArray,
   findValue,
@@ -87,7 +85,7 @@ export type ParsingFlags = {
    * A resolution function for JavaScript modules.
    * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
    */
-  readonly resolve?: ResolveCallback;
+  readonly resolve?: ModuleResolutionCallback;
 };
 
 /**
@@ -163,13 +161,17 @@ type ParseEntry = [
    */
   comp?: boolean,
   /**
-   * The positional marker.
+   * True if it is the positional marker.
    */
-  marker?: boolean,
+  isMarker?: boolean,
   /**
    * True if it is a new specification.
    */
   isNew?: boolean,
+  /**
+   * True if it is positional, but not the marker.
+   */
+  isPositional?: boolean,
 ];
 
 /**
@@ -209,6 +211,10 @@ const enum ArgType {
    * A positional argument.
    */
   positional,
+  /**
+   * An argument that comes after the positional marker.
+   */
+  afterMarker,
   /**
    * A cluster argument.
    */
@@ -351,11 +357,12 @@ function parseCluster(context: ParseContext, index: number): boolean {
 async function parseArgs(context: ParseContext) {
   const [registry, values, args, specifiedKeys, completing, warning] = context;
   let prev: ParseEntry = [-1];
-  let paramCount: Range = [0, 0];
+  let min = 0; // param count
+  let max = 0; // param count
   let suggestNames = false;
   for (let i = 0, k = 0; i < args.length; i = prev[0]) {
     const next = findNext(context, prev);
-    const [j, info, value, comp, marker, isNew] = next;
+    const [j, info, value, comp, isMarker, isNew, isPositional] = next;
     if (isNew || !info) {
       if (prev[1]) {
         // process the previous sequence
@@ -365,12 +372,10 @@ async function parseArgs(context: ParseContext) {
         break; // finished
       }
       prev = next;
-      const positional = info === registry.positional; // don't use option.positional for this check
       const [key, option, name] = info;
-      paramCount = getParamCount(option);
-      const [min, max] = paramCount;
+      [min, max] = getParamCount(option);
       const hasValue = value !== undefined;
-      if (!max || marker || (!positional && option.inline === false)) {
+      if (!max || (!isPositional && (isMarker || option.inline === false))) {
         if (comp) {
           throw new TextMessage();
         }
@@ -381,16 +386,9 @@ async function parseArgs(context: ParseContext) {
             prev[4] = false;
             continue;
           }
-          const [alt, name2] = marker ? [1, `${option.positional}`] : [0, name];
+          const [alt, name2] = isMarker ? [1, `${option.positional}`] : [0, name];
           throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
-      } else if (min && !hasValue && option.inline) {
-        if (completing) {
-          // ignore required inline parameters while completing
-          prev[1] = undefined;
-          continue;
-        }
-        throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(name));
       }
       if (!completing && !specifiedKeys.has(key)) {
         if (option.deprecated !== undefined) {
@@ -408,7 +406,7 @@ async function parseArgs(context: ParseContext) {
         continue; // fetch more
       }
       if (!comp) {
-        if (positional || !hasValue) {
+        if (isMarker || isPositional || !hasValue) {
           // positional marker, first positional parameter or option name
           k = hasValue ? j : j + 1;
         } else {
@@ -419,7 +417,7 @@ async function parseArgs(context: ParseContext) {
         continue; // fetch more
       }
       // perform completion of first positional or inline parameter
-      suggestNames = positional;
+      suggestNames = !!isPositional;
       k = j;
     }
     if (!info) {
@@ -427,7 +425,7 @@ async function parseArgs(context: ParseContext) {
     }
     // comp === true
     const words = await completeParameter(values, info, i, args.slice(k, j), value);
-    if (!marker && (suggestNames || (j > i && j - k >= paramCount[0]))) {
+    if (suggestNames || (j > i && j - k >= min)) {
       words.push(...completeName(registry, value));
     }
     throw new TextMessage(...words);
@@ -444,7 +442,8 @@ async function parseArgs(context: ParseContext) {
  */
 function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
-  const [prevIndex, prevInfo, prevVal, , prevMarker] = prev;
+  const [prevIndex, , prevVal, , prevMarker] = prev;
+  let [, prevInfo] = prev;
   const { names, positional, options } = registry;
   const inc = prevVal !== undefined ? 1 : 0;
   const prefix = flags.optionPrefix;
@@ -457,8 +456,10 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
     const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
     const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
     const argType = isParam
-      ? !isForcedName
-        ? ArgType.parameter
+      ? !isForcedName || prevMarker
+        ? prevMarker && i - prevIndex + inc > max
+          ? ArgType.afterMarker
+          : ArgType.parameter
         : !optionKey
           ? ArgType.unknownOption
           : !completing
@@ -484,7 +485,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
             ? positional
             : [optionKey, options[optionKey], name]
           : undefined;
-        return [i, newInfo, value, comp, isMarker, true];
+        return [i, newInfo, value, comp, isMarker, true, false];
       }
       case ArgType.cluster:
         if (comp) {
@@ -501,17 +502,39 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         }
         break; // ignore unknown options during completion
       case ArgType.positional:
-        return [i, positional, arg, comp, false, true];
+        return [i, positional, arg, comp, false, true, true];
+      case ArgType.afterMarker:
+        return [i, prevInfo, arg, comp, prevMarker, true, true];
       case ArgType.parameter:
-        if (comp) {
+        if (prevInfo?.[1].inline) {
+          if (!completing) {
+            // ignore required inline parameters while completing
+            throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(prevInfo[2]));
+          }
+          prevInfo = undefined;
+          i--; // reprocess the current argument
+        } else if (comp) {
           return [i, prevInfo, arg, comp, prevMarker, false];
         }
         break; // continue looking for parameters or option names
       case ArgType.missingParameter:
-        throw ErrorMessage.create(ErrorItem.missingParameter, {}, getSymbol(prevInfo?.[2] ?? ''));
+        reportMissingParameter(min, max, prevInfo?.[2] ?? '');
     }
   }
   return [args.length];
+}
+
+/**
+ * Reports a missing parameter to a non-niladic option.
+ * @param min The minimum parameter count
+ * @param max The maximum parameter count
+ * @param name The unknown option name
+ */
+function reportMissingParameter(min: number, max: number, name: string): never {
+  const [alt, val] = min === max ? [0, min] : isFinite(max) ? [2, [min, max]] : [1, min];
+  const sep = config.connectives.and;
+  const flags = { alt, sep, open: '', close: '', mergePrev: false };
+  throw ErrorMessage.create(ErrorItem.missingParameter, flags, getSymbol(name), val);
 }
 
 /**
@@ -563,15 +586,16 @@ async function completeParameter(
   if (option.complete) {
     try {
       // do not destructure `complete`, because the callback might need to use `this`
-      words = await option.complete(comp, { values, index, name, prev });
+      words = (await option.complete(comp, { values, index, name, prev })) ?? [];
     } catch (_err) {
       // do not propagate errors during completion
       words = [];
     }
   } else {
-    const choices = option.choices;
-    words = isReadonlyArray<string>(choices) ? choices.slice() : choices ? getKeys(choices) : [];
+    const { choices, normalize } = option;
+    words = choices?.slice() ?? [];
     if (comp) {
+      comp = normalize?.(comp) ?? comp;
       words = words.filter((word) => word.startsWith(comp));
     }
   }
@@ -633,13 +657,13 @@ async function parseParams(
   }
   /** @ignore */
   function parse2(param: string): unknown {
-    return rec && param in rec ? rec[param] : parse1(param);
+    return mapping && param in mapping ? mapping[param] : parse1(param);
   }
   const [, values, , , comp] = context;
   const [key, option, name] = info;
   const breakLoop = !!option.break && !comp;
   const seq = { values, index, name, comp };
-  const { type, regex, separator, append, choices } = option;
+  const { type, regex, separator, append, choices, mapping, normalize } = option;
 
   // if index is NaN, we are in the middle of requirements checking (data comes from environment)
   if (index >= 0 && breakLoop) {
@@ -655,33 +679,30 @@ async function parseParams(
   }
   if (index >= 0) {
     const [min, max] = getParamCount(option);
-    if (max > 0 && (params.length < min || params.length > max)) {
-      // this may happen when the sequence comes from the positional marker
+    if (max > 0 && params.length < min) {
+      // may happen when parsing the positional marker or when reaching the end of the command line
       // comp === false, otherwise completion would have taken place by now
-      const [alt, val] =
-        min === max ? [0, min] : !min ? [2, max] : isFinite(max) ? [3, [min, max]] : [1, min];
-      const sep = config.connectives.and;
-      const flags = { alt, sep, mergePrev: false };
-      throw error(ErrorItem.mismatchedParamCount, flags, val);
+      // params.length <= max, due to how the `findNext` function works
+      reportMissingParameter(min, max, name);
     }
   }
   if (type === 'function') {
     values[key] = await parse1(params);
     return breakLoop;
   }
+  if (normalize) {
+    params = params.map(normalize);
+  }
   if (regex) {
-    const mismatch = params.find((param) => !param.match(regex));
+    const mismatch = params.find((param) => !regex.test(param));
     if (mismatch) {
       throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
     }
   }
-  const [keys, rec] = isReadonlyArray<string>(choices)
-    ? [choices]
-    : [option.parse ? undefined : choices && getKeys(choices), choices];
-  if (keys) {
-    const mismatch = params.find((param) => !keys.includes(param));
+  if (choices) {
+    const mismatch = params.find((param) => !choices.includes(param));
     if (mismatch) {
-      throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, keys);
+      throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, choices);
     }
   }
   if (type === 'single') {
@@ -865,16 +886,10 @@ async function handleVersion(context: ParseContext, option: OpaqueOption): Promi
   if (!resolve) {
     throw ErrorMessage.create(ErrorItem.missingResolveCallback);
   }
-  for (
-    let path = version, resolved = '', lastResolved;
-    resolved !== lastResolved;
-    lastResolved = resolved, path = '../' + path
-  ) {
-    resolved = resolve(path);
-    const data = await readFile(new URL(resolved));
-    if (data !== undefined) {
-      return JSON.parse(data).version;
-    }
+  const path = new URL(resolve(version));
+  const data = await readFile(path);
+  if (data !== undefined) {
+    return JSON.parse(data).version;
   }
   throw ErrorMessage.create(ErrorItem.versionFileNotFound);
 }
@@ -889,7 +904,7 @@ async function handleVersion(context: ParseContext, option: OpaqueOption): Promi
  */
 async function checkRequired(context: ParseContext) {
   const keys = getKeys(context[0].options);
-  // we may need to serialize the following call
+  // TODO: we may need to serialize the following calls to avoid data races in client code
   await Promise.all(keys.map((key) => checkDefaultValue(context, key)));
   await Promise.all(keys.map((key) => checkRequiredOption(context, key)));
 }
@@ -922,8 +937,9 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
-    const value =
-      typeof option.default === 'function' ? await option.default(values) : option.default;
+    const value = await (typeof option.default === 'function'
+      ? option.default(values)
+      : option.default);
     values[key] =
       option.type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
   }
@@ -987,7 +1003,7 @@ async function checkRequires(
     (req) => checkItems(req.items, checkRequires, !negate),
     (req) => checkItems(req.items, checkRequires, negate),
     (req) => checkItems(getEntries(req), checkRequiresEntry, !negate),
-    (req) => checkRequiresCallback(context, option, req, error, negate, invert),
+    (req) => checkRequirementCallback(context, option, req, error, negate, invert),
   );
 }
 
@@ -1095,10 +1111,10 @@ async function checkRequireItems<T>(
  * @param invert True if the requirements should be inverted
  * @returns True if the requirements were satisfied
  */
-async function checkRequiresCallback(
+async function checkRequirementCallback(
   context: ParseContext,
   option: OpaqueOption,
-  callback: RequiresCallback,
+  callback: RequirementCallback,
   error: AnsiString,
   negate: boolean,
   invert: boolean,

@@ -3,6 +3,6 @@ import type { Options } from 'tsargp';
 export default {
   flag: {
     type: 'flag',
-    names: [' '],
+    names: ['='],
   },
 } as const satisfies Options;

@@ -166,6 +166,18 @@ describe('HelpFormatter', () => {
       expect(message.wrap()).toEqual(`  -s  <my_param>\n`);
     });
 
+    it('handle a single-valued option with an empty parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          paramName: '',
+        },
+      } as const satisfies Options;
+      const message = new HelpFormatter(options).format();
+      expect(message.wrap()).toEqual(`  -s  <param>\n`);
+    });
+
     it('handle a single-valued option with a parameter name with angle brackets', () => {
       const options = {
         single: {
@@ -223,7 +235,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -a  true false...  Accepts multiple parameters.\n`);
+      expect(message.wrap()).toEqual(`  -a  [true false...]  Accepts multiple parameters.\n`);
     });
 
     it('handle an array-valued option with a string array example value', () => {
@@ -235,7 +247,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -a  'one' 'two'...  Accepts multiple parameters.\n`);
+      expect(message.wrap()).toEqual(`  -a  ['one' 'two'...]  Accepts multiple parameters.\n`);
     });
 
     it('handle an array-valued option with a number array example value', () => {
@@ -247,7 +259,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -a  1 2...  Accepts multiple parameters.\n`);
+      expect(message.wrap()).toEqual(`  -a  [1 2...]  Accepts multiple parameters.\n`);
     });
 
     it('handle an array-valued option with an example value required to be inline', () => {
@@ -262,7 +274,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  ='true,false'  Values can be delimited with ','. Requires inline parameters.\n`,
+        `  -a  [='true,false']  Values can be delimited with ','. Requires inline parameters.\n`,
       );
     });
 
@@ -277,7 +289,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  'one,two'...  Accepts multiple parameters. Values can be delimited with ','.\n`,
+        `  -a  ['one,two'...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
       );
     });
 
@@ -292,7 +304,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  '1[,;]2'...  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
+        `  -a  ['1[,;]2'...]  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
       );
     });
   });
