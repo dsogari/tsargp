@@ -49,8 +49,8 @@ export const config: MessageConfig = {
     [ErrorItem.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
     [ErrorItem.unsatisfiedRequirement]: 'Option #0 requires #1.',
     [ErrorItem.missingRequiredOption]: 'Option #0 is required.',
-    [ErrorItem.mismatchedParamCount]:
-      'Wrong number of parameters to option #0: requires (exactly|at least|at most|between) #1.',
+    [ErrorItem.missingParameter]:
+      'Missing parameter(s) to option #0: requires (exactly|at least|between) #1.',
     [ErrorItem.versionFileNotFound]: 'Could not find a version JSON file.',
     [ErrorItem.disallowedInlineParameter]:
       '(Option|Positional marker) #0 does not accept inline parameters.',
@@ -80,7 +80,6 @@ export const config: MessageConfig = {
     [ErrorItem.variadicWithClusterLetter]:
       'Variadic option #0 may only appear as the last option in a cluster.',
     [ErrorItem.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
-    [ErrorItem.missingParameter]: 'Missing parameter to option #0.',
     [ErrorItem.missingResolveCallback]: 'Missing module resolution function.',
   },
   helpPhrases: {

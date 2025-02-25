@@ -881,7 +881,8 @@ type WithParamName = {
  */
 type WithChoices = {
   /**
-   * @deprecated mutually exclusive with {@link WithParam.choices}
+   * @deprecated mutually exclusive with {@link WithSelection.choices} and
+   * {@link WithSelection.caseInsensitive}
    */
   readonly regex?: never;
 };
@@ -891,9 +892,13 @@ type WithChoices = {
  */
 type WithRegex = {
   /**
-   * @deprecated mutually exclusive with {@link WithParam.regex}
+   * @deprecated mutually exclusive with {@link WithSelection.regex}
    */
   readonly choices?: never;
+  /**
+   * @deprecated mutually exclusive with {@link WithSelection.regex}
+   */
+  readonly caseInsensitive?: never;
 };
 
 /**

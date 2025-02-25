@@ -45,7 +45,7 @@ export default {
 
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is an example. In the documentation, you will learn how to parse them into an existing object or class instance, specify parsing flags, and emit warnings.
+There are multiple ways to parse the command-line arguments. Below is just an example. The documentation shows how to parse them into an existing object or class instance, specify parsing flags, and emit warnings.
 
 ```ts
 #!/usr/bin/env node
@@ -67,7 +67,7 @@ try {
 
 ### Validate options in test script
 
-You should check the validity of command-line options during development, to avoid headaches for end users. The documentation also shows how to check for inconsistencies in option naming, among other things.
+You should check the validity of command-line options during development. The documentation also shows how to check for inconsistencies in option naming, among other things.
 
 ```ts
 import { validate } from 'tsargp';

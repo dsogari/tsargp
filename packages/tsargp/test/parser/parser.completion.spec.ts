@@ -50,6 +50,18 @@ describe('parse', () => {
       expect(parse(options, 'cmd -s -s=', { ...flags, compIndex: 10 })).rejects.toThrow(/^abc$/);
     });
 
+    it('ignore non-inline parameter of array-valued option', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          choices: ['abc'],
+          inline: 'always',
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -a a', { compIndex: 8 })).rejects.toThrow(/^$/);
+    });
+
     it('ignore an unknown cluster letter', () => {
       const options = {
         flag: {

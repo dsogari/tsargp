@@ -223,7 +223,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -a  true false...  Accepts multiple parameters.\n`);
+      expect(message.wrap()).toEqual(`  -a  [true false...]  Accepts multiple parameters.\n`);
     });
 
     it('handle an array-valued option with a string array example value', () => {
@@ -235,7 +235,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -a  'one' 'two'...  Accepts multiple parameters.\n`);
+      expect(message.wrap()).toEqual(`  -a  ['one' 'two'...]  Accepts multiple parameters.\n`);
     });
 
     it('handle an array-valued option with a number array example value', () => {
@@ -247,7 +247,7 @@ describe('HelpFormatter', () => {
         },
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  -a  1 2...  Accepts multiple parameters.\n`);
+      expect(message.wrap()).toEqual(`  -a  [1 2...]  Accepts multiple parameters.\n`);
     });
 
     it('handle an array-valued option with an example value required to be inline', () => {
@@ -262,7 +262,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  ='true,false'  Values can be delimited with ','. Requires inline parameters.\n`,
+        `  -a  [='true,false']  Values can be delimited with ','. Requires inline parameters.\n`,
       );
     });
 
@@ -277,7 +277,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  'one,two'...  Accepts multiple parameters. Values can be delimited with ','.\n`,
+        `  -a  ['one,two'...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
       );
     });
 
@@ -292,7 +292,7 @@ describe('HelpFormatter', () => {
       } as const satisfies Options;
       const message = new HelpFormatter(options).format();
       expect(message.wrap()).toEqual(
-        `  -a  '1[,;]2'...  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
+        `  -a  ['1[,;]2'...]  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
       );
     });
   });

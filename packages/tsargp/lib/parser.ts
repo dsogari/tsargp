@@ -368,7 +368,7 @@ async function parseArgs(context: ParseContext) {
       const positional = info === registry.positional; // don't use option.positional for this check
       const [key, option, name] = info;
       paramCount = getParamCount(option);
-      const [min, max] = paramCount;
+      const [, max] = paramCount;
       const hasValue = value !== undefined;
       if (!max || marker || (!positional && option.inline === false)) {
         if (comp) {
@@ -384,13 +384,6 @@ async function parseArgs(context: ParseContext) {
           const [alt, name2] = marker ? [1, `${option.positional}`] : [0, name];
           throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
-      } else if (min && !hasValue && option.inline) {
-        if (completing) {
-          // ignore required inline parameters while completing
-          prev[1] = undefined;
-          continue;
-        }
-        throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(name));
       }
       if (!completing && !specifiedKeys.has(key)) {
         if (option.deprecated !== undefined) {
@@ -457,8 +450,10 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
     const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
     const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
     const argType = isParam
-      ? !isForcedName
-        ? ArgType.parameter
+      ? prevMarker || !isForcedName
+        ? prevMarker && i - prevIndex + inc > max
+          ? ArgType.positional
+          : ArgType.parameter
         : !optionKey
           ? ArgType.unknownOption
           : !completing
@@ -503,15 +498,34 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
       case ArgType.positional:
         return [i, positional, arg, comp, false, true];
       case ArgType.parameter:
+        if (prevInfo?.[1].inline) {
+          if (comp) {
+            throw new TextMessage();
+          }
+          throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(prevInfo[2]));
+        }
         if (comp) {
           return [i, prevInfo, arg, comp, prevMarker, false];
         }
         break; // continue looking for parameters or option names
       case ArgType.missingParameter:
-        throw ErrorMessage.create(ErrorItem.missingParameter, {}, getSymbol(prevInfo?.[2] ?? ''));
+        reportMissingParameter(min, max, prevInfo?.[2] ?? '');
     }
   }
   return [args.length];
+}
+
+/**
+ * Reports a missing parameter to a non-niladic option.
+ * @param min The minimum parameter count
+ * @param max The maximum parameter count
+ * @param name The unknown option name
+ */
+function reportMissingParameter(min: number, max: number, name: string): never {
+  const [alt, val] = min === max ? [0, min] : isFinite(max) ? [2, [min, max]] : [1, min];
+  const sep = config.connectives.and;
+  const flags = { alt, sep, open: '', close: '', mergePrev: false };
+  throw ErrorMessage.create(ErrorItem.missingParameter, flags, getSymbol(name), val);
 }
 
 /**
@@ -656,14 +670,11 @@ async function parseParams(
   }
   if (index >= 0) {
     const [min, max] = getParamCount(option);
-    if (max > 0 && (params.length < min || params.length > max)) {
-      // this may happen when the sequence comes from the positional marker
+    if (max > 0 && params.length < min) {
+      // may happen when parsing the positional marker or when reaching the end of the command line
       // comp === false, otherwise completion would have taken place by now
-      const [alt, val] =
-        min === max ? [0, min] : !min ? [2, max] : isFinite(max) ? [3, [min, max]] : [1, min];
-      const sep = config.connectives.and;
-      const flags = { alt, sep, mergePrev: false };
-      throw error(ErrorItem.mismatchedParamCount, flags, val);
+      // params.length <= max, due to how the `findNext` function works
+      reportMissingParameter(min, max, name);
     }
   }
   if (type === 'function') {

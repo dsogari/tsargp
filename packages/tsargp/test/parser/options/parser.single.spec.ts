@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../../lib/options';
-import { parse } from '../../../lib/parser';
+import { parse, ParsingFlags } from '../../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -8,13 +8,29 @@ describe('parse', () => {
   describe('parsing a single-valued option', () => {
     it('throw an error on missing parameter', () => {
       const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          cluster: 'f',
+        },
         single: {
           type: 'single',
           names: ['-s'],
+          cluster: 's',
         },
       } as const satisfies Options;
-      expect(parse(options, ['-s'])).rejects.toThrow(
-        `Wrong number of parameters to option -s: requires exactly 1.`,
+      const flags: ParsingFlags = { clusterPrefix: '', optionPrefix: '-' };
+      expect(parse(options, ['-s', '-f'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -s: requires exactly 1.`,
+      );
+      expect(parse(options, ['-s'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -s: requires exactly 1.`,
+      );
+      expect(parse(options, ['sf'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -s: requires exactly 1.`,
+      );
+      expect(parse(options, ['s'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -s: requires exactly 1.`,
       );
     });
 

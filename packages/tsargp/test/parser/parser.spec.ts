@@ -42,51 +42,15 @@ describe('parse', () => {
     expect(parse(options, [])).rejects.toThrow(`Option preferred is required.`);
   });
 
-  describe('an option prefix is specified', () => {
+  it('throw an error on unknown option when an option prefix is specified', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+      },
+    } as const satisfies Options;
     const flags: ParsingFlags = { optionPrefix: '-' };
-
-    it('throw an error on missing parameter to single-valued option', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-        },
-        single: {
-          type: 'single',
-          names: ['-s'],
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-s', '-f'], flags)).rejects.toThrow(
-        `Missing parameter to option -s.`,
-      );
-    });
-
-    it('throw an error on missing parameter to function option', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-        },
-        function: {
-          type: 'function',
-          names: ['-f'],
-          paramCount: [1, 2],
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-f', '-s'], flags)).rejects.toThrow(
-        `Missing parameter to option -f.`,
-      );
-    });
-
-    it('throw an error on unknown option', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-s', '-x'], flags)).rejects.toThrow(`Unknown option -x.`);
-    });
+    expect(parse(options, ['-s', '-x'], flags)).rejects.toThrow(`Unknown option -x.`);
   });
 });
 

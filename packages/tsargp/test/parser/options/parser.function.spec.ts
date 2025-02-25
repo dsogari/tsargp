@@ -1,11 +1,37 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../../lib/options';
-import { parse } from '../../../lib/parser';
+import { parse, ParsingFlags } from '../../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
   describe('parsing a function option', () => {
+    it('throw an error on missing parameter to function option', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          cluster: 's',
+        },
+        function: {
+          type: 'function',
+          names: ['-f'],
+          cluster: 'f',
+          paramCount: [1, 2],
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { clusterPrefix: '', optionPrefix: '-' };
+      expect(parse(options, ['-f', '-s'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -f: requires between 1 and 2.`,
+      );
+      expect(parse(options, ['-f'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -f: requires between 1 and 2.`,
+      );
+      expect(parse(options, ['f'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -f: requires between 1 and 2.`,
+      );
+    });
+
     it('accept zero parameters', () => {
       const options = {
         function: {

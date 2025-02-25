@@ -23,9 +23,9 @@ export const enum ErrorItem {
    */
   missingRequiredOption,
   /**
-   * Error raised when an option is specified with the wrong number of parameters.
+   * Raised when an option is specified without one of its expected parameter(s).
    */
-  mismatchedParamCount,
+  missingParameter,
   /**
    * Error raised when the parser fails to find a version file when handling the version option.
    */
@@ -123,10 +123,6 @@ export const enum ErrorItem {
    * Raised when a variadic option declares an inline constraint.
    */
   invalidInlineConstraint,
-  /**
-   * Raised when an option is specified without its expected parameter.
-   */
-  missingParameter,
   /**
    * Raised when a JavaScript module needs to be loaded, but a module resolution function was not
    * provided (either in the parsing flags or the validation flags).

@@ -518,7 +518,7 @@ function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, 
   const result = new AnsiString(0, breaks);
   if (!hidden) {
     const names = getOptionNames(option);
-    formatParam(option, names, result, false);
+    formatParam(option, names, result);
   }
   const len = result.strings.reduce((acc, str) => acc + (str.length && str.length + 1), -1);
   if (len < 0) {
@@ -748,7 +748,7 @@ function formatUsageOption(
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
     formatUsageNames(option, names, result);
-    formatParam(option, names, result, true);
+    formatParam(option, names, result);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -825,17 +825,11 @@ function formatUsageNames(option: OpaqueOption, names: ReadonlyArray<string>, re
  * @param option The option definition
  * @param names The valid option names
  * @param result The resulting string
- * @param isUsage True if the result appears in a usage
  */
-function formatParam(
-  option: OpaqueOption,
-  names: ReadonlyArray<string>,
-  result: AnsiString,
-  isUsage: boolean,
-) {
+function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result: AnsiString) {
   const { type, inline, example, separator, styles, positional, paramName } = option;
   const [min, max] = getParamCount(option);
-  const optional = !min && max && !(positional && !names.length) && (!example || isUsage);
+  const optional = !min && max && !(positional && !names.length);
   const ellipsis =
     type === 'command' || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
   if (inline) {

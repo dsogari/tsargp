@@ -155,18 +155,38 @@ describe('parse', () => {
           inline: 'always',
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd -s ', { compIndex: 9 })).rejects.toThrow(/^-s$/);
+      expect(parse(options, 'cmd -s ', { compIndex: 9 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -s= ', { compIndex: 10 })).rejects.toThrow(/^-s$/);
     });
 
     it('accept an array-valued option with no parameters', () => {
       const options = {
         array: {
           type: 'array',
-          names: ['-a'],
+          names: ['--array'],
+          cluster: 'a',
           inline: 'always',
         },
       } as const satisfies Options;
-      expect(parse(options, ['-a'])).resolves.toEqual({ array: [] });
+      expect(parse(options, ['--array'])).resolves.toEqual({ array: [] });
+      expect(parse(options, ['-a'], flags)).resolves.toEqual({ array: [] });
+    });
+
+    it('throw an error on array-valued option with missing inline parameter', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['--array'],
+          cluster: 'a',
+          inline: 'always',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['--array', '1'])).rejects.toThrow(
+        `Option --array requires an inline parameter.`,
+      );
+      expect(parse(options, ['-a', '1'], flags)).rejects.toThrow(
+        `Option --array requires an inline parameter.`,
+      );
     });
 
     it('throw an error on single-valued option with missing inline parameter', () => {
@@ -178,13 +198,10 @@ describe('parse', () => {
           inline: 'always',
         },
       } as const satisfies Options;
-      expect(parse(options, ['--single'])).rejects.toThrow(
-        `Option --single requires an inline parameter.`,
-      );
       expect(parse(options, ['--single', '1'])).rejects.toThrow(
         `Option --single requires an inline parameter.`,
       );
-      expect(parse(options, ['-s'], flags)).rejects.toThrow(
+      expect(parse(options, ['-s', '1'], flags)).rejects.toThrow(
         `Option --single requires an inline parameter.`,
       );
     });
