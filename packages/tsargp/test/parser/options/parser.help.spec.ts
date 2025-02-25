@@ -120,8 +120,7 @@ describe('parse', () => {
         command2: {
           type: 'command',
           names: ['cmd2'],
-          options: () => ({
-            // test asynchronous
+          options: async () => ({
             flag: {
               type: 'flag',
               names: ['-f'],

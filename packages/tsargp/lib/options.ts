@@ -1156,7 +1156,7 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 /**
  * Resolves the nested options of a subcommand.
  * @param option The command option
- * @param resolve The resolution callback
+ * @param resolve The module resolution callback
  * @returns The nested options
  */
 export async function getNestedOptions(

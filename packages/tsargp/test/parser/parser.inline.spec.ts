@@ -155,7 +155,8 @@ describe('parse', () => {
           inline: 'always',
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd -s ', { compIndex: 9 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -s ', { compIndex: 9 })).rejects.toThrow(/^-s$/);
+      expect(parse(options, 'cmd -s=', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
       expect(parse(options, 'cmd -s= ', { compIndex: 10 })).rejects.toThrow(/^-s$/);
     });
 

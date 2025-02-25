@@ -64,7 +64,7 @@ describe('parse', () => {
       expect(parse(options, ['-a', '1,2', '-a'])).resolves.toEqual({ array: [] });
     });
 
-    it('append values when the option explicitly asks so', () => {
+    it('append elements to the option value', () => {
       const options = {
         array: {
           type: 'array',

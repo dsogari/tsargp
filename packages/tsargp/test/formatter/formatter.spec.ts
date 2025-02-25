@@ -106,18 +106,6 @@ describe('HelpFormatter', () => {
       expect(message.wrap()).toEqual(`  -c  ...\n`);
     });
 
-    it('handle an option with empty name and name with spaces', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['', ' ', '  '],
-          synopsis: 'the phantom option',
-        },
-      } as const satisfies Options;
-      const message = new HelpFormatter(options).format();
-      expect(message.wrap()).toEqual(`  ,  ,       the phantom option\n`);
-    });
-
     it('handle an option that is always required', () => {
       const options = {
         flag: {

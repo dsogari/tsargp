@@ -1,11 +1,81 @@
 import { describe, expect, it, jest } from 'bun:test';
-import { numberInRange, type Options } from '../../lib/options';
+import { numberInRange, type OptionValues, type Options } from '../../lib/options';
 import { parse } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
   describe('a parsing callback is specified', () => {
+    it('replace the option value with the result of the parsing callback', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.toEqual({ flag: undefined });
+      expect(options.flag.parse).not.toHaveBeenCalled();
+      expect(parse(options, ['-f'])).resolves.toEqual({ flag: '' });
+      expect(options.flag.parse).toHaveBeenCalledWith('', {
+        values: { flag: '' }, // should have been { flag: undefined } at the time of call
+        index: 0,
+        name: '-f',
+        comp: false,
+      });
+      options.flag.parse.mockClear();
+      expect(parse(options, ['-f', '-f'])).resolves.toEqual({ flag: '' });
+      expect(options.flag.parse).toHaveBeenCalledWith('', {
+        values: { flag: '' }, // should have been { flag: undefined } at the time of call
+        index: 0,
+        name: '-f',
+        comp: false,
+      });
+      expect(options.flag.parse).toHaveBeenCalledTimes(2);
+    });
+
+    it('expose parsed values to the parsing callback', () => {
+      const options = {
+        flag1: {
+          type: 'flag',
+          names: ['-f1'],
+          parse(_, { values }) {
+            expect((values as OptionValues<typeof options>).flag2).toBeTruthy();
+          },
+        },
+        flag2: {
+          type: 'flag',
+          names: ['-f2'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-f2', '-f1'])).resolves.toEqual({
+        flag1: undefined,
+        flag2: true,
+      });
+    });
+
+    it('break the parsing loop when the option explicitly asks so', () => {
+      const options = {
+        flag1: {
+          type: 'flag',
+          names: ['-f1'],
+          parse: jest.fn(() => 'abc'),
+          break: true,
+        },
+        flag2: {
+          type: 'flag',
+          names: ['-f2'],
+          parse: jest.fn(),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-f1', '-f2'])).resolves.toEqual({
+        flag1: 'abc',
+        flag2: undefined,
+      });
+      expect(options.flag1.parse).toHaveBeenCalled();
+      expect(options.flag2.parse).not.toHaveBeenCalled();
+    });
+
     it('handle a flag option with value from environment variable', () => {
       const options = {
         flag: {
@@ -69,7 +139,7 @@ describe('parse', () => {
       });
       expect(options.array.parse).toHaveBeenCalledWith('2', {
         values: { array: ['1', '2'] }, // should have been { single: undefined } at the time of call
-        index: 0,
+        index: 0, // index of the first argument in the sequence
         name: 'preferred',
         comp: false,
       });

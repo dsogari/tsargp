@@ -80,7 +80,7 @@ All options share a set of attributes in addition to their type. They are descri
 The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
 
 - A name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator.
-- A name can contain whitespace or even be an empty string. (However, this will look strange in help messages.)
+- A name can contain whitespace or even be an empty string. (However, this may look strange in help messages.)
 - A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 <Callout type="default">
@@ -281,13 +281,13 @@ And if they were declared in the `requiredIf` attribute, they would mean:
 
 <Callout type="info">
 
-An option is considered specified if either it appears on the command line or its data exists in the [environment].
+An option is considered specified if it either appears on the command line or has data coming from the [environment].
 
 </Callout>
 
 #### Default value
 
-The `default` attribute, if present, specifies a value to be used at the end of the parsing loop, in case the option is specified neither on the command line nor in the [environment].
+The `default` attribute, if present, specifies a value (or a promise thereof) to be used at the end of the parsing loop, in case the option is specified neither on the command line nor in the [environment].
 
 <Callout type="info">
 
@@ -325,7 +325,7 @@ Options that may read data from the environment share some attributes, as descri
 
 The `stdin` attribute, if present, indicates that the option accepts data from the standard input. It will only have effect if the option is _not_ specified on the command line, otherwise the input stream will remain untouched.
 
-The parser only reads _readily_ available data, without waiting for new input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use a [default value] callback in conjunction with third-party prompting libraries.
+The parser only reads _readily_ available data, without waiting for new input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use a [default value callback] in conjunction with third-party prompting libraries.
 
 <Callout type="info">
 
@@ -391,15 +391,15 @@ The `positional` attribute, if present, indicates that the option accepts _posit
 
 If set to `true{:ts}`, then any argument not recognized as an option name will be considered positional. If set to a string, then it acts as a positional marker, in which case all arguments that appear _beyond_ the marker will be considered positional.
 
-<Callout type="info">
-
-The positional marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
-
-</Callout>
-
 <Callout type="default">
 
 When using this attribute, we recommend also setting [preferred name] to some explanatory name.
+
+</Callout>
+
+<Callout type="info">
+
+The positional marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
 
 </Callout>
 
@@ -747,6 +747,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 [forward requirements]: #forward-requirements
 [conditional requirements]: #conditional-requirements
 [default value]: #default-value
+[default value callback]: #default-value-callback
 [parsing callback]: #parsing-callback
 
 {/* environment attributes */}

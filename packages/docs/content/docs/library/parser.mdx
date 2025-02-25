@@ -72,7 +72,7 @@ Option names have precedence over the cluster prefix. For example, if the prefix
 
 <Callout type="default">
 
-The cluster prefix can be the empty string, thus behaving similarly to GNU's [tar] command.
+The cluster prefix can be the empty string, in which case it behaves similarly to GNU's [tar] command.
 
 </Callout>
 
@@ -213,7 +213,7 @@ This syntax cannot be used with the positional marker.
 
 </Callout>
 
-As is the case with standalone parameters, inline parameters do not conflict with option names, and so they may contain characters that are not valid in option names, such as the equals sign. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
+As is the case with standalone parameters, inline parameters do not conflict with option names, and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
 Cluster arguments may also have inline parameters, but their syntax is different. A cluster argument is considered to have an inline parameter if it contains an unknown letter that is _not the first_ one in the cluster. In this case, the first letter _must_ correspond to an option and the rest its parameter. See [cluster inline parameters] for further details.
 

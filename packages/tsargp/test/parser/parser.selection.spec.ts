@@ -30,6 +30,9 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-s', 'Abc'])).resolves.toEqual({ single: 'abc' });
+      expect(parse(options, ['-s', 'Abc;'])).rejects.toThrow(
+        `Invalid parameter to -s: 'abc;'. Value must match the regex /^[a-z]+$/s.`,
+      );
     });
 
     it('handle an array-valued option with case-sensitive selection', () => {
@@ -63,6 +66,9 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['-a', 'a', 'B'])).resolves.toEqual({ array: ['a', 'b'] });
       expect(parse(options, ['-a', 'a,B'])).resolves.toEqual({ array: ['a', 'b'] });
+      expect(parse(options, ['-a', 'a', 'B;'])).rejects.toThrow(
+        `Invalid parameter to -a: 'b;'. Value must match the regex /^[a-z]+$/s.`,
+      );
     });
   });
 
@@ -96,7 +102,7 @@ describe('parse', () => {
     });
   });
 
-  describe('a mapping constraint are specified', () => {
+  describe('a mapping constraint is specified', () => {
     it('handle a single-valued option with case-sensitive selection', () => {
       const options = {
         single: {
@@ -151,7 +157,7 @@ describe('parse', () => {
       expect(parse(options, ['-s', 'One'])).resolves.toEqual({ single: 'two' });
       expect(parse(options, ['-s', 'Abc'])).resolves.toEqual({ single: 'abc' });
       expect(parse(options, ['-s', 'Two'])).rejects.toThrow(
-        `Invalid parameter to -s: 'Two'. Value must be one of: 'one', 'abc'.`,
+        `Invalid parameter to -s: 'two'. Value must be one of: 'one', 'abc'.`,
       );
     });
 
@@ -184,7 +190,7 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['-a', 'One', 'Abc'])).resolves.toEqual({ array: ['two', 'abc'] });
       expect(parse(options, ['-a', 'One,Two'])).rejects.toThrow(
-        `Invalid parameter to -a: 'Two'. Value must be one of: 'one', 'abc'.`,
+        `Invalid parameter to -a: 'two'. Value must be one of: 'one', 'abc'.`,
       );
     });
   });

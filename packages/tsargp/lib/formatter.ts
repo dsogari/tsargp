@@ -890,7 +890,7 @@ function formatRequirements(
     (req) => formatRequiresExp(req.items, result, negate, true, custom1),
     (req) => formatRequiresExp(req.items, result, negate, false, custom1),
     (req) => formatRequiresExp(getEntries(req), result, negate, true, custom2),
-    (req) => formatRequiresCallback(req, result, negate),
+    (req) => formatRequirementCallback(req, result, negate),
   );
 }
 
@@ -978,7 +978,7 @@ function formatRequiredValue(
  * @param result The resulting string
  * @param negate True if the requirement should be negated
  */
-function formatRequiresCallback(
+function formatRequirementCallback(
   callback: RequirementCallback,
   result: AnsiString,
   negate: boolean,

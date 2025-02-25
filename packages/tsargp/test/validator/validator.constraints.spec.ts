@@ -6,7 +6,7 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
   describe('when an option has duplicate choice values', () => {
-    it('throw an error on single-valued', () => {
+    it('throw an error on single-valued option', () => {
       const options = {
         single: {
           type: 'single',
@@ -16,7 +16,7 @@ describe('validate', () => {
       expect(validate(options)).rejects.toThrow(`Option single has duplicate choice 'dup'.`);
     });
 
-    it('throw an error on array-valued', () => {
+    it('throw an error on array-valued option', () => {
       const options = {
         array: {
           type: 'array',

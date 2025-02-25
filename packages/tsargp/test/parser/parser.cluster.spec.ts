@@ -51,8 +51,8 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['f'], flags)).resolves.toEqual({ flag: true });
-      expect(parse(options, ['F'], flags)).resolves.toEqual({ flag: true });
-      expect(parse(options, [' '], flags)).resolves.toEqual({ flag: true });
+      expect(parse(options, ['fF'], flags)).resolves.toEqual({ flag: true });
+      expect(parse(options, ['f '], flags)).resolves.toEqual({ flag: true });
     });
 
     it('parse a single-valued option', () => {

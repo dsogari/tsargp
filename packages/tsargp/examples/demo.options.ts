@@ -95,7 +95,9 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     
     `,
     sources: ['BOOLEAN'],
+    choices: ['yes', 'no'],
     mapping: { yes: true, no: false },
+    normalize: (param) => param.toLowerCase(),
     default: false,
     requires: req.one(
       'strChoice',

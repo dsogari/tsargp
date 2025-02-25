@@ -8,7 +8,6 @@ import type {
   OptionValues,
   OpaqueOption,
   OpaqueOptionValues,
-  Range,
   Requires,
   RequiresEntry,
   ModuleResolutionCallback,
@@ -162,13 +161,17 @@ type ParseEntry = [
    */
   comp?: boolean,
   /**
-   * The positional marker.
+   * True if it is the positional marker.
    */
-  marker?: boolean,
+  isMarker?: boolean,
   /**
    * True if it is a new specification.
    */
   isNew?: boolean,
+  /**
+   * True if it is positional, but not the marker.
+   */
+  isPositional?: boolean,
 ];
 
 /**
@@ -208,6 +211,10 @@ const enum ArgType {
    * A positional argument.
    */
   positional,
+  /**
+   * An argument that comes after the positional marker.
+   */
+  afterMarker,
   /**
    * A cluster argument.
    */
@@ -350,11 +357,12 @@ function parseCluster(context: ParseContext, index: number): boolean {
 async function parseArgs(context: ParseContext) {
   const [registry, values, args, specifiedKeys, completing, warning] = context;
   let prev: ParseEntry = [-1];
-  let paramCount: Range = [0, 0];
+  let min = 0; // param count
+  let max = 0; // param count
   let suggestNames = false;
   for (let i = 0, k = 0; i < args.length; i = prev[0]) {
     const next = findNext(context, prev);
-    const [j, info, value, comp, marker, isNew] = next;
+    const [j, info, value, comp, isMarker, isNew, isPositional] = next;
     if (isNew || !info) {
       if (prev[1]) {
         // process the previous sequence
@@ -364,12 +372,10 @@ async function parseArgs(context: ParseContext) {
         break; // finished
       }
       prev = next;
-      const positional = info === registry.positional; // don't use option.positional for this check
       const [key, option, name] = info;
-      paramCount = getParamCount(option);
-      const [, max] = paramCount;
+      [min, max] = getParamCount(option);
       const hasValue = value !== undefined;
-      if (!max || marker || (!positional && option.inline === false)) {
+      if (!max || (!isPositional && (isMarker || option.inline === false))) {
         if (comp) {
           throw new TextMessage();
         }
@@ -380,7 +386,7 @@ async function parseArgs(context: ParseContext) {
             prev[4] = false;
             continue;
           }
-          const [alt, name2] = marker ? [1, `${option.positional}`] : [0, name];
+          const [alt, name2] = isMarker ? [1, `${option.positional}`] : [0, name];
           throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       }
@@ -400,7 +406,7 @@ async function parseArgs(context: ParseContext) {
         continue; // fetch more
       }
       if (!comp) {
-        if (positional || !hasValue) {
+        if (isMarker || isPositional || !hasValue) {
           // positional marker, first positional parameter or option name
           k = hasValue ? j : j + 1;
         } else {
@@ -411,7 +417,7 @@ async function parseArgs(context: ParseContext) {
         continue; // fetch more
       }
       // perform completion of first positional or inline parameter
-      suggestNames = positional;
+      suggestNames = !!isPositional;
       k = j;
     }
     if (!info) {
@@ -419,7 +425,7 @@ async function parseArgs(context: ParseContext) {
     }
     // comp === true
     const words = await completeParameter(values, info, i, args.slice(k, j), value);
-    if (!marker && (suggestNames || (j > i && j - k >= paramCount[0]))) {
+    if (suggestNames || (j > i && j - k >= min)) {
       words.push(...completeName(registry, value));
     }
     throw new TextMessage(...words);
@@ -436,7 +442,8 @@ async function parseArgs(context: ParseContext) {
  */
 function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
-  const [prevIndex, prevInfo, prevVal, , prevMarker] = prev;
+  const [prevIndex, , prevVal, , prevMarker] = prev;
+  let [, prevInfo] = prev;
   const { names, positional, options } = registry;
   const inc = prevVal !== undefined ? 1 : 0;
   const prefix = flags.optionPrefix;
@@ -449,9 +456,9 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
     const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
     const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
     const argType = isParam
-      ? prevMarker || !isForcedName
+      ? !isForcedName || prevMarker
         ? prevMarker && i - prevIndex + inc > max
-          ? ArgType.positional
+          ? ArgType.afterMarker
           : ArgType.parameter
         : !optionKey
           ? ArgType.unknownOption
@@ -478,7 +485,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
             ? positional
             : [optionKey, options[optionKey], name]
           : undefined;
-        return [i, newInfo, value, comp, isMarker, true];
+        return [i, newInfo, value, comp, isMarker, true, false];
       }
       case ArgType.cluster:
         if (comp) {
@@ -495,15 +502,18 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         }
         break; // ignore unknown options during completion
       case ArgType.positional:
-        return [i, positional, arg, comp, false, true];
+        return [i, positional, arg, comp, false, true, true];
+      case ArgType.afterMarker:
+        return [i, prevInfo, arg, comp, prevMarker, true, true];
       case ArgType.parameter:
         if (prevInfo?.[1].inline) {
-          if (comp) {
-            throw new TextMessage();
+          if (!completing) {
+            // ignore required inline parameters while completing
+            throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(prevInfo[2]));
           }
-          throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(prevInfo[2]));
-        }
-        if (comp) {
+          prevInfo = undefined;
+          i--; // reprocess the current argument
+        } else if (comp) {
           return [i, prevInfo, arg, comp, prevMarker, false];
         }
         break; // continue looking for parameters or option names
@@ -576,7 +586,7 @@ async function completeParameter(
   if (option.complete) {
     try {
       // do not destructure `complete`, because the callback might need to use `this`
-      words = await option.complete(comp, { values, index, name, prev });
+      words = (await option.complete(comp, { values, index, name, prev })) ?? [];
     } catch (_err) {
       // do not propagate errors during completion
       words = [];
@@ -585,7 +595,8 @@ async function completeParameter(
     const { choices, normalize } = option;
     words = choices?.slice() ?? [];
     if (comp) {
-      words = words.filter((word) => !!word.startsWith(normalize?.(comp) ?? comp));
+      comp = normalize?.(comp) ?? comp;
+      words = words.filter((word) => word.startsWith(comp));
     }
   }
   return words;
@@ -646,8 +657,7 @@ async function parseParams(
   }
   /** @ignore */
   function parse2(param: string): unknown {
-    const normalized = normalize?.(param) ?? param;
-    return mapping && normalized in mapping ? mapping[normalized] : parse1(normalized);
+    return mapping && param in mapping ? mapping[param] : parse1(param);
   }
   const [, values, , , comp] = context;
   const [key, option, name] = info;
@@ -680,14 +690,17 @@ async function parseParams(
     values[key] = await parse1(params);
     return breakLoop;
   }
+  if (normalize) {
+    params = params.map(normalize);
+  }
   if (regex) {
-    const mismatch = params.find((param) => !regex.test(normalize?.(param) ?? param));
+    const mismatch = params.find((param) => !regex.test(param));
     if (mismatch) {
       throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
     }
   }
   if (choices) {
-    const mismatch = params.find((param) => !choices.includes(normalize?.(param) ?? param));
+    const mismatch = params.find((param) => !choices.includes(param));
     if (mismatch) {
       throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, choices);
     }
@@ -990,7 +1003,7 @@ async function checkRequires(
     (req) => checkItems(req.items, checkRequires, !negate),
     (req) => checkItems(req.items, checkRequires, negate),
     (req) => checkItems(getEntries(req), checkRequiresEntry, !negate),
-    (req) => checkRequiresCallback(context, option, req, error, negate, invert),
+    (req) => checkRequirementCallback(context, option, req, error, negate, invert),
   );
 }
 
@@ -1098,7 +1111,7 @@ async function checkRequireItems<T>(
  * @param invert True if the requirements should be inverted
  * @returns True if the requirements were satisfied
  */
-async function checkRequiresCallback(
+async function checkRequirementCallback(
   context: ParseContext,
   option: OpaqueOption,
   callback: RequirementCallback,

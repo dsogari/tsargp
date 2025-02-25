@@ -103,7 +103,6 @@ describe('parse', () => {
           type: 'single',
           names: ['-s'],
           positional: '--',
-          preferredName: 'preferred',
         },
       } as const satisfies Options;
       const flags: ParsingFlags = { optionPrefix: '-' };
@@ -140,6 +139,9 @@ describe('parse', () => {
       expect(parse(options, ['--', '1'])).rejects.toThrow(
         `Missing parameter(s) to option preferred: requires exactly 2.`,
       );
+      expect(parse(options, ['--', '1', '2', '3'])).rejects.toThrow(
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
+      );
     });
 
     it('handle a single-valued option', () => {
@@ -153,6 +155,7 @@ describe('parse', () => {
       expect(parse(options, ['--', '-s'])).resolves.toEqual({ single: '-s' });
       expect(parse(options, ['0', '--', '-s'])).resolves.toEqual({ single: '-s' });
       expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['--', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
     });
 
     it('handle an array-valued option', () => {
@@ -178,6 +181,9 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['--', '1', '2', '3', '4'])).resolves.toEqual({ function: ['3', '4'] });
+      expect(parse(options, ['--', '1', '2', '3', '4', '-f', '-f'])).resolves.toEqual({
+        function: ['-f', '-f'],
+      });
     });
   });
 });
