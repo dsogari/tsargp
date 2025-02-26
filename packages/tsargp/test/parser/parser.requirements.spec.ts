@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test';
-import { type Options, req } from '../../lib/options';
+import { type Options, allOf, oneOf, notOf } from '../../lib/options';
 import { parse } from '../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -16,23 +16,23 @@ describe('parse', () => {
     expect(parse(options, [])).rejects.toThrow(`Option is required.`);
   });
 
-  it('accept a forward requirement with req.all with zero items', () => {
+  it('accept a forward requirement with allOf with zero items', () => {
     const options = {
       requires: {
         type: 'flag',
         names: ['-f'],
-        requires: req.all(),
+        requires: allOf(),
       },
     } as const satisfies Options;
     expect(parse(options, ['-f'])).resolves.toEqual({ requires: true });
   });
 
-  it('accept a conditional requirement with req.one with zero items', () => {
+  it('accept a conditional requirement with oneOf with zero items', () => {
     const options = {
       requires: {
         type: 'flag',
         names: ['-f'],
-        requiredIf: req.one(),
+        requiredIf: oneOf(),
       },
     } as const satisfies Options;
     expect(parse(options, [])).resolves.toEqual({ requires: undefined });
@@ -107,7 +107,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requires: req.not({ flag2: null }),
+          requires: notOf({ flag2: null }),
         },
         flag2: {
           type: 'function',
@@ -124,7 +124,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requires: req.not('flag2'),
+          requires: notOf('flag2'),
         },
         flag2: {
           type: 'flag',
@@ -160,7 +160,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requires: req.not({ flag2: undefined }),
+          requires: notOf({ flag2: undefined }),
         },
         flag2: {
           type: 'flag',
@@ -175,23 +175,23 @@ describe('parse', () => {
   });
 
   describe('a forward requirement is specified', () => {
-    it('throw an error on req.one with zero items', () => {
+    it('throw an error on oneOf with zero items', () => {
       const options = {
         requires: {
           type: 'flag',
           names: ['-f'],
-          requires: req.one(),
+          requires: oneOf(),
         },
       } as const satisfies Options;
       expect(parse(options, ['-f'])).rejects.toThrow(`Option -f requires.`);
     });
 
-    it('throw an error on requirement not satisfied with req.not', () => {
+    it('throw an error on requirement not satisfied with notOf', () => {
       const options = {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requires: req.not({ single: '1' }),
+          requires: notOf({ single: '1' }),
         },
         single: {
           type: 'single',
@@ -205,7 +205,7 @@ describe('parse', () => {
       expect(parse(options, ['1', '-f'])).rejects.toThrow(`Option -f requires preferred != '1'.`);
     });
 
-    it('throw an error on requirement not satisfied with req.all', () => {
+    it('throw an error on requirement not satisfied with allOf', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -219,7 +219,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requires: req.all('flag1', 'flag2'),
+          requires: allOf('flag1', 'flag2'),
         },
       } as const satisfies Options;
       expect(parse(options, ['1'])).rejects.toThrow(`Option preferred requires -f1.`);
@@ -228,7 +228,7 @@ describe('parse', () => {
       expect(parse(options, ['-f1', '-f2', '1'])).resolves.toMatchObject({});
     });
 
-    it('throw an error on requirement not satisfied with req.one', () => {
+    it('throw an error on requirement not satisfied with oneOf', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -242,7 +242,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requires: req.one('flag1', 'flag2'),
+          requires: oneOf('flag1', 'flag2'),
         },
       } as const satisfies Options;
       expect(parse(options, ['1'])).rejects.toThrow(`Option preferred requires (-f1 or -f2).`);
@@ -292,7 +292,7 @@ describe('parse', () => {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requires: req.not({
+          requires: notOf({
             single: { a: 1, b: [2] },
             array: ['a', 2, { b: 'c' }],
           }),
@@ -359,7 +359,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requires: req.not((values) => values['flag1'] === values['flag2']),
+          requires: notOf((values) => values['flag1'] === values['flag2']),
         },
       } as const satisfies Options;
       options.boolean.requires.item.toString = () => 'fcn';
@@ -414,7 +414,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requiredIf: req.not({ flag2: null }),
+          requiredIf: notOf({ flag2: null }),
         },
         flag2: {
           type: 'function',
@@ -434,7 +434,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requiredIf: req.not('flag2'),
+          requiredIf: notOf('flag2'),
         },
         flag2: {
           type: 'flag',
@@ -464,7 +464,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requiredIf: req.not({ flag2: undefined }),
+          requiredIf: notOf({ flag2: undefined }),
         },
         flag2: {
           type: 'flag',
@@ -476,23 +476,23 @@ describe('parse', () => {
   });
 
   describe('a conditional requirement is specified', () => {
-    it('throw an error on req.all with zero items', () => {
+    it('throw an error on allOf with zero items', () => {
       const options = {
         requires: {
           type: 'flag',
           names: ['-f'],
-          requiredIf: req.all(),
+          requiredIf: allOf(),
         },
       } as const satisfies Options;
       expect(parse(options, [])).rejects.toThrow(`Option -f is required if.`);
     });
 
-    it('throw an error on requirement not satisfied with req.not', () => {
+    it('throw an error on requirement not satisfied with notOf', () => {
       const options = {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requiredIf: req.not({ single: '1' }),
+          requiredIf: notOf({ single: '1' }),
         },
         single: {
           type: 'single',
@@ -505,7 +505,7 @@ describe('parse', () => {
       expect(parse(options, ['1'])).resolves.toMatchObject({});
     });
 
-    it('throw an error on requirement not satisfied with req.all', () => {
+    it('throw an error on requirement not satisfied with allOf', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -519,7 +519,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requiredIf: req.all('flag1', 'flag2'),
+          requiredIf: allOf('flag1', 'flag2'),
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toMatchObject({});
@@ -530,7 +530,7 @@ describe('parse', () => {
       );
     });
 
-    it('throw an error on requirement not satisfied with req.one', () => {
+    it('throw an error on requirement not satisfied with oneOf', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -544,7 +544,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requiredIf: req.one('flag1', 'flag2'),
+          requiredIf: oneOf('flag1', 'flag2'),
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toMatchObject({});
@@ -594,7 +594,7 @@ describe('parse', () => {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requiredIf: req.not({
+          requiredIf: notOf({
             single: { a: 1, b: [2] },
             array: ['a', 2, { b: 'c' }],
           }),
@@ -667,7 +667,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requiredIf: req.not((values) => values['flag1'] === values['flag2']),
+          requiredIf: notOf((values) => values['flag1'] === values['flag2']),
         },
       } as const satisfies Options;
       options.boolean.requiredIf.item.toString = () => 'fcn';

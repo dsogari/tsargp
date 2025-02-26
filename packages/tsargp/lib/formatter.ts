@@ -96,6 +96,11 @@ type GroupsFunction = (
  */
 type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
 
+/**
+ * A set of formatting functions for {@link HelpItem}.
+ */
+type HelpFunctions = Readonly<Record<HelpItem, HelpFunction>>;
+
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
@@ -129,7 +134,7 @@ const defaultHelpLayout: HelpLayout = {
 /**
  * The formatting functions for {@link HelpItem}.
  */
-const helpFunctions = {
+const helpFunctions: HelpFunctions = {
   [HelpItem.synopsis]: (option, phrase, _context, result) => {
     const { synopsis } = option;
     if (synopsis) {
@@ -267,7 +272,7 @@ const helpFunctions = {
     }
   },
   [HelpItem._count]: () => {},
-} as const satisfies Record<HelpItem, HelpFunction>;
+};
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -912,7 +917,7 @@ function formatRequiredKey(
     result.word(config.connectives.no);
   }
   const name = context[0][requiredKey].preferredName ?? '';
-  fmt.m(getSymbol(name), result);
+  fmt.m(getSymbol(name), result, {});
 }
 
 /**
@@ -963,7 +968,7 @@ function formatRequiredValue(
     result.word(connectives.no);
   }
   const name = option.preferredName ?? '';
-  fmt.m(getSymbol(name), result);
+  fmt.m(getSymbol(name), result, {});
   if (!requireAbsent && !requirePresent) {
     const connective = negate ? connectives.notEquals : connectives.equals;
     result.word(connective);

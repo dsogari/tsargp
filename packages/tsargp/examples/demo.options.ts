@@ -1,5 +1,16 @@
-import { type Options, fg, style, req, tf, fg8, numberInRange, config } from 'tsargp';
-import helloOpts from './demo.hello.options';
+import {
+  type Options,
+  fg,
+  style,
+  allOf,
+  oneOf,
+  notOf,
+  tf,
+  fg8,
+  numberInRange,
+  config,
+} from 'tsargp';
+import helloOpts from './demo.hello.options.js';
 
 /**
  * The main option definitions.
@@ -99,10 +110,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     mapping: { yes: true, no: false },
     normalize: (param) => param.toLowerCase(),
     default: false,
-    requires: req.one(
-      'strChoice',
-      req.all({ strArray: ['a', 'b'] }, req.not({ numArray: [1, 2] })),
-    ),
+    requires: oneOf('strChoice', allOf({ strArray: ['a', 'b'] }, notOf({ numArray: [1, 2] }))),
   },
   /**
    * A string option that has a regex constraint.

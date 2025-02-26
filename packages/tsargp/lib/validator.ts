@@ -28,7 +28,7 @@ import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex 
 /**
  * The naming convention rules.
  */
-const namingConventions = {
+const namingConventions: NamingRules = {
   cases: {
     lowercase: (name, lower, upper) => name === lower && name !== upper, // has at least one lower
     UPPERCASE: (name, lower, upper) => name !== lower && name === upper, // has at least one upper
@@ -44,7 +44,7 @@ const namingConventions = {
     snake_case: (name) => regex.snake.test(name),
     'colon:case': (name) => regex.colon.test(name),
   },
-} as const satisfies NamingRules;
+};
 
 //--------------------------------------------------------------------------------------------------
 // Public types
@@ -108,7 +108,7 @@ type ValidationContext = [
 ];
 
 //--------------------------------------------------------------------------------------------------
-// Classes
+// Functions
 //--------------------------------------------------------------------------------------------------
 /**
  * Validates a set of option definitions.
@@ -126,9 +126,6 @@ export async function validate(
   return warning.length ? { warning } : {};
 }
 
-//--------------------------------------------------------------------------------------------------
-// Functions
-//--------------------------------------------------------------------------------------------------
 /**
  * Validates all option definitions, including nested options recursively.
  * @param context The validation context

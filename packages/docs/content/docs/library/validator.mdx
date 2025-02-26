@@ -69,7 +69,7 @@ The following restrictions will raise an error on any option definition that fai
 
 </Callout>
 
-The validator does not validate the _satisfiability_ of option requirements, not only because it cannot evaluate [requirement callbacks] at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `req.all({opt:1}, {opt:2}){:ts}` cannot be satisfied, but is hard to verify in general[^1].
+The validator does not validate the _satisfiability_ of option requirements, not only because it cannot evaluate [requirement callbacks] at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `allOf({opt:1}, {opt:2}){:ts}` cannot be satisfied, but is hard to verify in general[^1].
 
 ### Validation warnings
 

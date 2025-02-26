@@ -237,9 +237,9 @@ You cannot reference options from a [subcommand] (parent or child) in a requirem
 
 You can also specify an expression, in which case it is evaluated as follows:
 
-- `req.all{:ts}` - an expression that is satisfied when _all_ requirements are satisfied
-- `req.one{:ts}` - an expression that is satisfied when at least _one_ requirement is satisfied
-- `req.not{:ts}` - an expression that is satisfied when the requirement is _not_ satisfied.
+- `allOf{:ts}` - an expression that is satisfied when _all_ requirements are satisfied
+- `oneOf{:ts}` - an expression that is satisfied when at least _one_ requirement is satisfied
+- `notOf{:ts}` - an expression that is satisfied when the requirement is _not_ satisfied.
 
 ##### Requirement callback
 
@@ -264,9 +264,9 @@ Mutually exclusive with [always required].
 An example might help elucidate this distinction. Suppose we have these requirements:
 
 ```ts
-req.all(
+allOf(
   'option1',
-  req.one({ option2: null }, req.not({ option3: [2] })),
+  oneOf({ option2: null }, notOf({ option3: [2] })),
   (values) => values['option1'] === values['option3'],
 );
 ```

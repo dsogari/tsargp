@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options, OptionRegistry, req } from '../../lib/options';
+import { type Options, OptionRegistry, allOf, oneOf, notOf } from '../../lib/options';
 import { HelpFormatter } from '../../lib/formatter';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -17,7 +17,7 @@ describe('HelpFormatter', () => {
           single: {
             type: 'single',
             names: ['-s'],
-            requires: req.not('flag'),
+            requires: notOf('flag'),
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
@@ -32,15 +32,15 @@ describe('HelpFormatter', () => {
           flag: {
             type: 'flag',
             names: ['-f'],
-            requires: req.one(
+            requires: oneOf(
               {
                 single: undefined,
               },
-              req.all(
+              allOf(
                 {
                   array: null,
                 },
-                req.not({
+                notOf({
                   single: { a: 1, b: [2] },
                   array: [1, 'a', { a: false }],
                 }),
@@ -75,7 +75,7 @@ describe('HelpFormatter', () => {
           single: {
             type: 'single',
             names: ['-s'],
-            requires: req.not(() => true),
+            requires: notOf(() => true),
           },
         } as const satisfies Options;
         options.flag.requires.toString = () => 'fcn';
@@ -99,7 +99,7 @@ describe('HelpFormatter', () => {
           single: {
             type: 'single',
             names: ['-s'],
-            requiredIf: req.not('flag'),
+            requiredIf: notOf('flag'),
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
@@ -114,15 +114,15 @@ describe('HelpFormatter', () => {
           flag: {
             type: 'flag',
             names: ['-f'],
-            requiredIf: req.one(
+            requiredIf: oneOf(
               {
                 single: undefined,
               },
-              req.all(
+              allOf(
                 {
                   array: null,
                 },
-                req.not({
+                notOf({
                   single: { a: 1, b: [2] },
                   array: [1, 'a', { a: false }],
                 }),
@@ -157,7 +157,7 @@ describe('HelpFormatter', () => {
           single: {
             type: 'single',
             names: ['-s'],
-            requiredIf: req.not(() => true),
+            requiredIf: notOf(() => true),
           },
         } as const satisfies Options;
         options.flag.requiredIf.toString = () => 'fcn';

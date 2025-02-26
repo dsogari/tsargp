@@ -2,10 +2,11 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { ConnectiveWords } from './config.js';
+import type { ErrorItem, fg, bg } from './enums.js';
 import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
 
 import { config } from './config.js';
-import { ErrorItem, cs, fg, bg, tf } from './enums.js';
+import { cs, tf } from './enums.js';
 import {
   getEntries,
   isArray,
@@ -26,7 +27,7 @@ export { underlineStyle as ul, formatFunctions as fmt };
 /**
  * A predefined underline style.
  */
-const underlineStyle = {
+const underlineStyle: UnderlineStyles = {
   /**
    * No underline.
    */
@@ -51,24 +52,24 @@ const underlineStyle = {
    * Dashed underline.
    */
   dashed: [4, 5],
-} as const satisfies Record<string, [4, number]>;
+};
 
 /**
- * A map of data type to formatting function key.
+ * A map of data type to format specifier.
  */
-const typeMapping: Record<string, string> = {
+const typeMapping: DataTypeToFormatSpecifier = {
   boolean: 'b',
   string: 's',
   symbol: 'm',
   number: 'n',
   bigint: 'n',
   object: 'o',
-} as const;
+};
 
 /**
  * The formatting function for each data type.
  */
-const formatFunctions = {
+const formatFunctions: FormatFunctions = {
   /**
    * The formatting function for boolean values.
    * @param value The boolean value
@@ -219,11 +220,21 @@ const formatFunctions = {
       }
     }
   },
-} as const satisfies FormatFunctions;
+};
 
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
+/**
+ * The name of a predefined underline style.
+ */
+export type UnderlineStyle = 'none' | 'single' | 'double' | 'curly' | 'dotted' | 'dashed';
+
+/**
+ * A set of underline styles.
+ */
+export type UnderlineStyles = Readonly<Record<UnderlineStyle, [4, number]>>;
+
 /**
  * A callback that processes a placeholder when splitting text.
  * @param this The ANSI string to append to
@@ -315,9 +326,22 @@ export type UlStyle = ValuesOf<typeof underlineStyle>;
  */
 export type StyleAttr = tf | fg | bg | FgColor | BgColor | UlColor | UlStyle;
 
-//--------------------------------------------------------------------------------------------------
-// Internal types
-//--------------------------------------------------------------------------------------------------
+/**
+ * A format specifier.
+ */
+export type FormatSpecifier =
+  | 'a' // array
+  | 'b' // boolean
+  | 's' // string
+  | 'n' // number
+  | 'r' // regexp
+  | 'v' // unknown
+  | 'u' // url
+  | 't' // ANSI string
+  | 'o' // object
+  | 'm' // symbol
+  | 'c'; // custom
+
 /**
  * A formatting function.
  * @param value The value to be formatted
@@ -325,13 +349,16 @@ export type StyleAttr = tf | fg | bg | FgColor | BgColor | UlColor | UlStyle;
  * @param flags The formatting flags
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FormatFunction = (value: any, result: AnsiString, flags: FormattingFlags) => void;
+export type FormatFunction = (value: any, result: AnsiString, flags: FormattingFlags) => void;
 
 /**
  * A set of formatting functions.
  */
-type FormatFunctions = Record<string, FormatFunction>;
+export type FormatFunctions = Readonly<Record<FormatSpecifier, FormatFunction>>;
 
+//--------------------------------------------------------------------------------------------------
+// Internal types
+//--------------------------------------------------------------------------------------------------
 /**
  * The ANSI string context.
  */
@@ -361,6 +388,11 @@ type AnsiContext = [
    */
   maxLength: number,
 ];
+
+/**
+ * A mapping of data type to format specifier.
+ */
+type DataTypeToFormatSpecifier = Readonly<Record<string, FormatSpecifier>>;
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -728,7 +760,11 @@ export class AnsiMessage extends Array<AnsiString> {
    * @param emitSpaces True if spaces should be emitted instead of move sequences
    * @returns The message to be printed on a terminal
    */
-  wrap(width = 0, emitStyles = !omitStyles(width), emitSpaces = !omitSpaces(width)): string {
+  wrap(
+    width: number = 0,
+    emitStyles: boolean = !omitStyles(width),
+    emitSpaces: boolean = !omitSpaces(width),
+  ): string {
     const result: Array<string> = [];
     let column = 0;
     for (const str of this) {
@@ -791,7 +827,7 @@ export class ErrorMessage extends Error {
   /**
    * The warning message.
    */
-  readonly msg = new WarnMessage();
+  readonly msg: WarnMessage = new WarnMessage();
 
   /**
    * We have to override this, since the message cannot be transformed after being wrapped.
@@ -804,7 +840,7 @@ export class ErrorMessage extends Error {
   /**
    * @returns The wrapped message
    */
-  get message(): string {
+  override get message(): string {
     return this.toString();
   }
 

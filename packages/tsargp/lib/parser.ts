@@ -13,7 +13,7 @@ import type {
   ModuleResolutionCallback,
   RequirementCallback,
 } from './options.js';
-import type { FormattingFlags } from './styles.js';
+import type { AnsiMessage, FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
 
 import { config } from './config.js';
@@ -27,7 +27,7 @@ import {
   valuesFor,
   getNestedOptions,
 } from './options.js';
-import { fmt, WarnMessage, AnsiMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
+import { fmt, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
   getCmdLine,
   findSimilar,
@@ -222,7 +222,7 @@ const enum ArgType {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Classes
+// Functions
 //--------------------------------------------------------------------------------------------------
 /**
  * Parses command-line arguments into option values.
@@ -252,7 +252,7 @@ export async function parse<T extends Options>(
 export async function parseInto<T extends Options>(
   options: T,
   values: OptionValues<T>,
-  cmdLine = getCmdLine(),
+  cmdLine: CommandLine = getCmdLine(),
   flags: ParsingFlags = {},
 ): Promise<ParsingResult> {
   const registry = new OptionRegistry(options);
@@ -264,9 +264,6 @@ export async function parseInto<T extends Options>(
   return warning.length ? { warning } : {};
 }
 
-//--------------------------------------------------------------------------------------------------
-// Functions
-//--------------------------------------------------------------------------------------------------
 /**
  * Initializes the command-line arguments for parsing.
  * @param registry The option registry
@@ -983,7 +980,7 @@ async function checkRequiredOption(context: ParseContext, key: string) {
  * @param invert True if the requirements should be inverted
  * @returns True if the requirements were satisfied
  */
-async function checkRequires(
+function checkRequires(
   context: ParseContext,
   option: OpaqueOption,
   requires: Requires,
@@ -1040,14 +1037,14 @@ function checkRequiresEntry(
     if (specified !== invert) {
       error.word(connectives.no);
     }
-    fmt.m(Symbol.for(name), error);
+    fmt.m(Symbol.for(name), error, {});
     return false;
   }
   if (areEqual(actual, expected) !== negate) {
     return true;
   }
   const connective = negate !== invert ? connectives.notEquals : connectives.equals;
-  fmt.m(Symbol.for(name), error);
+  fmt.m(Symbol.for(name), error, {});
   error.word(connective);
   fmt.v(expected, error, {});
   return false;

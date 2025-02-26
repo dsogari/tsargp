@@ -9,45 +9,68 @@ import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
 import { getEntries, getSymbol } from './utils.js';
 
-export { requirementExpressions as req };
+//--------------------------------------------------------------------------------------------------
+// Classes
+//--------------------------------------------------------------------------------------------------
+/**
+ * A base requirement expression that holds multiple requirement items.
+ */
+abstract class RequiresMany {
+  /**
+   * Creates a requirement expression with requirement items.
+   * @param items The requirement items
+   */
+  constructor(readonly items: Array<Requires>) {}
+}
+
+/**
+ * A requirement expression that is satisfied when all items are satisfied.
+ * If it contains zero items, it always evaluates to true.
+ */
+export class RequiresAll extends RequiresMany {}
+
+/**
+ * A requirement expression that is satisfied when at least one item is satisfied.
+ * If it contains zero items, it always evaluates to false.
+ */
+export class RequiresOne extends RequiresMany {}
+
+/**
+ * A requirement expression that is satisfied when the item is not satisfied.
+ */
+export class RequiresNot {
+  /**
+   * Creates a requirement expression with a requirement item.
+   * @param item The requirement item
+   */
+  constructor(readonly item: Requires) {}
+}
+
+/**
+ * Implements a registry of option definitions.
+ */
+export class OptionRegistry {
+  readonly names: Map<string, string> = new Map<string, string>();
+  readonly letters: Map<string, string> = new Map<string, string>();
+  readonly positional: OptionInfo | undefined;
+
+  /**
+   * Creates an option registry based on a set of option definitions.
+   * @param options The option definitions
+   */
+  constructor(readonly options: OpaqueOptions) {
+    for (const [key, option] of getEntries(this.options)) {
+      registerNames(this.names, this.letters, key, option);
+      if (option.positional !== undefined) {
+        this.positional = [key, option, option.preferredName ?? ''];
+      }
+    }
+  }
+}
 
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-/**
- * A helper object to create option requirement expressions.
- */
-const requirementExpressions = {
-  /**
-   * Creates a requirement expression that is satisfied only when all items are satisfied.
-   * If it contains zero items, it always evaluates to true.
-   * @param items The requirement items
-   * @returns The requirement expression
-   */
-  all(...items: Array<Requires>): RequiresAll {
-    return new RequiresAll(items);
-  },
-
-  /**
-   * Creates a requirement expression that is satisfied when at least one item is satisfied.
-   * If it contains zero items, it always evaluates to false.
-   * @param items The requirement items
-   * @returns The requirement expression
-   */
-  one(...items: Array<Requires>): RequiresOne {
-    return new RequiresOne(items);
-  },
-
-  /**
-   * Creates a requirement expression that is satisfied when the item is not satisfied.
-   * @param item The requirement item
-   * @returns The requirement expression
-   */
-  not(item: Requires): RequiresNot {
-    return new RequiresNot(item);
-  },
-} as const;
-
 /**
  * The types of options that throw messages.
  */
@@ -258,27 +281,6 @@ export type OptionStyles = {
    */
   readonly descr?: Style;
 };
-
-/**
- * A requirement expression that is satisfied only when all items are satisfied.
- */
-export class RequiresAll {
-  constructor(readonly items: Array<Requires>) {}
-}
-
-/**
- * A requirement expression that is satisfied when at least one item is satisfied.
- */
-export class RequiresOne {
-  constructor(readonly items: Array<Requires>) {}
-}
-
-/**
- * A requirement expression that is satisfied when the item is not satisfied.
- */
-export class RequiresNot {
-  constructor(readonly item: Requires) {}
-}
 
 /**
  * A requirement expression.
@@ -689,7 +691,7 @@ export type WithFunction = {
   readonly paramCount?: number | Range;
   /**
    * The number of remaining arguments to skip.
-   * You may change this value inside the callback. The parser does not alter this value.
+   * It is meant to be changed by the callback. (The parser does not alter this value.)
    */
   skipCount?: number;
 };
@@ -986,31 +988,6 @@ type OptionDataType<T extends Option> =
       : ValueDataType<T> | DefaultDataType<T>;
 
 //--------------------------------------------------------------------------------------------------
-// Classes
-//--------------------------------------------------------------------------------------------------
-/**
- * Implements a registry of option definitions.
- */
-export class OptionRegistry {
-  readonly names = new Map<string, string>();
-  readonly letters = new Map<string, string>();
-  readonly positional: OptionInfo | undefined;
-
-  /**
-   * Creates an option registry based on a set of option definitions.
-   * @param options The option definitions
-   */
-  constructor(readonly options: OpaqueOptions) {
-    for (const [key, option] of getEntries(this.options)) {
-      registerNames(this.names, this.letters, key, option);
-      if (option.positional !== undefined) {
-        this.positional = [key, option, option.preferredName ?? ''];
-      }
-    }
-  }
-}
-
-//--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1121,6 +1098,33 @@ export function visitRequirements<T>(
           : typeof requires === 'object'
             ? valFn(requires)
             : cbkFn(requires);
+}
+
+/**
+ * Creates a {@link RequiresAll} expression.
+ * @param items The requirement items
+ * @returns The requirement expression
+ */
+export function allOf(...items: Array<Requires>): RequiresAll {
+  return new RequiresAll(items);
+}
+
+/**
+ * Creates a {@link RequiresOne} expression.
+ * @param items The requirement items
+ * @returns The requirement expression
+ */
+export function oneOf(...items: Array<Requires>): RequiresOne {
+  return new RequiresOne(items);
+}
+
+/**
+ * Creates a {@link RequiresNot} expression.
+ * @param item The requirement item
+ * @returns The requirement expression
+ */
+export function notOf(item: Requires): RequiresNot {
+  return new RequiresNot(item);
 }
 
 /**

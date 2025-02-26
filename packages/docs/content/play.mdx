@@ -8,8 +8,8 @@ export const callbacks = {}; // will hold the editor callbacks
 {/* prettier-ignore-start */}
 
 export const initialDoc = `const {
-  ErrorMessage, TextMessage, ErrorItem, HelpItem,
-  parse, parseInto, validate, config, req, tf, fg, bg, ul, style, fg8, bg8, ul8,
+  AnsiMessage, ErrorMessage, TextMessage, ErrorItem, HelpItem, cs, tf, fg, bg, ul,
+  config, parse, parseInto, validate, allOf, oneOf, notOf, seq, style, fg8, bg8, ul8,
 } = tsargp;
 
 return {
@@ -23,7 +23,7 @@ return {
 
 {/* prettier-ignore-end */}
 
-<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[163]} />
+<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[200]} />
 
 <Callout type="default">
 

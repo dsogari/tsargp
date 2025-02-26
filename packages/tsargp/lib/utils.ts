@@ -214,6 +214,9 @@ export function getArgs(line: string, compIndex = NaN): Array<string> {
  * @returns The file data, if any
  */
 export async function readFile(file: string | number | URL): Promise<string | undefined> {
+  type ErrnoException = {
+    code?: string | undefined;
+  };
   if (file || !process?.stdin?.isTTY) {
     try {
       const { readFileSync } = await import('fs');
