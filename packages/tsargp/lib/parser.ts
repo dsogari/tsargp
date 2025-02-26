@@ -2,7 +2,6 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
-  HelpSections,
   Options,
   OptionInfo,
   OptionValues,
@@ -18,7 +17,7 @@ import type { Args } from './utils.js';
 
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
-import { HelpFormatter } from './formatter.js';
+import { format } from './formatter.js';
 import {
   getParamCount,
   isMessage,
@@ -26,6 +25,7 @@ import {
   OptionRegistry,
   valuesFor,
   getNestedOptions,
+  isCommand,
 } from './options.js';
 import { fmt, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
@@ -42,18 +42,9 @@ import {
   readFile,
   areEqual,
   regex,
+  isString,
+  isFunction,
 } from './utils.js';
-
-//--------------------------------------------------------------------------------------------------
-// Constants
-//--------------------------------------------------------------------------------------------------
-/**
- * The default help sections.
- */
-const defaultSections: HelpSections = [
-  { type: 'usage', title: 'Usage:', indent: 2 },
-  { type: 'groups', title: 'Options:' },
-];
 
 //--------------------------------------------------------------------------------------------------
 // Public types
@@ -257,7 +248,7 @@ export async function parseInto<T extends Options>(
 ): Promise<ParsingResult> {
   const registry = new OptionRegistry(options);
   const compIndex = flags?.compIndex ?? getCompIndex();
-  const args = typeof cmdLine === 'string' ? getArgs(cmdLine, compIndex) : cmdLine;
+  const args = isString(cmdLine) ? getArgs(cmdLine, compIndex) : cmdLine;
   const context = createContext(registry, values, args, !!compIndex, flags);
   await parseArgs(context);
   const warning = context[5];
@@ -335,7 +326,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const letter = rest[j];
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
-    if (j < rest.length - 1 && (option.type === 'command' || min < max)) {
+    if (j < rest.length - 1 && (isCommand(option.type) || min < max)) {
       throw ErrorMessage.create(ErrorItem.invalidClusterOption, {}, letter);
     }
     if (name !== undefined) {
@@ -725,12 +716,12 @@ async function parseParams(
  * @throws On value not satisfying the specified limit constraint
  */
 function normalizeArray<T>(option: OpaqueOption, name: string, value: Array<T>): Array<T> {
-  if (option.unique) {
+  const { unique, limit } = option;
+  if (unique) {
     const unique = new Set(value);
     value.length = 0; // reuse the same array
     value.push(...unique);
   }
-  const limit = option.limit;
   if (limit !== undefined && value.length > limit) {
     throw ErrorMessage.create(
       ErrorItem.limitConstraintViolation,
@@ -851,7 +842,7 @@ async function handleHelp(
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
-      (opt) => opt.type === 'command' && !!opt.names?.includes(rest[0]),
+      (opt) => isCommand(opt.type) && !!opt.names?.includes(rest[0]),
     );
     if (cmdOpt?.options) {
       const cmdOptions = await getNestedOptions(cmdOpt, resolve);
@@ -863,9 +854,7 @@ async function handleHelp(
       }
     }
   }
-  const filter = option.useFilter && rest;
-  const helpFormatter = new HelpFormatter(registry.options, option.layout, filter);
-  return helpFormatter.sections(option.sections ?? defaultSections, progName);
+  return format(registry.options, option.sections, option.useFilter && rest, progName);
 }
 
 /**
@@ -918,27 +907,25 @@ async function checkDefaultValue(context: ParseContext, key: string) {
     return;
   }
   const option = registry.options[key];
-  const names: Array<0 | string | URL> = option.stdin ? [0] : [];
-  names.push(...(option.sources ?? []));
+  const { type, stdin, sources, preferredName, required } = option;
+  const names: Array<0 | string | URL> = stdin ? [0] : [];
+  names.push(...(sources ?? []));
   for (const name of names) {
-    const param = typeof name === 'string' ? getEnv(name) : await readFile(name);
+    const param = isString(name) ? getEnv(name) : await readFile(name);
     if (param !== undefined) {
       await parseParams(context, [key, option, `${name}`], NaN, [param]);
       specifiedKeys.add(key);
       return;
     }
   }
-  const name = option.preferredName ?? '';
-  if (option.required) {
+  const name = preferredName ?? '';
+  if (required) {
     throw ErrorMessage.create(ErrorItem.missingRequiredOption, {}, getSymbol(name));
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
-    const value = await (typeof option.default === 'function'
-      ? option.default(values)
-      : option.default);
-    values[key] =
-      option.type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
+    const value = await (isFunction(option.default) ? option.default(values) : option.default);
+    values[key] = type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
   }
 }
 
@@ -954,15 +941,14 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   }
   const [registry, , , specifiedKeys] = context;
   const option = registry.options[key];
+  const { preferredName, requires, requiredIf } = option;
   const specified = specifiedKeys.has(key);
-  const requires = option.requires;
-  const requiredIf = option.requiredIf;
   const error = new AnsiString();
   if (
     (specified && requires && !(await check(requires, false, false))) ||
     (!specified && requiredIf && !(await check(requiredIf, true, true)))
   ) {
-    const name = option.preferredName ?? '';
+    const name = preferredName ?? '';
     const kind = specified
       ? ErrorItem.unsatisfiedRequirement
       : ErrorItem.unsatisfiedCondRequirement;

@@ -11,7 +11,6 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: [''],
-          sections: [{ type: 'groups' }],
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.not.toHaveProperty('help');
@@ -23,7 +22,6 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups' }],
           saveMessage: true,
         },
       } as const satisfies Options;
@@ -31,25 +29,6 @@ describe('parse', () => {
       expect(parse(options, ['-h'])).resolves.toEqual({
         help: expect.objectContaining({ message: '  -h\n' }),
       });
-    });
-
-    it('throw a help message with default settings', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-          group: 'Args:',
-        },
-        help: {
-          type: 'help',
-          names: ['-h'],
-          synopsis: 'the help option',
-        },
-      } as const satisfies Options;
-      expect(parse(options, [])).resolves.not.toHaveProperty('help');
-      expect(parse(options, ['-h'], { progName: 'prog' })).rejects.toThrow(
-        `Usage:\n\n  prog [-f] [-h]\n\nArgs:\n\n  -f\n\nOptions:\n\n  -h    the help option\n`,
-      );
     });
 
     it('throw a help message with usage and custom indentation', () => {
@@ -60,9 +39,12 @@ describe('parse', () => {
           group: 'group  heading',
           sections: [
             { type: 'usage', title: 'usage  heading' },
-            { type: 'groups', noWrap: true },
+            {
+              type: 'groups',
+              noWrap: true,
+              layout: { names: { indent: 0 } },
+            },
           ],
-          layout: { names: { indent: 0 } },
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.not.toHaveProperty('help');
@@ -88,7 +70,6 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups' }],
           useFilter: true,
         },
       } as const satisfies Options;
@@ -102,8 +83,7 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups' }],
-          layout: { descr: { hidden: true } },
+          sections: [{ type: 'groups', layout: { descr: { hidden: true } } }],
           useCommand: true,
           useFilter: true,
         },
@@ -120,19 +100,19 @@ describe('parse', () => {
         command2: {
           type: 'command',
           names: ['cmd2'],
-          options: async () => ({
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-            },
-            help: {
-              type: 'help',
-              names: ['-h'],
-              sections: [{ type: 'groups' }],
-              layout: { descr: { hidden: true } },
-              useFilter: true,
-            },
-          }),
+          options: async () =>
+            ({
+              flag: {
+                type: 'flag',
+                names: ['-f'],
+              },
+              help: {
+                type: 'help',
+                names: ['-h'],
+                sections: [{ type: 'groups', layout: { descr: { hidden: true } } }],
+                useFilter: true,
+              },
+            }) as const satisfies Options,
         },
       } as const satisfies Options;
       expect(parse(options, ['-h', '-h'])).rejects.toThrow('  -h\n');
@@ -146,8 +126,7 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups' }],
-          layout: { descr: { hidden: true } },
+          sections: [{ type: 'groups', layout: { descr: { hidden: true } } }],
           useCommand: true,
           useFilter: true,
         },
@@ -166,7 +145,6 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups' }],
           useCommand: true,
           useFilter: true,
         },

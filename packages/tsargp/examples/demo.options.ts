@@ -9,6 +9,9 @@ import {
   fg8,
   numberInRange,
   config,
+  allHelpItems,
+  HelpItem,
+  envHelpItems,
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 
@@ -27,6 +30,7 @@ export default {
       {
         type: 'groups',
         title: `Argument parser for TypeScript.`,
+        layout: { items: allHelpItems.filter((item) => item !== HelpItem.sources) },
       },
       {
         type: 'usage',
@@ -53,14 +57,36 @@ export default {
       },
       {
         type: 'text',
-        text: `MIT License.
-Copyright (c) 2024-2025 ${style(tf.bold, tf.italic)}Diego Sogari${style(tf.clear)}
-
-Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
+        text: `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
         noWrap: true,
       },
     ],
     useCommand: true,
+    useFilter: true,
+  },
+  /**
+   * A help option that throws a help message containing only environment variable names.
+   */
+  helpEnv: {
+    type: 'help',
+    names: ['--env'],
+    synopsis: 'A help option. Prints the available environment variables.',
+    sections: [
+      {
+        type: 'groups',
+        title: `Argument parser for TypeScript.`,
+        useEnv: true,
+        layout: {
+          param: { hidden: true },
+          items: envHelpItems,
+        },
+      },
+      {
+        type: 'text',
+        text: `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
+        noWrap: true,
+      },
+    ],
     useFilter: true,
   },
   /**
@@ -78,6 +104,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   flag: {
     type: 'flag',
     names: ['-f', '--no-flag'],
+    sources: ['FLAG'],
     synopsis: 'A flag option.',
     deprecated: 'some reason',
     parse(_, { name }) {
@@ -98,6 +125,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   boolean: {
     type: 'single',
     names: ['-b', '--boolean'],
+    sources: ['BOOLEAN'],
     synopsis: `A boolean option
     with:
     * a paragraph
@@ -105,7 +133,6 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
     1. and a list
     
     `,
-    sources: ['BOOLEAN'],
     choices: ['yes', 'no'],
     mapping: { yes: true, no: false },
     normalize: (param) => param.toLowerCase(),
@@ -118,6 +145,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   strRegex: {
     type: 'single',
     names: ['-sr', '--strRegex'],
+    sources: ['STR_REGEX'],
     synopsis: 'A string option.',
     group: 'String options:',
     regex: /^\d+$/,
@@ -131,6 +159,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   numRange: {
     type: 'single',
     names: ['-nr', '--numRange'],
+    sources: ['NUM_RANGE'],
     synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${config.styles.text}.`,
     group: 'Number options:',
     parse: numberInRange(
@@ -147,6 +176,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   strChoice: {
     type: 'single',
     names: ['-sc', '--strChoice'],
+    sources: ['STR_CHOICE'],
     synopsis: 'A string option.',
     group: 'String options:',
     choices: ['one', 'two'],
@@ -159,6 +189,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   numChoice: {
     type: 'single',
     names: ['-nc', '--numChoice'],
+    sources: ['NUM_CHOICE'],
     synopsis: 'A number option.',
     group: 'Number options:',
     choices: ['1', '2'],
@@ -172,6 +203,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   strArray: {
     type: 'array',
     names: ['-sa', '--strArray'],
+    sources: ['STR_ARRAY'],
     synopsis: 'A string array option.',
     group: 'String options:',
     default: ['one'],
@@ -183,6 +215,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   numArray: {
     type: 'array',
     names: ['-na', '--numArray'],
+    sources: ['NUM_ARRAY'],
     synopsis: 'A number array option.',
     group: 'Number options:',
     parse: Number,
@@ -194,6 +227,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   strArrayLimit: {
     type: 'array',
     names: [null, '--strArrayLimit'],
+    sources: ['STR_ARRAY_LIMIT'],
     synopsis: 'A string array option.',
     group: 'String options:',
     example: ['one'],
@@ -206,6 +240,7 @@ Report a bug: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
   numArrayUnique: {
     type: 'array',
     names: [null, '--numArrayUnique'],
+    sources: ['NUM_ARRAY_UNIQUE'],
     synopsis: 'A number array option.',
     group: 'Number options:',
     example: [1, 2],

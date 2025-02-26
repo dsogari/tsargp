@@ -3,9 +3,7 @@
 //--------------------------------------------------------------------------------------------------
 import type {
   HelpLayout,
-  PartialHelpLayout,
   WithColumnLayout,
-  HelpGroupsSection,
   HelpSection,
   HelpUsageSection,
   HelpSections,
@@ -20,17 +18,22 @@ import type { FormattingFlags, Style } from './styles.js';
 import { config } from './config.js';
 import { HelpItem, tf } from './enums.js';
 import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
-import { getParamCount, getOptionNames, visitRequirements } from './options.js';
 import {
-  mergeValues,
+  getParamCount,
+  getOptionNames,
+  visitRequirements,
+  isCommand,
+  getOptionSources,
+} from './options.js';
+import {
   getSymbol,
   isArray,
-  getKeys,
-  escapeRegExp,
   getValues,
   max,
   getEntries,
   getRequiredBy,
+  isString,
+  mergeValues,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -55,40 +58,17 @@ type HelpEntry = [
 ];
 
 /**
- * The formatter context.
- */
-type HelpContext = [
-  /**
-   * The option definitions.
-   */
-  options: OpaqueOptions,
-  /**
-   * The help layout.
-   */
-  layout: HelpLayout,
-];
-
-/**
  * A function to format a help item.
  * @param option The option definition
  * @param phrase The help item phrase
- * @param context The help context
+ * @param options The option definitions
  * @param result The resulting string
  */
 type HelpFunction = (
   option: OpaqueOption,
   phrase: string,
-  context: HelpContext,
+  options: OpaqueOptions,
   result: AnsiString,
-) => void;
-
-/**
- * A function to format a help groups section.
- */
-type GroupsFunction = (
-  group: string,
-  entries: ReadonlyArray<HelpEntry>,
-  section: HelpGroupsSection,
 ) => void;
 
 /**
@@ -107,7 +87,7 @@ type HelpFunctions = Readonly<Record<HelpItem, HelpFunction>>;
 /**
  * The default help column layout.
  */
-const defaultHelpColumn: WithColumnLayout = {
+const defaultColumnLayout: WithColumnLayout = {
   align: 'left',
   indent: 2,
   breaks: 0,
@@ -117,37 +97,58 @@ const defaultHelpColumn: WithColumnLayout = {
 /**
  * The complete list of help items.
  */
-const allHelpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
+export const allHelpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
   .fill(0)
   .map((_, index) => HelpItem.synopsis + index);
 
 /**
+ * The list of help items that are useful for help messages with environment variables only.
+ */
+export const envHelpItems: ReadonlyArray<HelpItem> = [
+  HelpItem.synopsis,
+  HelpItem.separator,
+  HelpItem.choices,
+  HelpItem.regex,
+  HelpItem.unique,
+  HelpItem.limit,
+  HelpItem.required,
+  HelpItem.default,
+  HelpItem.deprecated,
+  HelpItem.link,
+];
+
+/**
  * The default help layout.
  */
-const defaultHelpLayout: HelpLayout = {
-  names: defaultHelpColumn,
-  param: { ...defaultHelpColumn, absolute: false },
-  descr: { ...defaultHelpColumn, absolute: false },
+const defaultLayout: HelpLayout = {
+  names: defaultColumnLayout,
+  param: { ...defaultColumnLayout, absolute: false },
+  descr: { ...defaultColumnLayout, absolute: false },
   items: allHelpItems,
 };
+
+/**
+ * The default help sections.
+ */
+const defaultSections: HelpSections = [{ type: 'groups' }];
 
 /**
  * The formatting functions for {@link HelpItem}.
  */
 const helpFunctions: HelpFunctions = {
-  [HelpItem.synopsis]: (option, phrase, _context, result) => {
+  [HelpItem.synopsis]: (option, phrase, _options, result) => {
     const { synopsis } = option;
     if (synopsis) {
       result.format(phrase, {}, new AnsiString().split(synopsis));
     }
   },
-  [HelpItem.separator]: (option, phrase, _context, result) => {
+  [HelpItem.separator]: (option, phrase, _options, result) => {
     const { separator } = option;
     if (separator) {
       result.format(phrase, {}, separator);
     }
   },
-  [HelpItem.paramCount]: (option, phrase, _context, result) => {
+  [HelpItem.paramCount]: (option, phrase, _options, result) => {
     const [min, max] = getParamCount(option);
     if (max > 1 && !option.inline) {
       const [alt, val] =
@@ -166,106 +167,105 @@ const helpFunctions: HelpFunctions = {
       result.format(phrase, { alt, sep, open: '', close: '', mergePrev: false }, val);
     }
   },
-  [HelpItem.positional]: (option, phrase, _context, result) => {
+  [HelpItem.positional]: (option, phrase, _options, result) => {
     const { positional } = option;
     if (positional) {
       const [alt, name] = positional === true ? [0] : [1, getSymbol(positional)];
       result.format(phrase, { alt }, name);
     }
   },
-  [HelpItem.append]: (option, phrase, _context, result) => {
+  [HelpItem.append]: (option, phrase, _options, result) => {
     if (option.append) {
       result.split(phrase);
     }
   },
-  [HelpItem.choices]: (option, phrase, _context, result) => {
+  [HelpItem.choices]: (option, phrase, _options, result) => {
     const { choices } = option;
     if (choices?.length) {
       result.format(phrase, { open: '{', close: '}' }, choices);
     }
   },
-  [HelpItem.regex]: (option, phrase, _context, result) => {
+  [HelpItem.regex]: (option, phrase, _options, result) => {
     const { regex } = option;
     if (regex) {
       result.format(phrase, {}, regex);
     }
   },
-  [HelpItem.unique]: (option, phrase, _context, result) => {
+  [HelpItem.unique]: (option, phrase, _options, result) => {
     if (option.unique) {
       result.split(phrase);
     }
   },
-  [HelpItem.limit]: (option, phrase, _context, result) => {
+  [HelpItem.limit]: (option, phrase, _options, result) => {
     const { limit } = option;
     if (limit !== undefined) {
       result.format(phrase, {}, limit);
     }
   },
-  [HelpItem.requires]: (option, phrase, context, result) => {
+  [HelpItem.requires]: (option, phrase, options, result) => {
     const { requires } = option;
     if (requires) {
-      result.split(phrase, () => formatRequirements(context, requires, result));
+      result.split(phrase, () => formatRequirements(options, requires, result));
     }
   },
-  [HelpItem.required]: (option, phrase, _context, result) => {
+  [HelpItem.required]: (option, phrase, _options, result) => {
     if (option.required) {
       result.split(phrase);
     }
   },
-  [HelpItem.default]: (option, phrase, _context, result) => {
+  [HelpItem.default]: (option, phrase, _options, result) => {
     const def = option.default;
     if (def !== undefined) {
       result.format(phrase, {}, def);
     }
   },
-  [HelpItem.deprecated]: (option, phrase, _context, result) => {
+  [HelpItem.deprecated]: (option, phrase, _options, result) => {
     const { deprecated } = option;
     if (deprecated) {
       result.format(phrase, {}, new AnsiString().split(deprecated));
     }
   },
-  [HelpItem.link]: (option, phrase, _context, result) => {
+  [HelpItem.link]: (option, phrase, _options, result) => {
     const { link } = option;
     if (link) {
       result.format(phrase, {}, link);
     }
   },
-  [HelpItem.stdin]: (option, phrase, _context, result) => {
+  [HelpItem.stdin]: (option, phrase, _options, result) => {
     if (option.stdin) {
       result.split(phrase);
     }
   },
-  [HelpItem.sources]: (option, phrase, _context, result) => {
+  [HelpItem.sources]: (option, phrase, _options, result) => {
     const { sources } = option;
     if (sources?.length) {
-      const map = (name: (typeof sources)[number]) =>
-        typeof name === 'string' ? getSymbol(name) : name;
-      result.format(phrase, { open: '', close: '' }, sources.map(map));
+      const values = sources.map((name) => (isString(name) ? getSymbol(name) : name));
+      result.format(phrase, { open: '', close: '' }, values);
     }
   },
-  [HelpItem.requiredIf]: (option, phrase, context, result) => {
+  [HelpItem.requiredIf]: (option, phrase, options, result) => {
     const requiredIf = option.requiredIf;
     if (requiredIf) {
-      result.split(phrase, () => formatRequirements(context, requiredIf, result));
+      result.split(phrase, () => formatRequirements(options, requiredIf, result));
     }
   },
-  [HelpItem.cluster]: (option, phrase, _context, result) => {
+  [HelpItem.cluster]: (option, phrase, _options, result) => {
     const { cluster } = option;
     if (cluster) {
       result.format(phrase, {}, cluster);
     }
   },
-  [HelpItem.useCommand]: (option, phrase, _context, result) => {
+  [HelpItem.useCommand]: (option, phrase, _options, result) => {
     if (option.useCommand) {
       result.split(phrase);
     }
   },
-  [HelpItem.useFilter]: (option, phrase, _context, result) => {
+  [HelpItem.useFilter]: (option, phrase, _options, result) => {
     if (option.useFilter) {
       result.split(phrase);
     }
   },
-  [HelpItem.inline]: (option, phrase, _context, result) => {
+  [HelpItem.inline]: (option, phrase, _options, result) => {
     const { inline } = option;
     if (inline !== undefined) {
       result.format(phrase, { alt: inline ? 1 : 0 });
@@ -275,81 +275,29 @@ const helpFunctions: HelpFunctions = {
 };
 
 //--------------------------------------------------------------------------------------------------
-// Classes
-//--------------------------------------------------------------------------------------------------
-/**
- * Implements formatting of help messages for a set of option definitions.
- */
-export class HelpFormatter {
-  private readonly context: HelpContext;
-  private readonly keys: ReadonlyArray<string>;
-  private readonly groups: EntriesByGroup;
-
-  /**
-   * Creates a help message formatter.
-   * @param options The option definitions
-   * @param layout The help layout
-   * @param filter The option filter
-   */
-  constructor(
-    options: OpaqueOptions,
-    layout: PartialHelpLayout = {},
-    filter: ReadonlyArray<string> = [],
-  ) {
-    this.context = [options, mergeValues(defaultHelpLayout, layout)];
-    this.keys = filterOptions(options, filter);
-    this.groups = buildHelpEntries(this.context, this.keys);
-  }
-
-  /**
-   * Formats the help message of an option group.
-   * Options are rendered in the same order as was declared in the option definitions.
-   * @param name The group name (defaults to the default group)
-   * @returns The help message, if the group exists; otherwise an empty message
-   */
-  format(name = ''): AnsiMessage {
-    return formatHelpEntries(this.groups[name] ?? []);
-  }
-
-  /**
-   * Formats a help message with sections.
-   * Options are rendered in the same order as was declared in the option definitions.
-   * @param sections The help sections
-   * @param progName The program name, if any
-   * @returns The formatted help message
-   */
-  sections(sections: HelpSections, progName = ''): AnsiMessage {
-    const help = new AnsiMessage();
-    for (const section of sections) {
-      formatHelpSection(this.groups, this.keys, this.context[0], section, progName, help);
-    }
-    return help;
-  }
-}
-
-//--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
- * Formats a help groups section to be included in the help message.
- * @param groups The option groups
- * @param section The help section
- * @param formatFn The formatting function
+ * Formats a help message with sections.
+ * Options are rendered in the same order as was declared in the option definitions.
+ * @param options The option definitions (should be validated first)
+ * @param sections The help sections
+ * @param filter The option filter
+ * @param progName The program name, if any
+ * @returns The formatted help message
  */
-function formatGroups(
-  groups: EntriesByGroup,
-  section: HelpGroupsSection,
-  formatFn: GroupsFunction,
-) {
-  const { filter, exclude } = section;
-  const allNames = getKeys(groups);
-  const names = exclude ? allNames : (filter ?? allNames);
-  const excludeNames = new Set(exclude && filter);
-  for (const name of names) {
-    if (name in groups && !excludeNames.has(name)) {
-      formatFn(name, groups[name], section);
-    }
+export function format(
+  options: OpaqueOptions,
+  sections: HelpSections = defaultSections,
+  filter: ReadonlyArray<string> = [],
+  progName: string = '',
+): AnsiMessage {
+  const keys = filterOptions(options, filter);
+  const help = new AnsiMessage();
+  for (const section of sections) {
+    formatHelpSection(options, section, keys, progName, help);
   }
+  return help;
 }
 
 /**
@@ -360,17 +308,21 @@ function formatGroups(
  */
 function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): Array<string> {
   /** @ignore */
+  function matches(str: string): boolean {
+    str = str.toLowerCase();
+    return filter.findIndex((pattern) => str.includes(pattern)) >= 0;
+  }
+  /** @ignore */
   function exclude(option: OpaqueOption): 0 | boolean {
     const { names, synopsis, sources } = option;
     return (
-      regexp &&
-      !names?.find((name) => !!name && regexp.test(name)) &&
-      (!synopsis || !regexp.test(synopsis)) &&
-      !sources?.find((name) => regexp.test(`${name}`))
+      filter.length && // has at least one pattern
+      !(synopsis && matches(synopsis)) &&
+      !names?.find((name) => name && matches(name)) &&
+      !sources?.find((name) => isString(name) && matches(name))
     );
   }
-  const escaped = filter.map(escapeRegExp).join('|');
-  const regexp = escaped.length && RegExp(`(${escaped})`, 'i');
+  filter = filter.map((pattern) => pattern.toLowerCase());
   const keys: Array<string> = [];
   for (const [key, option] of getEntries(options)) {
     if (option.group !== null && !exclude(option)) {
@@ -383,24 +335,41 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
 /**
  * Build the help entries for a help message.
  * @param options The option definitions
- * @param keys The option keys
+ * @param keys The filtered option keys
+ * @param groupFilter The option group filter
+ * @param exclude True if the filter should exclude
+ * @param useEnv Whether option names should be replaced by environment variable names
  * @param buildFn The building function
  * @returns The option groups
  */
-function buildEntries(
+function buildGroups(
   options: OpaqueOptions,
   keys: ReadonlyArray<string>,
+  groupFilter: ReadonlyArray<string>,
+  exclude: boolean,
+  useEnv: boolean,
   buildFn: (option: OpaqueOption) => HelpEntry,
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
+  let names;
+  if (groupFilter.length) {
+    names = new Set(groupFilter);
+    if (!exclude) {
+      groupFilter.forEach((name) => (groups[name] = [])); // to keep the filter order
+    }
+  }
   for (const key of keys) {
     const option = options[key];
-    const entry = buildFn(option);
     const name = option.group ?? '';
-    if (name in groups) {
-      groups[name].push(entry);
-    } else {
-      groups[name] = [entry];
+    if (!names || names.has(name) !== exclude) {
+      if (!useEnv || option.sources?.length) {
+        const entry = buildFn(option);
+        if (name in groups) {
+          groups[name].push(entry);
+        } else {
+          groups[name] = [entry];
+        }
+      }
     }
   }
   return groups;
@@ -408,33 +377,63 @@ function buildEntries(
 
 /**
  * Build the help entries for a help message.
- * @param context The help context
- * @param keys The option keys
+ * @param options The option definitions
+ * @param layout The help layout
+ * @param keys The filtered option keys
+ * @param groupFilter The option group filter
+ * @param exclude True if the filter should exclude
+ * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The option groups
  */
-function buildHelpEntries(context: HelpContext, keys: ReadonlyArray<string>): EntriesByGroup {
+function buildEntries(
+  options: OpaqueOptions,
+  layout: HelpLayout,
+  keys: ReadonlyArray<string>,
+  groupFilter: ReadonlyArray<string> = [],
+  exclude: boolean = false,
+  useEnv: boolean = false,
+): EntriesByGroup {
+  const { optionSep } = config.connectives;
+  const slotWidths = getSlotWidths(options, layout, optionSep, useEnv);
+  let paramWidth = 0;
+  const groups = buildGroups(options, keys, groupFilter, exclude, useEnv, (option): HelpEntry => {
+    const names = formatNames(layout, option, slotWidths, optionSep, useEnv);
+    const param = formatParams(layout, option);
+    const descr = formatDescription(options, layout, option);
+    paramWidth = max(paramWidth, param.indent); // TODO: remove indent hack
+    return [names, param, descr];
+  });
+  const namesWidth = isArray(slotWidths)
+    ? slotWidths.reduce((acc, len) => acc + len) + Math.max(0, 2 * (slotWidths.length - 1))
+    : slotWidths;
+  adjustEntries(layout, groups, namesWidth, paramWidth);
+  return groups;
+}
+
+/**
+ * Adjust the help entries for a help message.
+ * @param layout The help layout
+ * @param groups The option groups
+ * @param namesWidth The width of the names column
+ * @param paramWidth The width of the parameter column
+ */
+function adjustEntries(
+  layout: HelpLayout,
+  groups: EntriesByGroup,
+  namesWidth: number,
+  paramWidth: number,
+) {
   /** @ignore */
   function getNextIndent(column: HelpLayout['param'], prevIndent: number): number {
     return column.absolute && !column.hidden
       ? max(0, column.indent)
       : prevIndent + (column.hidden ? 0 : column.indent);
   }
-  let nameWidths = getNameWidths(context);
-  let paramWidth = 0;
-  const groups = buildEntries(context[0], keys, (option): HelpEntry => {
-    const names = formatNames(context, option, nameWidths);
-    const [param, paramLen] = formatParams(context, option);
-    const descr = formatDescription(context, option);
-    paramWidth = max(paramWidth, paramLen);
-    return [names, param, descr];
-  });
-  if (typeof nameWidths !== 'number') {
-    nameWidths = nameWidths.length ? nameWidths.reduce((acc, len) => acc + len + 2, -2) : 0;
-  }
-  const { names, param, descr } = context[1];
+  const { names, param, descr } = layout;
   const namesIndent = names.hidden ? 0 : max(0, names.indent);
-  const paramIndent = getNextIndent(param, namesIndent + nameWidths);
+  const paramIndent = getNextIndent(param, namesIndent + namesWidth);
   const descrIndent = getNextIndent(descr, paramIndent + paramWidth);
+  const namesRight = names.align === 'right';
   const paramRight = param.align === 'right';
   const paramMerge = param.align === 'merge' || param.hidden;
   const descrMerge = descr.align === 'merge' || descr.hidden;
@@ -445,51 +444,54 @@ function buildHelpEntries(context: HelpContext, keys: ReadonlyArray<string>): En
     } else {
       descr.indent = descrIndent;
     }
-    if (paramMerge) {
-      if (names.length) {
-        names[names.length - 1].other(param);
-        param.clear();
-      } else {
-        param.indent = namesIndent;
-      }
+    if (paramMerge && names.length) {
+      names.at(-1)?.other(param);
+      param.clear();
     } else {
-      param.indent = paramIndent + (paramRight ? paramWidth - param.indent : 0);
+      param.indent = paramMerge
+        ? namesRight
+          ? namesIndent + namesWidth + 1
+          : namesIndent
+        : paramRight
+          ? paramIndent + paramWidth - param.indent
+          : paramIndent;
     }
   }
-  return groups;
 }
 
 /**
  * Formats an option's names to be printed on the terminal.
- * @param context The help context
+ * @param layout The help layout
  * @param option The option definition
- * @param nameWidths The name slot widths
+ * @param slotWidths The name slot widths
+ * @param separator The name separator
+ * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The list of formatted strings, one for each name
  */
 function formatNames(
-  context: HelpContext,
+  layout: HelpLayout,
   option: OpaqueOption,
-  nameWidths: Array<number> | number,
+  slotWidths: Array<number> | number,
+  separator: string,
+  useEnv: boolean,
 ): Array<AnsiString> {
-  const [, layout] = context;
-  let { indent, breaks } = layout.names;
-  const { align, hidden } = layout.names;
-  if (hidden || !option.names) {
+  const { hidden, align } = layout.names;
+  const names = useEnv ? getOptionSources(option) : option.names;
+  if (hidden || !names?.length) {
     return [];
   }
-  const { styles, connectives } = config;
-  const style = option.styles?.names ?? styles.symbol;
-  const sep = connectives.optionSep;
-  const slotted = typeof nameWidths !== 'number';
+  const style = option.styles?.names ?? config.styles.symbol;
+  const slotted = isArray(slotWidths);
   const result: Array<AnsiString> = [];
-  const sepLen = sep.length + 1;
-  let str: AnsiString | undefined;
+  const sepLen = separator.length + 1;
+  let { indent, breaks } = layout.names;
   indent = max(0, indent);
+  let str: AnsiString | undefined;
   let len = 0;
-  option.names.forEach((name, i) => {
+  names.forEach((name, i) => {
     if (name !== null) {
       if (str) {
-        str.close(sep);
+        str.close(separator);
         len += sepLen;
       }
       if (!str || slotted) {
@@ -503,23 +505,22 @@ function formatNames(
       str = undefined;
     }
     if (slotted) {
-      indent += nameWidths[i] + sepLen;
+      indent += slotWidths[i] + sepLen;
     }
   });
   if (str && !slotted && align === 'right') {
-    str.indent += nameWidths - len;
+    str.indent += slotWidths - len;
   }
   return result;
 }
 
 /**
  * Formats an option's parameter to be printed on the terminal.
- * @param context The help context
+ * @param layout The help layout
  * @param option The option definition
- * @returns [the formatted string, the string length]
+ * @returns The formatted string
  */
-function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, number] {
-  const [, layout] = context;
+function formatParams(layout: HelpLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
   const result = new AnsiString(0, breaks);
   if (!hidden) {
@@ -528,59 +529,74 @@ function formatParams(context: HelpContext, option: OpaqueOption): [AnsiString, 
   }
   const len = result.strings.reduce((acc, str) => acc + (str.length && str.length + 1), -1);
   if (len < 0) {
-    return [result.clear(), 0]; // this string does not contain any word
+    return result.clear(); // this string does not contain any word
   }
-  result.indent = len; // hack: save the length, since we will need it in `adjustEntries`
-  return [result, len];
+  result.indent = len; // TODO: save the length, since we will need it in `adjustEntries`
+  return result;
 }
 
 /**
  * Formats an option's description to be printed on the terminal.
  * The description always ends with a single line break.
- * @param context The help context
+ * @param options The option definitions
+ * @param layout The help layout
  * @param option The option definition
  * @returns The formatted string
  */
-function formatDescription(context: HelpContext, option: OpaqueOption): AnsiString {
-  const [, layout] = context;
-  const { descr, items } = layout;
-  const { hidden, breaks, align } = descr;
+function formatDescription(
+  options: OpaqueOptions,
+  layout: HelpLayout,
+  option: OpaqueOption,
+): AnsiString {
+  const { hidden, breaks, align } = layout.descr;
   const style = option.styles?.descr ?? config.styles.text;
   const result = new AnsiString(0, breaks, align === 'right', style);
   const count = result.count;
   if (!hidden) {
-    for (const item of items) {
-      helpFunctions[item](option, config.helpPhrases[item], context, result);
+    for (const item of layout.items) {
+      helpFunctions[item](option, config.helpPhrases[item], options, result);
     }
   }
   return (result.count === count ? result.clear() : result.addClear()).break();
 }
 
 /**
- * Gets the required width of option names in a set of option definitions.
- * @param context The help context
- * @returns The name slot widths, or the maximum combined width
+ * Gets the required width of name slots in a set of option definitions.
+ * @param options The option definitions
+ * @param layout The help layout
+ * @param separator The name separator
+ * @param useEnv Whether option names should be replaced by environment variable names
+ * @returns The slot widths, or the maximum combined width
  */
-function getNameWidths(context: HelpContext): Array<number> | number {
-  const [options, layout] = context;
-  const { hidden, align } = layout.names;
-  if (hidden) {
+function getSlotWidths(
+  options: OpaqueOptions,
+  layout: HelpLayout,
+  separator: string,
+  useEnv: boolean,
+): Array<number> | number {
+  const { names, param } = layout;
+  if (names.hidden) {
     return 0;
   }
-  const sepLen = config.connectives.optionSep.length + 1;
-  const slotted = align === 'slot';
+  const sepLen = separator.length + 1;
+  const slotted = names.align === 'slot' && param.align !== 'merge';
   const slotWidths: Array<number> = [];
   let maxWidth = 0;
   for (const option of getValues(options)) {
-    const names = option.names;
-    if (option.group !== null && names) {
-      if (slotted) {
-        names.forEach((name, i) => {
-          slotWidths[i] = max(slotWidths[i] ?? 0, name?.length ?? 0);
-        });
-      } else {
-        const len = names.reduce((acc, name) => acc + sepLen + (name?.length ?? -sepLen), -sepLen);
-        maxWidth = max(maxWidth, len);
+    if (option.group !== null) {
+      const names = useEnv ? getOptionSources(option) : option.names;
+      if (names?.length) {
+        if (slotted) {
+          names.forEach((name, i) => {
+            slotWidths[i] = max(slotWidths[i] ?? 0, name?.length ?? 0);
+          });
+        } else {
+          const len = names.reduce(
+            (acc, name) => acc + sepLen + (name?.length ?? -sepLen),
+            -sepLen,
+          );
+          maxWidth = max(maxWidth, len);
+        }
       }
     }
   }
@@ -588,52 +604,41 @@ function getNameWidths(context: HelpContext): Array<number> | number {
 }
 
 /**
- * Formats a help message from a list of help entries.
- * @param entries The help entries
- * @param result The resulting message
- * @returns The resulting message
- */
-function formatHelpEntries(
-  entries: ReadonlyArray<HelpEntry>,
-  result = new AnsiMessage(),
-): AnsiMessage {
-  for (const [names, param, descr] of entries) {
-    result.push(...names, param, descr);
-  }
-  return result;
-}
-
-/**
  * Formats a help section to be included in the full help message.
  * Options are rendered in the same order as was declared in the option definitions.
- * @param groups The option groups
- * @param keys The option keys
  * @param options The option definitions
  * @param section The help section
+ * @param keys The filtered option keys
  * @param progName The program name
  * @param result The resulting message
  */
 function formatHelpSection(
-  groups: EntriesByGroup,
-  keys: ReadonlyArray<string>,
   options: OpaqueOptions,
   section: HelpSection,
+  keys: ReadonlyArray<string>,
   progName: string,
   result: AnsiMessage,
 ) {
   const { type, title, breaks, noWrap, style: sty } = section;
   let curBreaks = breaks ?? (result.length ? 1 : 0); // to account for the first section
   if (type === 'groups') {
+    const { layout, filter, exclude, useEnv } = section;
     const headingStyle = sty ?? style(tf.bold);
-    formatGroups(groups, section, (group, entries) => {
-      const title2 = group || title;
-      const heading = title2
-        ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
-        : new AnsiString(0, curBreaks);
-      result.push(heading);
-      formatHelpEntries(entries, result);
-      curBreaks = 1; // to account for the last option description
-    });
+    const mergedLayout = mergeValues(defaultLayout, layout ?? {});
+    const groups = buildEntries(options, mergedLayout, keys, filter, exclude, useEnv);
+    for (const [name, entries] of getEntries(groups)) {
+      if (entries.length) {
+        const title2 = name || title;
+        const heading = title2
+          ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
+          : new AnsiString(0, curBreaks);
+        result.push(heading);
+        for (const [names, param, descr] of entries) {
+          result.push(...names, param, descr);
+        }
+        curBreaks = 1; // to account for the last option description
+      }
+    }
   } else {
     if (title) {
       result.push(formatText(title, sty ?? style(tf.bold), 0, curBreaks, noWrap).break());
@@ -677,7 +682,7 @@ function formatText(
   defStyle: Style,
   indent?: number,
   breaks?: number,
-  noWrap = false,
+  noWrap: boolean = false,
 ): AnsiString {
   const result = new AnsiString(indent, breaks, false, defStyle);
   if (noWrap) {
@@ -691,7 +696,7 @@ function formatText(
 /**
  * Formats a usage text to be included in a help section.
  * Options are rendered in the same order as was declared in the option definitions.
- * @param allKeys The option keys
+ * @param allKeys The filtered option keys
  * @param options The option definitions
  * @param section The help section
  * @param indent The indentation level (negative values are replaced by zero)
@@ -710,7 +715,7 @@ function formatUsage(
   const visited = new Set<string>(exclude && filter);
   const requiredKeys = new Set(required);
   const requiredBy = requires && getRequiredBy(requires);
-  const keys = exclude ? allKeys : (filter?.filter((key) => allKeys.includes(key)) ?? allKeys);
+  const keys = exclude || !filter ? allKeys : filter.filter((key) => allKeys.includes(key));
   const count = result.count;
   for (const key of keys) {
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
@@ -747,7 +752,7 @@ function formatUsageOption(
   preOrderFn?: (requiredKey?: string) => void,
 ): boolean {
   /** @ignore */
-  function format(receivedKey?: string, isLast = false): boolean {
+  function format(receivedKey?: string, isLast: boolean = false): boolean {
     const count = result.count;
     const names = getOptionNames(option);
     // if the received key is my own key, then I'm the junction point in a circular dependency:
@@ -837,7 +842,7 @@ function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result:
   const [min, max] = getParamCount(option);
   const optional = !min && max && !(positional && !names.length);
   const ellipsis =
-    type === 'command' || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
+    isCommand(type) || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
@@ -851,7 +856,7 @@ function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result:
     if (example !== undefined) {
       let param = example;
       if (separator && isArray(param)) {
-        const sep = typeof separator === 'string' ? separator : separator.source;
+        const sep = isString(separator) ? separator : separator.source;
         param = param.join(sep);
       }
       fmt.v(param, result, { sep: '', open: '', close: '' });
@@ -869,29 +874,29 @@ function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result:
 /**
  * Recursively formats an option's requirements to be included in the description.
  * Assumes that the options were validated.
- * @param context The help context
+ * @param options The option definitions
  * @param requires The option requirements
  * @param result The resulting string
  * @param negate True if the requirement should be negated
  */
 function formatRequirements(
-  context: HelpContext,
+  options: OpaqueOptions,
   requires: Requires,
   result: AnsiString,
   negate: boolean = false,
 ) {
   /** @ignore */
   function custom1(item: Requires) {
-    formatRequirements(context, item, result, negate);
+    formatRequirements(options, item, result, negate);
   }
   /** @ignore */
   function custom2([key, value]: RequiresEntry) {
-    formatRequiredValue(context[0][key], value, result, negate);
+    formatRequiredValue(options[key], value, result, negate);
   }
   visitRequirements(
     requires,
-    (req) => formatRequiredKey(context, req, result, negate),
-    (req) => formatRequirements(context, req.item, result, !negate),
+    (req) => formatRequiredKey(options, req, result, negate),
+    (req) => formatRequirements(options, req.item, result, !negate),
     (req) => formatRequiresExp(req.items, result, negate, true, custom1),
     (req) => formatRequiresExp(req.items, result, negate, false, custom1),
     (req) => formatRequiresExp(getEntries(req), result, negate, true, custom2),
@@ -902,13 +907,13 @@ function formatRequirements(
 /**
  * Formats a required option key to be included in the description.
  * Assumes that the options were validated.
- * @param context The help context
+ * @param options The option definitions
  * @param requiredKey The required option key
  * @param result The resulting string
  * @param negate True if the requirement should be negated
  */
 function formatRequiredKey(
-  context: HelpContext,
+  options: OpaqueOptions,
   requiredKey: string,
   result: AnsiString,
   negate: boolean,
@@ -916,7 +921,7 @@ function formatRequiredKey(
   if (negate) {
     result.word(config.connectives.no);
   }
-  const name = context[0][requiredKey].preferredName ?? '';
+  const name = options[requiredKey].preferredName ?? '';
   fmt.m(getSymbol(name), result, {});
 }
 

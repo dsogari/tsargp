@@ -21,9 +21,14 @@ const options = {
     type: 'help',
     names: ['-h', '--help'],
     synopsis: 'The help option for the hello command. Prints this help message.',
-    layout: {
-      param: { align: 'merge' },
-    },
+    sections: [
+      { type: 'usage', title: 'Usage:', indent: 2 },
+      {
+        type: 'groups',
+        title: 'Options:',
+        layout: { param: { align: 'merge' } },
+      },
+    ],
     useFilter: true,
   },
   /**

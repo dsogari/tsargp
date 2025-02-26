@@ -239,8 +239,7 @@ export function areEqual(actual: unknown, expected: unknown): boolean {
   if (actual === expected) {
     return true;
   }
-  const type = typeof actual;
-  if (type === typeof expected && type !== 'function') {
+  if (typeof actual === typeof expected && !isFunction(actual)) {
     const array1 = isArray(actual);
     const array2 = isArray(expected);
     if (array1 && array2) {
@@ -248,7 +247,7 @@ export function areEqual(actual: unknown, expected: unknown): boolean {
         actual.length === expected.length && !actual.find((val, i) => !areEqual(val, expected[i]))
       );
     }
-    if (!array1 && !array2 && actual && expected && type === 'object') {
+    if (!array1 && !array2 && actual && expected && isObject(actual)) {
       const keys1 = getKeys(actual);
       const keys2 = getKeys(expected);
       return (
@@ -458,7 +457,7 @@ export function mergeValues<T extends Record<string, unknown>>(
   const result: Record<string, unknown> = {};
   for (const [key, val] of getEntries(template)) {
     result[key] =
-      isArray(val) || typeof val !== 'object'
+      isArray(val) || !isObject(val)
         ? (source[key] ?? val)
         : { ...val, ...(source[key] as object) };
   }
@@ -541,6 +540,34 @@ export function getEntries<T>(rec: Readonly<Record<string, T>>): Array<[string, 
  */
 export function isArray<T = unknown>(value: unknown): value is Array<T> {
   return Array.isArray(value);
+}
+
+/**
+ * Checks if a value is a string.
+ * @param value The value
+ * @returns True if the value is a string
+ */
+export function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+/**
+ * Checks if a value is an object.
+ * @param value The value
+ * @returns True if the value is an object
+ */
+export function isObject(value: unknown): value is object {
+  return typeof value === 'object';
+}
+
+/**
+ * Checks if a value is a function.
+ * @param value The value
+ * @returns True if the value is a function
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function isFunction(value: unknown): value is Function {
+  return typeof value === 'function';
 }
 
 /**

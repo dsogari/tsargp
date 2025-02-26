@@ -7,7 +7,7 @@ import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, getSymbol } from './utils.js';
+import { getEntries, getSymbol, isFunction, isObject, isString } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -147,15 +147,10 @@ export type HelpLayout = {
    */
   readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
   /**
-   * The order of items to be shown in the option description.
+   * The order of items to be shown in option descriptions.
    */
   readonly items: ReadonlyArray<HelpItem>;
 };
-
-/**
- * A partial help layout.
- */
-export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
 
 /**
  * Defines attributes common to all help sections.
@@ -237,6 +232,20 @@ export type WithSectionUsage = {
 };
 
 /**
+ * Defines additional attributes for the groups section.
+ */
+export type WithSectionGroups = {
+  /**
+   * The help layout.
+   */
+  readonly layout?: PartialWithDepth<HelpLayout>;
+  /**
+   * Whether option names should be replaced by environment variable names.
+   */
+  readonly useEnv?: true;
+};
+
+/**
  * A help text section.
  */
 export type HelpTextSection = WithSectionKind<'text'> & WithSectionText & WithSectionIndent;
@@ -252,7 +261,7 @@ export type HelpUsageSection = WithSectionKind<'usage'> &
 /**
  * A help groups section.
  */
-export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter;
+export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter & WithSectionGroups;
 
 /**
  * A help section.
@@ -444,11 +453,11 @@ export type WithBasic = {
    */
   preferredName?: string;
   /**
-   * The option synopsis. It may contain inline styles.
+   * The option synopsis. May contain inline styles.
    */
   readonly synopsis?: string;
   /**
-   * The option deprecation notice. It may contain inline styles.
+   * The option deprecation notice. May contain inline styles.
    */
   readonly deprecated?: string;
   /**
@@ -521,7 +530,7 @@ export type WithEnv = {
    */
   readonly stdin?: true;
   /**
-   * The name of environment data sources to try reading from (in order), if the option is specified
+   * The names of environment data sources to try reading from (in order), if the option is specified
    * neither on the command-line nor in the standard input. A string means an environment variable,
    * while a URL means a local file.
    */
@@ -543,6 +552,7 @@ export type WithParam<I> = {
   readonly example?: KnownValue;
   /**
    * The option parameter name. Replaces the option type in the help message parameter column.
+   * It should not contain inline styles or line feeds.
    */
   readonly paramName?: string;
   /**
@@ -592,10 +602,6 @@ export type WithSelection = {
  * Defines attributes for the help option.
  */
 export type WithHelp = {
-  /**
-   * The help layout.
-   */
-  readonly layout?: PartialHelpLayout;
   /**
    * The help sections to be rendered.
    */
@@ -1021,11 +1027,20 @@ function registerNames(
  * @returns The option names
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
-  const names = option.names?.slice() ?? [];
-  if (typeof option.positional === 'string') {
+  const names = option.names?.slice().filter(isString) ?? [];
+  if (isString(option.positional)) {
     names.push(option.positional);
   }
-  return names.filter((name): name is string => name !== null);
+  return names;
+}
+
+/**
+ * Gets a list of environment data sources, excluding URLs.
+ * @param option The option definition
+ * @returns The option data sources
+ */
+export function getOptionSources(option: OpaqueOption): Array<string> {
+  return option.sources?.slice().filter(isString) ?? [];
 }
 
 /**
@@ -1038,12 +1053,21 @@ export function isMessage(type: OptionType): type is MessageOptionType {
 }
 
 /**
- * Tests if an option is that of a niladic option.
+ * Tests if an option type is that of a niladic option.
  * @param type The option type
  * @returns True if the option type is niladic
  */
 export function isNiladic(type: OptionType): type is NiladicOptionType {
   return niladicOptionTypes.includes(type as NiladicOptionType);
+}
+
+/**
+ * Tests if an option type is that of a command option.
+ * @param type The option type
+ * @returns True if the option type is command
+ */
+export function isCommand(type: OptionType): type is 'command' {
+  return type === 'command';
 }
 
 /**
@@ -1055,14 +1079,14 @@ export function getParamCount(option: OpaqueOption): Range {
   if (isNiladic(option.type)) {
     return [0, 0];
   }
-  const { paramCount } = option;
-  return option.type === 'function'
-    ? typeof paramCount === 'object'
+  const { type, paramCount } = option;
+  return type === 'function'
+    ? isObject(paramCount)
       ? paramCount
       : paramCount !== undefined && paramCount >= 0
         ? [paramCount, paramCount]
         : [0, Infinity]
-    : option.type === 'array'
+    : type === 'array'
       ? [0, Infinity]
       : [1, 1];
 }
@@ -1087,7 +1111,7 @@ export function visitRequirements<T>(
   valFn: (req: RequiresVal) => T,
   cbkFn: (req: RequirementCallback) => T,
 ): T {
-  return typeof requires === 'string'
+  return isString(requires)
     ? keyFn(requires)
     : requires instanceof RequiresNot
       ? notFn(requires)
@@ -1095,9 +1119,9 @@ export function visitRequirements<T>(
         ? allFn(requires)
         : requires instanceof RequiresOne
           ? oneFn(requires)
-          : typeof requires === 'object'
-            ? valFn(requires)
-            : cbkFn(requires);
+          : isFunction(requires)
+            ? cbkFn(requires)
+            : valFn(requires);
 }
 
 /**
@@ -1167,12 +1191,12 @@ export async function getNestedOptions(
   option: OpaqueOption,
   resolve?: ModuleResolutionCallback,
 ): Promise<OpaqueOptions> {
-  if (typeof option.options === 'string') {
+  if (isString(option.options)) {
     if (!resolve) {
       throw ErrorMessage.create(ErrorItem.missingResolveCallback);
     }
     return (await import(resolve(option.options))).default;
   }
   // do not destructure `options`, because the callback might need to use `this`
-  return await (typeof option.options === 'function' ? option.options() : (option.options ?? {}));
+  return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
 }
