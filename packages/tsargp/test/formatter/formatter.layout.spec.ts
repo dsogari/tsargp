@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSections, Options } from '../../lib/options';
 import { config } from '../../lib/config';
-import { tf } from '../../lib/enums';
+import { HelpItem, tf } from '../../lib/enums';
 import { format } from '../../lib/formatter';
 import { style } from '../../lib/styles';
 
@@ -27,16 +27,30 @@ describe('format', () => {
     expect(message.wrap()).toEqual('\n');
   });
 
-  it('handle an option with phantom names', () => {
+  it('handle options with phantom names', () => {
     const options = {
-      flag: {
+      flag1: {
         type: 'flag',
         names: ['', ' ', null],
         synopsis: 'A phantom option.',
       },
+      flag2: {
+        type: 'flag',
+        names: [' ', '', null],
+        synopsis: 'A phantom option.',
+      },
+      flag3: {
+        type: 'flag',
+        names: [' ', null, '  '],
+        synopsis: 'A phantom option.',
+      },
     } as const satisfies Options;
     const message = format(options);
-    expect(message.wrap()).toEqual('  ,      A phantom option.\n');
+    expect(message.wrap()).toEqual(
+      '           A phantom option.\n' +
+        '           A phantom option.\n' +
+        '   ,       A phantom option.\n',
+    );
   });
 
   it('handle an option with no description', () => {
@@ -59,25 +73,25 @@ describe('format', () => {
         default: 1,
         styles: {
           names: style(tf.bold),
-          descr: style(tf.faint),
+          descr: style(tf.clear, tf.faint),
         },
       },
     } as const satisfies Options;
     const message = format(options);
     expect(message.wrap(0, true)).toEqual(
-      '  \x1b[39m\x1b[1m' +
+      '  \x1b[0m\x1b[1m' +
         '-f' +
-        '\x1b[0m\x1b[39m' +
+        '\x1b[0m' +
         ', ' +
         '\x1b[1m' +
         '--flag' +
-        '\x1b[0m\x1b[39m' +
+        '\x1b[0m' +
         '    ' +
-        '\x1b[2m\x1b[39m' +
+        '\x1b[0;2m' +
         'A flag option. Defaults to ' +
         '\x1b[33m' +
         '1' +
-        '\x1b[0m\x1b[2m' +
+        '\x1b[0;2m' +
         '.' +
         '\x1b[0m' +
         '\n',
@@ -94,11 +108,11 @@ describe('format', () => {
     } as const satisfies Options;
     const message = format(options);
     expect(message.wrap(0, true)).toEqual(
-      '  \x1b[39m\x1b[35m' +
+      '  \x1b[0m\x1b[35m' +
         '-f' +
-        '\x1b[0m\x1b[39m' +
+        '\x1b[0m' +
         '    ' +
-        '\x1b[39m\x1b[39m' +
+        '\x1b[0m' +
         'A ' +
         '\x1b[1m' +
         'flag' +
@@ -430,7 +444,7 @@ describe('format', () => {
       },
     ];
     const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -f           --flag\n      --flag2\n');
+    expect(message.wrap()).toEqual('  -f,          --flag\n      --flag2\n');
   });
 
   it('align option parameters to the right boundary', () => {
@@ -487,6 +501,8 @@ describe('format', () => {
       },
       single2: {
         type: 'single',
+        paramName: 'long-parameter-name',
+        synopsis: 'A single-valued option',
       },
       single3: {
         type: 'single',
@@ -504,13 +520,16 @@ describe('format', () => {
         type: 'groups',
         layout: {
           param: { align: 'merge' },
-          items: [],
+          items: [HelpItem.synopsis],
         },
       },
     ];
     const message = format(options, sections);
     expect(message.wrap()).toEqual(
-      `  -s1, --single <param>\n  <param>\n  -s3=<param>\n  --array[=<param>]\n`,
+      '  -s1, --single <param>\n' +
+        '  <long-parameter-name>  A single-valued option\n' +
+        '  -s3=<param>\n' +
+        '  --array[=<param>]\n',
     );
   });
 
@@ -522,6 +541,7 @@ describe('format', () => {
       },
       single2: {
         type: 'single',
+        paramName: 'long-parameter-name',
       },
       single3: {
         type: 'single',
@@ -540,13 +560,13 @@ describe('format', () => {
         layout: {
           names: { align: 'slot' }, // ignored by the formatter
           param: { align: 'merge' },
-          items: [],
+          items: [HelpItem.synopsis],
         },
       },
     ];
     const message = format(options, sections);
     expect(message.wrap()).toEqual(
-      `  -s1, --single <param>\n  <param>\n  -s3=<param>\n  --array[=<param>]\n`,
+      `  -s1, --single <param>\n  <long-parameter-name>\n  -s3=<param>\n  --array[=<param>]\n`,
     );
   });
 
@@ -558,6 +578,7 @@ describe('format', () => {
       },
       single2: {
         type: 'single',
+        paramName: 'long-parameter-name',
       },
       single3: {
         type: 'single',
@@ -576,14 +597,14 @@ describe('format', () => {
         layout: {
           names: { align: 'right' },
           param: { align: 'merge' },
-          items: [],
+          items: [HelpItem.synopsis],
         },
       },
     ];
     const message = format(options, sections);
     expect(message.wrap()).toEqual(
       '  -s1, --single <param>\n' +
-        '                <param>\n' +
+        '                <long-parameter-name>\n' +
         '            -s3=<param>\n' +
         '        --array[=<param>]\n',
     );

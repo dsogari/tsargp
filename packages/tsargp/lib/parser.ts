@@ -271,7 +271,7 @@ function createContext(
   completing: boolean,
   flags: ParsingFlags,
 ): ParseContext {
-  if (!flags.progName) {
+  if (flags.progName === undefined) {
     flags.progName = process?.argv[1]?.split(regex.pathSep).at(-1);
   }
   if (!completing && flags.progName && process?.title) {
@@ -793,7 +793,8 @@ async function handleCommand(
   const cmdOptions = await getNestedOptions(option, flags.resolve);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const cmdFlags: ParsingFlags = { progName: name, clusterPrefix, optionPrefix };
+  const progName = flags.progName && flags.progName + ' ' + name;
+  const cmdFlags: ParsingFlags = { progName, clusterPrefix, optionPrefix };
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
@@ -838,7 +839,8 @@ async function handleHelp(
   rest: Array<string>,
 ): Promise<AnsiMessage> {
   let registry = context[0];
-  const { progName, resolve } = context[6];
+  let { progName } = context[6];
+  const { resolve } = context[6];
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
@@ -850,7 +852,7 @@ async function handleHelp(
       if (helpOpt) {
         registry = new OptionRegistry(cmdOptions);
         option = helpOpt;
-        rest.splice(0, 1); // only if the command has help; otherwise, it may be an option filter
+        progName &&= progName + ' ' + rest.splice(0, 1)[0];
       }
     }
   }

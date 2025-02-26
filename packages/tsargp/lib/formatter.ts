@@ -394,19 +394,44 @@ function buildEntries(
   useEnv: boolean = false,
 ): EntriesByGroup {
   const { optionSep } = config.connectives;
-  const slotWidths = getSlotWidths(options, layout, optionSep, useEnv);
+  const slotWidths: Array<number> = [];
+  const nameWidths: Array<number> = [];
+  let namesWidth = 0;
   let paramWidth = 0;
+  let mergedWidth = 0;
   const groups = buildGroups(options, keys, groupFilter, exclude, useEnv, (option): HelpEntry => {
-    const names = formatNames(layout, option, slotWidths, optionSep, useEnv);
+    const names = formatNames(layout, option, useEnv);
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option);
-    paramWidth = max(paramWidth, param.indent); // TODO: remove indent hack
+    const paramLen = param.totalLen;
+    param.indent = paramLen; // TODO: save the length, since we will need it in `adjustEntries`
+    let prev: AnsiString | undefined;
+    let namesLen = 0;
+    names.forEach((str, i) => {
+      const nameLen = str.totalLen;
+      if (nameLen) {
+        if (prev) {
+          prev.close(optionSep);
+          prev.indent += optionSep.length + 1;
+          namesLen += optionSep.length + 1;
+        }
+        prev = str;
+      }
+      const inc = i < names.length - 1 ? optionSep.length + 1 : 0;
+      slotWidths[i] = max(slotWidths[i] ?? 0, nameLen + inc);
+      str.indent = nameLen; // TODO: save the length, since we will need it in `adjustEntries`
+      namesLen += nameLen;
+    });
+    nameWidths.push(namesLen);
+    namesWidth = max(namesWidth, namesLen);
+    paramWidth = max(paramWidth, paramLen);
+    mergedWidth = max(
+      mergedWidth,
+      namesLen + paramLen + (namesLen && paramLen && !param.mergeLeft ? 1 : 0),
+    );
     return [names, param, descr];
   });
-  const namesWidth = isArray(slotWidths)
-    ? slotWidths.reduce((acc, len) => acc + len) + Math.max(0, 2 * (slotWidths.length - 1))
-    : slotWidths;
-  adjustEntries(layout, groups, namesWidth, paramWidth);
+  adjustEntries(layout, groups, slotWidths, nameWidths, namesWidth, paramWidth, mergedWidth);
   return groups;
 }
 
@@ -414,102 +439,97 @@ function buildEntries(
  * Adjust the help entries for a help message.
  * @param layout The help layout
  * @param groups The option groups
+ * @param slotWidths The widths of the name slots
+ * @param nameWidths The widths of the names column for each entry
  * @param namesWidth The width of the names column
  * @param paramWidth The width of the parameter column
+ * @param mergedWidth The width of the names and parameter columns merged
  */
 function adjustEntries(
   layout: HelpLayout,
   groups: EntriesByGroup,
+  slotWidths: ReadonlyArray<number>,
+  nameWidths: ReadonlyArray<number>,
   namesWidth: number,
   paramWidth: number,
+  mergedWidth: number,
 ) {
   /** @ignore */
-  function getNextIndent(column: HelpLayout['param'], prevIndent: number): number {
+  function getStart(column: HelpLayout['param'], prevEnd: number): number {
     return column.absolute && !column.hidden
       ? max(0, column.indent)
-      : prevIndent + (column.hidden ? 0 : column.indent);
+      : prevEnd + (column.hidden ? 0 : column.indent);
   }
   const { names, param, descr } = layout;
-  const namesIndent = names.hidden ? 0 : max(0, names.indent);
-  const paramIndent = getNextIndent(param, namesIndent + namesWidth);
-  const descrIndent = getNextIndent(descr, paramIndent + paramWidth);
+  const namesSlotted = names.align === 'slot';
   const namesRight = names.align === 'right';
   const paramRight = param.align === 'right';
-  const paramMerge = param.align === 'merge' || param.hidden;
-  const descrMerge = descr.align === 'merge' || descr.hidden;
+  const paramMerge = param.align === 'merge';
+  const descrMerge = descr.align === 'merge';
+  const paramHidden = param.hidden;
+  const namesStart = names.hidden ? 0 : max(0, names.indent);
+  const namesEnd = namesStart + namesWidth;
+  const paramStart = getStart(param, namesEnd);
+  const paramEnd = paramStart + paramWidth;
+  const descrStart = getStart(descr, paramMerge ? namesStart + mergedWidth : paramEnd);
+  let j = 0;
   for (const [names, param, descr] of getValues(groups).flat()) {
+    const width = nameWidths[j++];
+    let indent = namesRight ? namesEnd - width : namesStart;
+    names.forEach((str, i) => {
+      const saved = str.indent; // TODO: fix length hack
+      str.indent = indent;
+      indent += namesSlotted && !paramMerge ? slotWidths[i] : saved;
+    });
     if (descrMerge) {
       param.other(descr);
       descr.clear();
     } else {
-      descr.indent = descrIndent;
+      descr.indent = descrStart;
     }
-    if (paramMerge && names.length) {
+    if ((paramMerge || paramHidden) && names.length) {
       names.at(-1)?.other(param);
       param.clear();
     } else {
       param.indent = paramMerge
         ? namesRight
-          ? namesIndent + namesWidth + 1
-          : namesIndent
+          ? namesEnd + 1
+          : namesStart
         : paramRight
-          ? paramIndent + paramWidth - param.indent
-          : paramIndent;
+          ? paramEnd - param.indent // TODO: fix length hack
+          : paramStart;
     }
   }
 }
 
 /**
  * Formats an option's names to be printed on the terminal.
+ * This does not include the positional marker.
  * @param layout The help layout
  * @param option The option definition
- * @param slotWidths The name slot widths
- * @param separator The name separator
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The list of formatted strings, one for each name
  */
-function formatNames(
-  layout: HelpLayout,
-  option: OpaqueOption,
-  slotWidths: Array<number> | number,
-  separator: string,
-  useEnv: boolean,
-): Array<AnsiString> {
-  const { hidden, align } = layout.names;
+function formatNames(layout: HelpLayout, option: OpaqueOption, useEnv: boolean): Array<AnsiString> {
+  const { breaks, hidden } = layout.names;
   const names = useEnv ? getOptionSources(option) : option.names;
   if (hidden || !names?.length) {
     return [];
   }
-  const style = option.styles?.names ?? config.styles.symbol;
-  const slotted = isArray(slotWidths);
+  const defSty = config.styles.text;
+  const sty = option.styles?.names ?? config.styles.symbol;
   const result: Array<AnsiString> = [];
-  const sepLen = separator.length + 1;
-  let { indent, breaks } = layout.names;
-  indent = max(0, indent);
   let str: AnsiString | undefined;
-  let len = 0;
-  names.forEach((name, i) => {
+  names.forEach((name) => {
     if (name !== null) {
-      if (str) {
-        str.close(separator);
-        len += sepLen;
-      }
-      if (!str || slotted) {
-        str = new AnsiString(indent, breaks);
-        result.push(str);
-        breaks = 0; // break only on the first name
-      }
-      str.word(name, style);
-      len += name.length;
-    } else if (slotted) {
-      str = undefined;
-    }
-    if (slotted) {
-      indent += slotWidths[i] + sepLen;
+      str = new AnsiString(0, str ? 0 : breaks, false, str ? '' : defSty);
+      result.push(str.word(name, sty));
+    } else {
+      result.push(new AnsiString());
     }
   });
-  if (str && !slotted && align === 'right') {
-    str.indent += slotWidths - len;
+  if (str && !str.defSty) {
+    str.close('', defSty); // close style on last string
   }
   return result;
 }
@@ -522,17 +542,14 @@ function formatNames(
  */
 function formatParams(layout: HelpLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
-  const result = new AnsiString(0, breaks);
+  const defSty = option.styles?.param ?? config.styles.value;
+  const result = new AnsiString(0, breaks, false, defSty);
+  const count = result.count;
   if (!hidden) {
     const names = getOptionNames(option);
     formatParam(option, names, result);
   }
-  const len = result.strings.reduce((acc, str) => acc + (str.length && str.length + 1), -1);
-  if (len < 0) {
-    return result.clear(); // this string does not contain any word
-  }
-  result.indent = len; // TODO: save the length, since we will need it in `adjustEntries`
-  return result;
+  return result.count === count ? result.clear() : result;
 }
 
 /**
@@ -549,8 +566,8 @@ function formatDescription(
   option: OpaqueOption,
 ): AnsiString {
   const { hidden, breaks, align } = layout.descr;
-  const style = option.styles?.descr ?? config.styles.text;
-  const result = new AnsiString(0, breaks, align === 'right', style);
+  const defSty = option.styles?.descr ?? config.styles.text;
+  const result = new AnsiString(0, breaks, align === 'right', defSty);
   const count = result.count;
   if (!hidden) {
     for (const item of layout.items) {
@@ -558,49 +575,6 @@ function formatDescription(
     }
   }
   return (result.count === count ? result.clear() : result.addClear()).break();
-}
-
-/**
- * Gets the required width of name slots in a set of option definitions.
- * @param options The option definitions
- * @param layout The help layout
- * @param separator The name separator
- * @param useEnv Whether option names should be replaced by environment variable names
- * @returns The slot widths, or the maximum combined width
- */
-function getSlotWidths(
-  options: OpaqueOptions,
-  layout: HelpLayout,
-  separator: string,
-  useEnv: boolean,
-): Array<number> | number {
-  const { names, param } = layout;
-  if (names.hidden) {
-    return 0;
-  }
-  const sepLen = separator.length + 1;
-  const slotted = names.align === 'slot' && param.align !== 'merge';
-  const slotWidths: Array<number> = [];
-  let maxWidth = 0;
-  for (const option of getValues(options)) {
-    if (option.group !== null) {
-      const names = useEnv ? getOptionSources(option) : option.names;
-      if (names?.length) {
-        if (slotted) {
-          names.forEach((name, i) => {
-            slotWidths[i] = max(slotWidths[i] ?? 0, name?.length ?? 0);
-          });
-        } else {
-          const len = names.reduce(
-            (acc, name) => acc + sepLen + (name?.length ?? -sepLen),
-            -sepLen,
-          );
-          maxWidth = max(maxWidth, len);
-        }
-      }
-    }
-  }
-  return slotted ? slotWidths : maxWidth;
 }
 
 /**
@@ -671,7 +645,7 @@ function formatHelpSection(
 /**
  * Formats a custom text to be included in a help section.
  * @param text The heading title or section text
- * @param defStyle The default style
+ * @param defSty The default style
  * @param indent The indentation level (negative values are replaced by zero)
  * @param breaks The number of line breaks (non-positive values are ignored)
  * @param noWrap True if the provided text should not be split
@@ -679,18 +653,18 @@ function formatHelpSection(
  */
 function formatText(
   text: string,
-  defStyle: Style,
+  defSty: Style,
   indent?: number,
   breaks?: number,
   noWrap: boolean = false,
 ): AnsiString {
-  const result = new AnsiString(indent, breaks, false, defStyle);
+  const result = new AnsiString(indent, breaks, false, defSty);
   if (noWrap) {
     result.word(text); // warning: may be larger than the terminal width
   } else {
     result.split(text);
   }
-  return result.addClear(); // to simplify client code
+  return result.addClear(); // reset from possible inline styles
 }
 
 /**
@@ -710,7 +684,7 @@ function formatUsage(
   indent?: number,
   breaks?: number,
 ): AnsiString {
-  const result = new AnsiString(indent, breaks);
+  const result = new AnsiString(indent, breaks, false, config.styles.text);
   const { filter, exclude, required, requires, comment } = section;
   const visited = new Set<string>(exclude && filter);
   const requiredKeys = new Set(required);
@@ -724,9 +698,9 @@ function formatUsage(
     return result.clear(); // skip comment if there are no options
   }
   if (comment) {
-    result.split(comment);
+    result.split(comment).addClear(); // reset from possible inline styles
   }
-  return result.addClear();
+  return result;
 }
 
 /**
@@ -759,7 +733,10 @@ function formatUsageOption(
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
     formatUsageNames(option, names, result);
-    formatParam(option, names, result);
+    const defSty = option.styles?.param ?? config.styles.value;
+    const param = new AnsiString(0, 0, false, defSty);
+    formatParam(option, names, param);
+    result.other(param).close('', result.defSty);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -838,7 +815,7 @@ function formatUsageNames(option: OpaqueOption, names: ReadonlyArray<string>, re
  * @param result The resulting string
  */
 function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result: AnsiString) {
-  const { type, inline, example, separator, styles, positional, paramName } = option;
+  const { type, inline, example, separator, positional, paramName } = option;
   const [min, max] = getParamCount(option);
   const optional = !min && max && !(positional && !names.length);
   const ellipsis =
@@ -846,29 +823,20 @@ function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result:
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
-  const saved = result.defSty;
-  try {
-    result.defSty = styles?.param ?? config.styles.value;
-    result
-      .open('', result.defSty)
-      .open(optional ? '[' : '') // do not use openAtPos
-      .open(inline ? '=' : '');
-    if (example !== undefined) {
-      let param = example;
-      if (separator && isArray(param)) {
-        const sep = isString(separator) ? separator : separator.source;
-        param = param.join(sep);
-      }
-      fmt.v(param, result, { sep: '', open: '', close: '' });
-      result.close(ellipsis);
-    } else {
-      const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName || 'param'}>`;
-      result.word(param + ellipsis);
+  result.open(optional ? '[' : '').open(inline ? '=' : '');
+  if (example !== undefined) {
+    let param = example;
+    if (separator && isArray(param)) {
+      const sep = isString(separator) ? separator : separator.source;
+      param = param.join(sep);
     }
-    result.close(optional ? ']' : '').close('', saved);
-  } finally {
-    result.defSty = saved;
+    fmt.v(param, result, { sep: '', open: '', close: '' });
+    result.close(ellipsis);
+  } else {
+    const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName || 'param'}>`;
+    result.word(param + ellipsis);
   }
+  result.close(optional ? ']' : '');
 }
 
 /**

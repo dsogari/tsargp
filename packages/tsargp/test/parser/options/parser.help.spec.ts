@@ -78,7 +78,7 @@ describe('parse', () => {
       );
     });
 
-    it('throw the help message of a subcommand with option filter', () => {
+    it('throw the help message of a subcommand with nested options object', () => {
       const options = {
         help: {
           type: 'help',
@@ -87,19 +87,37 @@ describe('parse', () => {
           useCommand: true,
           useFilter: true,
         },
-        command1: {
+        command: {
           type: 'command',
-          names: ['cmd1'],
+          names: ['cmd'],
           options: {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
+            help: {
+              type: 'help',
+              names: ['-h'],
+              sections: [{ type: 'usage' }],
             },
           },
         },
-        command2: {
+      } as const satisfies Options;
+      expect(parse(options, ['-h', 'cm'])).rejects.toThrow('  cmd  ...\n');
+      expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow('[-h]\n');
+      expect(parse(options, ['-h', 'cmd'], { progName: 'prog' })).rejects.toThrow(
+        'prog cmd [-h]\n',
+      );
+    });
+
+    it('throw the help message of a subcommand with nested options callback', () => {
+      const options = {
+        help: {
+          type: 'help',
+          names: ['-h'],
+          sections: [{ type: 'groups', layout: { descr: { hidden: true } } }],
+          useCommand: true,
+          useFilter: true,
+        },
+        command: {
           type: 'command',
-          names: ['cmd2'],
+          names: ['cmd'],
           options: async () =>
             ({
               flag: {
@@ -116,9 +134,8 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-h', '-h'])).rejects.toThrow('  -h\n');
-      expect(parse(options, ['-h', 'cmd1'])).rejects.toThrow('  cmd1  ...\n');
-      expect(parse(options, ['-h', 'cmd2'])).rejects.toThrow('  -f\n  -h\n');
-      expect(parse(options, ['-h', 'cmd2', '-f'])).rejects.toThrow('  -f\n');
+      expect(parse(options, ['-h', 'cmd'])).rejects.toThrow('  -f\n  -h\n');
+      expect(parse(options, ['-h', 'cmd', '-f'])).rejects.toThrow('  -f\n');
     });
 
     it('throw the help message of a subcommand with a dynamic module with no help option', () => {

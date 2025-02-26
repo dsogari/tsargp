@@ -216,7 +216,7 @@ const formatFunctions: FormatFunctions = {
       result.open('', config.styles.value);
       result.open(open).split(`${value}`).close(close);
       if (config.styles.value) {
-        result.close('', sgr(tf.clear) + result.defSty);
+        result.close('', result.defSty);
       }
     }
   },
@@ -428,6 +428,24 @@ export class AnsiString {
   }
 
   /**
+   * @returns The combined length including spaces (but with no wrapping)
+   */
+  get totalLen(): number {
+    const len = this.strings.reduce(
+      (acc, str) => acc + (str.length ? str.length + 1 : acc ? -1 : 0),
+      0,
+    );
+    return len && len - 1;
+  }
+
+  /**
+   * @returns The mergeLeft flag value
+   */
+  get mergeLeft(): boolean {
+    return this.context[3];
+  }
+
+  /**
    * Sets a flag to merge the next word with the last word.
    * @param merge The flag value
    */
@@ -440,13 +458,13 @@ export class AnsiString {
    * @param indent The starting column for this string (negative values are replaced by zero)
    * @param breaks The initial number of line feeds (non-positive values are ignored)
    * @param righty True if the string should be right-aligned to the terminal width
-   * @param defSty The default style to use
+   * @param defSty The default style to use (defaults to empty)
    */
   constructor(
     public indent = 0,
     breaks = 0,
     public righty = false,
-    public defSty = config.styles.text,
+    public defSty = '',
   ) {
     this.break(breaks).context[2] = defSty;
   }
@@ -560,7 +578,7 @@ export class AnsiString {
    */
   word(word: string, sty: Style = ''): this {
     if (word) {
-      this.add(word, sty ? sty + word + sgr(tf.clear) + this.defSty : word);
+      this.add(word, sty ? sty + word + this.defSty : word);
     }
     return this;
   }
@@ -809,7 +827,8 @@ export class WarnMessage extends AnsiMessage {
    * @param args The phrase arguments
    */
   addCustom(phrase: string, flags?: FormattingFlags, ...args: Args) {
-    this.push(new AnsiString().format(phrase, flags, ...args).break());
+    const str = new AnsiString(0, 0, false, config.styles.text);
+    this.push(str.format(phrase, flags, ...args).break());
   }
 
   /**
