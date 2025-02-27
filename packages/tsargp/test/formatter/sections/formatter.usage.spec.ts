@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections } from '../../../lib/options';
 import { format } from '../../../lib/formatter';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('rendering a usage section', () => {
   it('skip a section with no content', () => {
     const sections: HelpSections = [{ type: 'usage' }];
@@ -12,8 +10,7 @@ describe('rendering a usage section', () => {
 
   it('skip the program name and comment when there are no options', () => {
     const sections: HelpSections = [{ type: 'usage', comment: 'comment' }];
-    const message = format({}, sections, undefined, 'prog');
-    expect(message.wrap()).toEqual('');
+    expect(format({}, sections, undefined, 'prog').wrap()).toEqual('');
   });
 
   it('render the program name', () => {
@@ -24,8 +21,7 @@ describe('rendering a usage section', () => {
       },
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'usage' }];
-    const message = format(options, sections, undefined, 'prog');
-    expect(message.wrap()).toEqual('prog [-f]\n');
+    expect(format(options, sections, undefined, 'prog').wrap()).toEqual('prog [-f]\n');
   });
 
   it('indent the program name', () => {
@@ -36,8 +32,7 @@ describe('rendering a usage section', () => {
       },
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'usage', indent: 2 }];
-    const message = format(options, sections, undefined, 'prog');
-    expect(message.wrap()).toEqual('  prog [-f]\n');
+    expect(format(options, sections, undefined, 'prog').wrap()).toEqual('  prog [-f]\n');
   });
 
   it('break the program name', () => {
@@ -48,8 +43,7 @@ describe('rendering a usage section', () => {
       },
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'usage', breaks: 1 }];
-    const message = format(options, sections, undefined, 'prog');
-    expect(message.wrap()).toEqual('\nprog [-f]\n');
+    expect(format(options, sections, undefined, 'prog').wrap()).toEqual('\nprog [-f]\n');
   });
 
   it('render the section heading, but avoid indenting it', () => {
@@ -182,12 +176,14 @@ describe('rendering a usage section', () => {
         names: ['-f3'],
       },
     } as const satisfies Options;
+    const sections0: HelpSections = [{ type: 'usage', filter: [] }]; // empty filter
     const sections1: HelpSections = [{ type: 'usage', filter: ['flag1'] }];
     const sections2: HelpSections = [{ type: 'usage', filter: ['flag1'], exclude: true }];
     const sections3: HelpSections = [{ type: 'usage', filter: ['flag1'], required: ['flag1'] }];
     const sections4: HelpSections = [{ type: 'usage', filter: ['flag2', 'flag1'] }];
     const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
     const filter = ['-f1', '-f2'];
+    expect(format(options, sections0, filter).wrap()).toEqual('');
     expect(format(options, sections1, filter).wrap()).toEqual('[-f1]\n');
     expect(format(options, sections2, filter).wrap()).toEqual('[-f2]\n');
     expect(format(options, sections3, filter).wrap()).toEqual('-f1\n');

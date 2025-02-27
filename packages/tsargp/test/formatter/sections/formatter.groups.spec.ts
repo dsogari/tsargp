@@ -3,8 +3,6 @@ import type { Options, HelpSections } from '../../../lib/options';
 import { format } from '../../../lib/formatter';
 import { HelpItem } from '../../../lib/enums';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('rendering a groups section', () => {
   it('skip a section with no content', () => {
     const sections: HelpSections = [{ type: 'groups' }];
@@ -68,15 +66,17 @@ describe('rendering a groups section', () => {
         group: 'group2',
       },
     } as const satisfies Options;
+    const sections0: HelpSections = [{ type: 'groups', filter: [] }]; // empty filter
     const sections1: HelpSections = [{ type: 'groups', filter: ['group1'] }];
     const sections2: HelpSections = [{ type: 'groups', filter: ['group1'], exclude: true }];
     const sections3: HelpSections = [{ type: 'groups', filter: ['group2', 'group1'] }];
+    expect(format(options, sections0).wrap()).toEqual('');
     expect(format(options, sections1).wrap()).toEqual('group1\n\n  -f1\n');
     expect(format(options, sections2).wrap()).toEqual('group2\n\n  -f2\n');
     expect(format(options, sections3).wrap()).toEqual('group2\n\n  -f2\n\ngroup1\n\n  -f1\n');
   });
 
-  it('use data sources instead of option names', () => {
+  it('use environment variable names instead of option names', () => {
     const options = {
       flag: {
         type: 'flag',
@@ -85,6 +85,7 @@ describe('rendering a groups section', () => {
         sources: ['FLAG', 'THE_FLAG'],
       },
       single: {
+        // this option should be hidden
         type: 'single',
         names: ['-s'],
         synopsis: 'A single option',
@@ -97,7 +98,6 @@ describe('rendering a groups section', () => {
         items: [HelpItem.synopsis],
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(`  FLAG, THE_FLAG    A flag option\n`);
+    expect(format(options, sections).wrap()).toEqual(`  FLAG, THE_FLAG    A flag option\n`);
   });
 });

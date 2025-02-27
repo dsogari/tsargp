@@ -2,7 +2,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { ConnectiveWords } from './config.js';
-import { ErrorItem, tf, fg, bg } from './enums.js';
+import type { ErrorItem, tf, fg, bg } from './enums.js';
 import type { Alias, Args, Enumerate } from './utils.js';
 
 import { config } from './config.js';
@@ -124,7 +124,7 @@ const formatFunctions: FormatFunctions = {
    * @param flags The formatting flags
    */
   a(value: Array<unknown>, result, flags) {
-    const connectives = config.connectives;
+    const { connectives } = config;
     const sep = flags.sep ?? connectives.arraySep;
     const open = flags.open ?? connectives.arrayOpen;
     const close = flags.close ?? connectives.arrayClose;
@@ -148,8 +148,7 @@ const formatFunctions: FormatFunctions = {
    * @param flags The formatting flags
    */
   o(value: object, result, flags) {
-    const connectives = config.connectives;
-    const valueSep = connectives.valueSep;
+    const { connectives } = config;
     const newFlags: FormattingFlags = {
       ...flags,
       sep: flags.sep ?? connectives.objectSep,
@@ -162,7 +161,7 @@ const formatFunctions: FormatFunctions = {
         } else {
           this['s'](key, result, flags);
         }
-        result.close(valueSep);
+        result.close(connectives.valueSep);
         this['v'](val, result, flags);
       },
     };
@@ -189,17 +188,13 @@ const formatFunctions: FormatFunctions = {
     if (spec && value !== null) {
       this[spec](value, result, flags);
     } else {
-      const connectives = config.connectives;
-      const open = connectives.valueOpen;
-      const close = connectives.valueClose;
-      result.openSty(config.styles.value);
+      const { connectives } = config;
       result
-        .open(open)
+        .openSty(config.styles.value)
+        .open(connectives.valueOpen)
         .split('' + value)
-        .close(close);
-      if (result.defSty && config.styles.value) {
-        result.closeSty(result.defSty);
-      }
+        .close(connectives.valueClose)
+        .closeSty(result.defSty);
     }
   },
 };
@@ -253,6 +248,7 @@ export type FormattingFlags = {
 
 /**
  * A control sequence introducer.
+ * @template T The type of the sequence command
  */
 export type Sequence<T extends cs> = Array<number> & { cmd: T };
 
@@ -416,7 +412,7 @@ export class AnsiString {
    */
   get totalLen(): number {
     const len = this.strings.reduce(
-      (acc, str) => acc + (str.length ? str.length + 1 : acc && -1),
+      (acc, str) => acc + (str.length ? str.length + 1 : acc && -1), // decrement on line feeds
       0,
     );
     return len && len - 1;
@@ -442,12 +438,12 @@ export class AnsiString {
    * @param indent The starting column for this string (negative values are replaced by zero)
    * @param breaks The initial number of line feeds (non-positive values are ignored)
    * @param righty True if the string should be right-aligned to the terminal width
-   * @param defSty The default style to use (defaults to empty)
+   * @param defSty The default style to use (defaults to none)
    */
   constructor(
-    public indent = 0,
-    breaks = 0,
-    public righty = false,
+    public indent: number = 0,
+    breaks: number = 0,
+    public righty: boolean = false,
     public defSty: Style = sgrSequence(),
   ) {
     this.break(breaks).context[2].push(...defSty);
@@ -517,7 +513,7 @@ export class AnsiString {
   }
 
   /**
-   * Appends a style.
+   * Opens with a style.
    * @param sty The SGR sequence
    * @returns The ANSI string instance
    */
@@ -547,8 +543,8 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   open(word: string): this {
-    this.add(word, word);
     if (word) {
+      this.add(word, word);
       this.merge = true;
     }
     return this;
@@ -586,7 +582,11 @@ export class AnsiString {
    */
   word(word: string, sty?: Style): this {
     if (word) {
-      this.add(word, sty ? sty + word + this.defSty : word);
+      if (sty) {
+        this.openSty(sty).add(word, word).closeSty(this.defSty);
+      } else {
+        this.add(word, word);
+      }
     }
     return this;
   }
@@ -600,7 +600,7 @@ export class AnsiString {
    */
   add(text: string, styledText: string, close = false): this {
     if (!text) {
-      const sty = sgrFromText(styledText);
+      const sty: Style = seqFromText(cs.sgr, styledText);
       return close ? this.closeSty(sty) : this.openSty(sty);
     }
     const count = this.count;
@@ -617,8 +617,8 @@ export class AnsiString {
       this.context[3] = mergeRight || close;
     }
     this.context[5] = max(maxLength, text.length);
-    curStyle.length = 0; // reset opening style
     this.merge = false;
+    curStyle.length = 0; // reset opening style
     return this;
   }
 
@@ -657,7 +657,7 @@ export class AnsiString {
   ): number {
     /** @ignore */
     function move(from: number, to: number): string {
-      return to >= from
+      return to > from
         ? emitSpaces
           ? ' '.repeat(to - from)
           : '' + sequence(cs.cuf, to - from)
@@ -957,6 +957,7 @@ function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
 
 /**
  * Creates a control sequence.
+ * @template T The type of the sequence command
  * @param cmd The sequence command
  * @param params The sequence parameters
  * @returns The control sequence
@@ -971,7 +972,7 @@ function sequence<T extends cs>(cmd: T, ...params: Array<number>): Sequence<T> {
 }
 
 /**
- * Creates an SGR sequence from styling attributes.
+ * Creates an SGR sequence.
  * @param attrs The styling attributes
  * @returns The SGR sequence
  */
@@ -980,17 +981,19 @@ function sgrSequence(...attrs: Array<StyleAttr>): Style {
 }
 
 /**
- * Creates an SGR sequence from a string.
- * @param text The string (must be a sequence of SGR sequences)
- * @returns The SGR sequence
+ * Creates a control sequence from a string.
+ * @template T The type of the sequence command
+ * @param cmd The sequence command
+ * @param text The string (must be a sequence of control sequences)
+ * @returns The control sequence
  */
-function sgrFromText(text: string): Style {
+function seqFromText<T extends cs>(cmd: T, text: string): Sequence<T> {
   const params = text
     .split('\x1b[') // assumes that there is no text between sequences
     .slice(1) // discard text before the first sequence
-    .flatMap((str) => str.slice(0, -1).split(';'))
-    .map(Number);
-  return sequence(cs.sgr, ...params);
+    .flatMap((str) => str.slice(0, -1).split(';')) // remove the sequence specifier and split params
+    .map(Number); // empty parameters get mapped to zero
+  return sequence(cmd, ...params);
 }
 
 /**

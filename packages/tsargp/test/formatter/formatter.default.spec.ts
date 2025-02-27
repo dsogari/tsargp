@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../lib/options';
 import { format } from '../../lib/formatter';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('format', () => {
   describe('a default value is specified', () => {
     it('handle a boolean value', () => {
@@ -14,8 +12,7 @@ describe('format', () => {
           default: true,
         },
       } as const satisfies Options;
-      const message = format(options);
-      expect(message.wrap()).toEqual(`  -f    Defaults to true.\n`);
+      expect(format(options).wrap()).toEqual(`  -f    Defaults to true.\n`);
     });
 
     it('handle a string value', () => {
@@ -26,8 +23,7 @@ describe('format', () => {
           default: 'abc',
         },
       } as const satisfies Options;
-      const message = format(options);
-      expect(message.wrap()).toEqual(`  -f    Defaults to 'abc'.\n`);
+      expect(format(options).wrap()).toEqual(`  -f    Defaults to 'abc'.\n`);
     });
 
     it('handle a number value', () => {
@@ -38,8 +34,7 @@ describe('format', () => {
           default: 123,
         },
       } as const satisfies Options;
-      const message = format(options);
-      expect(message.wrap()).toEqual(`  -f    Defaults to 123.\n`);
+      expect(format(options).wrap()).toEqual(`  -f    Defaults to 123.\n`);
     });
 
     it('handle a string array value', () => {
@@ -50,8 +45,7 @@ describe('format', () => {
           default: ['one', 'two'],
         },
       } as const satisfies Options;
-      const message = format(options);
-      expect(message.wrap()).toEqual(`  -f    Defaults to ['one', 'two'].\n`);
+      expect(format(options).wrap()).toEqual(`  -f    Defaults to ['one', 'two'].\n`);
     });
 
     it('handle a number array value', () => {
@@ -62,8 +56,7 @@ describe('format', () => {
           default: [1, 2],
         },
       } as const satisfies Options;
-      const message = format(options);
-      expect(message.wrap()).toMatch(`  -f    Defaults to [1, 2].\n`);
+      expect(format(options).wrap()).toMatch(`  -f    Defaults to [1, 2].\n`);
     });
   });
 
@@ -76,8 +69,7 @@ describe('format', () => {
           default: () => 0,
         },
       } as const satisfies Options;
-      const message = format(options);
-      expect(message.wrap()).toEqual(`  -f    Defaults to <() => 0>.\n`);
+      expect(format(options).wrap()).toEqual(`  -f    Defaults to <() => 0>.\n`);
     });
 
     it('handle a callback with a toString method', () => {
@@ -89,8 +81,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       options.flag.default.toString = () => 'fcn';
-      const message = format(options);
-      expect(message.wrap()).toEqual(`  -f    Defaults to <fcn>.\n`);
+      expect(format(options).wrap()).toEqual(`  -f    Defaults to <fcn>.\n`);
     });
   });
 });

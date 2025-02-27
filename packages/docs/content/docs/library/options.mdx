@@ -454,7 +454,7 @@ Niladic options do not expect any parameter on the command line.
 
 ### Help option
 
-The **help** option handles the formatting of help messages. Internally, it instantiates a help [formatter] with the provided configuration, obtains the formatted message and throws it. The application is responsible for catching this message and printing it in a terminal.
+The **help** option handles the formatting of [help messages]. Internally, it calls the `format` function with the provided configuration, obtains the formatted message and throws it. The application is responsible for catching this message and printing it in a terminal.
 
 <Callout type="info">
 
@@ -810,7 +810,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 {/* formatter references */}
 
-[formatter]: formatter
+[help messages]: formatter#help-message
 [help columns]: formatter#help-columns
 [groups section]: formatter#groups-section
 [help sections]: formatter#help-sections

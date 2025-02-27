@@ -117,10 +117,6 @@ export const regex = {
    */
   punct: /\p{P}/gu,
   /**
-   * A regular expression to match `RegExp` special characters.
-   */
-  regex: /[\\^$.*+?()[\]{}|]/g,
-  /**
    * A regular expression to match path separators.
    */
   pathSep: /[\\/]/,
@@ -141,11 +137,6 @@ export const regex = {
    */
   colon: /[^:]+:[^:]+/,
 } as const satisfies Record<string, RegExp>;
-
-/**
- * A stateless version of {@link regex.regex}.
- */
-const regexSymbol = RegExp(regex.regex.source);
 
 //--------------------------------------------------------------------------------------------------
 // Functions
@@ -214,14 +205,12 @@ export function getArgs(line: string, compIndex = NaN): Array<string> {
  * @returns The file data, if any
  */
 export async function readFile(file: string | number | URL): Promise<string | undefined> {
-  type ErrnoException = {
-    code?: string | undefined;
-  };
   if (file || !process?.stdin?.isTTY) {
     try {
       const { readFileSync } = await import('fs');
       return readFileSync?.(file).toString();
     } catch (err) {
+      type ErrnoException = { code?: string };
       const code = (err as ErrnoException).code ?? '';
       if (!['ENOENT', 'EAGAIN'].includes(code)) {
         throw err;
@@ -568,16 +557,6 @@ export function isObject(value: unknown): value is object {
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export function isFunction(value: unknown): value is Function {
   return typeof value === 'function';
-}
-
-/**
- * Escapes the `RegExp` special characters.
- * @param str The string to be escaped
- * @returns The escaped string
- * @see https://docs-lodash.com/v4/escape-reg-exp/
- */
-export function escapeRegExp(str: string): string {
-  return str && regexSymbol.test(str) ? str.replace(regex.regex, '\\$&') : str;
 }
 
 /**

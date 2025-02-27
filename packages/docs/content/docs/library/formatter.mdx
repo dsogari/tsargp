@@ -26,21 +26,11 @@ This is better illustrated by the figure below:
 To generate a help message, you must call the `format` function. It accepts the following parameters:
 
 - `options` - the option definitions (required)
-- `sections` - a list of [help sections] to include in the help message (optional, defaults to a single [groups section])
+- `sections` - a list of [help sections] to include in the message (optional, defaults to a single [groups section])
 - `filter` - an [option filter] to select a subset of options (optional, defaults to none)
 - `progName` - a program name to display in usage sections (optional, defaults to none)
 
 It returns a [ANSI message] with the formatted sections.
-
-### Option filter
-
-The `filter` parameter to the `format` function lists patterns that indicate which options should be rendered in the help message. It matches options' [names], [synopsis] and environment [data sources]. If multiple patterns are provided, any matched one will suffice to include an option in the message.
-
-<Callout type="info">
-
-This is inherently different from what a text search utility like `grep` would produce. The formatter will render the whole _help entry_ of options matching the given patterns, not just the matching _lines_.
-
-</Callout>
 
 ## Help columns
 
@@ -60,7 +50,7 @@ For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `null{:ts}` and
 -f, -ff,      --flag
 ```
 
-Note how the absent name produced whitespace between its neighbors, and the commas were suppressed.
+Note how the absent name produced whitespace between its neighbors.
 
 <Callout type="info">
 
@@ -103,7 +93,7 @@ All help sections share a set of optional properties:
 
 <Callout type="warning">
 
-When `noWrap` is set, be careful with inline styles present in text properties, as they will appear in redirected command outputs and will not be affected by the `NO_COLOR` and related variables. (See [ANSI message].)
+When `noWrap` is set, be careful with [inline styles] present in text properties, as they will appear in redirected command outputs and will not be affected by the `NO_COLOR` and related variables. (See [ANSI message].)
 
 </Callout>
 
@@ -205,7 +195,7 @@ The `useEnv` property is useful when you want to create a dedicated section for 
 
 #### Column layout
 
-The layout of a groups section can be configured via a partial `HelpColumnsLayout` object containing three optional properties: `names`, `param` and `descr`. They can be used to customize the layout of the corresponding [help column], applied to all help entries in the section. They are objects with the following optional settings:
+The layout of a groups section can be configured via a partial `HelpColumnsLayout` object containing three optional properties: `names`, `param` and `descr`. They can be used to customize the layout of the corresponding [help column], and is applied to all help entries in the section. They are objects with the following optional settings:
 
 - `align` - text alignment for the column (may be one of `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` - level of indentation for the column (must be non-negative if `absolute` is `true{:ts}`, defaults to `2{:ts}`)
@@ -251,7 +241,7 @@ packet-beta
 
 ##### Column alignment
 
-The `names.align` property supports an additional value `'slot'{:ts}`, meaning that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information. This value is ignored if `param.align` is `'merge'{:ts}` (see below).
+The `names.align` property supports an additional value `'slot'{:ts}`, meaning that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information. This value will be ignored if `param.align` is set to `'merge'{:ts}` or if `param.hidden{:ts}` is `true{:ts}` and `descr.align{:ts}` is set to `'merge'{:ts}` (see below).
 
 The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which instructs the formatter to merge the contents of the column with the previous one. This is useful, for instance, if you want option parameters to be inlined with option names. When using this value, both the `indent` and `breaks` properties are ignored.
 
@@ -309,6 +299,16 @@ You might want to use this to limit the amount of information in the help messag
 
 </Callout>
 
+## Option filter
+
+The `filter` parameter to the `format` function lists patterns that indicate which options should be rendered in the help message. It matches options' [names], [synopsis] and environment [data sources]. If multiple patterns are provided, any matched one will suffice to include an option in the message.
+
+<Callout type="info">
+
+This is inherently different from what a text search utility like `grep` would produce. The formatter will render the whole _help entry_ of options matching the given patterns, not just the matching _lines_.
+
+</Callout>
+
 {/* self references */}
 
 [^1]: _polyadic_ means that the option accepts more than one parameter, but the parameter count is not variable
@@ -346,3 +346,4 @@ You might want to use this to limit the amount of information in the help messag
 [ANSI message]: styles#ansi-message
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration
+[inline styles]: styles#inline-styles

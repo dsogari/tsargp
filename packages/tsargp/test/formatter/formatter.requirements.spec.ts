@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import { type Options, OptionRegistry, allOf, oneOf, notOf } from '../../lib/options';
 import { format } from '../../lib/formatter';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('format', () => {
   describe('a forward requirement is specified', () => {
     it('handle an option that requires the presence or absence of another', () => {
@@ -20,8 +18,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
-      const message = format(options);
-      expect(message.wrap()).toEqual(
+      expect(format(options).wrap()).toEqual(
         `  -f           Requires -s.\n  -s  <param>  Requires no -f.\n`,
       );
     });
@@ -58,8 +55,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
-      const message = format(options);
-      expect(message.wrap()).toEqual(
+      expect(format(options).wrap()).toEqual(
         `  -f    Requires (-s or (no -a and (-s != {a: 1, b: [2]} or -a != [1, 'a', {a: false}]))).\n`,
       );
     });
@@ -80,8 +76,7 @@ describe('format', () => {
       options.flag.requires.toString = () => 'fcn';
       options.single.requires.item.toString = () => 'fcn';
       new OptionRegistry(options); // sets preferredName
-      const message = format(options);
-      expect(message.wrap()).toEqual(
+      expect(format(options).wrap()).toEqual(
         `  -f           Requires <fcn>.\n  -s  <param>  Requires not <fcn>.\n`,
       );
     });
@@ -102,8 +97,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
-      const message = format(options);
-      expect(message.wrap()).toEqual(
+      expect(format(options).wrap()).toEqual(
         `  -f           Required if -s.\n  -s  <param>  Required if no -f.\n`,
       );
     });
@@ -140,8 +134,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
-      const message = format(options);
-      expect(message.wrap()).toEqual(
+      expect(format(options).wrap()).toEqual(
         `  -f    Required if (-s or (no -a and (-s != {a: 1, b: [2]} or -a != [1, 'a', {a: false}]))).\n`,
       );
     });
@@ -162,8 +155,7 @@ describe('format', () => {
       options.flag.requiredIf.toString = () => 'fcn';
       options.single.requiredIf.item.toString = () => 'fcn';
       new OptionRegistry(options); // sets preferredName
-      const message = format(options);
-      expect(message.wrap()).toEqual(
+      expect(format(options).wrap()).toEqual(
         `  -f           Required if <fcn>.\n  -s  <param>  Required if not <fcn>.\n`,
       );
     });

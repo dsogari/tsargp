@@ -9,6 +9,7 @@ export * from './validator.js';
 
 export { allOf, oneOf, notOf, valuesFor, numberInRange } from './options.js';
 export {
+  seq,
   style,
   fg8,
   bg8,

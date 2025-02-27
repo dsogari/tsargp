@@ -232,11 +232,11 @@ export type WithSectionUsage = {
  */
 export type WithSectionGroups = {
   /**
-   * The help layout.
+   * The help columns layout.
    */
   readonly layout?: PartialWithDepth<HelpColumnsLayout>;
   /**
-   * The order of items to be shown in option descriptions.
+   * The order of items display in option descriptions.
    */
   readonly items?: ReadonlyArray<HelpItem>;
   /**
@@ -530,9 +530,9 @@ export type WithEnv = {
    */
   readonly stdin?: true;
   /**
-   * The names of environment data sources to try reading from (in order), if the option is specified
-   * neither on the command-line nor in the standard input. A string means an environment variable,
-   * while a URL means a local file.
+   * The names of environment data sources to try reading from (in that order), if the option is
+   * specified neither on the command-line nor in the standard input. A string means an environment
+   * variable, while a URL means a local file.
    */
   readonly sources?: ReadonlyArray<string | URL>;
   /**

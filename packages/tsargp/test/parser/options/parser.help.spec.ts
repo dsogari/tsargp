@@ -78,7 +78,7 @@ describe('parse', () => {
       );
     });
 
-    it('throw the help message of a subcommand with nested options object', () => {
+    it('throw the help message of a subcommand with nested options and program name', () => {
       const options = {
         help: {
           type: 'help',

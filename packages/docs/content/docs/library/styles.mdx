@@ -6,11 +6,11 @@ import { Callout } from 'nextra/components';
 
 # Styles
 
-The `Style` type is a string literal consisting of Select Graphic Rendition ([SGR]) sequences. It can be used to customize the display of text in terminals that support it.
+The `styles` module handles text styling. It provides a `Style` type that behaves like a string consisting of Select Graphic Rendition ([SGR]) sequences, and can be used to customize the display of text in terminals that support them.
 
 ## Styling attributes
 
-The `style` function accepts a list of styling attributes and creates a `Style` that can be used in any part of the API that expects this type. It can also be embedded directly in text attributes, such as:
+A `Style` can be created with the `style` function, which accepts a list of styling attributes as parameters. The resulting object can be used in any part of the API that expects this type. It can also be concatenated and embedded in text attributes, such as:
 
 - [option synopsis] and [deprecation notice]
 - [help section] titles and texts
@@ -73,7 +73,7 @@ The `tf` enumeration declares text type faces that can be combined together. The
   - `noIdeogram` - no ideogram attributes
   - `notSuperscriptOrSubscript` - neither superscript nor subscript
 
-### Predefined text colors
+### Predefined colors
 
 The `fg` and `bg` enumerations declare predefined foreground and background colors, respectively. They both have the same colors, which are listed below.
 
@@ -97,24 +97,16 @@ The `fg` and `bg` enumerations declare predefined foreground and background colo
   - `brightCyan` - bright cyan
   - `brightWhite` - bright white
 
-### Extended text colors
+### Extended colors
 
-In addition to predefined colors, there are three utility functions to get custom 8-bit colors:
+In addition to predefined colors, there are six utility functions to get custom colors:
 
-- `fg8` - creates a foreground color from an 8-bit decimal value
-- `bg8` - creates a background color from an 8-bit decimal value
-- `ul8` - creates an underline color from an 8-bit decimal value
-
-### Underline styles
-
-The `ul` constant holds the styles of underlined text:
-
-- `none` - no underline
-- `single` - single underline
-- `double` - double underline
-- `curly` - curly underline
-- `dotted` - dotted underline
-- `dashed` - dashed underline
+- `fg8` - creates an 8-bit foreground color
+- `bg8` - creates an 8-bit background color
+- `ul8` - creates an 8-bit underline color
+- `fg24` - creates a 24-bit RGB foreground color
+- `bg24` - creates a 24-bit RGB background color
+- `ul24` - creates a 24-bit RGB underline color
 
 ## ANSI string
 
@@ -287,7 +279,7 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 
 <Callout type="default">
 
-You can also set these styles to the empty string, if you need to disable text styling for your application.
+You can also set an empty `style(){:ts}`, to preserve previous styles for a particular element, or for all elements if you need to disable text styling for your application.
 
 </Callout>
 

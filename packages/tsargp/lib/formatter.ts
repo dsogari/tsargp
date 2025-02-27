@@ -40,7 +40,7 @@ type HelpEntry = [
   /**
    * The list of formatted option names.
    */
-  names: ReadonlyArray<AnsiString>,
+  names: Array<AnsiString>,
   /**
    * The formatted option parameter.
    */
@@ -66,14 +66,14 @@ type HelpFunction = (
 ) => void;
 
 /**
- * A map of option groups to help entries.
- */
-type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
-
-/**
  * A set of formatting functions for {@link HelpItem}.
  */
 type HelpFunctions = Readonly<Record<HelpItem, HelpFunction>>;
+
+/**
+ * A map of option groups to help entries.
+ */
+type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -112,7 +112,7 @@ export const envHelpItems: ReadonlyArray<HelpItem> = [
 ];
 
 /**
- * The default help layout.
+ * The default help columns layout.
  */
 const defaultLayout: HelpColumnsLayout = {
   names: defaultColumnLayout,
@@ -310,8 +310,8 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
     const { names, synopsis, sources } = option;
     return (
       filter.length && // has at least one pattern
-      !(synopsis && matches(synopsis)) &&
       !names?.find((name) => name && matches(name)) &&
+      !(synopsis && matches(synopsis)) &&
       !sources?.find((name) => isString(name) && matches(name))
     );
   }
@@ -326,31 +326,26 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
 }
 
 /**
- * Build the help entries for a help message.
+ * Build the help entries for a groups section.
  * @param options The option definitions
  * @param keys The filtered option keys
- * @param groupFilter The option group filter
- * @param exclude True if the filter should exclude
  * @param buildFn The building function
+ * @param filter The option group filter
+ * @param exclude True if the filter should exclude
  * @returns The option groups
  */
 function buildGroups(
   options: OpaqueOptions,
   keys: ReadonlyArray<string>,
-  groupFilter: ReadonlyArray<string>,
-  exclude: boolean,
   buildFn: (option: OpaqueOption) => HelpEntry | undefined,
+  filter?: ReadonlyArray<string>,
+  exclude?: boolean,
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
-  const names = new Set(getValues(options).map((opt) => opt.group ?? ''));
-  groupFilter.forEach(
-    exclude
-      ? (name) => names.delete(name)
-      : (name) => (names.has(name) ? (groups[name] = []) : void 0),
-  );
-  if (!groupFilter.length || exclude) {
-    names.forEach((name) => (groups[name] = []));
-  }
+  const allNames = new Set(getValues(options).map((opt) => opt.group ?? ''));
+  const visited = new Set<string>(exclude ? filter : []);
+  const include = exclude || !filter ? allNames : filter.filter((name) => allNames.has(name));
+  include.forEach((name) => (visited.has(name) ? void 0 : (groups[name] = [])));
   for (const key of keys) {
     const option = options[key];
     const name = option.group ?? '';
@@ -365,9 +360,9 @@ function buildGroups(
 }
 
 /**
- * Build the help entries for a help message.
+ * Build the help entries for a groups section.
  * @param options The option definitions
- * @param layout The help layout
+ * @param layout The help columns layout
  * @param keys The filtered option keys
  * @param items The help items
  * @param groupFilter The option group filter
@@ -379,24 +374,19 @@ function buildEntries(
   options: OpaqueOptions,
   layout: HelpColumnsLayout,
   keys: ReadonlyArray<string>,
-  items: ReadonlyArray<HelpItem> = allHelpItems,
-  groupFilter: ReadonlyArray<string> = [],
-  exclude: boolean = false,
-  useEnv: boolean = false,
+  items?: ReadonlyArray<HelpItem>,
+  groupFilter?: ReadonlyArray<string>,
+  exclude?: boolean,
+  useEnv?: boolean,
 ): EntriesByGroup {
-  const { optionSep } = config.connectives;
-  const slotWidths: Array<number> = [];
-  const nameWidths: Array<number> = [];
-  let namesWidth = 0;
-  let paramWidth = 0;
-  let mergedWidth = 0;
-  const groups = buildGroups(options, keys, groupFilter, exclude, (option) => {
+  /** @ignore */
+  function build(option: OpaqueOption): HelpEntry | undefined {
     const names = formatNames(layout, option, useEnv);
     if (useEnv && !names.length) {
-      return undefined;
+      return undefined; // skip options without environment variable names, in this case
     }
     const param = formatParams(layout, option);
-    const descr = formatDescription(options, layout, items, option);
+    const descr = formatDescription(options, layout, option, items);
     const paramLen = param.totalLen;
     param.indent = paramLen; // TODO: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
@@ -406,35 +396,40 @@ function buildEntries(
       if (nameLen) {
         if (prev) {
           prev.close(optionSep);
-          prev.indent += optionSep.length + 1;
-          namesLen += optionSep.length + 1;
+          prev.indent += slotInc; // length in non-slotted alignment
+          namesLen += slotInc; // length in non-slotted alignment
         }
         prev = str;
       }
-      const inc = i < names.length - 1 ? optionSep.length + 1 : 0;
-      slotWidths[i] = max(slotWidths[i] ?? 0, nameLen + inc);
+      const inc = i < names.length - 1 ? slotInc : 0; // include sep in slot width
+      slotWidths[i] = max(slotWidths[i] ?? 0, nameLen + inc); // longest across all entries
       str.indent = nameLen; // TODO: save the length, since we will need it in `adjustEntries`
       namesLen += nameLen;
     });
-    nameWidths.push(namesLen);
-    namesWidth = max(namesWidth, namesLen);
-    paramWidth = max(paramWidth, paramLen);
+    namesWidth = max(namesWidth, namesLen); // longest across all entries
+    paramWidth = max(paramWidth, paramLen); // longest across all entries
     mergedWidth = max(
-      mergedWidth,
+      mergedWidth, // longest across all entries
       namesLen + paramLen + (namesLen && paramLen && !param.mergeLeft ? 1 : 0),
     );
     return [names, param, descr];
-  });
-  adjustEntries(layout, groups, slotWidths, nameWidths, namesWidth, paramWidth, mergedWidth);
+  }
+  const { optionSep } = config.connectives;
+  const slotInc = optionSep.length + 1; // include separator and space in slot width
+  const slotWidths: Array<number> = [];
+  let namesWidth = 0; // for non-slotted alignment
+  let paramWidth = 0; // for non-slotted alignment
+  let mergedWidth = 0; // names + param
+  const groups = buildGroups(options, keys, build, groupFilter, exclude);
+  adjustEntries(layout, groups, slotWidths, namesWidth, paramWidth, mergedWidth);
   return groups;
 }
 
 /**
  * Adjust the help entries for a help message.
- * @param layout The help layout
- * @param groups The option groups
+ * @param layout The help columns layout
+ * @param groups The option groups and their help entries
  * @param slotWidths The widths of the name slots
- * @param nameWidths The widths of the names column for each entry
  * @param namesWidth The width of the names column
  * @param paramWidth The width of the parameter column
  * @param mergedWidth The width of the names and parameter columns merged
@@ -443,7 +438,6 @@ function adjustEntries(
   layout: HelpColumnsLayout,
   groups: EntriesByGroup,
   slotWidths: ReadonlyArray<number>,
-  nameWidths: ReadonlyArray<number>,
   namesWidth: number,
   paramWidth: number,
   mergedWidth: number,
@@ -466,14 +460,19 @@ function adjustEntries(
   const paramStart = getStart(param, namesEnd);
   const paramEnd = paramStart + paramWidth;
   const descrStart = getStart(descr, paramMerge ? namesStart + mergedWidth : paramEnd);
-  let j = 0;
+  const useSlot = namesSlotted && !paramMerge && !(paramHidden && descrMerge);
   for (const [names, param, descr] of getValues(groups).flat()) {
-    const width = nameWidths[j++];
-    let indent = namesRight ? namesEnd - width : namesStart;
+    let indent = namesRight
+      ? namesEnd - names.reduce((acc, str) => acc + str.indent, 0) // compute width
+      : namesStart;
+    let lastName: AnsiString | undefined; // last non-empty name
     names.forEach((str, i) => {
       const saved = str.indent; // TODO: fix length hack
-      str.indent = indent;
-      indent += namesSlotted && !paramMerge ? slotWidths[i] : saved;
+      if (saved) {
+        str.indent = indent;
+        lastName = str;
+      }
+      indent += useSlot ? slotWidths[i] : saved;
     });
     if (descrMerge) {
       param.other(descr);
@@ -481,17 +480,18 @@ function adjustEntries(
     } else {
       descr.indent = descrStart;
     }
-    if ((paramMerge || paramHidden) && names.length) {
-      names.at(-1)?.other(param);
+    if ((paramMerge || paramHidden) && lastName) {
+      lastName.other(param);
       param.clear();
     } else {
-      param.indent = paramMerge
-        ? namesRight
-          ? namesEnd + 1
-          : namesStart
-        : paramRight
-          ? paramEnd - param.indent // TODO: fix length hack
-          : paramStart;
+      param.indent =
+        paramMerge || paramHidden
+          ? namesRight
+            ? namesEnd + 1 // start column where it would normally (i.e., without mergeRight)
+            : namesStart
+          : paramRight
+            ? paramEnd - param.indent // TODO: fix length hack
+            : paramStart;
     }
   }
 }
@@ -499,7 +499,7 @@ function adjustEntries(
 /**
  * Formats an option's names to be printed on the terminal.
  * This does not include the positional marker.
- * @param layout The help layout
+ * @param layout The help columns layout
  * @param option The option definition
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The list of formatted strings, one for each name
@@ -507,7 +507,7 @@ function adjustEntries(
 function formatNames(
   layout: HelpColumnsLayout,
   option: OpaqueOption,
-  useEnv: boolean,
+  useEnv: boolean = false,
 ): Array<AnsiString> {
   const { breaks, hidden } = layout.names;
   const names = useEnv ? option.sources?.filter(isString) : option.names;
@@ -520,7 +520,7 @@ function formatNames(
   let str: AnsiString | undefined;
   names.forEach((name) => {
     if (name) {
-      str = new AnsiString(0, str ? 0 : breaks, false, defSty);
+      str = new AnsiString(0, str ? 0 : breaks, false, defSty); // break only on the first name
       result.push(str.word(name, sty));
     } else {
       result.push(new AnsiString());
@@ -531,7 +531,7 @@ function formatNames(
 
 /**
  * Formats an option's parameter to be printed on the terminal.
- * @param layout The help layout
+ * @param layout The help columns layout
  * @param option The option definition
  * @returns The formatted string
  */
@@ -551,16 +551,16 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiStri
  * Formats an option's description to be printed on the terminal.
  * The description always ends with a single line break.
  * @param options The option definitions
- * @param layout The help layout
- * @param items The help items
+ * @param layout The help columns layout
  * @param option The option definition
+ * @param items The help items
  * @returns The formatted string
  */
 function formatDescription(
   options: OpaqueOptions,
   layout: HelpColumnsLayout,
-  items: ReadonlyArray<HelpItem>,
   option: OpaqueOption,
+  items: ReadonlyArray<HelpItem> = allHelpItems,
 ): AnsiString {
   const { hidden, breaks, align } = layout.descr;
   const defSty = option.styles?.descr ?? config.styles.text;
@@ -597,8 +597,8 @@ function formatHelpSection(
     const headingStyle = sty ?? style(tf.bold);
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
     const groups = buildEntries(options, mergedLayout, keys, items, filter, exclude, useEnv);
-    for (const [name, entries] of getEntries(groups)) {
-      const title2 = name || title;
+    for (const [group, entries] of getEntries(groups)) {
+      const title2 = group || title;
       const heading = title2
         ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
         : new AnsiString(0, curBreaks);
@@ -681,7 +681,7 @@ function formatUsage(
 ): AnsiString {
   const result = new AnsiString(indent, breaks, false, config.styles.text);
   const { filter, exclude, required, requires, comment } = section;
-  const visited = new Set<string>(exclude && filter);
+  const visited = new Set<string>(exclude ? filter : []);
   const requiredKeys = new Set(required);
   const requiredBy = requires && getRequiredBy(requires);
   const keys = exclude || !filter ? allKeys : filter.filter((key) => allKeys.includes(key));
@@ -723,7 +723,7 @@ function formatUsageOption(
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
     formatUsageNames(option, names, result);
     const defSty = option.styles?.param ?? config.styles.value;
-    const param = new AnsiString(0, 0, false, defSty);
+    const param = new AnsiString(0, 0, false, defSty); // use an auxiliary string for param
     formatParam(option, names, param);
     result.other(param).closeSty(result.defSty);
     if (!required) {

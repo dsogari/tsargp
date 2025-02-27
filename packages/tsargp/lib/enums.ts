@@ -263,17 +263,13 @@ const enum ControlSequence {
    */
   cha = 'G',
   /**
-   * Cursor Horizontal Tabulation. Move cursor Ps times tabs forward (default=1).
-   */
-  cht = 'I',
-  /**
-   * Cursor Backward Tabulation. Move cursor Ps tabs backward (default=1).
-   */
-  cbt = 'Z',
-  /**
    * Cursor Position. Set cursor to position [Ps, Ps] (default = [1, 1]).
    */
   cup = 'H',
+  /**
+   * Cursor Horizontal Tabulation. Move cursor Ps times tabs forward (default=1).
+   */
+  cht = 'I',
   /**
    * Erase In Display. Erase various parts of the viewport.
    */
@@ -306,6 +302,10 @@ const enum ControlSequence {
    * Erase Characters. Erase Ps characters from current cursor position to the right (default=1).
    */
   ech = 'X',
+  /**
+   * Cursor Backward Tabulation. Move cursor Ps tabs backward (default=1).
+   */
+  cbt = 'Z',
   /**
    * Horizontal Position Absolute. Same as {@link ControlSequence.cha}.
    */
@@ -355,14 +355,6 @@ const enum ControlSequence {
    */
   dsr = 'n',
   /**
-   * Request Mode. Request mode state.
-   */
-  rqm = '$p',
-  /**
-   * Soft Terminal Reset. Reset several terminal attributes to initial state.
-   */
-  str = '!p',
-  /**
    * Set Top and Bottom Margins.
    * Set top and bottom margins of the viewport [top;bottom] (default = viewport size).
    */
@@ -375,14 +367,6 @@ const enum ControlSequence {
    * Restore Cursor. Restore cursor position, charmap and text attributes.
    */
   rcp = 'u',
-  /**
-   * Insert Columns. Insert Ps columns at cursor position.
-   */
-  icl = "'}",
-  /**
-   * Delete Columns. Delete Ps columns at cursor position.
-   */
-  dcl = "'~",
 }
 
 /**

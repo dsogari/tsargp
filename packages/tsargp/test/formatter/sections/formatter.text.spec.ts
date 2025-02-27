@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import type { HelpSections } from '../../../lib/options';
 import { format } from '../../../lib/formatter';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('rendering a text section', () => {
   it('skip a section with no content', () => {
     const sections: HelpSections = [{ type: 'text' }];

@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../lib/options';
 import { format } from '../../lib/formatter';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('format', () => {
   it('handle a single-valued option with required inline parameter', () => {
     const options = {
@@ -13,8 +11,7 @@ describe('format', () => {
         inline: 'always',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  =<param>  Requires inline parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -s  =<param>  Requires inline parameters.\n`);
   });
 
   it('handle a single-valued option with disallowed inline parameter', () => {
@@ -25,8 +22,7 @@ describe('format', () => {
         inline: false,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  <param>  Disallows inline parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -s  <param>  Disallows inline parameters.\n`);
   });
 
   it('handle an array-valued option with required inline parameter', () => {
@@ -38,8 +34,7 @@ describe('format', () => {
         inline: 'always',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -a  [=<param>]  Values can be delimited with ','. Requires inline parameters.\n`,
     );
   });
@@ -53,8 +48,7 @@ describe('format', () => {
         inline: 'always',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  [=<param>]  Requires inline parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  [=<param>]  Requires inline parameters.\n`);
   });
 
   it('handle a function option with a single parameter', () => {
@@ -65,8 +59,7 @@ describe('format', () => {
         paramCount: 1,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  <param>\n`);
+    expect(format(options).wrap()).toEqual(`  -f  <param>\n`);
   });
 
   it('handle a function option with an optional parameter', () => {
@@ -77,8 +70,7 @@ describe('format', () => {
         paramCount: [0, 1],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  [<param>]\n`);
+    expect(format(options).wrap()).toEqual(`  -f  [<param>]\n`);
   });
 
   it('handle a function option with an exact parameter count', () => {
@@ -89,8 +81,7 @@ describe('format', () => {
         paramCount: 2,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  <param>...  Accepts 2 parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts 2 parameters.\n`);
   });
 
   it('handle a function option with a range parameter count', () => {
@@ -101,8 +92,9 @@ describe('format', () => {
         paramCount: [1, 2],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  <param>...  Accepts between 1 and 2 parameters.\n`);
+    expect(format(options).wrap()).toEqual(
+      `  -f  <param>...  Accepts between 1 and 2 parameters.\n`,
+    );
   });
 
   it('handle a function option with a minimum parameter count (1)', () => {
@@ -113,8 +105,7 @@ describe('format', () => {
         paramCount: [1, Infinity],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  <param>...  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts multiple parameters.\n`);
   });
 
   it('handle a function option with a minimum parameter count (2)', () => {
@@ -125,8 +116,7 @@ describe('format', () => {
         paramCount: [2, Infinity],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  <param>...  Accepts at least 2 parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts at least 2 parameters.\n`);
   });
 
   it('handle a function option with a maximum parameter count', () => {
@@ -137,8 +127,7 @@ describe('format', () => {
         paramCount: [0, 2],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts at most 2 parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts at most 2 parameters.\n`);
   });
 
   it('handle a function option with unlimited parameter count', () => {
@@ -149,8 +138,7 @@ describe('format', () => {
         paramCount: [0, Infinity],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
   });
 
   it('handle a single-valued option with a parameter name', () => {
@@ -161,8 +149,7 @@ describe('format', () => {
         paramName: 'my_param',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  <my_param>\n`);
+    expect(format(options).wrap()).toEqual(`  -s  <my_param>\n`);
   });
 
   it('handle a single-valued option with an empty parameter name', () => {
@@ -173,8 +160,7 @@ describe('format', () => {
         paramName: '',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  <param>\n`);
+    expect(format(options).wrap()).toEqual(`  -s  <param>\n`);
   });
 
   it('handle a single-valued option with a parameter name with angle brackets', () => {
@@ -185,8 +171,7 @@ describe('format', () => {
         paramName: '<token>=<value>',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  <token>=<value>\n`);
+    expect(format(options).wrap()).toEqual(`  -s  <token>=<value>\n`);
   });
 
   it('handle a single-valued option with a boolean example value', () => {
@@ -197,8 +182,7 @@ describe('format', () => {
         example: true,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  true\n`);
+    expect(format(options).wrap()).toEqual(`  -s  true\n`);
   });
 
   it('handle a single-valued option with a string example value', () => {
@@ -209,8 +193,7 @@ describe('format', () => {
         example: '123',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  '123'\n`);
+    expect(format(options).wrap()).toEqual(`  -s  '123'\n`);
   });
 
   it('handle a single-valued option with a number example value', () => {
@@ -221,8 +204,7 @@ describe('format', () => {
         example: 123,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  123\n`);
+    expect(format(options).wrap()).toEqual(`  -s  123\n`);
   });
 
   it('handle an array-valued option with a boolean array example value', () => {
@@ -233,8 +215,7 @@ describe('format', () => {
         example: [true, false],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -a  [true false...]  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -a  [true false...]  Accepts multiple parameters.\n`);
   });
 
   it('handle an array-valued option with a string array example value', () => {
@@ -245,8 +226,9 @@ describe('format', () => {
         example: ['one', 'two'],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -a  ['one' 'two'...]  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual(
+      `  -a  ['one' 'two'...]  Accepts multiple parameters.\n`,
+    );
   });
 
   it('handle an array-valued option with a number array example value', () => {
@@ -257,8 +239,7 @@ describe('format', () => {
         example: [1, 2],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -a  [1 2...]  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -a  [1 2...]  Accepts multiple parameters.\n`);
   });
 
   it('handle an array-valued option with an example value required to be inline', () => {
@@ -271,8 +252,7 @@ describe('format', () => {
         inline: 'always',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -a  [='true,false']  Values can be delimited with ','. Requires inline parameters.\n`,
     );
   });
@@ -286,8 +266,7 @@ describe('format', () => {
         separator: ',',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -a  ['one,two'...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
     );
   });
@@ -301,8 +280,7 @@ describe('format', () => {
         separator: /[,;]/s,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -a  ['1[,;]2'...]  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
     );
   });

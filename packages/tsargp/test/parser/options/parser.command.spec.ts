@@ -84,7 +84,7 @@ describe('parse', () => {
         );
       });
 
-      it('handle a nested options object with a help option', () => {
+      it('handle a nested options object with a help option and program name', () => {
         const options = {
           command: {
             type: 'command',

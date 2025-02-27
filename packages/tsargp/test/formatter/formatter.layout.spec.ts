@@ -5,15 +5,12 @@ import { HelpItem, tf } from '../../lib/enums';
 import { format } from '../../lib/formatter';
 import { style } from '../../lib/styles';
 
-process.env['FORCE_WIDTH'] = '0'; // omit styles
-
 describe('format', () => {
   it('handle an option with no names or description', () => {
     const options = {
       flag: { type: 'flag' },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual('\n');
+    expect(format(options).wrap()).toEqual('\n');
   });
 
   it('handle an option with empty names array', () => {
@@ -23,8 +20,7 @@ describe('format', () => {
         names: [],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual('\n');
+    expect(format(options).wrap()).toEqual('\n');
   });
 
   it('handle options with phantom names', () => {
@@ -45,11 +41,10 @@ describe('format', () => {
         synopsis: 'A phantom option.',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
-      '           A phantom option.\n' +
-        '           A phantom option.\n' +
-        '   ,       A phantom option.\n',
+    expect(format(options).wrap()).toEqual(
+      '           A phantom option.\n' + // one unquoted name with spaces
+        '           A phantom option.\n' + // one unquoted name with spaces
+        '   ,       A phantom option.\n', // two unquoted names with spaces
     );
   });
 
@@ -60,8 +55,7 @@ describe('format', () => {
         names: ['-f'],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual('  -f\n');
+    expect(format(options).wrap()).toEqual('  -f\n');
   });
 
   it('handle an option with custom styles', () => {
@@ -77,23 +71,22 @@ describe('format', () => {
         },
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap(0, true)).toEqual(
-      '  \x1b[0m\x1b[1m' +
+    expect(format(options).wrap(0, true)).toEqual(
+      '  \x1b[0;1m' + // tf.clear comes from default config
         '-f' +
         '\x1b[0m' +
         ', ' +
-        '\x1b[0m\x1b[1m' +
+        '\x1b[0;1m' + // each name has its own ANSI string
         '--flag' +
         '\x1b[0m' +
         ', ' +
-        '\x1b[0m\x1b[1m' +
+        '\x1b[0;1m' +
         '--flag1' +
         '\x1b[0m' +
         '    ' +
-        '\x1b[0;2m' +
+        '\x1b[0;2m' + // custom style merged with default one
         'A flag option.' +
-        '\x1b[0;2m' +
+        '\x1b[0;2m' + // each help item starts afresh
         ' Defaults to ' +
         '\x1b[33m' +
         '1' +
@@ -112,9 +105,8 @@ describe('format', () => {
         synopsis: `A ${style(tf.bold)}flag${style(tf.clear)} option`,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap(0, true)).toEqual(
-      '  \x1b[0m\x1b[35m' +
+    expect(format(options).wrap(0, true)).toEqual(
+      '  \x1b[0;35m' +
         '-f' +
         '\x1b[0m' +
         '    ' +
@@ -140,8 +132,7 @@ describe('format', () => {
           paragraphs`,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toMatch(
+    expect(format(options).wrap()).toMatch(
       /^ {2}-f {4}A flag option with line breaks, tabs and ...\n\n {8}paragraphs\n$/,
     );
   });
@@ -157,8 +148,7 @@ describe('format', () => {
           1. item3`,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toMatch(
+    expect(format(options).wrap()).toMatch(
       /^ {2}-f {4}A flag option with lists:\n {8}- item1\n {8}\* item2\n {8}1\. item3\n$/,
     );
   });
@@ -172,8 +162,7 @@ describe('format', () => {
         group: null,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual('');
+    expect(format(options).wrap()).toEqual('');
   });
 
   it('not break columns in the help message when configured with negative values', () => {
@@ -194,8 +183,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -s  <param>  A string option\n');
+    expect(format(options, sections).wrap()).toEqual('  -s  <param>  A string option\n');
   });
 
   it('break columns in the help message when configured with positive indentation', () => {
@@ -221,9 +209,8 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(
-      '\n               A flag option\n\n  -s\n      <param>\n               A string option\n',
+    expect(format(options, sections).wrap()).toMatch(
+      /^\n {15}A flag option\n\n {2}-s\n {6}<param>\n {15}A string option\n$/,
     );
   });
 
@@ -245,8 +232,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
+    expect(format(options, sections).wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
   });
 
   it('break columns in the help message when configured with negative indentation', () => {
@@ -267,8 +253,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toMatch(/^\n-s\n <param>\n {7}A string option\n$/);
+    expect(format(options, sections).wrap()).toMatch(/^\n-s\n <param>\n {7}A string option\n$/);
   });
 
   it('hide the option names from the help message when configured to do so', () => {
@@ -287,8 +272,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  <param>  A string option\n');
+    expect(format(options, sections).wrap()).toEqual('  <param>  A string option\n');
   });
 
   it('hide the option parameter from the help message when configured to do so', () => {
@@ -307,8 +291,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -s  A string option\n');
+    expect(format(options, sections).wrap()).toEqual('  -s  A string option\n');
   });
 
   it('hide the option description from the help message when configured to do so', () => {
@@ -327,8 +310,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -s  <param>\n');
+    expect(format(options, sections).wrap()).toEqual('  -s  <param>\n');
   });
 
   it('align option names to the left boundary without separator', () => {
@@ -344,18 +326,17 @@ describe('format', () => {
         synopsis: 'A flag option',
       },
     } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: {
+          names: { align: 'left' },
+        },
+      },
+    ];
     config.connectives.optionSep = '';
     try {
-      const sections: HelpSections = [
-        {
-          type: 'groups',
-          layout: {
-            names: { align: 'left' },
-          },
-        },
-      ];
-      const message = format(options, sections);
-      expect(message.wrap()).toEqual(
+      expect(format(options, sections).wrap()).toEqual(
         '  -f --flag    A flag option\n  --flag2      A flag option\n',
       );
     } finally {
@@ -382,8 +363,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -f, --flag\n  --flag2\n');
+    expect(format(options, sections).wrap()).toEqual('  -f, --flag\n  --flag2\n');
   });
 
   it('align option names to the right boundary', () => {
@@ -405,8 +385,31 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -f, --flag\n     --flag2\n');
+    expect(format(options, sections).wrap()).toEqual('  -f, --flag\n     --flag2\n');
+  });
+
+  it('align option names to the right boundary with different groups', () => {
+    const options = {
+      flag1: {
+        type: 'flag',
+        names: ['-f', null, '--flag'],
+      },
+      flag2: {
+        type: 'flag',
+        names: [null, '--flag2', null],
+        group: 'group',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        filter: ['group', ''], // change the group order
+        layout: {
+          names: { align: 'right' },
+        },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual('group\n\n     --flag2\n\n  -f, --flag\n');
   });
 
   it('align option names within slots without separator', () => {
@@ -420,18 +423,17 @@ describe('format', () => {
         names: [null, '--flag2', null],
       },
     } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: {
+          names: { align: 'slot' },
+        },
+      },
+    ];
     config.connectives.optionSep = '';
     try {
-      const sections: HelpSections = [
-        {
-          type: 'groups',
-          layout: {
-            names: { align: 'slot' },
-          },
-        },
-      ];
-      const message = format(options, sections);
-      expect(message.wrap()).toEqual('  -f         --flag\n     --flag2\n');
+      expect(format(options, sections).wrap()).toEqual('  -f         --flag\n     --flag2\n');
     } finally {
       config.connectives.optionSep = ',';
     }
@@ -456,8 +458,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual('  -f,          --flag\n      --flag2\n');
+    expect(format(options, sections).wrap()).toEqual('  -f,          --flag\n      --flag2\n');
   });
 
   it('align option parameters to the right boundary', () => {
@@ -480,8 +481,7 @@ describe('format', () => {
         items: [],
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(`  -s1  'abcde'\n  -s2     'ab'\n`);
+    expect(format(options, sections).wrap()).toEqual(`  -s1  'abcde'\n  -s2     'ab'\n`);
   });
 
   it('align option descriptions to the right boundary', () => {
@@ -498,8 +498,9 @@ describe('format', () => {
         layout: { descr: { align: 'right' } },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap(14, false, true)).toEqual('  -f    A flag\n        option\n');
+    expect(format(options, sections).wrap(14, false, true)).toEqual(
+      '  -f    A flag\n        option\n',
+    );
   });
 
   it('merge option parameters with left-aligned option names', () => {
@@ -511,7 +512,6 @@ describe('format', () => {
       single2: {
         type: 'single',
         paramName: 'long-parameter-name',
-        synopsis: 'A single-valued option',
       },
       single3: {
         type: 'single',
@@ -531,12 +531,8 @@ describe('format', () => {
         items: [HelpItem.synopsis],
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(
-      '  -s1, --single <param>\n' +
-        '  <long-parameter-name>  A single-valued option\n' +
-        '  -s3=<param>\n' +
-        '  --array[=<param>]\n',
+    expect(format(options, sections).wrap()).toEqual(
+      '  -s1, --single <param>\n  <long-parameter-name>\n  -s3=<param>\n  --array[=<param>]\n',
     );
   });
 
@@ -571,8 +567,7 @@ describe('format', () => {
         items: [HelpItem.synopsis],
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(
+    expect(format(options, sections).wrap()).toEqual(
       `  -s1, --single <param>\n  <long-parameter-name>\n  -s3=<param>\n  --array[=<param>]\n`,
     );
   });
@@ -608,8 +603,7 @@ describe('format', () => {
         items: [HelpItem.synopsis],
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(
+    expect(format(options, sections).wrap()).toEqual(
       '  -s1, --single <param>\n' +
         '                <long-parameter-name>\n' +
         '            -s3=<param>\n' +
@@ -638,29 +632,34 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(`  -s  <param> A string option\n  -f  A flag option\n`);
+    expect(format(options, sections).wrap()).toEqual(
+      `  -s  <param> A string option\n  -f  A flag option\n`,
+    );
   });
 
-  it('merge option descriptions with option names', () => {
+  it('merge option descriptions with slotted option names', () => {
     const options = {
       single: {
         type: 'single',
-        names: ['-s'],
+        names: ['-s', null],
         synopsis: 'A string option',
+      },
+      flag: {
+        type: 'flag',
+        synopsis: 'A flag option',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
       {
         type: 'groups',
         layout: {
+          names: { align: 'slot' }, // ignored by the formatter
           param: { hidden: true },
           descr: { align: 'merge' },
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(`  -s A string option\n`);
+    expect(format(options, sections).wrap()).toEqual(`  -s A string option\n  A flag option\n`);
   });
 
   it('merge option descriptions with option parameters and option names', () => {
@@ -689,8 +688,7 @@ describe('format', () => {
         },
       },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(
+    expect(format(options, sections).wrap()).toEqual(
       `  -s <param> A string option\n  <param> A string option\n  -f A flag option\n`,
     );
   });

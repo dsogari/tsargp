@@ -75,9 +75,9 @@ export default {
       {
         type: 'groups',
         title: `Argument parser for TypeScript.`,
-        useEnv: true,
         layout: { param: { hidden: true } },
         items: envHelpItems,
+        useEnv: true,
       },
       {
         type: 'text',

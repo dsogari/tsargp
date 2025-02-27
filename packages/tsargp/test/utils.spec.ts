@@ -3,7 +3,6 @@ import {
   gestaltSimilarity,
   findSimilar,
   mergeValues,
-  escapeRegExp,
   findValue,
   areEqual,
   readFile,
@@ -107,12 +106,6 @@ describe('findValue', () => {
   it('return the first match', () => {
     expect(findValue({ a: 1, b: 'a' }, () => true)).toEqual(1);
     expect(findValue({ a: 1, b: 'a' }, (val) => val === 'a')).toEqual('a');
-  });
-});
-
-describe('escapeRegExp', () => {
-  it('escape special regex symbols', () => {
-    expect(escapeRegExp('\\^$.*+?()[]{}|')).toEqual('\\\\\\^\\$\\.\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|');
   });
 });
 

@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSections, Options } from '../../lib/options';
-import { format } from '../../lib/formatter';
 import { tf } from '../../lib/enums';
+import { format } from '../../lib/formatter';
 import { style } from '../../lib/styles';
-
-process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('format', () => {
   it('handle zero options', () => {
@@ -34,8 +32,10 @@ describe('format', () => {
         names: ['-s'],
       },
     } as const satisfies Options;
+    const sections0: HelpSections = [{ type: 'groups', filter: [] }]; // empty filter
     const sections1: HelpSections = [{ type: 'groups', filter: [''] }];
     const sections2: HelpSections = [{ type: 'groups', filter: ['group'] }];
+    expect(format(options, sections0).wrap()).toEqual(``);
     expect(format(options, sections1).wrap()).toEqual(`  -s  <param>\n`);
     expect(format(options, sections2).wrap()).toEqual(`group\n\n  -f\n`);
   });
@@ -61,8 +61,7 @@ describe('format', () => {
         layout: { descr: { absolute: true } },
       },
     ];
-    const message = format(options, sections, ['flag']);
-    expect(message.wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
+    expect(format(options, sections, ['flag']).wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
   });
 
   it('filter an option with environment variable using multiple regular expressions', () => {
@@ -81,8 +80,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'groups', items: [] }];
-    const message = format(options, sections, ['-f', 'sing']);
-    expect(message.wrap()).toEqual(`  -f\n  -s  <param>\n`);
+    expect(format(options, sections, ['-f', 'sing']).wrap()).toEqual(`  -f\n  -s  <param>\n`);
   });
 
   it('handle a help option', () => {
@@ -94,8 +92,7 @@ describe('format', () => {
         useFilter: true,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -h    ` +
         `Uses the next argument as the name of a subcommand. ` +
         `Uses the remaining arguments as option filter.\n`,
@@ -109,8 +106,7 @@ describe('format', () => {
         names: ['-f'],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
   });
 
   it('handle a command option', () => {
@@ -120,8 +116,7 @@ describe('format', () => {
         names: ['-c'],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -c  ...\n`);
+    expect(format(options).wrap()).toEqual(`  -c  ...\n`);
   });
 
   it('handle an option that is always required', () => {
@@ -132,8 +127,7 @@ describe('format', () => {
         required: true,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f    Always required.\n`);
+    expect(format(options).wrap()).toEqual(`  -f    Always required.\n`);
   });
 
   it('handle a flag option with an external reference', () => {
@@ -144,8 +138,7 @@ describe('format', () => {
         link: new URL('https://dsogari.github.io/tsargp/docs'),
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -f    Refer to https://dsogari.github.io/tsargp/docs for details.\n`,
     );
   });
@@ -158,8 +151,7 @@ describe('format', () => {
         deprecated: 'reason',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f    Deprecated for reason.\n`);
+    expect(format(options).wrap()).toEqual(`  -f    Deprecated for reason.\n`);
   });
 
   it('handle a flag option with cluster letters', () => {
@@ -170,8 +162,7 @@ describe('format', () => {
         cluster: 'fF',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
+    expect(format(options).wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
   });
 
   it('handle a flag option that reads data from standard input', () => {
@@ -182,8 +173,7 @@ describe('format', () => {
         stdin: true,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f    Reads data from standard input.\n`);
+    expect(format(options).wrap()).toEqual(`  -f    Reads data from standard input.\n`);
   });
 
   it('handle a flag option with an environment variable', () => {
@@ -194,8 +184,9 @@ describe('format', () => {
         sources: ['VAR', new URL('file://path')],
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -f    Reads environment data from VAR, file://path/.\n`);
+    expect(format(options).wrap()).toEqual(
+      `  -f    Reads environment data from VAR, file://path/.\n`,
+    );
   });
 
   it('handle a single-valued option that accepts positional arguments', () => {
@@ -206,8 +197,7 @@ describe('format', () => {
         positional: true,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
+    expect(format(options).wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
   });
 
   it('handle a single-valued option that accepts positional arguments after marker', () => {
@@ -218,8 +208,7 @@ describe('format', () => {
         positional: '--',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
     );
   });
@@ -232,8 +221,7 @@ describe('format', () => {
         separator: ',',
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -a  [<param>...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
     );
   });
@@ -246,8 +234,7 @@ describe('format', () => {
         append: true,
       },
     } as const satisfies Options;
-    const message = format(options);
-    expect(message.wrap()).toEqual(
+    expect(format(options).wrap()).toEqual(
       `  -a  [<param>...]  Accepts multiple parameters. Can be specified multiple times.\n`,
     );
   });
@@ -269,8 +256,7 @@ describe('format', () => {
       { type: 'usage', title: `section ${style(tf.clear)} title`, noWrap: true },
       { type: 'groups', title: `section ${style(tf.clear)} title`, noWrap: true },
     ];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(
+    expect(format(options, sections).wrap()).toEqual(
       'section ' +
         '\x1b[0m' +
         ' title\n\nsection ' +
