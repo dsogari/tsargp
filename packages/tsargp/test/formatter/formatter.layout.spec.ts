@@ -68,7 +68,7 @@ describe('format', () => {
     const options = {
       flag: {
         type: 'flag',
-        names: ['-f', '--flag'],
+        names: ['-f', '--flag', '--flag1'],
         synopsis: 'A flag option.',
         default: 1,
         styles: {
@@ -83,8 +83,12 @@ describe('format', () => {
         '-f' +
         '\x1b[0m' +
         ', ' +
-        '\x1b[1m' +
+        '\x1b[0m\x1b[1m' +
         '--flag' +
+        '\x1b[0m' +
+        ', ' +
+        '\x1b[0m\x1b[1m' +
+        '--flag1' +
         '\x1b[0m' +
         '    ' +
         '\x1b[0;2m' +
@@ -196,6 +200,11 @@ describe('format', () => {
 
   it('break columns in the help message when configured with positive indentation', () => {
     const options = {
+      flag: {
+        type: 'flag',
+        names: [''],
+        synopsis: 'A flag option',
+      },
       single: {
         type: 'single',
         names: ['-s'],
@@ -213,7 +222,9 @@ describe('format', () => {
       },
     ];
     const message = format(options, sections);
-    expect(message.wrap()).toMatch(/^\n {2}-s\n {6}<param>\n {15}A string option\n$/);
+    expect(message.wrap()).toEqual(
+      '\n               A flag option\n\n  -s\n      <param>\n               A string option\n',
+    );
   });
 
   it('break columns in the help message when configured with absolute indentation', () => {

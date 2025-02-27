@@ -1035,15 +1035,6 @@ export function getOptionNames(option: OpaqueOption): Array<string> {
 }
 
 /**
- * Gets a list of environment data sources, excluding URLs.
- * @param option The option definition
- * @returns The option data sources
- */
-export function getOptionSources(option: OpaqueOption): Array<string> {
-  return option.sources?.slice().filter(isString) ?? [];
-}
-
-/**
  * Tests if an option type is that of a message-valued option.
  * @param type The option type
  * @returns True if the option type is message

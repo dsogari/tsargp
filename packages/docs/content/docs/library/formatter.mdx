@@ -251,7 +251,7 @@ packet-beta
 
 ##### Column alignment
 
-The `names.align` property supports an additional value `'slot'{:ts}`, meaning that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information.
+The `names.align` property supports an additional value `'slot'{:ts}`, meaning that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information. This value is ignored if `param.align` is `'merge'{:ts}` (see below).
 
 The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which instructs the formatter to merge the contents of the column with the previous one. This is useful, for instance, if you want option parameters to be inlined with option names. When using this value, both the `indent` and `breaks` properties are ignored.
 

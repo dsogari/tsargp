@@ -18,13 +18,7 @@ import type { FormattingFlags, Style } from './styles.js';
 import { config } from './config.js';
 import { HelpItem, tf } from './enums.js';
 import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
-import {
-  getParamCount,
-  getOptionNames,
-  visitRequirements,
-  isCommand,
-  getOptionSources,
-} from './options.js';
+import { getParamCount, getOptionNames, visitRequirements, isCommand } from './options.js';
 import {
   getSymbol,
   isArray,
@@ -337,7 +331,6 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
  * @param keys The filtered option keys
  * @param groupFilter The option group filter
  * @param exclude True if the filter should exclude
- * @param useEnv Whether option names should be replaced by environment variable names
  * @param buildFn The building function
  * @returns The option groups
  */
@@ -346,28 +339,25 @@ function buildGroups(
   keys: ReadonlyArray<string>,
   groupFilter: ReadonlyArray<string>,
   exclude: boolean,
-  useEnv: boolean,
-  buildFn: (option: OpaqueOption) => HelpEntry,
+  buildFn: (option: OpaqueOption) => HelpEntry | undefined,
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
-  let names;
-  if (groupFilter.length) {
-    names = new Set(groupFilter);
-    if (!exclude) {
-      groupFilter.forEach((name) => (groups[name] = [])); // to keep the filter order
-    }
+  const names = new Set(getValues(options).map((opt) => opt.group ?? ''));
+  groupFilter.forEach(
+    exclude
+      ? (name) => names.delete(name)
+      : (name) => (names.has(name) ? (groups[name] = []) : void 0),
+  );
+  if (!groupFilter.length || exclude) {
+    names.forEach((name) => (groups[name] = []));
   }
   for (const key of keys) {
     const option = options[key];
     const name = option.group ?? '';
-    if (!names || names.has(name) !== exclude) {
-      if (!useEnv || option.sources?.length) {
-        const entry = buildFn(option);
-        if (name in groups) {
-          groups[name].push(entry);
-        } else {
-          groups[name] = [entry];
-        }
+    if (name in groups) {
+      const entry = buildFn(option);
+      if (entry) {
+        groups[name].push(entry);
       }
     }
   }
@@ -400,8 +390,11 @@ function buildEntries(
   let namesWidth = 0;
   let paramWidth = 0;
   let mergedWidth = 0;
-  const groups = buildGroups(options, keys, groupFilter, exclude, useEnv, (option): HelpEntry => {
+  const groups = buildGroups(options, keys, groupFilter, exclude, (option) => {
     const names = formatNames(layout, option, useEnv);
+    if (useEnv && !names.length) {
+      return undefined;
+    }
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, items, option);
     const paramLen = param.totalLen;
@@ -517,7 +510,7 @@ function formatNames(
   useEnv: boolean,
 ): Array<AnsiString> {
   const { breaks, hidden } = layout.names;
-  const names = useEnv ? getOptionSources(option) : option.names;
+  const names = useEnv ? option.sources?.filter(isString) : option.names;
   if (hidden || !names?.length) {
     return [];
   }
@@ -526,16 +519,13 @@ function formatNames(
   const result: Array<AnsiString> = [];
   let str: AnsiString | undefined;
   names.forEach((name) => {
-    if (name !== null) {
-      str = new AnsiString(0, str ? 0 : breaks, false, str ? '' : defSty);
+    if (name) {
+      str = new AnsiString(0, str ? 0 : breaks, false, defSty);
       result.push(str.word(name, sty));
     } else {
       result.push(new AnsiString());
     }
   });
-  if (str && !str.defSty) {
-    str.close('', defSty); // close style on last string
-  }
   return result;
 }
 
@@ -608,17 +598,15 @@ function formatHelpSection(
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
     const groups = buildEntries(options, mergedLayout, keys, items, filter, exclude, useEnv);
     for (const [name, entries] of getEntries(groups)) {
-      if (entries.length) {
-        const title2 = name || title;
-        const heading = title2
-          ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
-          : new AnsiString(0, curBreaks);
-        result.push(heading);
-        for (const [names, param, descr] of entries) {
-          result.push(...names, param, descr);
-        }
-        curBreaks = 1; // to account for the last option description
+      const title2 = name || title;
+      const heading = title2
+        ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
+        : new AnsiString(0, curBreaks);
+      result.push(heading);
+      for (const [names, param, descr] of entries) {
+        result.push(...names, param, descr);
       }
+      curBreaks = 1; // to account for the last option description
     }
   } else {
     if (title) {
