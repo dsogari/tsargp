@@ -725,7 +725,7 @@ function formatUsageOption(
     const defSty = option.styles?.param ?? config.styles.value;
     const param = new AnsiString(0, 0, false, defSty);
     formatParam(option, names, param);
-    result.other(param).close('', result.defSty);
+    result.other(param).closeSty(result.defSty);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {

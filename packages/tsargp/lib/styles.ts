@@ -2,11 +2,11 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { ConnectiveWords } from './config.js';
-import type { ErrorItem, fg, bg } from './enums.js';
-import type { Alias, Args, Enumerate, ValuesOf } from './utils.js';
+import { ErrorItem, tf, fg, bg } from './enums.js';
+import type { Alias, Args, Enumerate } from './utils.js';
 
 import { config } from './config.js';
-import { cs, tf } from './enums.js';
+import { cs } from './enums.js';
 import {
   getEntries,
   isArray,
@@ -18,42 +18,21 @@ import {
   streamWidth,
 } from './utils.js';
 
-export { sequence as seq, sgr as style, foreground as fg8, background as bg8, underline as ul8 };
-export { underlineStyle as ul, formatFunctions as fmt };
+export {
+  sequence as seq,
+  sgrSequence as style,
+  foreground8 as fg8,
+  background8 as bg8,
+  underline8 as ul8,
+  foreground24 as fg24,
+  background24 as bg24,
+  underline24 as ul24,
+};
+export { formatFunctions as fmt };
 
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-/**
- * A predefined underline style.
- */
-const underlineStyle: UnderlineStyles = {
-  /**
-   * No underline.
-   */
-  none: [4, 0],
-  /**
-   * Single underline.
-   */
-  single: [4, 1],
-  /**
-   * Double underline.
-   */
-  double: [4, 2],
-  /**
-   * Curly underline.
-   */
-  curly: [4, 3],
-  /**
-   * Dotted underline.
-   */
-  dotted: [4, 4],
-  /**
-   * Dashed underline.
-   */
-  dashed: [4, 5],
-};
-
 /**
  * A map of data type to format specifier.
  */
@@ -76,7 +55,7 @@ const formatFunctions: FormatFunctions = {
    * @param result The resulting string
    */
   b(value: boolean, result) {
-    result.word(`${value}`, config.styles.boolean);
+    result.word('' + value, config.styles.boolean);
   },
   /**
    * The formatting function for string values.
@@ -85,7 +64,7 @@ const formatFunctions: FormatFunctions = {
    */
   s(value: string, result) {
     const quote = config.connectives.stringQuote;
-    result.word(`${quote}${value}${quote}`, config.styles.string);
+    result.word(quote + value + quote, config.styles.string);
   },
   /**
    * The formatting function for number values.
@@ -93,7 +72,7 @@ const formatFunctions: FormatFunctions = {
    * @param result The resulting string
    */
   n(value: number, result) {
-    result.word(`${value}`, config.styles.number);
+    result.word('' + value, config.styles.number);
   },
   /**
    * The formatting function for regular expressions.
@@ -101,7 +80,7 @@ const formatFunctions: FormatFunctions = {
    * @param result The resulting string
    */
   r(value: RegExp, result) {
-    result.word(`${value}`, config.styles.regex);
+    result.word('' + value, config.styles.regex);
   },
   /**
    * The formatting function for symbols.
@@ -213,10 +192,13 @@ const formatFunctions: FormatFunctions = {
       const connectives = config.connectives;
       const open = connectives.valueOpen;
       const close = connectives.valueClose;
-      result.open('', config.styles.value);
-      result.open(open).split(`${value}`).close(close);
-      if (config.styles.value) {
-        result.close('', result.defSty);
+      result.openSty(config.styles.value);
+      result
+        .open(open)
+        .split('' + value)
+        .close(close);
+      if (result.defSty && config.styles.value) {
+        result.closeSty(result.defSty);
       }
     }
   },
@@ -225,16 +207,6 @@ const formatFunctions: FormatFunctions = {
 //--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
-/**
- * The name of a predefined underline style.
- */
-export type UnderlineStyle = 'none' | 'single' | 'double' | 'curly' | 'dotted' | 'dashed';
-
-/**
- * A set of underline styles.
- */
-export type UnderlineStyles = Readonly<Record<UnderlineStyle, [4, number]>>;
-
 /**
  * A callback that processes a placeholder when splitting text.
  * @param this The ANSI string to append to
@@ -281,20 +253,13 @@ export type FormattingFlags = {
 
 /**
  * A control sequence introducer.
- * @template P The type of the sequence parameter
- * @template C The type of the sequence command
  */
-export type CSI<P extends string, C extends cs> = `\x1b[${P}${C}`;
-
-/**
- * A control sequence.
- */
-export type Sequence = CSI<string, cs> | '';
+export type Sequence<T extends cs> = Array<number> & { cmd: T };
 
 /**
  * A select graphics rendition sequence.
  */
-export type Style = CSI<string, cs.sgr> | '';
+export type Style = Sequence<cs.sgr>;
 
 /**
  * An 8-bit decimal number.
@@ -304,27 +269,46 @@ export type Decimal = Alias<Enumerate<256>>;
 /**
  * An 8-bit foreground color.
  */
-export type FgColor = [38, 5, Decimal];
+export type Fg8Color = [38, 5, Decimal];
 
 /**
  * An 8-bit background color.
  */
-export type BgColor = [48, 5, Decimal];
+export type Bg8Color = [48, 5, Decimal];
 
 /**
  * An 8-bit underline color.
  */
-export type UlColor = [58, 5, Decimal];
+export type Ul8Color = [58, 5, Decimal];
 
 /**
- * An underline style.
+ * An 24-bit foreground color.
  */
-export type UlStyle = ValuesOf<typeof underlineStyle>;
+export type Fg24Color = [38, 2, Decimal, Decimal, Decimal];
+
+/**
+ * An 24-bit background color.
+ */
+export type Bg24Color = [48, 2, Decimal, Decimal, Decimal];
+
+/**
+ * An 24-bit underline color.
+ */
+export type Ul24Color = [58, 2, Decimal, Decimal, Decimal];
 
 /**
  * A text styling attribute.
  */
-export type StyleAttr = tf | fg | bg | FgColor | BgColor | UlColor | UlStyle;
+export type StyleAttr =
+  | tf
+  | fg
+  | bg
+  | Fg8Color
+  | Bg8Color
+  | Ul8Color
+  | Fg24Color
+  | Bg24Color
+  | Ul24Color;
 
 /**
  * A format specifier.
@@ -374,7 +358,7 @@ type AnsiContext = [
   /**
    * The styles to be applied to the next string.
    */
-  curStyle: string,
+  curStyle: Style,
   /**
    * Whether the first internal string should be merged with the previous string.
    */
@@ -404,7 +388,7 @@ export class AnsiString {
   /**
    * The ANSI string context.
    */
-  private context: AnsiContext = [[], [], '', false, false, 0];
+  private context: AnsiContext = [[], [], sgrSequence(), false, false, 0];
 
   /**
    * @returns The list of internal strings without control sequences
@@ -464,9 +448,9 @@ export class AnsiString {
     public indent = 0,
     breaks = 0,
     public righty = false,
-    public defSty = '',
+    public defSty: Style = sgrSequence(),
   ) {
-    this.break(breaks).context[2] = defSty;
+    this.break(breaks).context[2].push(...defSty);
   }
 
   /**
@@ -474,7 +458,7 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   clear(): this {
-    this.context = [[], [], '', false, false, 0];
+    this.context = [[], [], sgrSequence(), false, false, 0];
     return this;
   }
 
@@ -485,7 +469,7 @@ export class AnsiString {
    */
   other(other: AnsiString): this {
     if (other.count) {
-      const [thisStrings, thisStyledStrings] = this.context;
+      const [thisStrings, thisStyledStrings, thisCurStyle] = this.context;
       const [
         otherStrings,
         otherStyledStrings,
@@ -505,7 +489,8 @@ export class AnsiString {
       }
       thisStrings.push(...restStrings);
       thisStyledStrings.push(...restStyledStrings);
-      this.context[2] = otherCurStyle;
+      thisCurStyle.length = 0;
+      thisCurStyle.push(...otherCurStyle); // avoid taking the object reference
       this.context[4] = otherMergeRight;
       this.context[5] = max(this.context[5], otherMaxLength);
     }
@@ -532,27 +517,50 @@ export class AnsiString {
   }
 
   /**
-   * Appends text that will be merged with the next text.
-   * @param text The text with no control sequences
-   * @param styledText The text with possible control sequences
+   * Appends a style.
+   * @param sty The SGR sequence
    * @returns The ANSI string instance
    */
-  open(text: string, styledText = text): this {
-    this.add(text, styledText);
-    if (text) {
+  openSty(sty: Style): this {
+    this.context[2].push(...sty); // append to opening style
+    return this;
+  }
+
+  /**
+   * Closes with a style.
+   * @param sty The SGR sequence
+   * @returns The ANSI string instance
+   */
+  closeSty(sty: Style): this {
+    const count = this.count;
+    const [, styledStrings, curStyle] = this.context;
+    if (count && !curStyle.length) {
+      styledStrings[count - 1] += sty; // close with style
+    }
+    curStyle.length = 0; // reset opening style
+    return this;
+  }
+
+  /**
+   * Opens with a word.
+   * @param word The word to insert (should contain no styles)
+   * @returns The ANSI string instance
+   */
+  open(word: string): this {
+    this.add(word, word);
+    if (word) {
       this.merge = true;
     }
     return this;
   }
 
   /**
-   * Appends a text that is merged with the last text.
-   * @param text The text with no control sequences
-   * @param styledText The text with possible control sequences
+   * Closes with a word.
+   * @param word The word to insert (should contain no styles)
    * @returns The ANSI string instance
    */
-  close(text: string, styledText = text): this {
-    return this.add(text, styledText, true);
+  close(word: string): this {
+    return this.add(word, word, true);
   }
 
   /**
@@ -572,11 +580,11 @@ export class AnsiString {
 
   /**
    * Appends a word.
-   * @param word The word to insert
+   * @param word The word to insert (should contain no styles)
    * @param sty The style to be applied
    * @returns The ANSI string instance
    */
-  word(word: string, sty: Style = ''): this {
+  word(word: string, sty?: Style): this {
     if (word) {
       this.add(word, sty ? sty + word + this.defSty : word);
     }
@@ -591,32 +599,26 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   add(text: string, styledText: string, close = false): this {
-    if (styledText) {
-      const count = this.count;
-      const [strings, styledStrings, curStyle, , mergeRight, maxLength] = this.context;
-      if (text) {
-        if (count && (mergeRight || close)) {
-          strings[count - 1] += text;
-          styledStrings[count - 1] += curStyle + styledText;
-          text = strings[count - 1]; // to update maxLength
-        } else {
-          strings.push(text);
-          styledStrings.push(curStyle + styledText);
-        }
-        if (!maxLength) {
-          this.context[3] = mergeRight || close;
-        }
-        this.context[5] = max(maxLength, text.length);
-        this.merge = false;
-      } else if (!close) {
-        this.context[2] += styledText; // append to opening style
-      } else if (count && !curStyle) {
-        styledStrings[count - 1] += styledText; // close with style
-      }
-      if (text || close) {
-        this.context[2] = '';
-      }
+    if (!text) {
+      const sty = sgrFromText(styledText);
+      return close ? this.closeSty(sty) : this.openSty(sty);
     }
+    const count = this.count;
+    const [strings, styledStrings, curStyle, , mergeRight, maxLength] = this.context;
+    if (count && (mergeRight || close)) {
+      strings[count - 1] += text;
+      styledStrings[count - 1] += curStyle + styledText;
+      text = strings[count - 1]; // to update maxLength
+    } else {
+      strings.push(text);
+      styledStrings.push(curStyle + styledText);
+    }
+    if (!maxLength) {
+      this.context[3] = mergeRight || close;
+    }
+    this.context[5] = max(maxLength, text.length);
+    curStyle.length = 0; // reset opening style
+    this.merge = false;
     return this;
   }
 
@@ -634,7 +636,7 @@ export class AnsiString {
         this.break(2);
       }
     });
-    return this.close('', this.defSty); // reset from possible inline styles
+    return this.closeSty(this.defSty); // reset from possible inline styles
   }
 
   /**
@@ -654,10 +656,19 @@ export class AnsiString {
     emitSpaces: boolean,
   ): number {
     /** @ignore */
+    function move(from: number, to: number): string {
+      return to >= from
+        ? emitSpaces
+          ? ' '.repeat(to - from)
+          : '' + sequence(cs.cuf, to - from)
+        : emitSpaces
+          ? ''
+          : '' + sequence(cs.cub, from - to);
+    }
+    /** @ignore */
     function align() {
       if (needToAlign && j < result.length && column < width) {
-        const rem = width - column; // remaining columns until right boundary
-        const pad = !emitSpaces ? sequence(cs.cuf, rem) : ' '.repeat(rem);
+        const pad = move(column, width); // remaining columns until right boundary
         result.splice(j, 0, pad); // insert padding at the indentation boundary
         column = width;
       }
@@ -682,13 +693,7 @@ export class AnsiString {
       start = 0; // wrap to the first column instead
     }
     if (column !== start && strings[0]) {
-      const pad = !largestFits
-        ? '\n'
-        : !emitSpaces
-          ? sequence(cs.cha, start + 1)
-          : column < start
-            ? ' '.repeat(start - column)
-            : '';
+      const pad = largestFits ? move(column, start) : '\n';
       if (pad) {
         result.push(pad);
       } else {
@@ -707,7 +712,7 @@ export class AnsiString {
       column = start;
     }
 
-    const indent = start ? (!emitSpaces ? sequence(cs.cha, start + 1) : ' '.repeat(start)) : '';
+    const indent = start ? move(0, start) : '';
     let j = result.length; // save index for right-alignment
     for (let i = 0; i < count; i++) {
       let str = strings[i];
@@ -794,7 +799,7 @@ export class AnsiMessage extends Array<AnsiString> {
    * @returns The wrapped message
    */
   get message(): string {
-    return this.toString();
+    return '' + this;
   }
 }
 
@@ -845,14 +850,14 @@ export class ErrorMessage extends Error {
    * @returns The wrapped message
    */
   override toString(): string {
-    return this.msg.toString();
+    return '' + this.msg;
   }
 
   /**
    * @returns The wrapped message
    */
   override get message(): string {
-    return this.toString();
+    return '' + this;
   }
 
   /**
@@ -897,7 +902,7 @@ export class TextMessage extends Array<string> {
    * @returns The wrapped message
    */
   get message(): string {
-    return this.toString();
+    return '' + this;
   }
 }
 
@@ -944,7 +949,7 @@ function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
         }
         boundFormat?.(parts[i]);
         text = parts[i + 1].replace(regex.sgr, '');
-        result.close(text, parts[i + 1]);
+        result.add(text, parts[i + 1], true);
       }
     }
   }
@@ -952,47 +957,98 @@ function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
 
 /**
  * Creates a control sequence.
- * @template T The type of the sequence command
  * @param cmd The sequence command
  * @param params The sequence parameters
  * @returns The control sequence
  */
-function sequence<T extends cs>(cmd: T, ...params: Array<number>): CSI<string, T> {
-  return `\x1b[${params.join(';')}${cmd}`;
+function sequence<T extends cs>(cmd: T, ...params: Array<number>): Sequence<T> {
+  const seq = params as Sequence<T>;
+  seq.toString = function () {
+    return this.length ? `\x1b[${this.join(';')}${this.cmd}` : '';
+  };
+  seq.cmd = cmd;
+  return seq;
 }
 
 /**
- * Creates an SGR sequence.
- * @param attrs The text styling attributes
+ * Creates an SGR sequence from styling attributes.
+ * @param attrs The styling attributes
  * @returns The SGR sequence
  */
-function sgr(...attrs: Array<StyleAttr>): Style {
+function sgrSequence(...attrs: Array<StyleAttr>): Style {
   return sequence(cs.sgr, ...attrs.flat());
 }
 
 /**
- * Creates a foreground color.
+ * Creates an SGR sequence from a string.
+ * @param text The string (must be a sequence of SGR sequences)
+ * @returns The SGR sequence
+ */
+function sgrFromText(text: string): Style {
+  const params = text
+    .split('\x1b[') // assumes that there is no text between sequences
+    .slice(1) // discard text before the first sequence
+    .flatMap((str) => str.slice(0, -1).split(';'))
+    .map(Number);
+  return sequence(cs.sgr, ...params);
+}
+
+/**
+ * Creates an 8-bit foreground color.
  * @param color The color decimal value
  * @returns The foreground color
  */
-function foreground(color: Decimal): FgColor {
+function foreground8(color: Decimal): Fg8Color {
   return [38, 5, color];
 }
 
 /**
- * Creates a background color.
+ * Creates an 8-bit background color.
  * @param color The color decimal value
  * @returns The background color
  */
-function background(color: Decimal): BgColor {
+function background8(color: Decimal): Bg8Color {
   return [48, 5, color];
 }
 
 /**
- * Creates an underline color.
+ * Creates an 8-bit underline color.
  * @param color The color decimal value
  * @returns The underline color
  */
-function underline(color: Decimal): UlColor {
+function underline8(color: Decimal): Ul8Color {
   return [58, 5, color];
+}
+
+/**
+ * Creates a 24-bit foreground color.
+ * @param r The red color component
+ * @param g The green color component
+ * @param b The blue color component
+ * @returns The foreground color
+ */
+function foreground24(r: Decimal, g: Decimal, b: Decimal): Fg24Color {
+  return [38, 2, r, g, b];
+}
+
+/**
+ * Creates a 24-bit background color.
+ * @param r The red color component
+ * @param g The green color component
+ * @param b The blue color component
+ * @returns The background color
+ */
+function background24(r: Decimal, g: Decimal, b: Decimal): Bg24Color {
+  return [48, 2, r, g, b];
+}
+
+/**
+ * Creates a 24-bit underline color.
+ * @param r The red color component
+ * @param g The green color component
+ * @param b The blue color component
+ * @returns The underline color
+ */
+function underline24(r: Decimal, g: Decimal, b: Decimal): Ul24Color {
+  return [58, 2, r, g, b];
 }

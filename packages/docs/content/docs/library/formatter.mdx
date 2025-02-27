@@ -99,11 +99,11 @@ All help sections share a set of optional properties:
 - `title` - the section heading or the default [option group] heading (defaults to none)
 - `style` - the style of the section heading or [option group] headings (defaults to `tf.bold{:ts}`)
 - `breaks` - the number of line feeds to insert before the section (defaults to `0{:ts}` for the first section, `1{:ts}` for others)
-- `noWrap` - true to disable wrapping of provided texts (defaults to `false{:ts}`)
+- `noWrap` - true to disable wrapping of text properties (defaults to `false{:ts}`)
 
 <Callout type="warning">
 
-When `noWrap` is set, inline styles may still be used in text properties, although they will _not_ be formatted according to [text formatting] rules. This also means that they would appear in redirected command outputs.
+When `noWrap` is set, be careful with inline styles present in text properties, as they will appear in redirected command outputs and will not be affected by the `NO_COLOR` and related variables. (See [ANSI message].)
 
 </Callout>
 
