@@ -231,6 +231,10 @@ export const enum HelpItem {
  */
 const enum ControlSequence {
   /**
+   * Insert Characters. Insert Ps (blank) characters (default = 1).
+   */
+  ich = '@',
+  /**
    * Cursor Up. Move cursor Ps times up (default=1).
    */
   cuu = 'A',
@@ -267,14 +271,6 @@ const enum ControlSequence {
    */
   cbt = 'Z',
   /**
-   * Vertical Position Absolute. Move cursor to Ps-th row (default=1).
-   */
-  vpa = 'd',
-  /**
-   * Vertical Position Relative. Move cursor Ps times down (default=1).
-   */
-  vpr = 'e',
-  /**
    * Cursor Position. Set cursor to position [Ps, Ps] (default = [1, 1]).
    */
   cup = 'H',
@@ -295,41 +291,9 @@ const enum ControlSequence {
    */
   dl = 'M',
   /**
-   * Insert Characters. Insert Ps (blank) characters (default = 1).
-   */
-  ich = '@',
-  /**
    * Delete Characters. Delete Ps characters (default=1).
    */
   dch = 'P',
-  /**
-   * Erase Characters. Erase Ps characters from current cursor position to the right (default=1).
-   */
-  ech = 'X',
-  /**
-   * Repeat Preceding Character. Repeat preceding character Ps times (default=1).
-   */
-  rch = 'b',
-  /**
-   * Tab Clear. Clear tab stops at current position (0) or all (3) (default=0).
-   */
-  tbc = 'g',
-  /**
-   * Insert Columns. Insert Ps columns at cursor position.
-   */
-  icl = "'}",
-  /**
-   * Delete Columns. Delete Ps columns at cursor position.
-   */
-  dcl = "'~",
-  /**
-   * Scroll Left. Scroll viewport Ps times to the left.
-   */
-  sl = 'SP@',
-  /**
-   * Scroll Right. Scroll viewport Ps times to the right.
-   */
-  sr = 'SPA',
   /**
    * Scroll Up. Scroll Ps lines up (default=1).
    */
@@ -339,34 +303,70 @@ const enum ControlSequence {
    */
   sd = 'T',
   /**
-   * Select Graphic Rendition. Set/Reset various text attributes.
+   * Erase Characters. Erase Ps characters from current cursor position to the right (default=1).
    */
-  sgr = 'm',
+  ech = 'X',
   /**
-   * Set Top and Bottom Margins. Set top and bottom margins of the viewport [top;bottom] (default =
-   * viewport size).
+   * Horizontal Position Absolute. Same as {@link ControlSequence.cha}.
    */
-  tbm = 'r',
+  hpa = '`',
+  /**
+   * Horizontal Position Relative. Same as {@link ControlSequence.cuf}.
+   */
+  hpr = 'a',
+  /**
+   * Repeat Preceding Character. Repeat preceding character Ps times (default=1).
+   */
+  rch = 'b',
+  /**
+   * Vertical Position Absolute. Move cursor to Ps-th row (default=1).
+   */
+  vpa = 'd',
+  /**
+   * Vertical Position Relative. Move cursor Ps times down (default=1).
+   */
+  vpr = 'e',
+  /**
+   * Horizontal and Vertical Position. Same as {@link ControlSequence.cup}.
+   */
+  hvp = 'f',
+  /**
+   * Tab Clear. Clear tab stops at current position (0) or all (3) (default=0).
+   */
+  tbc = 'g',
   /**
    * Set Mode. Set various terminal modes.
    */
   sm = 'h',
   /**
+   * AUX Port mode. (4=disable; 5=enable)
+   */
+  aux = 'i',
+  /**
    * Reset Mode. Reset various terminal attributes.
    */
   rm = 'l',
+  /**
+   * Select Graphic Rendition. Set/Reset various text attributes.
+   */
+  sgr = 'm',
   /**
    * Device Status Report. Request cursor position (CPR) with Ps = 6.
    */
   dsr = 'n',
   /**
+   * Request Mode. Request mode state.
+   */
+  rqm = '$p',
+  /**
    * Soft Terminal Reset. Reset several terminal attributes to initial state.
    */
   str = '!p',
   /**
-   * Set Cursor Style.
+   * Set Top and Bottom Margins.
+   * Set top and bottom margins of the viewport [top;bottom] (default = viewport size).
    */
-  scs = 'SPq',
+  tbm = 'r',
   /**
    * Save Cursor. Save cursor position, charmap and text attributes.
    */
@@ -375,6 +375,14 @@ const enum ControlSequence {
    * Restore Cursor. Restore cursor position, charmap and text attributes.
    */
   rcp = 'u',
+  /**
+   * Insert Columns. Insert Ps columns at cursor position.
+   */
+  icl = "'}",
+  /**
+   * Delete Columns. Delete Ps columns at cursor position.
+   */
+  dcl = "'~",
 }
 
 /**

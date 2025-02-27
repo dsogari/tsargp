@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options, req } from '../../lib/options';
+import { type Options, allOf, oneOf, notOf } from '../../lib/options';
 import { validate } from '../../lib/validator';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -16,31 +16,31 @@ describe('validate', () => {
       expect(validate(options)).resolves.toEqual({});
     });
 
-    it('throw an error on option required by itself with req.not', () => {
+    it('throw an error on option required by itself with notOf', () => {
       const options = {
         flag: {
           type: 'flag',
-          requires: req.not('flag'),
+          requires: notOf('flag'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag requires itself.`);
     });
 
-    it('throw an error on option required by itself with req.all', () => {
+    it('throw an error on option required by itself with allOf', () => {
       const options = {
         flag: {
           type: 'flag',
-          requires: req.all('flag'),
+          requires: allOf('flag'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag requires itself.`);
     });
 
-    it('throw an error on unknown option required with req.one', () => {
+    it('throw an error on unknown option required with oneOf', () => {
       const options = {
         flag: {
           type: 'flag',
-          requires: req.one('other'),
+          requires: oneOf('other'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Unknown option other in requirement.`);
@@ -142,31 +142,31 @@ describe('validate', () => {
       expect(validate(options)).resolves.toEqual({});
     });
 
-    it('throw an error on option required by itself with req.not', () => {
+    it('throw an error on option required by itself with notOf', () => {
       const options = {
         flag: {
           type: 'flag',
-          requiredIf: req.not('flag'),
+          requiredIf: notOf('flag'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag requires itself.`);
     });
 
-    it('throw an error on option required by itself with req.all', () => {
+    it('throw an error on option required by itself with allOf', () => {
       const options = {
         flag: {
           type: 'flag',
-          requiredIf: req.all('flag'),
+          requiredIf: allOf('flag'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag requires itself.`);
     });
 
-    it('throw an error on unknown option required with req.one', () => {
+    it('throw an error on unknown option required with oneOf', () => {
       const options = {
         flag: {
           type: 'flag',
-          requiredIf: req.one('other'),
+          requiredIf: oneOf('other'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Unknown option other in requirement.`);

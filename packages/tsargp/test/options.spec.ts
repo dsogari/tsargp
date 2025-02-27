@@ -6,7 +6,9 @@ import {
   isMessage,
   isNiladic,
   OptionRegistry,
-  req,
+  allOf,
+  oneOf,
+  notOf,
   valuesFor,
   visitRequirements,
 } from '../lib/options';
@@ -168,19 +170,19 @@ describe('visitRequirements', () => {
   });
 
   it('handle a not expression', () => {
-    const expression = req.not('');
+    const expression = notOf('');
     visitRequirements(expression, ...mocks);
     expect(mocks[1]).toHaveBeenCalledWith(expression);
   });
 
   it('handle an all expression', () => {
-    const expression = req.all();
+    const expression = allOf();
     visitRequirements(expression, ...mocks);
     expect(mocks[2]).toHaveBeenCalledWith(expression);
   });
 
   it('handle a one expression', () => {
-    const expression = req.one();
+    const expression = oneOf();
     visitRequirements(expression, ...mocks);
     expect(mocks[3]).toHaveBeenCalledWith(expression);
   });

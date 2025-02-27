@@ -52,7 +52,7 @@ export default {
 } as const satisfies Options;
 ```
 
-You may also want to customize the help layout, e.g.:
+You may also want to customize the layout of the [groups section], e.g.:
 
 ```ts
 import { type Options, HelpItem, style, tf, config } from 'tsargp';
@@ -62,12 +62,19 @@ config.helpPhrases[HelpItem.synopsis] = '💡 #0'; // option synopsis with emoji
 export default {
   help: {
     // ...
-    layout: {
-      names: { indent: 4 }, // indent option names by 4 spaces
-      descr: { breaks: 1 }, // line feed before option descriptions
-      param: { hidden: true }, // hide option parameter/examples
-      items: [HelpItem.synopsis, HelpItem.deprecated],
-    },
+    sections: [
+      // ...
+      {
+        // ...
+        layout: {
+          names: { indent: 4 }, // indent option names by 4 spaces
+          descr: { breaks: 1 }, // line feed before option descriptions
+          param: { hidden: true }, // hide option parameter/examples
+        },
+        items: [HelpItem.synopsis, HelpItem.deprecated],
+      },
+      // ...
+    ],
     styles: {
       descr: style(tf.italic), // italic description for this option
     },
@@ -180,3 +187,7 @@ Since we are using a delegated `parse` call, we deliberately set the [program na
 
 [program name]: ../library/parser#program-name
 [completion index]: ../library/parser#completion-index
+
+{/* formatter references */}
+
+[groups section]: ../library/formatter#groups-section
