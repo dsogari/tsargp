@@ -840,14 +840,13 @@ async function handleHelp(
 ): Promise<AnsiMessage> {
   let registry = context[0];
   let { progName } = context[6];
-  const { resolve } = context[6];
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
       (opt) => isCommand(opt.type) && !!opt.names?.includes(rest[0]),
     );
     if (cmdOpt?.options) {
-      const cmdOptions = await getNestedOptions(cmdOpt, resolve);
+      const cmdOptions = await getNestedOptions(cmdOpt, context[6].resolve);
       const helpOpt = findValue(cmdOptions, (opt) => opt.type === 'help');
       if (helpOpt) {
         registry = new OptionRegistry(cmdOptions);

@@ -34,9 +34,10 @@ describe('format', () => {
         names: ['-s'],
       },
     } as const satisfies Options;
-    const sections: HelpSections = [{ type: 'groups', filter: ['group'] }];
-    const message = format(options, sections);
-    expect(message.wrap()).toEqual(`group\n\n  -f\n`);
+    const sections1: HelpSections = [{ type: 'groups', filter: [''] }];
+    const sections2: HelpSections = [{ type: 'groups', filter: ['group'] }];
+    expect(format(options, sections1).wrap()).toEqual(`  -s  <param>\n`);
+    expect(format(options, sections2).wrap()).toEqual(`group\n\n  -f\n`);
   });
 
   it('filter options using a single regular expression', () => {
@@ -79,7 +80,7 @@ describe('format', () => {
         sources: ['SINGLE'],
       },
     } as const satisfies Options;
-    const sections: HelpSections = [{ type: 'groups', layout: { items: [] } }];
+    const sections: HelpSections = [{ type: 'groups', items: [] }];
     const message = format(options, sections, ['-f', 'sing']);
     expect(message.wrap()).toEqual(`  -f\n  -s  <param>\n`);
   });

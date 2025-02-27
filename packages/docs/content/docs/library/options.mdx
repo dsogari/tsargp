@@ -80,7 +80,7 @@ All options share a set of attributes in addition to their type. They are descri
 The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
 
 - A name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator.
-- A name can contain whitespace or even be an empty string. (However, this may look strange in help messages.)
+- A name can contain whitespace or even be the empty string. (However, this may look strange in help messages.)
 - A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 <Callout type="default">
@@ -115,7 +115,7 @@ Deprecated options specified on the command line generate a [warning message], w
 
 #### Group | hide
 
-The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. Alternatively, you can use the value `null{:ts}` to completely hide it from the help message.
+The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. If absent, then the option belongs to the _default_ group, which is also denoted by the empty string. Alternatively, you can use the value `null{:ts}` to completely hide it from the help message.
 
 <Callout type="default">
 
@@ -464,16 +464,9 @@ When [word completion] is in effect, this option will be _skipped_.
 
 In addition to the sets of [basic] and [message] attributes, this option has the attributes described below.
 
-#### Help layout
-
-The `layout` attribute specifies a custom [help layout].
-
 #### Help sections
 
-The `sections` attribute specifies [help sections] to be rendered in the help message. By default, two are included:
-
-- [usage section] - with `'Usage:'{:ts}` as heading, and content indented by 2 spaces
-- [groups section] - with `'Options:'{:ts}` as the default group heading
+The `sections` attribute specifies [help sections] to be rendered in the help message. By default, a single [groups section] is included.
 
 #### Enable subcommand
 
@@ -562,7 +555,7 @@ The `optionPrefix` attribute, if present, specifies the prefix for option names 
 
 ### Flag option
 
-The **flag** option accepts no parameter, but has a value that will be either the result of the [parsing callback], if specified, or `true{:ts}`. The callback receives an empty string as its first parameter.
+The **flag** option accepts no parameter, but has a value that will be either the result of the [parsing callback], if specified, or `true{:ts}`. The callback receives the empty string as its first parameter.
 
 <Callout type="default">
 
@@ -819,7 +812,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 [formatter]: formatter
 [help columns]: formatter#help-columns
-[help layout]: formatter#help-layout
+[groups section]: formatter#groups-section
 [help sections]: formatter#help-sections
 [usage section]: formatter#usage-section
 [groups section]: formatter#groups-section

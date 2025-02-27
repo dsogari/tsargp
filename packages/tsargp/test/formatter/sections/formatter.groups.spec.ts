@@ -94,9 +94,7 @@ describe('rendering a groups section', () => {
       {
         type: 'groups',
         useEnv: true,
-        layout: {
-          items: [HelpItem.synopsis],
-        },
+        items: [HelpItem.synopsis],
       },
     ];
     const message = format(options, sections);

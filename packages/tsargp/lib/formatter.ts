@@ -2,7 +2,7 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
-  HelpLayout,
+  HelpColumnsLayout,
   WithColumnLayout,
   HelpSection,
   HelpUsageSection,
@@ -120,11 +120,10 @@ export const envHelpItems: ReadonlyArray<HelpItem> = [
 /**
  * The default help layout.
  */
-const defaultLayout: HelpLayout = {
+const defaultLayout: HelpColumnsLayout = {
   names: defaultColumnLayout,
   param: { ...defaultColumnLayout, absolute: false },
   descr: { ...defaultColumnLayout, absolute: false },
-  items: allHelpItems,
 };
 
 /**
@@ -380,6 +379,7 @@ function buildGroups(
  * @param options The option definitions
  * @param layout The help layout
  * @param keys The filtered option keys
+ * @param items The help items
  * @param groupFilter The option group filter
  * @param exclude True if the filter should exclude
  * @param useEnv Whether option names should be replaced by environment variable names
@@ -387,8 +387,9 @@ function buildGroups(
  */
 function buildEntries(
   options: OpaqueOptions,
-  layout: HelpLayout,
+  layout: HelpColumnsLayout,
   keys: ReadonlyArray<string>,
+  items: ReadonlyArray<HelpItem> = allHelpItems,
   groupFilter: ReadonlyArray<string> = [],
   exclude: boolean = false,
   useEnv: boolean = false,
@@ -402,7 +403,7 @@ function buildEntries(
   const groups = buildGroups(options, keys, groupFilter, exclude, useEnv, (option): HelpEntry => {
     const names = formatNames(layout, option, useEnv);
     const param = formatParams(layout, option);
-    const descr = formatDescription(options, layout, option);
+    const descr = formatDescription(options, layout, items, option);
     const paramLen = param.totalLen;
     param.indent = paramLen; // TODO: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
@@ -446,7 +447,7 @@ function buildEntries(
  * @param mergedWidth The width of the names and parameter columns merged
  */
 function adjustEntries(
-  layout: HelpLayout,
+  layout: HelpColumnsLayout,
   groups: EntriesByGroup,
   slotWidths: ReadonlyArray<number>,
   nameWidths: ReadonlyArray<number>,
@@ -455,7 +456,7 @@ function adjustEntries(
   mergedWidth: number,
 ) {
   /** @ignore */
-  function getStart(column: HelpLayout['param'], prevEnd: number): number {
+  function getStart(column: HelpColumnsLayout['param'], prevEnd: number): number {
     return column.absolute && !column.hidden
       ? max(0, column.indent)
       : prevEnd + (column.hidden ? 0 : column.indent);
@@ -510,7 +511,11 @@ function adjustEntries(
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The list of formatted strings, one for each name
  */
-function formatNames(layout: HelpLayout, option: OpaqueOption, useEnv: boolean): Array<AnsiString> {
+function formatNames(
+  layout: HelpColumnsLayout,
+  option: OpaqueOption,
+  useEnv: boolean,
+): Array<AnsiString> {
   const { breaks, hidden } = layout.names;
   const names = useEnv ? getOptionSources(option) : option.names;
   if (hidden || !names?.length) {
@@ -540,7 +545,7 @@ function formatNames(layout: HelpLayout, option: OpaqueOption, useEnv: boolean):
  * @param option The option definition
  * @returns The formatted string
  */
-function formatParams(layout: HelpLayout, option: OpaqueOption): AnsiString {
+function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
   const defSty = option.styles?.param ?? config.styles.value;
   const result = new AnsiString(0, breaks, false, defSty);
@@ -557,12 +562,14 @@ function formatParams(layout: HelpLayout, option: OpaqueOption): AnsiString {
  * The description always ends with a single line break.
  * @param options The option definitions
  * @param layout The help layout
+ * @param items The help items
  * @param option The option definition
  * @returns The formatted string
  */
 function formatDescription(
   options: OpaqueOptions,
-  layout: HelpLayout,
+  layout: HelpColumnsLayout,
+  items: ReadonlyArray<HelpItem>,
   option: OpaqueOption,
 ): AnsiString {
   const { hidden, breaks, align } = layout.descr;
@@ -570,11 +577,11 @@ function formatDescription(
   const result = new AnsiString(0, breaks, align === 'right', defSty);
   const count = result.count;
   if (!hidden) {
-    for (const item of layout.items) {
+    for (const item of items) {
       helpFunctions[item](option, config.helpPhrases[item], options, result);
     }
   }
-  return (result.count === count ? result.clear() : result.addClear()).break();
+  return (result.count === count ? result.clear() : result).break();
 }
 
 /**
@@ -596,10 +603,10 @@ function formatHelpSection(
   const { type, title, breaks, noWrap, style: sty } = section;
   let curBreaks = breaks ?? (result.length ? 1 : 0); // to account for the first section
   if (type === 'groups') {
-    const { layout, filter, exclude, useEnv } = section;
+    const { layout, filter, exclude, items, useEnv } = section;
     const headingStyle = sty ?? style(tf.bold);
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
-    const groups = buildEntries(options, mergedLayout, keys, filter, exclude, useEnv);
+    const groups = buildEntries(options, mergedLayout, keys, items, filter, exclude, useEnv);
     for (const [name, entries] of getEntries(groups)) {
       if (entries.length) {
         const title2 = name || title;
@@ -664,7 +671,7 @@ function formatText(
   } else {
     result.split(text);
   }
-  return result.addClear(); // reset from possible inline styles
+  return result;
 }
 
 /**
@@ -694,13 +701,7 @@ function formatUsage(
   for (const key of keys) {
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
-  if (result.count === count) {
-    return result.clear(); // skip comment if there are no options
-  }
-  if (comment) {
-    result.split(comment).addClear(); // reset from possible inline styles
-  }
-  return result;
+  return result.count === count ? result.clear() : comment ? result.split(comment) : result;
 }
 
 /**

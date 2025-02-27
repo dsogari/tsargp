@@ -7,7 +7,7 @@ import { Callout } from 'nextra/components';
 
 # Formatter
 
-The `formatter` module handles formatting of help messages. It provides a `HelpFormatter` class that can be instantiated with a set of option definitions and provides methods to render help messages in ANSI format. The messages produced by the formatter can also be customized via [message configuration].
+The `formatter` module handles formatting of help messages. It provides functions that accept a set of option definitions and render help messages in ANSI format. The messages produced by the formatter can also be customized via [message configuration].
 
 ## Help message
 
@@ -17,28 +17,34 @@ Internally, the help message consists of [ANSI strings], which may contain escap
 - **item** - a piece of information in an option's description
 - **group** - a set of entries corresponding to an [option group]
 - **section** - like the section of a document (may be a collection of groups)
-- **column** - a horizontal division (as formed by a vertical ruler) across all entries
+- **column** - a horizontal division (as formed by a vertical ruler) across all entries in a section
 
 This is better illustrated by the figure below:
 
 <HelpContent style={{ maxWidth: '500', margin: '20px 20px 0px' }} />
 
-There are two ways of obtaining help messages, as described below.
+To generate a help message, you must call the `format` function. It accepts the following parameters:
 
-### Grouped help
+- `options` - the option definitions (required)
+- `sections` - a list of [help sections] to include in the help message (optional, defaults to a single [groups section])
+- `filter` - an [option filter] to select a subset of options (optional, defaults to none)
+- `progName` - a program name to display in usage sections (optional, defaults to none)
 
-The `format` method returns the help message of an [option group]. It accepts a single optional parameter: the name of the group. If not provided, the _default_ group will be used, which encompasses all options that did not explicitly declare a group in their definition.
+It returns a [ANSI message] with the formatted sections.
 
-### Sectioned help
+### Option filter
 
-The `sections` method returns a help message that includes [help sections]. It accepts two parameters:
+The `filter` parameter to the `format` function lists patterns that indicate which options should be rendered in the help message. It matches options' [names], [synopsis] and environment [data sources]. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
-- `sections` - a list of `HelpSection`s to include in the help message
-- `progName` - an optional program name to display in usage sections
+<Callout type="info">
+
+This is inherently different from what a text search utility like `grep` would produce. The formatter will render the whole _help entry_ of options matching the given patterns, not just the matching _lines_.
+
+</Callout>
 
 ## Help columns
 
-Every option definition produces a help entry in its respective group in the help message. Furthermore, the whole set of entries across all groups is split into "columns" (not to be confused with terminal columns), each containing a different kind of information, as described below.
+Every option definition produces a help entry in its respective group in the help message. Furthermore, the whole set of entries across all groups in a section is split into "columns" (not to be confused with terminal columns), each containing a different kind of information, as described below.
 
 ### Names column
 
@@ -46,12 +52,12 @@ This column contains the options' names separated by commas. The names are liste
 
 #### Name slots
 
-Depending on the column's [alignment] setting, each option name may reserve a "slot" in the respective position in this column. The width of a name slot will be the length of the longest name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
+Depending on the [column alignment] setting, each option name may reserve a "slot" in the respective position in this column. The width of a name slot will be the length of the longest name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
 
 For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `null{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as:
 
 ```
--f, -ff      --flag
+-f, -ff,      --flag
 ```
 
 Note how the absent name produced whitespace between its neighbors, and the commas were suppressed.
@@ -88,7 +94,7 @@ Sections are a convenient way to organize the help content. There are three kind
 
 ### Common properties
 
-All help sections share a set of properties:
+All help sections share a set of optional properties:
 
 - `title` - the section heading or the default [option group] heading (defaults to none)
 - `style` - the style of the section heading or [option group] headings (defaults to `tf.bold{:ts}`)
@@ -109,9 +115,9 @@ All headings are separated from their content by _two_ line feeds, unless extra 
 
 ### Text section
 
-A text section can be used to write many kinds of content, such as an introductory text, usage instructions, afterword, copyright notice or external references. In addition to the [common properties], it has the following properties:
+A text section can be used to write many kinds of content, such as an introductory text, usage instructions, afterword, copyright notice or external references. In addition to the [common properties], it has the following optional properties:
 
-- `text` - the section content
+- `text` - the section content (defaults to none)
 - `indent` - the level of indentation of the section content (defaults to `0{:ts}`)
 
 ### Usage section
@@ -136,7 +142,7 @@ The usage text is a concise representation of a program's command-line. Here is 
 
 {/* cSpell:enable */}
 
-In addition to the [common properties], a usage section has the following properties:
+In addition to the [common properties], a usage section has the following optional properties:
 
 - `indent` - the level of indentation of the section content (defaults to `0{:ts}`)
 - `filter` - a list of option keys to include or exclude (defaults to including all options)
@@ -177,10 +183,13 @@ Mutual exclusivity and multi-targeting are _not_ supported at this time. For tha
 
 ### Groups section
 
-A groups section is a collection of option groups and their help entries. In addition to the [common properties], it has the following properties:
+A groups section is a collection of option groups and their help entries. In addition to the [common properties], it has the following optional properties:
 
 - `filter` - a list of group names to include or exclude (defaults to including all groups)
 - `exclude` - whether the filter should exclude (defaults to `false{:ts}`)
+- `layout` - an object with [column layout] settings for the section (see below)
+- `items` - the order of [help items] to be shown in option descriptions (defaults to all items)
+- `useEnv` - whether option names should be replaced by environment variable names (defaults to `false{:ts}`)
 
 <Callout type="info">
 
@@ -188,13 +197,15 @@ In the case of an inclusion filter, groups are listed in the same order specifie
 
 </Callout>
 
-## Help layout
+<Callout type="default">
 
-The layout of the help message can be configured via a `PartialHelpLayout` object, which can be provided as the second parameter to the formatter constructor. It contains the optional properties described below.
+The `useEnv` property is useful when you want to create a dedicated section for environment variables.
 
-### Column layout
+</Callout>
 
-The `names`, `param` and `descr` properties can be used to customize the layout of the corresponding [help column] (applied to all help entries). They are objects with the following optional settings:
+#### Column layout
+
+The layout of a groups section can be configured via a partial `HelpColumnsLayout` object containing three optional properties: `names`, `param` and `descr`. They can be used to customize the layout of the corresponding [help column], applied to all help entries in the section. They are objects with the following optional settings:
 
 - `align` - text alignment for the column (may be one of `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` - level of indentation for the column (must be non-negative if `absolute` is `true{:ts}`, defaults to `2{:ts}`)
@@ -238,6 +249,8 @@ packet-beta
 12-79: "description"
 ```
 
+##### Column alignment
+
 The `names.align` property supports an additional value `'slot'{:ts}`, meaning that each name receives a "slot" in the column, and the name is left-aligned within that slot. See [name slots] for more information.
 
 The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which instructs the formatter to merge the contents of the column with the previous one. This is useful, for instance, if you want option parameters to be inlined with option names. When using this value, both the `indent` and `breaks` properties are ignored.
@@ -248,7 +261,9 @@ Note that merging a column is not the same as using zero indentation. Indentatio
 
 </Callout>
 
-An additional example can better illustrate the effect of some of these settings. Suppose we have:
+##### Layout example
+
+An example can better illustrate the effect of some of the layout settings. Suppose we have:
 
 ```ts
 {
@@ -284,9 +299,9 @@ Below is an extract of a help message produced with the above configuration:
 
 {/* cSpell:enable */}
 
-### Help items
+#### Help items
 
-The `items` property specifies the kinds of help items that should be displayed in option descriptions, and in which order. It is an array whose values can be one of the enumerators from `HelpItem`. The default is to print all items in the order listed in the enumerator type.
+The `items` property of a groups section specifies the kinds of help items that should be displayed in option descriptions, and in which order. It is an array whose values can be one of the enumerators from `HelpItem`. The default is to print all items in the order listed in the enumerator type.
 
 <Callout type="default">
 
@@ -294,24 +309,17 @@ You might want to use this to limit the amount of information in the help messag
 
 </Callout>
 
-## Option filter
-
-The formatter constructor accepts a third optional parameter: a list of patterns that indicate which options should be rendered in the help message. The filter matches options' [names], [synopsis] and environment [data sources]. If multiple patterns are provided, any matched one will suffice to include an option in the message.
-
-<Callout type="info">
-
-This is inherently different from what a text search utility like `grep` would produce. The formatter will render the whole help _entry_ of options matching the given patterns, not just the matching _lines_.
-
-</Callout>
-
 {/* self references */}
 
 [^1]: _polyadic_ means that the option accepts more than one parameter, but the parameter count is not variable
 
+[groups section]: #groups-section
+[option filter]: #option-filter
 [help sections]: #help-sections
 [help column]: #help-columns
 [custom phrases]: #custom-phrases
-[alignment]: #help-layout
+[column layout]: #column-layout
+[column alignment]: #column-alignment
 [help items]: #help-items
 [name slots]: #name-slots
 [common properties]: #common-properties
@@ -335,5 +343,6 @@ This is inherently different from what a text search utility like `grep` would p
 {/* styles references */}
 
 [ANSI strings]: styles#ansi-string
+[ANSI message]: styles#ansi-message
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration

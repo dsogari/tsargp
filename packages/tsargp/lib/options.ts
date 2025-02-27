@@ -131,9 +131,9 @@ export type WithAbsoluteLayout = {
 };
 
 /**
- * The help layout.
+ * The help columns layout.
  */
-export type HelpLayout = {
+export type HelpColumnsLayout = {
   /**
    * The settings for the names column.
    */
@@ -146,10 +146,6 @@ export type HelpLayout = {
    * The settings for the description column.
    */
   readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
-  /**
-   * The order of items to be shown in option descriptions.
-   */
-  readonly items: ReadonlyArray<HelpItem>;
 };
 
 /**
@@ -238,7 +234,11 @@ export type WithSectionGroups = {
   /**
    * The help layout.
    */
-  readonly layout?: PartialWithDepth<HelpLayout>;
+  readonly layout?: PartialWithDepth<HelpColumnsLayout>;
+  /**
+   * The order of items to be shown in option descriptions.
+   */
+  readonly items?: ReadonlyArray<HelpItem>;
   /**
    * Whether option names should be replaced by environment variable names.
    */

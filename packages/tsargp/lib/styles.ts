@@ -432,7 +432,7 @@ export class AnsiString {
    */
   get totalLen(): number {
     const len = this.strings.reduce(
-      (acc, str) => acc + (str.length ? str.length + 1 : acc ? -1 : 0),
+      (acc, str) => acc + (str.length ? str.length + 1 : acc && -1),
       0,
     );
     return len && len - 1;
@@ -584,14 +584,6 @@ export class AnsiString {
   }
 
   /**
-   * Appends an SGR clear sequence.
-   * @returns The ANSI string instance
-   */
-  addClear(): this {
-    return this.close('', sgr(tf.clear));
-  }
-
-  /**
    * Appends a text.
    * @param text The text with no control sequences
    * @param styledText The text with possible control sequences
@@ -642,7 +634,7 @@ export class AnsiString {
         this.break(2);
       }
     });
-    return this;
+    return this.close('', this.defSty); // reset from possible inline styles
   }
 
   /**
@@ -925,9 +917,9 @@ function splitParagraph(result: AnsiString, para: string, format?: FormatCallbac
       splitItem(result, item, format);
     } else {
       if (result.count > count) {
-        result.break();
+        result.break(); // break before list item if does not start the paragraph
       }
-      result.word(item);
+      result.word(item); // list item prefix
     }
   });
 }

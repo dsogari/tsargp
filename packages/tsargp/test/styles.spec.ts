@@ -46,14 +46,6 @@ describe('AnsiString', () => {
     });
   });
 
-  describe('addClear', () => {
-    it('does not change the length of previous strings', () => {
-      const str = new AnsiString().word('type').addClear();
-      expect(str.strings).toEqual(['type']);
-      expect(str.styles).toEqual(['type' + clr]);
-    });
-  });
-
   describe('word', () => {
     it('add words with no style', () => {
       const str = new AnsiString().word('type').word('script');
@@ -233,10 +225,16 @@ describe('AnsiString', () => {
       expect(str.styles).toEqual(['⚠️', 'type', 'script']);
     });
 
-    it('split text with style sequences', () => {
-      const str = new AnsiString().split(`${clr}type ${clr} script${clr}`);
+    it('split text with inline styles when the string has no default style', () => {
+      const str = new AnsiString().split(`${bold}type ${bold} script${bold}`);
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual([clr + 'type', clr + 'script' + clr]);
+      expect(str.styles).toEqual([bold + 'type', bold + 'script' + bold]);
+    });
+
+    it('split text with inline styles when the string has a default style', () => {
+      const str = new AnsiString(0, 0, false, clr).split(`${bold}type ${bold} script${bold}`);
+      expect(str.strings).toEqual(['type', 'script']);
+      expect(str.styles).toEqual([clr + bold + 'type', bold + 'script' + bold + clr]);
     });
 
     it('split text with paragraphs', () => {

@@ -30,7 +30,7 @@ export default {
       {
         type: 'groups',
         title: `Argument parser for TypeScript.`,
-        layout: { items: allHelpItems.filter((item) => item !== HelpItem.sources) },
+        items: allHelpItems.filter((item) => item !== HelpItem.sources),
       },
       {
         type: 'usage',
@@ -76,10 +76,8 @@ export default {
         type: 'groups',
         title: `Argument parser for TypeScript.`,
         useEnv: true,
-        layout: {
-          param: { hidden: true },
-          items: envHelpItems,
-        },
+        layout: { param: { hidden: true } },
+        items: envHelpItems,
       },
       {
         type: 'text',

@@ -88,12 +88,14 @@ describe('format', () => {
         '\x1b[0m' +
         '    ' +
         '\x1b[0;2m' +
-        'A flag option. Defaults to ' +
+        'A flag option.' +
+        '\x1b[0;2m' +
+        ' Defaults to ' +
         '\x1b[33m' +
         '1' +
         '\x1b[0;2m' +
         '.' +
-        '\x1b[0m' +
+        '\x1b[0;2m' +
         '\n',
     );
   });
@@ -463,10 +465,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          param: { align: 'right' },
-          items: [],
-        },
+        layout: { param: { align: 'right' } },
+        items: [],
       },
     ];
     const message = format(options, sections);
@@ -484,9 +484,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          descr: { align: 'right' },
-        },
+        layout: { descr: { align: 'right' } },
       },
     ];
     const message = format(options, sections);
@@ -518,10 +516,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          param: { align: 'merge' },
-          items: [HelpItem.synopsis],
-        },
+        layout: { param: { align: 'merge' } },
+        items: [HelpItem.synopsis],
       },
     ];
     const message = format(options, sections);
@@ -560,8 +556,8 @@ describe('format', () => {
         layout: {
           names: { align: 'slot' }, // ignored by the formatter
           param: { align: 'merge' },
-          items: [HelpItem.synopsis],
         },
+        items: [HelpItem.synopsis],
       },
     ];
     const message = format(options, sections);
@@ -597,8 +593,8 @@ describe('format', () => {
         layout: {
           names: { align: 'right' },
           param: { align: 'merge' },
-          items: [HelpItem.synopsis],
         },
+        items: [HelpItem.synopsis],
       },
     ];
     const message = format(options, sections);
