@@ -2,7 +2,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { ConnectiveWords } from './config.js';
-import type { ErrorItem, tf, fg, bg } from './enums.js';
+import type { ErrorItem, tf, fg, bg, ul } from './enums.js';
 import type { Alias, Args, Enumerate } from './utils.js';
 
 import { config } from './config.js';
@@ -18,16 +18,7 @@ import {
   streamWidth,
 } from './utils.js';
 
-export {
-  sequence as seq,
-  sgrSequence as style,
-  foreground8 as fg8,
-  background8 as bg8,
-  underline8 as ul8,
-  foreground24 as fg24,
-  background24 as bg24,
-  underline24 as ul24,
-};
+export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };
 export { formatFunctions as fmt };
 
 //--------------------------------------------------------------------------------------------------
@@ -263,48 +254,19 @@ export type Style = Sequence<cs.sgr>;
 export type Decimal = Alias<Enumerate<256>>;
 
 /**
- * An 8-bit foreground color.
+ * An 8-bit indexed color.
  */
-export type Fg8Color = [38, 5, Decimal];
+export type IndColor = [5, Decimal];
 
 /**
- * An 8-bit background color.
+ * A 24-bit RGB color.
  */
-export type Bg8Color = [48, 5, Decimal];
-
-/**
- * An 8-bit underline color.
- */
-export type Ul8Color = [58, 5, Decimal];
-
-/**
- * An 24-bit foreground color.
- */
-export type Fg24Color = [38, 2, Decimal, Decimal, Decimal];
-
-/**
- * An 24-bit background color.
- */
-export type Bg24Color = [48, 2, Decimal, Decimal, Decimal];
-
-/**
- * An 24-bit underline color.
- */
-export type Ul24Color = [58, 2, Decimal, Decimal, Decimal];
+export type RgbColor = [2, Decimal, Decimal, Decimal];
 
 /**
  * A text styling attribute.
  */
-export type StyleAttr =
-  | tf
-  | fg
-  | bg
-  | Fg8Color
-  | Bg8Color
-  | Ul8Color
-  | Fg24Color
-  | Bg24Color
-  | Ul24Color;
+export type StyleAttr = tf | fg | bg | ul | IndColor | RgbColor;
 
 /**
  * A format specifier.
@@ -997,61 +959,21 @@ function seqFromText<T extends cs>(cmd: T, text: string): Sequence<T> {
 }
 
 /**
- * Creates an 8-bit foreground color.
- * @param color The color decimal value
- * @returns The foreground color
+ * Creates an 8-bit indexed color.
+ * @param index The color index
+ * @returns The color attribute
  */
-function foreground8(color: Decimal): Fg8Color {
-  return [38, 5, color];
+function indexedColor(index: Decimal): IndColor {
+  return [5, index];
 }
 
 /**
- * Creates an 8-bit background color.
- * @param color The color decimal value
- * @returns The background color
+ * Creates a 24-bit RGB color.
+ * @param r The red component
+ * @param g The green component
+ * @param b The blue component
+ * @returns The color attribute
  */
-function background8(color: Decimal): Bg8Color {
-  return [48, 5, color];
-}
-
-/**
- * Creates an 8-bit underline color.
- * @param color The color decimal value
- * @returns The underline color
- */
-function underline8(color: Decimal): Ul8Color {
-  return [58, 5, color];
-}
-
-/**
- * Creates a 24-bit foreground color.
- * @param r The red color component
- * @param g The green color component
- * @param b The blue color component
- * @returns The foreground color
- */
-function foreground24(r: Decimal, g: Decimal, b: Decimal): Fg24Color {
-  return [38, 2, r, g, b];
-}
-
-/**
- * Creates a 24-bit background color.
- * @param r The red color component
- * @param g The green color component
- * @param b The blue color component
- * @returns The background color
- */
-function background24(r: Decimal, g: Decimal, b: Decimal): Bg24Color {
-  return [48, 2, r, g, b];
-}
-
-/**
- * Creates a 24-bit underline color.
- * @param r The red color component
- * @param g The green color component
- * @param b The blue color component
- * @returns The underline color
- */
-function underline24(r: Decimal, g: Decimal, b: Decimal): Ul24Color {
-  return [58, 2, r, g, b];
+function rgbColor(r: Decimal, g: Decimal, b: Decimal): RgbColor {
+  return [2, r, g, b];
 }

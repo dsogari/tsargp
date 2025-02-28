@@ -1,17 +1,13 @@
 import { afterEach, describe, expect, it, jest } from 'bun:test';
-import { cs, fg, bg, tf, ErrorItem } from '../lib/enums';
+import { cs, fg, bg, tf, ErrorItem, ul } from '../lib/enums';
 import {
   AnsiString,
   AnsiMessage,
   WarnMessage,
   ErrorMessage,
   TextMessage,
-  fg8,
-  bg8,
-  ul8,
-  fg24,
-  bg24,
-  ul24,
+  ext8,
+  rgb,
   seq,
   style,
 } from '../lib/styles';
@@ -56,7 +52,8 @@ describe('AnsiString', () => {
     });
 
     it('add a word with style and reset to another style', () => {
-      const sty = style(fg8(0), bg8(0), ul8(0), fg24(0, 0, 0), bg24(0, 0, 0), ul24(0, 0, 0));
+      rgb(0xff, 0xd7, 0);
+      const sty = style(fg.extended, ext8(0), bg.extended, ext8(0), ul.extended, rgb(0, 0, 0));
       const str = new AnsiString().word('type', sty);
       expect(str.strings).toEqual(['type']);
       expect(str.styles).toEqual([sty + 'type']);

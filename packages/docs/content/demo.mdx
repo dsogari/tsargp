@@ -88,7 +88,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 ### Cluster arguments
 
 - check if cluster arguments can be specified (e.g., `-sn 1 -1` or `-s 1 -n -1`)
-- check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`, same result as above)
+- check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`; same result as above)
 
 <details>
   <summary>Expected output</summary>
@@ -389,7 +389,7 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check th the `-b` option cannot be specified without required options (e.g., try `-b yes` and see that it fails)
 2. check if the `-b` option can be specified with required options (e.g., `-b yes -sc one`)
-3. check if the `-b` option can be specified through an environment variable (e.g., `BOOLEAN=yes tsargp -sc one`, same result as above)
+3. check if the `-b` option can be specified through an environment variable (e.g., `BOOLEAN=yes ...`; same result as above)
 
 <details>
   <summary>Expected output (1)</summary>

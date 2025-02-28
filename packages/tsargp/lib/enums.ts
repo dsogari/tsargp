@@ -1,7 +1,13 @@
 //--------------------------------------------------------------------------------------------------
 // Exports
 //--------------------------------------------------------------------------------------------------
-export { ControlSequence as cs, TypeFace as tf, ForegroundColor as fg, BackgroundColor as bg };
+export {
+  ControlSequence as cs,
+  TypeFace as tf,
+  ForegroundColor as fg,
+  BackgroundColor as bg,
+  UnderlineColor as ul,
+};
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -567,7 +573,11 @@ const enum ForegroundColor {
   magenta,
   cyan,
   white,
-  default = 39,
+  /**
+   * An extended foreground color. To be used with indexed or RGB colors.
+   */
+  extended,
+  default,
   brightBlack = 90,
   brightRed,
   brightGreen,
@@ -590,7 +600,11 @@ const enum BackgroundColor {
   magenta,
   cyan,
   white,
-  default = 49,
+  /**
+   * An extended background color. To be used with indexed or RGB colors.
+   */
+  extended,
+  default,
   brightBlack = 100,
   brightRed,
   brightGreen,
@@ -599,4 +613,14 @@ const enum BackgroundColor {
   brightMagenta,
   brightCyan,
   brightWhite,
+}
+
+/**
+ * A predefined text underline color.
+ */
+const enum UnderlineColor {
+  /**
+   * An extended underline color. To be used with indexed or RGB colors.
+   */
+  extended = 58,
 }

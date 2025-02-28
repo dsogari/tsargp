@@ -6,7 +6,7 @@ import {
   oneOf,
   notOf,
   tf,
-  fg8,
+  ext8,
   numberInRange,
   config,
   allHelpItems,
@@ -109,7 +109,7 @@ export default {
       return name !== this.names?.[1];
     },
     styles: {
-      names: style(fg8(138)),
+      names: style(fg.extended, ext8(138)),
       descr: style(tf.italic, tf.crossedOut),
     },
   },
@@ -127,7 +127,7 @@ export default {
     synopsis: `A boolean option
     with:
     * a paragraph
-    - ${style(tf.underlined, fg8(223))}inline styles${style(fg.default, tf.notUnderlined)}
+    - ${style(tf.underlined, fg.extended, ext8(223))}inline styles${style(fg.default, tf.notUnderlined)}
     1. and a list
     
     `,

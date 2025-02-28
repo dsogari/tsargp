@@ -75,7 +75,7 @@ The `tf` enumeration declares text type faces that can be combined together. The
 
 ### Predefined colors
 
-The `fg` and `bg` enumerations declare predefined foreground and background colors, respectively. They both have the same colors, which are listed below.
+The `fg` and `bg` enumerations declare foreground and background colors, respectively. They both have the same set of predefined colors, which are listed below.
 
 - `default` - the default color
 - Standard colors:
@@ -99,14 +99,16 @@ The `fg` and `bg` enumerations declare predefined foreground and background colo
 
 ### Extended colors
 
-In addition to predefined colors, there are six utility functions to get custom colors:
+In addition to predefined colors, `fg` and `bg` have a special enumerator called `extended`. It must be followed by additional attributes, which can be obtained through one of the auxiliary functions below:
 
-- `fg8` - creates an 8-bit foreground color
-- `bg8` - creates an 8-bit background color
-- `ul8` - creates an 8-bit underline color
-- `fg24` - creates a 24-bit RGB foreground color
-- `bg24` - creates a 24-bit RGB background color
-- `ul24` - creates a 24-bit RGB underline color
+- `ext8` - creates an 8-bit indexed color
+- `rgb` - creates a 24-bit RGB color
+
+There is also a `ul` enumeration with this enumerator, for underline colors. For example, to set the underline color to <span style={{textDecoration: 'underline', textDecorationColor: 'orange'}}>orange</span> (`#FFA500`):
+
+```ts
+style(ul.extended, rgb(255, 165, 0));
+```
 
 ## ANSI string
 
@@ -279,7 +281,7 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 
 <Callout type="default">
 
-You can also set an empty `style(){:ts}`, to preserve previous styles for a particular element, or for all elements if you need to disable text styling for your application.
+To preserve previous styles for a particular element, you can assign it an empty `style(){:ts}`. If you need to disable text styling for your application as a whole, do the same for all elements.
 
 </Callout>
 
@@ -312,7 +314,7 @@ The `connectives` property specifies words used to format some text elements tha
 
 <Callout type="info">
 
-Connective words cannot contain [inline styles] or line feeds.
+Connective words should _not_ contain [inline styles] or line feeds.
 
 </Callout>
 

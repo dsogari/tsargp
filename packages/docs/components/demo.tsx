@@ -4,7 +4,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import { parseInto, ErrorMessage, AnsiMessage, valuesFor } from 'tsargp';
+import { parseInto, ErrorMessage, AnsiMessage, valuesFor, type ParsingFlags } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { demo as options } from 'tsargp/examples';
 
@@ -22,7 +22,12 @@ class DemoCommand extends Command {
   override async run(line: string, compIndex?: number) {
     try {
       const values = valuesFor(options);
-      const flags = { progName: 'tsargp', compIndex, clusterPrefix: '-' };
+      const flags: ParsingFlags = {
+        progName: 'tsargp',
+        compIndex,
+        clusterPrefix: '-',
+        optionPrefix: '-',
+      };
       const { warning } = await parseInto(options, values, line, flags);
       if (warning) {
         this.println(warning.wrap(this.state.width));
