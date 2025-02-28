@@ -807,7 +807,14 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
       close: enclose ? config.connectives.exprClose : '',
       mergeNext: true,
     };
-    fmt.a(names.map(getSymbol), result, flags);
+    const { styles } = config;
+    const saved = styles.symbol;
+    try {
+      styles.symbol = option.styles?.names ?? saved;
+      fmt.a(names.map(getSymbol), result, flags);
+    } finally {
+      styles.symbol = saved;
+    }
     if (option.positional) {
       result.openAtPos('[', count).close(']');
     }
