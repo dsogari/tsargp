@@ -56,7 +56,7 @@ describe('validate', () => {
     expect(validate(options)).rejects.toThrow(`Option flag has duplicate name 'dup'.`);
   });
 
-  it('throw an error on duplicate option name across options', () => {
+  it('throw an error on duplicate option name across different options', () => {
     const options = {
       flag1: {
         type: 'flag',
@@ -79,6 +79,30 @@ describe('validate', () => {
       },
     } as const satisfies Options;
     expect(validate(options)).rejects.toThrow(`Option single has duplicate name 'dup'.`);
+  });
+
+  it('throw an error on duplicate environment variable in the same option', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        sources: ['dup', 'dup'],
+      },
+    } as const satisfies Options;
+    expect(validate(options)).rejects.toThrow(`Option flag has duplicate name 'dup'.`);
+  });
+
+  it('throw an error on duplicate environment variable across different options', () => {
+    const options = {
+      flag1: {
+        type: 'flag',
+        sources: ['dup'],
+      },
+      flag2: {
+        type: 'flag',
+        sources: ['dup'],
+      },
+    } as const satisfies Options;
+    expect(validate(options)).rejects.toThrow(`Option flag2 has duplicate name 'dup'.`);
   });
 
   it('return a warning on mixed naming conventions in nested options', () => {

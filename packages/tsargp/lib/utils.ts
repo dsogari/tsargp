@@ -259,7 +259,7 @@ export function areEqual(actual: unknown, expected: unknown): boolean {
  * @param S The source string
  * @param T The target string
  * @returns The length of the largest substrings and their indices in both strings
- * @see https://www.wikiwand.com/en/Longest_common_substring
+ * @see https://en.wikipedia.org/wiki/Longest_common_substring
  */
 function longestCommonSubstrings(S: string, T: string): [number, Array<[number, number]>] {
   const dp = new Array<number>(T.length);
@@ -308,7 +308,7 @@ function matchingCharacters(S: string, T: string): number {
  * @param S The source string
  * @param T The target string
  * @returns The similarity between the two strings
- * @see https://www.wikiwand.com/en/Gestalt_pattern_matching
+ * @see https://en.wikipedia.org/wiki/Gestalt_pattern_matching
  */
 export function gestaltSimilarity(S: string, T: string): number {
   return (2 * matchingCharacters(S, T)) / (S.length + T.length);

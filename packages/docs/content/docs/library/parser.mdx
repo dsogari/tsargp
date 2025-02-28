@@ -42,7 +42,7 @@ This function returns a promise that resolves to a `ParsingResult` object contai
 
 ## Parsing flags
 
-The parsing procedure can also be configured with a `ParsingFlags` object that has some optional properties, as described below.
+The parsing procedure can be configured via a `ParsingFlags` object that has some optional properties, as described below.
 
 ### Program name
 
@@ -202,7 +202,7 @@ As has been mentioned previously, requirements are _not_ checked when [word comp
 
 ### Name suggestions
 
-When the parser expects an option name and the current argument is not a valid one (and there is no [positional] option), it may select option names that are similar to the current argument using the [Gestalt algorithm], and include them in the error message.
+When the parser expects an option name and the current argument is not a valid one (and there is no [positional] option), it may select option names that are similar to the current argument using the [Gestalt] algorithm, and include them in the error message.
 
 ### Inline parameters
 
@@ -286,7 +286,7 @@ Other option names are not used, not only because they would pollute the output 
 
 [Set]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
 [Bash docs]: https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html
-[Gestalt algorithm]: https://www.wikiwand.com/en/Gestalt_pattern_matching
+[Gestalt]: https://en.wikipedia.org/wiki/Gestalt_pattern_matching
 [callback hell]: http://callbackhell.com/
 [JavaScript modules]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 [import.meta.resolve]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve
