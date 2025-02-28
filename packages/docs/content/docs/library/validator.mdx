@@ -6,7 +6,7 @@ import { Callout } from 'nextra/components';
 
 # Validator
 
-The `validator` module handles validation of option definitions. It contains functions that accept a set of definitions and perform the validation. They may also produce error and warning messages, which can be customized via [message configuration].
+The `validator` module handles validation of option definitions. It provides functions that accept a set of definitions and perform the validation. They may also produce error and warning messages, which can be customized via [message configuration].
 
 ## Option validation
 
@@ -31,7 +31,7 @@ To configure the validation procedure, you can provide a `ValidationFlags` objec
 
 The `noNamingIssues` property indicates whether the validation procedure should skip detection of naming inconsistencies
 
-### Skip recurse
+### Skip recursion
 
 The `noRecurse` property indicates whether the validation procedure should skip recursion into [nested options].
 
@@ -69,7 +69,7 @@ The following restrictions will raise an error on any option definition that fai
 
 </Callout>
 
-The validator does not validate the _satisfiability_ of option requirements, not only because it cannot evaluate [requirement callbacks] at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `req.all({opt:1}, {opt:2}){:ts}` cannot be satisfied, but is hard to verify in general[^1].
+The validator does not validate the _satisfiability_ of option requirements, not only because it cannot evaluate [requirement callbacks] at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `allOf({opt:1}, {opt:2}){:ts}` cannot be satisfied, but is hard to verify in general[^1].
 
 ### Validation warnings
 

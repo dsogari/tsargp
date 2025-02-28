@@ -8,8 +8,8 @@ export const callbacks = {}; // will hold the editor callbacks
 {/* prettier-ignore-start */}
 
 export const initialDoc = `const {
-  ErrorMessage, TextMessage, ErrorItem, HelpItem,
-  parse, parseInto, validate, config, req, tf, fg, bg, ul, style, fg8, bg8, ul8,
+  AnsiMessage, ErrorMessage, TextMessage, ErrorItem, HelpItem, tf, fg, bg, ul,
+  config, parse, parseInto, allOf, oneOf, notOf, style, ext8, rgb,
 } = tsargp;
 
 return {
@@ -18,12 +18,13 @@ return {
     type: 'help',
     names: ['-h', '--help'],
     synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`,
+    group: 'Options:',
   },
 };`;
 
 {/* prettier-ignore-end */}
 
-<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[163]} />
+<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[178]} />
 
 <Callout type="default">
 

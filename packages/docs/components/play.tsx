@@ -13,7 +13,7 @@ import {
   ErrorMessage,
   TextMessage,
 } from 'tsargp';
-import { config, style, req, fg8, bg8, ul8, ul } from 'tsargp';
+import { config, style, allOf, oneOf, notOf, ext8, rgb } from 'tsargp';
 import * as enums from 'tsargp/enums';
 import { type Props, Command } from './classes/command';
 
@@ -21,19 +21,20 @@ import { type Props, Command } from './classes/command';
 // Constants
 //--------------------------------------------------------------------------------------------------
 const tsargp = {
-  parse,
-  parseInto,
-  validate,
+  AnsiMessage,
   ErrorMessage,
   TextMessage,
   config,
-  req,
-  ul,
   ...enums,
+  parse,
+  parseInto,
+  validate,
+  allOf,
+  oneOf,
+  notOf,
   style,
-  fg8,
-  bg8,
-  ul8,
+  ext8,
+  rgb,
 };
 
 //--------------------------------------------------------------------------------------------------

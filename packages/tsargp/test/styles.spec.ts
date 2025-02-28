@@ -1,20 +1,17 @@
 import { afterEach, describe, expect, it, jest } from 'bun:test';
-import { cs, fg, bg, tf, ErrorItem } from '../lib/enums';
+import { cs, fg, bg, tf, ErrorItem, ul } from '../lib/enums';
 import {
   AnsiString,
   AnsiMessage,
   WarnMessage,
   ErrorMessage,
   TextMessage,
-  ul,
-  fg8,
-  bg8,
-  ul8,
+  ext8,
+  rgb,
   seq,
   style,
 } from '../lib/styles';
 
-const def = style(fg.default);
 const clr = style(tf.clear);
 const bold = style(tf.bold);
 
@@ -22,10 +19,10 @@ describe('AnsiString', () => {
   describe('add', () => {
     it('add styles', () => {
       const str = new AnsiString()
-        .add('', seq(cs.rcp))
-        .add('', seq(cs.cbt, 1))
-        .add('', seq(cs.tbm, 1, 2))
-        .add('', seq(cs.rm, 1, 2, 3));
+        .add('', '' + seq(cs.rcp))
+        .add('', '' + seq(cs.cbt, 1))
+        .add('', '' + seq(cs.tbm, 1, 2))
+        .add('', '' + seq(cs.rm, 1, 2, 3));
       expect(str.count).toEqual(0);
       expect(str.strings).toBeEmpty();
       expect(str.styles).toBeEmpty();
@@ -43,15 +40,7 @@ describe('AnsiString', () => {
       const str1 = new AnsiString(0, 1);
       const str2 = new AnsiString().open('type').other(str1).word('script');
       expect(str2.strings).toEqual(['type', '', 'script']);
-      expect(str2.styles).toEqual([def + 'type', '\n', def + 'script']);
-    });
-  });
-
-  describe('addClear', () => {
-    it('does not change the length of previous strings', () => {
-      const str = new AnsiString().word('type').addClear();
-      expect(str.strings).toEqual(['type']);
-      expect(str.styles).toEqual([def + 'type' + clr]);
+      expect(str2.styles).toEqual(['type', '\n', 'script']);
     });
   });
 
@@ -59,14 +48,15 @@ describe('AnsiString', () => {
     it('add words with no style', () => {
       const str = new AnsiString().word('type').word('script');
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual([def + 'type', 'script']);
+      expect(str.styles).toEqual(['type', 'script']);
     });
 
     it('add a word with style and reset to another style', () => {
-      const seq = style(fg8(0), bg8(0), ul8(0));
-      const str = new AnsiString().word('type', seq);
+      rgb(0xff, 0xd7, 0);
+      const sty = style(fg.extended, ext8(0), bg.extended, ext8(0), ul.extended, rgb(0, 0, 0));
+      const str = new AnsiString().word('type', sty);
       expect(str.strings).toEqual(['type']);
-      expect(str.styles).toEqual([def + seq + 'type' + clr + def]);
+      expect(str.styles).toEqual([sty + 'type']);
     });
   });
 
@@ -90,7 +80,7 @@ describe('AnsiString', () => {
       str1.word('script').clear().word('script');
       const str2 = new AnsiString().word('type').other(str1);
       expect(str2.strings).toEqual(['type', 'script']);
-      expect(str2.styles).toEqual([def + 'type', 'script']);
+      expect(str2.styles).toEqual(['type', 'script']);
     });
   });
 
@@ -98,19 +88,19 @@ describe('AnsiString', () => {
     it('add an opening delimiter to the next word', () => {
       const str = new AnsiString().open('[').open('"').word('type');
       expect(str.strings).toEqual(['["type']);
-      expect(str.styles).toEqual([def + '["type']);
+      expect(str.styles).toEqual(['["type']);
     });
 
     it('avoid merging the previous word with the next word if the delimiter is empty', () => {
       const str = new AnsiString().word('type').open('').word('script');
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual([def + 'type', 'script']);
+      expect(str.styles).toEqual(['type', 'script']);
     });
 
     it('add an opening delimiter at a specific position', () => {
       const str = new AnsiString().openAtPos('"', 0).word('type').openAtPos('[', 0);
       expect(str.strings).toEqual(['["type']);
-      expect(str.styles).toEqual(['[' + def + '"type']);
+      expect(str.styles).toEqual(['["type']);
     });
   });
 
@@ -122,7 +112,7 @@ describe('AnsiString', () => {
         str2.merge = true;
         str2.other(str1);
         expect(str2.strings).toEqual(['type']);
-        expect(str2.styles).toEqual([def + def + 'type']);
+        expect(str2.styles).toEqual(['type']);
       });
 
       it('if the merge flag is set on the other string', () => {
@@ -131,7 +121,7 @@ describe('AnsiString', () => {
         str1.word('type');
         const str2 = new AnsiString().other(str1);
         expect(str2.strings).toEqual(['type']);
-        expect(str2.styles).toEqual([def + def + 'type']);
+        expect(str2.styles).toEqual(['type']);
       });
 
       it('preserve the merge flag from the other string', () => {
@@ -139,7 +129,7 @@ describe('AnsiString', () => {
         str1.merge = true;
         const str2 = new AnsiString().other(str1).word(']');
         expect(str2.strings).toEqual(['type]']);
-        expect(str2.styles).toEqual([def + def + 'type]']);
+        expect(str2.styles).toEqual(['type]']);
       });
     });
 
@@ -148,18 +138,18 @@ describe('AnsiString', () => {
         const str1 = new AnsiString().word('type');
         const str2 = new AnsiString().word('[');
         str2.merge = true;
-        str2.add('', clr).other(str1);
+        str2.openSty(clr).other(str1);
         expect(str2.strings).toEqual(['[type']);
-        expect(str2.styles).toEqual([def + '[' + clr + def + 'type']);
+        expect(str2.styles).toEqual(['[' + clr + 'type']);
       });
 
       it('keep current style if the merge flag is set in the other string', () => {
         const str1 = new AnsiString();
         str1.merge = true;
         str1.word('type');
-        const str2 = new AnsiString().word('[').add('', clr).other(str1);
+        const str2 = new AnsiString().word('[').openSty(clr).other(str1);
         expect(str2.strings).toEqual(['[type']);
-        expect(str2.styles).toEqual([def + '[' + clr + def + 'type']);
+        expect(str2.styles).toEqual(['[' + clr + 'type']);
       });
 
       it('preserve the merge flag from the other string', () => {
@@ -167,7 +157,7 @@ describe('AnsiString', () => {
         str1.merge = true;
         const str2 = new AnsiString().word('type').other(str1).word(']');
         expect(str2.strings).toEqual(['type', 'script]']);
-        expect(str2.styles).toEqual([def + 'type', def + 'script]']);
+        expect(str2.styles).toEqual(['type', 'script]']);
       });
     });
 
@@ -177,7 +167,7 @@ describe('AnsiString', () => {
         str1.merge = true;
         const str2 = new AnsiString().word('type').other(str1).word('script');
         expect(str2.strings).toEqual(['type', 'script']);
-        expect(str2.styles).toEqual([def + 'type', 'script']);
+        expect(str2.styles).toEqual(['type', 'script']);
       });
     });
 
@@ -186,7 +176,7 @@ describe('AnsiString', () => {
         const str1 = new AnsiString().split('type script');
         const str2 = new AnsiString().open('[').other(str1).close(']');
         expect(str2.strings).toEqual(['[type', 'script]']);
-        expect(str2.styles).toEqual([def + '[' + def + 'type', 'script]']);
+        expect(str2.styles).toEqual(['[type', 'script]']);
       });
 
       it('merge the endpoint strings if the merge flag is set in the other string', () => {
@@ -195,7 +185,7 @@ describe('AnsiString', () => {
         str1.split('type script');
         const str2 = new AnsiString().word('[').other(str1);
         expect(str2.strings).toEqual(['[type', 'script']);
-        expect(str2.styles).toEqual([def + '[' + def + 'type', 'script']);
+        expect(str2.styles).toEqual(['[type', 'script']);
       });
     });
   });
@@ -204,26 +194,26 @@ describe('AnsiString', () => {
     it('add a closing delimiter when there are no internal strings', () => {
       const str = new AnsiString().close(']');
       expect(str.strings).toEqual([']']);
-      expect(str.styles).toEqual([def + ']']);
+      expect(str.styles).toEqual([']']);
     });
 
     it('add a closing delimiter when there are previous words', () => {
-      const str = new AnsiString().word('type').close('', clr).close(']');
+      const str = new AnsiString().word('type').closeSty(clr).close(']');
       expect(str.strings).toEqual(['type]']);
-      expect(str.styles).toEqual([def + 'type' + clr + ']']);
+      expect(str.styles).toEqual(['type' + clr + ']']);
     });
 
     it('add a closing delimiter to the last internal string', () => {
-      const seq = style(fg.default, bg.default, ul.curly);
-      const str = new AnsiString().word('type').open('', seq).close(']').close('.');
+      const sty = style(fg.default, bg.default);
+      const str = new AnsiString().word('type').openSty(sty).close(']').close('.');
       expect(str.strings).toEqual(['type].']);
-      expect(str.styles).toEqual([def + 'type' + seq + '].']);
+      expect(str.styles).toEqual(['type' + sty + '].']);
     });
 
     it('avoid merging with the next word if the delimiter is empty', () => {
       const str = new AnsiString().word('type').close('').word('script');
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual([def + 'type', 'script']);
+      expect(str.styles).toEqual(['type', 'script']);
     });
   });
 
@@ -231,25 +221,31 @@ describe('AnsiString', () => {
     it('split text with emojis', () => {
       const str = new AnsiString().split(`⚠️ type script`);
       expect(str.strings).toEqual(['⚠️', 'type', 'script']);
-      expect(str.styles).toEqual([def + '⚠️', 'type', 'script']);
+      expect(str.styles).toEqual(['⚠️', 'type', 'script']);
     });
 
-    it('split text with style sequences', () => {
-      const str = new AnsiString().split(`${clr}type ${clr} script${clr}`);
+    it('split text with inline styles when the string has no default style', () => {
+      const str = new AnsiString().split(`${bold}type ${bold} script${bold}`);
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual([def + clr + 'type', clr + 'script' + clr]);
+      expect(str.styles).toEqual([bold + 'type', bold + 'script' + bold]);
+    });
+
+    it('split text with inline styles when the string has a default style', () => {
+      const str = new AnsiString(0, 0, false, clr).split(`${bold}type ${bold} script${bold}`);
+      expect(str.strings).toEqual(['type', 'script']);
+      expect(str.styles).toEqual([clr + '' + bold + 'type', bold + 'script' + bold + clr]);
     });
 
     it('split text with paragraphs', () => {
       const str = new AnsiString().split('type\nscript\n\nis\nfun');
       expect(str.strings).toEqual(['type', 'script', '', 'is', 'fun']);
-      expect(str.styles).toEqual([def + 'type', 'script', '\n\n', 'is', 'fun']);
+      expect(str.styles).toEqual(['type', 'script', '\n\n', 'is', 'fun']);
     });
 
     it('split text with list items', () => {
       const str = new AnsiString().split('type:\n- script\n1. is fun');
       expect(str.strings).toEqual(['type:', '', '-', 'script', '', '1.', 'is', 'fun']);
-      expect(str.styles).toEqual([def + 'type:', '\n', '-', 'script', '\n', '1.', 'is', 'fun']);
+      expect(str.styles).toEqual(['type:', '\n', '-', 'script', '\n', '1.', 'is', 'fun']);
     });
 
     describe('using placeholders', () => {
@@ -257,9 +253,9 @@ describe('AnsiString', () => {
         const format = jest.fn(function (this: AnsiString) {
           this.word('abc');
         });
-        const str = new AnsiString().split('type' + '#0 script is #1' + 'fun', format);
-        expect(str.strings).toEqual(['type' + 'abc', 'script', 'is', 'abc' + 'fun']);
-        expect(str.styles).toEqual([def + 'type' + 'abc', 'script', 'is', 'abc' + 'fun']);
+        const str = new AnsiString().split('[#0 script is #1]', format);
+        expect(str.strings).toEqual(['[abc', 'script', 'is', 'abc]']);
+        expect(str.styles).toEqual(['[abc', 'script', 'is', 'abc]']);
         expect(format).toHaveBeenCalledTimes(2);
         expect(format).toHaveBeenCalledWith('#0');
         expect(format).toHaveBeenCalledWith('#1');
@@ -271,7 +267,7 @@ describe('AnsiString', () => {
         });
         const str = new AnsiString().split('#0', format);
         expect(str.strings).toEqual(['-', 'item', '', '*', 'item', '', '1.', 'item']);
-        expect(str.styles).toEqual([def + '-', 'item', '\n', '*', 'item', '\n', '1.', 'item']);
+        expect(str.styles).toEqual(['-', 'item', '\n', '*', 'item', '\n', '1.', 'item']);
         expect(format).toHaveBeenCalledTimes(1);
         expect(format).toHaveBeenCalledWith('#0');
       });
@@ -280,7 +276,7 @@ describe('AnsiString', () => {
         const format = jest.fn();
         const str = new AnsiString().word('type').split('#0#0', format).word('script');
         expect(str.strings).toEqual(['type', 'script']);
-        expect(str.styles).toEqual([def + 'type', 'script']);
+        expect(str.styles).toEqual(['type', 'script']);
         expect(format).toHaveBeenCalledTimes(2);
         expect(format).toHaveBeenCalledWith('#0');
       });
@@ -292,7 +288,7 @@ describe('AnsiString', () => {
       });
       const str = new AnsiString().split(bold + '#0 is #1' + bold, format);
       expect(str.strings).toEqual(['abc', 'is', 'abc']);
-      expect(str.styles).toEqual([def + bold + 'abc', 'is', 'abc' + bold]);
+      expect(str.styles).toEqual([bold + 'abc', 'is', 'abc' + bold]);
       expect(format).toHaveBeenCalledTimes(2);
       expect(format).toHaveBeenCalledWith('#0');
       expect(format).toHaveBeenCalledWith('#1');
@@ -351,16 +347,18 @@ describe('AnsiString', () => {
         });
 
         describe('emitting styles', () => {
+          const moveBack2 = seq(cs.cub, 2);
+
           it('adjust the current line with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString().split('abc def').wrap(result, 2, 0, true, false);
-            expect(result).toEqual([seq(cs.cha, 1), def + 'abc', ' def']);
+            expect(result).toEqual(['' + moveBack2, 'abc', ' def']);
           });
 
           it('not adjust the current line when spaces are required', () => {
             const result: Array<string> = [];
             new AnsiString().split('abc def').wrap(result, 2, 0, true, true);
-            expect(result).toEqual([def + 'abc', ' def']);
+            expect(result).toEqual(['abc', ' def']);
           });
         });
       });
@@ -397,28 +395,30 @@ describe('AnsiString', () => {
         });
 
         describe('emitting styles', () => {
+          const moveFwd2 = seq(cs.cuf, 2);
+
           it('adjust the current line with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc def').wrap(result, 0, 0, true, false);
-            expect(result).toEqual([seq(cs.cha, 3), def + 'abc', ' def']);
+            expect(result).toEqual(['' + moveFwd2, 'abc', ' def']);
           });
 
           it('keep indentation in new lines with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, false);
-            expect(result).toEqual([seq(cs.cha, 3), def + 'abc', '\n\n', seq(cs.cha, 3), 'def']);
+            expect(result).toEqual(['' + moveFwd2, 'abc', '\n\n', '' + moveFwd2, 'def']);
           });
 
           it('adjust the current line with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc def').wrap(result, 0, 0, true, true);
-            expect(result).toEqual(['  ', def + 'abc', ' def']);
+            expect(result).toEqual(['  ', 'abc', ' def']);
           });
 
           it('keep indentation in new lines with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, true);
-            expect(result).toEqual(['  ', def + 'abc', '\n\n', '  ', 'def']);
+            expect(result).toEqual(['  ', 'abc', '\n\n', '  ', 'def']);
           });
         });
       });
@@ -429,13 +429,13 @@ describe('AnsiString', () => {
         it('emit styles with move sequences', () => {
           const result: Array<string> = [];
           str.wrap(result, 0, 0, true, false);
-          expect(result).toEqual([def + 'abc' + clr, ' def']);
+          expect(result).toEqual(['abc' + clr, ' def']);
         });
 
         it('emit styles with spaces', () => {
           const result: Array<string> = [];
           str.wrap(result, 0, 0, true, true);
-          expect(result).toEqual([def + 'abc' + clr, ' def']);
+          expect(result).toEqual(['abc' + clr, ' def']);
         });
       });
     });
@@ -518,21 +518,27 @@ describe('AnsiString', () => {
         });
 
         describe('emitting styles', () => {
+          const moveFwd1 = seq(cs.cuf, 1);
+
           it('keep indentation in wrapped lines with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, false);
-            expect(result).toEqual([seq(cs.cha, 2), def + 'abc', `\n${seq(cs.cha, 2)}`, 'largest']);
+            expect(result).toEqual(['' + moveFwd1, 'abc', '\n' + moveFwd1, 'largest']);
           });
 
           it('keep indentation in wrapped lines with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, true);
-            expect(result).toEqual([' ', def + 'abc', '\n ', 'largest']);
+            expect(result).toEqual([' ', 'abc', '\n ', 'largest']);
           });
         });
       });
 
       describe('right-aligned', () => {
+        const moveFwd2 = seq(cs.cuf, 2);
+        const moveFwd4 = seq(cs.cuf, 4);
+        const moveFwd5 = seq(cs.cuf, 5);
+
         it('align with spaces when breaking the line', () => {
           const result: Array<string> = [];
           new AnsiString(0, 0, true).word('abc').break().wrap(result, 0, 8, false, true);
@@ -549,25 +555,25 @@ describe('AnsiString', () => {
           it('align with a move sequence when breaking the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).word('abc').break().wrap(result, 0, 8, true, false);
-            expect(result).toEqual([seq(cs.cuf, 5), def + 'abc', '\n']);
+            expect(result).toEqual(['' + moveFwd5, 'abc', '\n']);
           });
 
           it('align with a move sequence when wrapping the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).split('type script').wrap(result, 0, 8, true, false);
-            expect(result).toEqual([seq(cs.cuf, 4), def + 'type', '\n', seq(cs.cuf, 2), 'script']);
+            expect(result).toEqual(['' + moveFwd4, 'type', '\n', '' + moveFwd2, 'script']);
           });
 
           it('align with spaces when breaking the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).word('abc').break().wrap(result, 0, 8, true, true);
-            expect(result).toEqual(['     ', def + 'abc', '\n']);
+            expect(result).toEqual(['     ', 'abc', '\n']);
           });
 
           it('align with spaces when wrapping the line', () => {
             const result: Array<string> = [];
             new AnsiString(0, 0, true).split('type script').wrap(result, 0, 8, true, true);
-            expect(result).toEqual(['    ', def + 'type', '\n', '  ', 'script']);
+            expect(result).toEqual(['    ', 'type', '\n', '  ', 'script']);
           });
         });
       });
@@ -736,15 +742,15 @@ describe('AnsiMessage', () => {
     const str = new AnsiString().split('type script');
     const msg = new AnsiMessage(str);
     expect(msg.wrap(0)).toEqual('type script');
-    expect(msg.wrap(11)).toEqual(def + 'type script');
+    expect(msg.wrap(11)).toEqual('type script');
     process.env['NO_COLOR'] = '1';
     expect(msg.wrap(0)).toEqual('type script');
     expect(msg.wrap(11)).toEqual('type script');
     process.env['FORCE_COLOR'] = '1';
-    expect(msg.wrap(0)).toEqual(def + 'type script');
-    expect(msg.wrap(11)).toEqual(def + 'type script');
+    expect(msg.wrap(0)).toEqual('type script');
+    expect(msg.wrap(11)).toEqual('type script');
     process.env['FORCE_WIDTH'] = '10';
-    expect(msg.message).toEqual(def + 'type\nscript');
+    expect(msg.message).toEqual('type\nscript');
   });
 
   it('produce a string message', () => {
@@ -764,7 +770,7 @@ describe('WarnMessage', () => {
     const str = new AnsiString().split('type script');
     const msg = new WarnMessage(str);
     process.env['FORCE_WIDTH'] = '10';
-    expect(msg.message).toEqual(def + 'type\nscript');
+    expect(msg.message).toEqual('type\nscript');
   });
 
   it('produce a string message', () => {

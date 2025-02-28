@@ -84,6 +84,26 @@ describe('parse', () => {
         );
       });
 
+      it('handle a nested options object with a help option and program name', () => {
+        const options = {
+          command: {
+            type: 'command',
+            names: ['cmd'],
+            options: {
+              help: {
+                type: 'help',
+                names: ['-h'],
+                sections: [{ type: 'usage' }],
+              },
+            },
+          },
+        } as const satisfies Options;
+        expect(parse(options, ['cmd', '-h'], { progName: '' })).rejects.toThrow('[-h]\n');
+        expect(parse(options, ['cmd', '-h'], { progName: 'prog' })).rejects.toThrow(
+          'prog cmd [-h]\n',
+        );
+      });
+
       it('handle a nested options promise', () => {
         const options = {
           command: {

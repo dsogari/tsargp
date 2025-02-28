@@ -18,9 +18,18 @@ import {
   visitRequirements,
   isMessage,
   getNestedOptions,
+  isCommand,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
-import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex } from './utils.js';
+import {
+  findSimilar,
+  getEntries,
+  getSymbol,
+  getValues,
+  isObject,
+  matchNamingRules,
+  regex,
+} from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -28,7 +37,7 @@ import { findSimilar, getEntries, getSymbol, getValues, matchNamingRules, regex 
 /**
  * The naming convention rules.
  */
-const namingConventions = {
+const namingConventions: NamingRules = {
   cases: {
     lowercase: (name, lower, upper) => name === lower && name !== upper, // has at least one lower
     UPPERCASE: (name, lower, upper) => name !== lower && name === upper, // has at least one upper
@@ -44,7 +53,7 @@ const namingConventions = {
     snake_case: (name) => regex.snake.test(name),
     'colon:case': (name) => regex.colon.test(name),
   },
-} as const satisfies NamingRules;
+};
 
 //--------------------------------------------------------------------------------------------------
 // Public types
@@ -108,7 +117,7 @@ type ValidationContext = [
 ];
 
 //--------------------------------------------------------------------------------------------------
-// Classes
+// Functions
 //--------------------------------------------------------------------------------------------------
 /**
  * Validates a set of option definitions.
@@ -126,9 +135,6 @@ export async function validate(
   return warning.length ? { warning } : {};
 }
 
-//--------------------------------------------------------------------------------------------------
-// Functions
-//--------------------------------------------------------------------------------------------------
 /**
  * Validates all option definitions, including nested options recursively.
  * @param context The validation context
@@ -262,7 +268,7 @@ async function validateOption(context: ValidationContext, key: string, option: O
   if (requiredIf) {
     validateRequirements(context, key, requiredIf);
   }
-  if (!flags.noRecurse && type === 'command' && options && !visited.has(options)) {
+  if (!flags.noRecurse && isCommand(type) && options && !visited.has(options)) {
     visited.add(options);
     const cmdOptions = await getNestedOptions(option, flags.resolve);
     // create a new context, to avoid changing the behavior of functions up in the call stack
@@ -345,7 +351,7 @@ function validateConstraints(context: ValidationContext, key: symbol, option: Op
     }
   }
   const { paramCount } = option;
-  if (typeof paramCount === 'object' && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
+  if (isObject(paramCount) && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
   }
   const [min, max] = getParamCount(option);

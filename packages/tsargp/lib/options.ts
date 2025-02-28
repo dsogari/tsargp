@@ -7,47 +7,70 @@ import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, getSymbol } from './utils.js';
+import { getEntries, getSymbol, isFunction, isObject, isString } from './utils.js';
 
-export { requirementExpressions as req };
+//--------------------------------------------------------------------------------------------------
+// Classes
+//--------------------------------------------------------------------------------------------------
+/**
+ * A base requirement expression that holds multiple requirement items.
+ */
+abstract class RequiresMany {
+  /**
+   * Creates a requirement expression with requirement items.
+   * @param items The requirement items
+   */
+  constructor(readonly items: Array<Requires>) {}
+}
+
+/**
+ * A requirement expression that is satisfied when all items are satisfied.
+ * If it contains zero items, it always evaluates to true.
+ */
+export class RequiresAll extends RequiresMany {}
+
+/**
+ * A requirement expression that is satisfied when at least one item is satisfied.
+ * If it contains zero items, it always evaluates to false.
+ */
+export class RequiresOne extends RequiresMany {}
+
+/**
+ * A requirement expression that is satisfied when the item is not satisfied.
+ */
+export class RequiresNot {
+  /**
+   * Creates a requirement expression with a requirement item.
+   * @param item The requirement item
+   */
+  constructor(readonly item: Requires) {}
+}
+
+/**
+ * Implements a registry of option definitions.
+ */
+export class OptionRegistry {
+  readonly names: Map<string, string> = new Map<string, string>();
+  readonly letters: Map<string, string> = new Map<string, string>();
+  readonly positional: OptionInfo | undefined;
+
+  /**
+   * Creates an option registry based on a set of option definitions.
+   * @param options The option definitions
+   */
+  constructor(readonly options: OpaqueOptions) {
+    for (const [key, option] of getEntries(this.options)) {
+      registerNames(this.names, this.letters, key, option);
+      if (option.positional !== undefined) {
+        this.positional = [key, option, option.preferredName ?? ''];
+      }
+    }
+  }
+}
 
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
-/**
- * A helper object to create option requirement expressions.
- */
-const requirementExpressions = {
-  /**
-   * Creates a requirement expression that is satisfied only when all items are satisfied.
-   * If it contains zero items, it always evaluates to true.
-   * @param items The requirement items
-   * @returns The requirement expression
-   */
-  all(...items: Array<Requires>): RequiresAll {
-    return new RequiresAll(items);
-  },
-
-  /**
-   * Creates a requirement expression that is satisfied when at least one item is satisfied.
-   * If it contains zero items, it always evaluates to false.
-   * @param items The requirement items
-   * @returns The requirement expression
-   */
-  one(...items: Array<Requires>): RequiresOne {
-    return new RequiresOne(items);
-  },
-
-  /**
-   * Creates a requirement expression that is satisfied when the item is not satisfied.
-   * @param item The requirement item
-   * @returns The requirement expression
-   */
-  not(item: Requires): RequiresNot {
-    return new RequiresNot(item);
-  },
-} as const;
-
 /**
  * The types of options that throw messages.
  */
@@ -108,9 +131,9 @@ export type WithAbsoluteLayout = {
 };
 
 /**
- * The help layout.
+ * The help columns layout.
  */
-export type HelpLayout = {
+export type HelpColumnsLayout = {
   /**
    * The settings for the names column.
    */
@@ -123,16 +146,7 @@ export type HelpLayout = {
    * The settings for the description column.
    */
   readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
-  /**
-   * The order of items to be shown in the option description.
-   */
-  readonly items: ReadonlyArray<HelpItem>;
 };
-
-/**
- * A partial help layout.
- */
-export type PartialHelpLayout = PartialWithDepth<HelpLayout>;
 
 /**
  * Defines attributes common to all help sections.
@@ -214,6 +228,24 @@ export type WithSectionUsage = {
 };
 
 /**
+ * Defines additional attributes for the groups section.
+ */
+export type WithSectionGroups = {
+  /**
+   * The help columns layout.
+   */
+  readonly layout?: PartialWithDepth<HelpColumnsLayout>;
+  /**
+   * The order of items display in option descriptions.
+   */
+  readonly items?: ReadonlyArray<HelpItem>;
+  /**
+   * Whether option names should be replaced by environment variable names.
+   */
+  readonly useEnv?: true;
+};
+
+/**
  * A help text section.
  */
 export type HelpTextSection = WithSectionKind<'text'> & WithSectionText & WithSectionIndent;
@@ -229,7 +261,7 @@ export type HelpUsageSection = WithSectionKind<'usage'> &
 /**
  * A help groups section.
  */
-export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter;
+export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter & WithSectionGroups;
 
 /**
  * A help section.
@@ -258,27 +290,6 @@ export type OptionStyles = {
    */
   readonly descr?: Style;
 };
-
-/**
- * A requirement expression that is satisfied only when all items are satisfied.
- */
-export class RequiresAll {
-  constructor(readonly items: Array<Requires>) {}
-}
-
-/**
- * A requirement expression that is satisfied when at least one item is satisfied.
- */
-export class RequiresOne {
-  constructor(readonly items: Array<Requires>) {}
-}
-
-/**
- * A requirement expression that is satisfied when the item is not satisfied.
- */
-export class RequiresNot {
-  constructor(readonly item: Requires) {}
-}
 
 /**
  * A requirement expression.
@@ -442,11 +453,11 @@ export type WithBasic = {
    */
   preferredName?: string;
   /**
-   * The option synopsis. It may contain inline styles.
+   * The option synopsis. May contain inline styles.
    */
   readonly synopsis?: string;
   /**
-   * The option deprecation notice. It may contain inline styles.
+   * The option deprecation notice. May contain inline styles.
    */
   readonly deprecated?: string;
   /**
@@ -519,9 +530,9 @@ export type WithEnv = {
    */
   readonly stdin?: true;
   /**
-   * The name of environment data sources to try reading from (in order), if the option is specified
-   * neither on the command-line nor in the standard input. A string means an environment variable,
-   * while a URL means a local file.
+   * The names of environment data sources to try reading from (in that order), if the option is
+   * specified neither on the command-line nor in the standard input. A string means an environment
+   * variable, while a URL means a local file.
    */
   readonly sources?: ReadonlyArray<string | URL>;
   /**
@@ -541,6 +552,7 @@ export type WithParam<I> = {
   readonly example?: KnownValue;
   /**
    * The option parameter name. Replaces the option type in the help message parameter column.
+   * It should not contain inline styles or line feeds.
    */
   readonly paramName?: string;
   /**
@@ -590,10 +602,6 @@ export type WithSelection = {
  * Defines attributes for the help option.
  */
 export type WithHelp = {
-  /**
-   * The help layout.
-   */
-  readonly layout?: PartialHelpLayout;
   /**
    * The help sections to be rendered.
    */
@@ -689,7 +697,7 @@ export type WithFunction = {
   readonly paramCount?: number | Range;
   /**
    * The number of remaining arguments to skip.
-   * You may change this value inside the callback. The parser does not alter this value.
+   * It is meant to be changed by the callback. (The parser does not alter this value.)
    */
   skipCount?: number;
 };
@@ -986,31 +994,6 @@ type OptionDataType<T extends Option> =
       : ValueDataType<T> | DefaultDataType<T>;
 
 //--------------------------------------------------------------------------------------------------
-// Classes
-//--------------------------------------------------------------------------------------------------
-/**
- * Implements a registry of option definitions.
- */
-export class OptionRegistry {
-  readonly names = new Map<string, string>();
-  readonly letters = new Map<string, string>();
-  readonly positional: OptionInfo | undefined;
-
-  /**
-   * Creates an option registry based on a set of option definitions.
-   * @param options The option definitions
-   */
-  constructor(readonly options: OpaqueOptions) {
-    for (const [key, option] of getEntries(this.options)) {
-      registerNames(this.names, this.letters, key, option);
-      if (option.positional !== undefined) {
-        this.positional = [key, option, option.preferredName ?? ''];
-      }
-    }
-  }
-}
-
-//--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1044,11 +1027,11 @@ function registerNames(
  * @returns The option names
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
-  const names = option.names?.slice() ?? [];
-  if (typeof option.positional === 'string') {
+  const names = option.names?.slice().filter(isString) ?? [];
+  if (isString(option.positional)) {
     names.push(option.positional);
   }
-  return names.filter((name): name is string => name !== null);
+  return names;
 }
 
 /**
@@ -1061,12 +1044,21 @@ export function isMessage(type: OptionType): type is MessageOptionType {
 }
 
 /**
- * Tests if an option is that of a niladic option.
+ * Tests if an option type is that of a niladic option.
  * @param type The option type
  * @returns True if the option type is niladic
  */
 export function isNiladic(type: OptionType): type is NiladicOptionType {
   return niladicOptionTypes.includes(type as NiladicOptionType);
+}
+
+/**
+ * Tests if an option type is that of a command option.
+ * @param type The option type
+ * @returns True if the option type is command
+ */
+export function isCommand(type: OptionType): type is 'command' {
+  return type === 'command';
 }
 
 /**
@@ -1078,14 +1070,14 @@ export function getParamCount(option: OpaqueOption): Range {
   if (isNiladic(option.type)) {
     return [0, 0];
   }
-  const { paramCount } = option;
-  return option.type === 'function'
-    ? typeof paramCount === 'object'
+  const { type, paramCount } = option;
+  return type === 'function'
+    ? isObject(paramCount)
       ? paramCount
       : paramCount !== undefined && paramCount >= 0
         ? [paramCount, paramCount]
         : [0, Infinity]
-    : option.type === 'array'
+    : type === 'array'
       ? [0, Infinity]
       : [1, 1];
 }
@@ -1110,7 +1102,7 @@ export function visitRequirements<T>(
   valFn: (req: RequiresVal) => T,
   cbkFn: (req: RequirementCallback) => T,
 ): T {
-  return typeof requires === 'string'
+  return isString(requires)
     ? keyFn(requires)
     : requires instanceof RequiresNot
       ? notFn(requires)
@@ -1118,9 +1110,36 @@ export function visitRequirements<T>(
         ? allFn(requires)
         : requires instanceof RequiresOne
           ? oneFn(requires)
-          : typeof requires === 'object'
-            ? valFn(requires)
-            : cbkFn(requires);
+          : isFunction(requires)
+            ? cbkFn(requires)
+            : valFn(requires);
+}
+
+/**
+ * Creates a {@link RequiresAll} expression.
+ * @param items The requirement items
+ * @returns The requirement expression
+ */
+export function allOf(...items: Array<Requires>): RequiresAll {
+  return new RequiresAll(items);
+}
+
+/**
+ * Creates a {@link RequiresOne} expression.
+ * @param items The requirement items
+ * @returns The requirement expression
+ */
+export function oneOf(...items: Array<Requires>): RequiresOne {
+  return new RequiresOne(items);
+}
+
+/**
+ * Creates a {@link RequiresNot} expression.
+ * @param item The requirement item
+ * @returns The requirement expression
+ */
+export function notOf(item: Requires): RequiresNot {
+  return new RequiresNot(item);
 }
 
 /**
@@ -1163,12 +1182,12 @@ export async function getNestedOptions(
   option: OpaqueOption,
   resolve?: ModuleResolutionCallback,
 ): Promise<OpaqueOptions> {
-  if (typeof option.options === 'string') {
+  if (isString(option.options)) {
     if (!resolve) {
       throw ErrorMessage.create(ErrorItem.missingResolveCallback);
     }
     return (await import(resolve(option.options))).default;
   }
   // do not destructure `options`, because the callback might need to use `this`
-  return await (typeof option.options === 'function' ? option.options() : (option.options ?? {}));
+  return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
 }

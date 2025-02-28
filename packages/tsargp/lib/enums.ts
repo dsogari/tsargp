@@ -1,7 +1,13 @@
 //--------------------------------------------------------------------------------------------------
 // Exports
 //--------------------------------------------------------------------------------------------------
-export { ControlSequence as cs, TypeFace as tf, ForegroundColor as fg, BackgroundColor as bg };
+export {
+  ControlSequence as cs,
+  TypeFace as tf,
+  ForegroundColor as fg,
+  BackgroundColor as bg,
+  UnderlineColor as ul,
+};
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -231,6 +237,10 @@ export const enum HelpItem {
  */
 const enum ControlSequence {
   /**
+   * Insert Characters. Insert Ps (blank) characters (default = 1).
+   */
+  ich = '@',
+  /**
    * Cursor Up. Move cursor Ps times up (default=1).
    */
   cuu = 'A',
@@ -259,25 +269,13 @@ const enum ControlSequence {
    */
   cha = 'G',
   /**
-   * Cursor Horizontal Tabulation. Move cursor Ps times tabs forward (default=1).
-   */
-  cht = 'I',
-  /**
-   * Cursor Backward Tabulation. Move cursor Ps tabs backward (default=1).
-   */
-  cbt = 'Z',
-  /**
-   * Vertical Position Absolute. Move cursor to Ps-th row (default=1).
-   */
-  vpa = 'd',
-  /**
-   * Vertical Position Relative. Move cursor Ps times down (default=1).
-   */
-  vpr = 'e',
-  /**
    * Cursor Position. Set cursor to position [Ps, Ps] (default = [1, 1]).
    */
   cup = 'H',
+  /**
+   * Cursor Horizontal Tabulation. Move cursor Ps times tabs forward (default=1).
+   */
+  cht = 'I',
   /**
    * Erase In Display. Erase various parts of the viewport.
    */
@@ -295,41 +293,9 @@ const enum ControlSequence {
    */
   dl = 'M',
   /**
-   * Insert Characters. Insert Ps (blank) characters (default = 1).
-   */
-  ich = '@',
-  /**
    * Delete Characters. Delete Ps characters (default=1).
    */
   dch = 'P',
-  /**
-   * Erase Characters. Erase Ps characters from current cursor position to the right (default=1).
-   */
-  ech = 'X',
-  /**
-   * Repeat Preceding Character. Repeat preceding character Ps times (default=1).
-   */
-  rch = 'b',
-  /**
-   * Tab Clear. Clear tab stops at current position (0) or all (3) (default=0).
-   */
-  tbc = 'g',
-  /**
-   * Insert Columns. Insert Ps columns at cursor position.
-   */
-  icl = "'}",
-  /**
-   * Delete Columns. Delete Ps columns at cursor position.
-   */
-  dcl = "'~",
-  /**
-   * Scroll Left. Scroll viewport Ps times to the left.
-   */
-  sl = 'SP@',
-  /**
-   * Scroll Right. Scroll viewport Ps times to the right.
-   */
-  sr = 'SPA',
   /**
    * Scroll Up. Scroll Ps lines up (default=1).
    */
@@ -339,34 +305,66 @@ const enum ControlSequence {
    */
   sd = 'T',
   /**
-   * Select Graphic Rendition. Set/Reset various text attributes.
+   * Erase Characters. Erase Ps characters from current cursor position to the right (default=1).
    */
-  sgr = 'm',
+  ech = 'X',
   /**
-   * Set Top and Bottom Margins. Set top and bottom margins of the viewport [top;bottom] (default =
-   * viewport size).
+   * Cursor Backward Tabulation. Move cursor Ps tabs backward (default=1).
    */
-  tbm = 'r',
+  cbt = 'Z',
+  /**
+   * Horizontal Position Absolute. Same as {@link ControlSequence.cha}.
+   */
+  hpa = '`',
+  /**
+   * Horizontal Position Relative. Same as {@link ControlSequence.cuf}.
+   */
+  hpr = 'a',
+  /**
+   * Repeat Preceding Character. Repeat preceding character Ps times (default=1).
+   */
+  rch = 'b',
+  /**
+   * Vertical Position Absolute. Move cursor to Ps-th row (default=1).
+   */
+  vpa = 'd',
+  /**
+   * Vertical Position Relative. Move cursor Ps times down (default=1).
+   */
+  vpr = 'e',
+  /**
+   * Horizontal and Vertical Position. Same as {@link ControlSequence.cup}.
+   */
+  hvp = 'f',
+  /**
+   * Tab Clear. Clear tab stops at current position (0) or all (3) (default=0).
+   */
+  tbc = 'g',
   /**
    * Set Mode. Set various terminal modes.
    */
   sm = 'h',
   /**
+   * AUX Port mode. (4=disable; 5=enable)
+   */
+  aux = 'i',
+  /**
    * Reset Mode. Reset various terminal attributes.
    */
   rm = 'l',
+  /**
+   * Select Graphic Rendition. Set/Reset various text attributes.
+   */
+  sgr = 'm',
   /**
    * Device Status Report. Request cursor position (CPR) with Ps = 6.
    */
   dsr = 'n',
   /**
-   * Soft Terminal Reset. Reset several terminal attributes to initial state.
+   * Set Top and Bottom Margins.
+   * Set top and bottom margins of the viewport [top;bottom] (default = viewport size).
    */
-  str = '!p',
-  /**
-   * Set Cursor Style.
-   */
-  scs = 'SPq',
+  tbm = 'r',
   /**
    * Save Cursor. Save cursor position, charmap and text attributes.
    */
@@ -575,7 +573,11 @@ const enum ForegroundColor {
   magenta,
   cyan,
   white,
-  default = 39,
+  /**
+   * An extended foreground color. To be used with indexed or RGB colors.
+   */
+  extended,
+  default,
   brightBlack = 90,
   brightRed,
   brightGreen,
@@ -598,7 +600,11 @@ const enum BackgroundColor {
   magenta,
   cyan,
   white,
-  default = 49,
+  /**
+   * An extended background color. To be used with indexed or RGB colors.
+   */
+  extended,
+  default,
   brightBlack = 100,
   brightRed,
   brightGreen,
@@ -607,4 +613,14 @@ const enum BackgroundColor {
   brightMagenta,
   brightCyan,
   brightWhite,
+}
+
+/**
+ * A predefined text underline color.
+ */
+const enum UnderlineColor {
+  /**
+   * An extended underline color. To be used with indexed or RGB colors.
+   */
+  extended = 58,
 }
