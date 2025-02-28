@@ -297,7 +297,7 @@ export type OptionStyles = {
 export type RequiresExp = RequiresNot | RequiresAll | RequiresOne;
 
 /**
- * An object that maps option keys to required values.
+ * A mapping of option keys to required values.
  */
 export type RequiresVal = { readonly [key: string]: unknown };
 
@@ -310,7 +310,7 @@ export type RequiresEntry = readonly [key: string, value: unknown];
  * An option requirement can be either:
  *
  * - an option key;
- * - an object that maps option keys to required values;
+ * - a mapping of option keys to required values;
  * - a requirement expression; or
  * - a requirement callback
  */

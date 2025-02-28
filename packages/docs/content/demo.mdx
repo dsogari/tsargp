@@ -326,19 +326,19 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check if the help option accepts option filters (e.g., `-h -f`)
 2. check if the help option accepts a subcommand name (e.g., `-h hello`)
-3. check if the above can be combined (e.g., `-h hello -h`)
+3. check if the above can be combined (e.g., `-h hello -h` or `hello -h -h`)
 
 <details>
   <summary>Expected output (1)</summary>
 {/* cSpell:disable */}
 
 ```ansi
-[1mArgument parser for TypeScript.[0m
+[0;1mArgument parser for TypeScript.[0m
 
-  [39m[38;5;138m-f[0m[39m, [38;5;138m--no-flag[0m[39m       [3;9m[39mA flag option. Deprecated for [39msome reason.[0m
+  [0;38;2;160;100;64m-f[0m, [0;38;2;160;100;64m--no-flag[0m    [3;9mA flag option.[3;9m Deprecated for some reason.[3;9m
 
-[1mUsage:[0m
-  [39mdemo.js[0m [[39m([35m-f[0m[39m|[35m--no-flag[0m[39m)][0m
+[0;1mUsage:[0m
+  [0mdemo.js [[0m([35m-f[0m|[35m--no-flag[0m)[0m]
 
 [90m...[0m
 ```
@@ -351,14 +351,13 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[1mUsage:[0m
+[0;1mUsage:[0m
 
-  [39mdemo.js[0m [[39m[90m<param>...[0m[39m] [([35m-h[0m[39m|[35m--help[0m[39m)] [[35mhello[0m[39m [90m...[0m[39m][0m
+  [0mdemo.js hello [0m[90m[<param>...][0m [([35m-h[0m|[35m--help[0m)[0m] [[35mhello[0m [90m...[0m]
 
-[1mArguments:[0m
+[0;1mArguments:[0m
 
-  [39m[90m<param>...[0m[39m              [39mAccepts multiple parameters. Accepts positional arguments. Reads data from
-                          standard input. Defaults to [[32m'world'[0m[39m].[0m
+  [90m[<param>...]  [0mAccepts multiple parameters.[0m Reads data from standard input.[0m Defaults to [[32m'world'[0m].[0m
 
 [90m...[0m
 ```
@@ -371,14 +370,14 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[1mUsage:[0m
+[0;1mUsage:[0m
 
-  [39mdemo.js[0m [[39m([35m-h[0m[39m|[35m--help[0m[39m)][0m
+  [0mdemo.js hello [[0m([35m-h[0m|[35m--help[0m)[0m]
 
-[1mOptions:[0m
+[0;1mOptions:[0m
 
-  [39m[35m-h[0m[39m, [35m--help[0m[39m    [39m[39mThe help option for the hello command. Prints this help message. Uses the remaining
-                arguments as option filter.[0m
+  [0;35m-h[0m, [0;35m--help[0m  [0mThe help option for the hello command. Prints this help message.[0m Uses the remaining
+              arguments as option filter.[0m
 ```
 
 {/* cSpell:enable */}

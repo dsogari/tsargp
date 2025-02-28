@@ -27,7 +27,7 @@ Why use this library when there are already many good argument parsers on npm?
 
 One of the most distinctive features is the _declarative_ API. Very few libraries that we know of support this (at the time of writing, it's worth mentioning [meow], [yargs] and [oclif]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
 
-Moreover, by relying on TypeScript, it ensures that values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a choice constraint in its definition. Even JSDoc comments are preserved in IntelliSense!
+Moreover, by relying on TypeScript, it ensures that values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a parameter mapping in its definition. Even JSDoc comments are preserved in [IntelliSense]!
 
 ## Installation
 
@@ -172,3 +172,4 @@ You can configure shell completion to use the main script as a source of complet
 [meow]: https://www.npmjs.com/package/meow
 [yargs]: https://yargs.js.org/
 [oclif]: https://oclif.io/
+[IntelliSense]: https://code.visualstudio.com/docs/editor/intellisense

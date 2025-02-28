@@ -12,6 +12,7 @@ import {
   allHelpItems,
   HelpItem,
   envHelpItems,
+  rgb,
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 
@@ -109,7 +110,7 @@ export default {
       return name !== this.names?.[1];
     },
     styles: {
-      names: style(fg.extended, ext8(138)),
+      names: style(fg.extended, rgb(160, 100, 64)),
       descr: style(tf.italic, tf.crossedOut),
     },
   },
