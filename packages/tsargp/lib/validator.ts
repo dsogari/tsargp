@@ -19,6 +19,7 @@ import {
   isMessage,
   getNestedOptions,
   isCommand,
+  getOptionEnvVars,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import {
@@ -172,7 +173,7 @@ async function validateOptions(context: ValidationContext) {
  * @param letterToKey The map of cluster letters to key
  * @param key The option key
  * @param option The option definition
- * @throws On invalid option name, duplicate name, invalid cluster letter or duplicate letter
+ * @throws On invalid name, duplicate name, invalid cluster letter or duplicate letter
  */
 function validateNames(
   context: ValidationContext,
@@ -181,26 +182,35 @@ function validateNames(
   key: string,
   option: OpaqueOption,
 ) {
-  const [, , , , prefix] = context;
-  const prefixedKey = getSymbol(prefix + key);
+  /** @ignore */
+  function error(item: ErrorItem, name: string): never {
+    throw ErrorMessage.create(item, {}, prefixedKey, name);
+  }
+  const prefixedKey = getSymbol(context[4] + key);
   const names = getOptionNames(option);
   for (const name of names) {
     if (name.includes('=')) {
-      throw ErrorMessage.create(ErrorItem.invalidOptionName, {}, prefixedKey, name);
+      throw error(ErrorItem.invalidOptionName, name);
     }
     if (nameToKey.has(name)) {
-      throw ErrorMessage.create(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
+      throw error(ErrorItem.duplicateOptionName, name);
     }
     nameToKey.set(name, key);
   }
   for (const letter of option.cluster ?? '') {
     if (letter.includes('=')) {
-      throw ErrorMessage.create(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
+      throw error(ErrorItem.invalidClusterLetter, letter);
     }
     if (letterToKey.has(letter)) {
-      throw ErrorMessage.create(ErrorItem.duplicateClusterLetter, {}, prefixedKey, letter);
+      throw error(ErrorItem.duplicateClusterLetter, letter);
     }
     letterToKey.set(letter, key);
+  }
+  const vars = getOptionEnvVars(option);
+  for (const name of vars) {
+    if (name.includes('=')) {
+      throw error(ErrorItem.invalidOptionName, name);
+    }
   }
 }
 
@@ -313,21 +323,25 @@ function validateRequirement(
   requiredKey: string,
   requiredValue?: RequiresVal[string],
 ) {
+  /** @ignore */
+  function error(item: ErrorItem): never {
+    throw ErrorMessage.create(item, {}, prefixedKey);
+  }
   const [options, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + requiredKey);
   if (requiredKey === key) {
-    throw ErrorMessage.create(ErrorItem.invalidSelfRequirement, {}, prefixedKey);
+    throw error(ErrorItem.invalidSelfRequirement);
   }
   if (!(requiredKey in options)) {
-    throw ErrorMessage.create(ErrorItem.unknownRequiredOption, {}, prefixedKey);
+    throw error(ErrorItem.unknownRequiredOption);
   }
   const option = options[requiredKey];
   if (isMessage(option.type)) {
-    throw ErrorMessage.create(ErrorItem.invalidRequiredOption, {}, prefixedKey);
+    throw error(ErrorItem.invalidRequiredOption);
   }
   const noValue = {};
   if ((requiredValue ?? noValue) === noValue && (option.required || option.default !== undefined)) {
-    throw ErrorMessage.create(ErrorItem.invalidRequiredValue, {}, prefixedKey);
+    throw error(ErrorItem.invalidRequiredValue);
   }
 }
 

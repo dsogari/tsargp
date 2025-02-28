@@ -18,7 +18,13 @@ import type { FormattingFlags, Style } from './styles.js';
 import { config } from './config.js';
 import { HelpItem, tf } from './enums.js';
 import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
-import { getParamCount, getOptionNames, visitRequirements, isCommand } from './options.js';
+import {
+  getParamCount,
+  getOptionNames,
+  visitRequirements,
+  isCommand,
+  getOptionEnvVars,
+} from './options.js';
 import {
   getSymbol,
   isArray,
@@ -511,7 +517,7 @@ function formatNames(
   useEnv: boolean = false,
 ): Array<AnsiString> {
   const { breaks, hidden } = layout.names;
-  const names = useEnv ? option.sources?.filter(isString) : option.names;
+  const names = useEnv ? getOptionEnvVars(option) : option.names;
   if (hidden || !names?.length) {
     return [];
   }

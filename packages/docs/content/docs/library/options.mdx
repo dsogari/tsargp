@@ -253,7 +253,7 @@ options.flag.requires.toString = () => 'this and that ...';
 
 #### Conditional requirements
 
-The `requiredIf` attribute is reciprocal to the previous one: if present, it specifies requirements that must be satisfied for the affected option to be _considered_ required.
+The `requiredIf` attribute is reciprocal to the previous one: if present, it specifies requirements that must be satisfied for the affected option to be _considered_ required. It accepts the same values as the former.
 
 <Callout type="info">
 
@@ -344,9 +344,11 @@ The `sources` attribute, if present, lists names of environment data sources fro
 
 The reason why we did not use a dedicated `env` attribute for environment variables was a design choice: since the sources are tried in the specified order, you can mix the two types of values in order of priority.
 
+If data is found in a source, the affected option will be considered _as if_ specified on the command line, which has implications for evaluating the option's [requirements].
+
 <Callout type="info">
 
-If data is found in a source, the affected option will be considered _as if_ specified on the command line, which has implications for evaluating the option's requirements.
+Variable names should _not_ be included in the list of [option names], although they are subject to the same restrictions.
 
 </Callout>
 
@@ -356,7 +358,7 @@ The `break` attribute indicates whether the parser should exit the parsing loop 
 
 <Callout type="warning">
 
-When setting this attribute, the requirements of all options specified up to the current argument will be verified. Hence, you should make it clear in the help message that any options required by the affected one must be specified _before_ it.
+When setting this attribute, the [requirements] of all options specified up to the current argument will be verified. Hence, you should make it clear in the help message that any options required by the affected one must be specified _before_ it.
 
 </Callout>
 
@@ -756,7 +758,7 @@ When [word completion] is in effect, the last argument will be the word to compl
 
 [cluster letters]: #cluster-letters
 [always required]: #always-required
-[forward requirements]: #forward-requirements
+[requirements]: #forward-requirements
 [conditional requirements]: #conditional-requirements
 [default value]: #default-value
 [default value callback]: #default-value-callback

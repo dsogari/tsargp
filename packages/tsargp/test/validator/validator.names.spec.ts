@@ -36,6 +36,16 @@ describe('validate', () => {
     expect(validate(options)).rejects.toThrow(`Option single has invalid name '='.`);
   });
 
+  it('throw an error on option with invalid environment variable name', () => {
+    const options = {
+      single: {
+        type: 'single',
+        sources: ['='],
+      },
+    } as const satisfies Options;
+    expect(validate(options)).rejects.toThrow(`Option single has invalid name '='.`);
+  });
+
   it('throw an error on duplicate option name in the same option', () => {
     const options = {
       flag: {

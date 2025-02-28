@@ -1035,6 +1035,15 @@ export function getOptionNames(option: OpaqueOption): Array<string> {
 }
 
 /**
+ * Gets a list of environment variables for an option.
+ * @param option The option definition
+ * @returns The variable names
+ */
+export function getOptionEnvVars(option: OpaqueOption): Array<string> {
+  return option.sources?.filter(isString) ?? [];
+}
+
+/**
  * Tests if an option type is that of a message-valued option.
  * @param type The option type
  * @returns True if the option type is message
