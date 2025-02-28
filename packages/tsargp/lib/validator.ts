@@ -247,7 +247,7 @@ function detectNamingIssues(context: ValidationContext, nameToKey: Map<string, s
  * @param prefixedKey The prefixed key
  * @param key The option key
  * @param option The option definition
- * @throws On invalid constraint definition, invalid default/example value or invalid requirements
+ * @throws On invalid constraint or invalid requirements
  */
 async function validateOption(
   context: ValidationContext,

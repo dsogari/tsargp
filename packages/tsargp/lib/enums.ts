@@ -33,7 +33,7 @@ export const enum ErrorItem {
    */
   missingParameter,
   /**
-   * Error raised when the parser fails to find a version file when handling the version option.
+   * Error raised when the parser fails to find a version file when parsing the version option.
    */
   versionFileNotFound,
   /**
