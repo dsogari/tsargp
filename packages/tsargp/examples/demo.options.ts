@@ -7,12 +7,12 @@ import {
   notOf,
   tf,
   ext8,
+  rgb,
   numberInRange,
   config,
   allHelpItems,
   HelpItem,
   envHelpItems,
-  rgb,
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 

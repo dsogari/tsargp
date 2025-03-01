@@ -28,7 +28,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { single: 'data' },
         index: NaN,
-        name: '0',
+        name: '0', // zero for standard input
         comp: false,
       });
     });

@@ -1,10 +1,5 @@
-import {
-  type Options,
-  type OptionValues,
-  type OpaqueOptionValues,
-  allHelpItems,
-  HelpItem,
-} from 'tsargp';
+import type { Options, OptionValues, OpaqueOptionValues } from 'tsargp';
+import { allHelpItems, HelpItem } from 'tsargp';
 
 /**
  * The option definitions for the hello subcommand.

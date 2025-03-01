@@ -15,11 +15,11 @@ import { ErrorItem } from './enums.js';
 import {
   getParamCount,
   getOptionNames,
+  getOptionEnvVars,
   visitRequirements,
   isMessage,
   getNestedOptions,
   isCommand,
-  getOptionEnvVars,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import {

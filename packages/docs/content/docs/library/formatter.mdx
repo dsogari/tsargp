@@ -67,7 +67,7 @@ This column is rendered according to the following rules:
 - otherwise
   - if it contains a [parameter name], render this name
   - else, render the word `'param'{:ts}`
-  - and enclose the result in angle brackets `'<>'{:ts}` (if this was not already the case)
+  - and, if not already the case, enclose the result in angle brackets `'<>'{:ts}`
 - and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
 - and, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
 - and, if it can be specified without parameters, enclose the result in square brackets `'[]'{:ts}`
@@ -147,7 +147,7 @@ The `filter` property can be used to create multiple usages of the same command,
 
 <Callout type="info">
 
-In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional] marker, which must come _last_ in the usage.
+In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which must come _last_ in the usage.
 
 </Callout>
 
@@ -245,7 +245,7 @@ The `param.align` and `descr.align` properties support an additional value `'mer
 
 <Callout type="info">
 
-If either `param.align` is set to `'merge'{:ts}` or if `param.hidden{:ts}` is `true{:ts}` and `descr.align{:ts}` is set to `'merge'{:ts}`, then the `'slot'{:ts}` setting for the names column will be ignored.
+If either `param.align` is set to `'merge'{:ts}` or if `param.hidden{:ts}` is `true{:ts}` and `descr.align{:ts}` is set to `'merge'{:ts}`, then the `'slot'{:ts}` setting for `names.align` will be ignored.
 
 </Callout>
 
@@ -273,7 +273,7 @@ layout = {
 };
 ```
 
-Below is an extract of a help message produced with the above configuration in a terminal with 70-character width:
+Below is an excerpt of a help message produced with the above configuration, in a terminal with 70-character width:
 
 {/* cSpell:disable */}
 
@@ -330,7 +330,7 @@ This is inherently different from what a text search utility like GNU's `grep` w
 [environment variable]: options#data-sources
 [option group]: options#group--hide
 [option names]: options#option-names
-[positional]: options#positional--marker
+[positional marker]: options#positional--marker
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#niladic-options

@@ -245,7 +245,7 @@ You can also specify an expression, in which case it is evaluated as follows:
 
 You can also specify a custom callback to evaluate requirements. It receives a single parameter containing the parsed values, and should return a `boolean{:ts}` (or a promise thereof) indicating whether the requirements were satisfied. It may perform any kind of verification, such as inspect parsed values, check the environment, etc.
 
-It may be configured with a custom `toString` method to be displayed in [messages], e.g.:
+It may be configured with a custom `toString` method so it can be displayed in [messages]. For example:
 
 ```ts
 options.flag.requires.toString = () => 'this and that ...';
@@ -299,7 +299,7 @@ Mutually exclusive with [always required].
 
 In case the default value is not known beforehand, you can use a callback. It receives a single parameter containing the parsed values, and should return the default option value (or a promise thereof).
 
-When rendering a help message, the [formatter] disregards any value returned by the callback, as it may depend on the values parsed from command-line arguments (which are not available when processing the help option). On the other hand, the callback may be configured with a custom `toString` method to be displayed in [messages], e.g.:
+When rendering a help message, the [formatter] disregards any value returned by the callback, as it may depend on the values parsed from command-line arguments (which are not available when processing the help option). On the other hand, the callback may be configured with a custom `toString` method so it can be displayed in [messages], e.g.:
 
 ```ts
 options.flag.default.toString = () => 'this and that ...';
@@ -471,9 +471,7 @@ The `sections` attribute specifies [help sections] to be rendered in the help me
 
 #### Enable subcommand
 
-The `useCommand` attribute is an opt-in feature that allows the next argument to be used as the name of a [subcommand] for which the help message should be generated.
-
-For example, the following invocations would be equivalent:
+The `useCommand` attribute, if present, indicates that the option may use the next argument as the name of a [subcommand] for which the message should be generated. For example, the following invocations would be equivalent:
 
 ```
 cli --help cmd
@@ -490,7 +488,7 @@ If a subcommand with the specified name does not exist or does not have its own 
 
 #### Enable option filter
 
-The `useFilter` attribute is an opt-in feature that allows the remaining arguments to be used as [option filter]. For example, the invocation `cli --help flag` would only include in the help message those options whose [names], [synopsis] or environment [data sources] match the regex `/flag/i{:ts}`.
+The `useFilter` attribute, if present, indicates that the option may use the remaining arguments as [option filter]. If enabled, an invocation like `cli --help flag` would only include options whose [names], [synopsis] or environment variable names contain the pattern `flag` (case-insensitive).
 
 This feature can be combined with [enable subcommand]. For example, the following invocations would be equivalent:
 
@@ -682,7 +680,7 @@ In the special case of _zero_, the [parsing callback] will receive a copy of all
 
 <Callout type="warning">
 
-If the data comes from the [environment], then the callback will receive an array with a single element as parameter, which may be _less_ than the expected count. To check if this is the case, you should inspect the `index` property of the [argument information], which should be `NaN{:ts}`.
+If the data comes from the [environment], then the callback will receive an array with a single element as parameter, which may be _less_ than the expected count. To check if this is the case, you should inspect the `index` property of the [argument information], which should have the value `NaN{:ts}`.
 
 </Callout>
 
@@ -692,7 +690,7 @@ Note that this option cannot have a [parameter separator], since it would confli
 
 The `skipCount` attribute indicates the number of remaining arguments to skip, after returning from the [parsing callback]. This value is meant to be changed by the callback, and only works when the [parameter count] is zero.
 
-It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends. Note that this is different from _unlimited_ parameters, which rely on the parser to detect them based on the occurrence of option names in the command line.
+It is useful in cases where the number of parameters is not known beforehand, and the callback wants to have control over where an [argument sequence] ends. Note that this is different from _unlimited_ parameters, where the parser must detect the end of a sequence based on the occurrence of an option name in the command line.
 
 Here is an example of how it might be used inside the callback:
 

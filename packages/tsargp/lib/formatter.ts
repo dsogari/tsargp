@@ -21,9 +21,9 @@ import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
 import {
   getParamCount,
   getOptionNames,
+  getOptionEnvVars,
   visitRequirements,
   isCommand,
-  getOptionEnvVars,
 } from './options.js';
 import {
   getSymbol,
@@ -695,12 +695,12 @@ function formatUsage(
   const requiredBy = requires && getRequiredBy(requires);
   const keys = exclude || !filter ? allKeys.slice() : filter.filter((key) => allKeys.includes(key));
   const count = result.count;
-  let handlePositional;
+  let hasPositional;
   for (const key of keys) {
-    if (!handlePositional && isString(options[key].positional)) {
+    if (!hasPositional && isString(options[key].positional)) {
+      hasPositional = true;
       keys.push(key);
-      handlePositional = true;
-      continue; // save for last (ignore filter order in this case)
+      continue; // leave positional marker for last (ignore filter order in this case)
     }
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
@@ -751,6 +751,8 @@ function formatUsageOption(
       // received key, so I can be considered optional
       if (!required && (isLast || !receivedKey)) {
         const [min, max] = getParamCount(option);
+        // skip enclosing brackets for positional option with optional parameters, because the names
+        // are also optional, so it would not make sense, e.g.: [[-a] [<param>...]]
         if (!option.positional || min || !max) {
           result.openAtPos('[', count).close(']');
         }
@@ -801,16 +803,16 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
   if (names.length) {
     const count = result.count;
     const enclose = names.length > 1;
-    const flags = {
+    const flags: FormattingFlags = {
       sep: config.connectives.optionAlt,
       open: enclose ? config.connectives.exprOpen : '',
       close: enclose ? config.connectives.exprClose : '',
-      mergeNext: true,
+      mergeNext: true, // keep names compact
     };
     const { styles } = config;
     const saved = styles.symbol;
     try {
-      styles.symbol = option.styles?.names ?? saved;
+      styles.symbol = option.styles?.names ?? saved; // use configured style, if any
       fmt.a(names.map(getSymbol), result, flags);
     } finally {
       styles.symbol = saved;
@@ -924,7 +926,7 @@ function formatRequiresExp<T>(
 ) {
   const { connectives } = config;
   const enclose = items.length > 1;
-  const flags = {
+  const flags: FormattingFlags = {
     open: enclose ? connectives.exprOpen : '',
     close: enclose ? connectives.exprClose : '',
   };

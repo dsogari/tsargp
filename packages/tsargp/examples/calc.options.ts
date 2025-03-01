@@ -1,4 +1,5 @@
-import { allHelpItems, HelpItem, type Options, type OptionValues } from 'tsargp';
+import type { Options, OptionValues } from 'tsargp';
+import { allHelpItems, HelpItem } from 'tsargp';
 
 /**
  * The option definitions for a multi-argument operation.
