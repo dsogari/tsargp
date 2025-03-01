@@ -18,7 +18,13 @@ import type { FormattingFlags, Style } from './styles.js';
 import { config } from './config.js';
 import { HelpItem, tf } from './enums.js';
 import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
-import { getParamCount, getOptionNames, visitRequirements, isCommand } from './options.js';
+import {
+  getParamCount,
+  getOptionNames,
+  getOptionEnvVars,
+  visitRequirements,
+  isCommand,
+} from './options.js';
 import {
   getSymbol,
   isArray,
@@ -143,7 +149,7 @@ const helpFunctions: HelpFunctions = {
   },
   [HelpItem.paramCount]: (option, phrase, _options, result) => {
     const [min, max] = getParamCount(option);
-    if (max > 1 && !option.inline) {
+    if (max > 1 && option.inline !== 'always') {
       const [alt, val] =
         min === max
           ? [1, min] // exactly %n
@@ -260,8 +266,9 @@ const helpFunctions: HelpFunctions = {
   },
   [HelpItem.inline]: (option, phrase, _options, result) => {
     const { inline } = option;
-    if (inline !== undefined) {
-      result.format(phrase, { alt: inline ? 1 : 0 });
+    const alt = inline === 'always' ? 1 : inline === false ? 0 : -1;
+    if (alt >= 0) {
+      result.format(phrase, { alt });
     }
   },
   [HelpItem._count]: () => {},
@@ -342,7 +349,7 @@ function buildGroups(
   exclude?: boolean,
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
-  const allNames = new Set(getValues(options).map((opt) => opt.group ?? ''));
+  const allNames = new Set(keys.map((key) => options[key].group ?? ''));
   const visited = new Set<string>(exclude ? filter : []);
   const include = exclude || !filter ? allNames : filter.filter((name) => allNames.has(name));
   include.forEach((name) => (visited.has(name) ? void 0 : (groups[name] = [])));
@@ -475,13 +482,13 @@ function adjustEntries(
       indent += useSlot ? slotWidths[i] : saved;
     });
     if (descrMerge) {
-      param.other(descr);
+      param.other(descr); // no need to reset param style
       descr.clear();
     } else {
       descr.indent = descrStart;
     }
     if ((paramMerge || paramHidden) && lastName) {
-      lastName.other(param);
+      lastName.other(param); // no need to reset names style
       param.clear();
     } else {
       param.indent =
@@ -510,7 +517,7 @@ function formatNames(
   useEnv: boolean = false,
 ): Array<AnsiString> {
   const { breaks, hidden } = layout.names;
-  const names = useEnv ? option.sources?.filter(isString) : option.names;
+  const names = useEnv ? getOptionEnvVars(option) : option.names;
   if (hidden || !names?.length) {
     return [];
   }
@@ -541,8 +548,7 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiStri
   const result = new AnsiString(0, breaks, false, defSty);
   const count = result.count;
   if (!hidden) {
-    const names = getOptionNames(option);
-    formatParam(option, names, result);
+    formatParam(option, result);
   }
   return result.count === count ? result.clear() : result;
 }
@@ -591,16 +597,16 @@ function formatHelpSection(
   result: AnsiMessage,
 ) {
   const { type, title, breaks, noWrap, style: sty } = section;
+  const headingStyle = sty ?? style(tf.bold);
   let curBreaks = breaks ?? (result.length ? 1 : 0); // to account for the first section
   if (type === 'groups') {
     const { layout, filter, exclude, items, useEnv } = section;
-    const headingStyle = sty ?? style(tf.bold);
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
     const groups = buildEntries(options, mergedLayout, keys, items, filter, exclude, useEnv);
     for (const [group, entries] of getEntries(groups)) {
       const title2 = group || title;
       const heading = title2
-        ? formatText(title2, headingStyle, 0, curBreaks, noWrap).break(2)
+        ? formatText(title2, 0, curBreaks, noWrap, headingStyle).break(2)
         : new AnsiString(0, curBreaks);
       result.push(heading);
       for (const [names, param, descr] of entries) {
@@ -610,15 +616,14 @@ function formatHelpSection(
     }
   } else {
     if (title) {
-      result.push(formatText(title, sty ?? style(tf.bold), 0, curBreaks, noWrap).break());
+      result.push(formatText(title, 0, curBreaks, noWrap, headingStyle).break());
       curBreaks = 1; // to account for the space between title and content
     }
-    const textStyle = config.styles.text;
     if (type === 'usage') {
       const count = result.length;
       let { indent } = section;
       if (progName) {
-        result.push(formatText(progName, textStyle, indent, curBreaks, true));
+        result.push(formatText(progName, indent, curBreaks, true));
         indent = max(0, indent ?? 0) + progName.length + 1;
         curBreaks = 0; // to avoid breaking between program name and usage text
       }
@@ -631,7 +636,7 @@ function formatHelpSection(
     } else {
       const { text, indent } = section;
       if (text) {
-        result.push(formatText(text, textStyle, indent, curBreaks, noWrap).break());
+        result.push(formatText(text, indent, curBreaks, noWrap).break());
       }
     }
   }
@@ -640,23 +645,27 @@ function formatHelpSection(
 /**
  * Formats a custom text to be included in a help section.
  * @param text The heading title or section text
- * @param defSty The default style
  * @param indent The indentation level (negative values are replaced by zero)
  * @param breaks The number of line breaks (non-positive values are ignored)
  * @param noWrap True if the provided text should not be split
+ * @param sty The style to apply to the text
  * @returns The ANSI string
  */
 function formatText(
   text: string,
-  defSty: Style,
   indent?: number,
   breaks?: number,
-  noWrap: boolean = false,
+  noWrap?: boolean,
+  sty?: Style,
 ): AnsiString {
+  const defSty = config.styles.text;
   const result = new AnsiString(indent, breaks, false, defSty);
   if (noWrap) {
-    result.word(text); // warning: may be larger than the terminal width
+    result.word(text, sty); // warning: may be larger than the terminal width
   } else {
+    if (sty) {
+      result.openSty(sty);
+    }
     result.split(text);
   }
   return result;
@@ -684,9 +693,15 @@ function formatUsage(
   const visited = new Set<string>(exclude ? filter : []);
   const requiredKeys = new Set(required);
   const requiredBy = requires && getRequiredBy(requires);
-  const keys = exclude || !filter ? allKeys : filter.filter((key) => allKeys.includes(key));
+  const keys = exclude || !filter ? allKeys.slice() : filter.filter((key) => allKeys.includes(key));
   const count = result.count;
+  let hasPositional;
   for (const key of keys) {
+    if (!hasPositional && isString(options[key].positional)) {
+      hasPositional = true;
+      keys.push(key);
+      continue; // leave positional marker for last (ignore filter order in this case)
+    }
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
   return result.count === count ? result.clear() : comment ? result.split(comment) : result;
@@ -717,15 +732,14 @@ function formatUsageOption(
   /** @ignore */
   function format(receivedKey?: string, isLast: boolean = false): boolean {
     const count = result.count;
-    const names = getOptionNames(option);
     // if the received key is my own key, then I'm the junction point in a circular dependency:
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
-    formatUsageNames(option, names, result);
+    formatUsageNames(option, result);
     const defSty = option.styles?.param ?? config.styles.value;
     const param = new AnsiString(0, 0, false, defSty); // use an auxiliary string for param
-    formatParam(option, names, param);
-    result.other(param).closeSty(result.defSty);
+    formatParam(option, param);
+    result.other(param).closeSty(result.defSty); // need to reset result style
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -736,7 +750,12 @@ function formatUsageOption(
       // if I'm not always required and I'm the last option in a dependency chain, ignore the
       // received key, so I can be considered optional
       if (!required && (isLast || !receivedKey)) {
-        result.openAtPos('[', count).close(']');
+        const [min, max] = getParamCount(option);
+        // skip enclosing brackets for positional option with optional parameters, because the names
+        // are also optional, so it would not make sense, e.g.: [[-a] [<param>...]]
+        if (!option.positional || min || !max) {
+          result.openAtPos('[', count).close(']');
+        }
       }
     }
     return required;
@@ -777,20 +796,27 @@ function formatUsageOption(
 /**
  * Formats an option's names to be included in the usage text.
  * @param option The option definition
- * @param names The valid option names
  * @param result The resulting string
  */
-function formatUsageNames(option: OpaqueOption, names: ReadonlyArray<string>, result: AnsiString) {
+function formatUsageNames(option: OpaqueOption, result: AnsiString) {
+  const names = getOptionNames(option);
   if (names.length) {
     const count = result.count;
     const enclose = names.length > 1;
-    const flags = {
+    const flags: FormattingFlags = {
       sep: config.connectives.optionAlt,
       open: enclose ? config.connectives.exprOpen : '',
       close: enclose ? config.connectives.exprClose : '',
-      mergeNext: true,
+      mergeNext: true, // keep names compact
     };
-    fmt.a(names.map(getSymbol), result, flags);
+    const { styles } = config;
+    const saved = styles.symbol;
+    try {
+      styles.symbol = option.styles?.names ?? saved; // use configured style, if any
+      fmt.a(names.map(getSymbol), result, flags);
+    } finally {
+      styles.symbol = saved;
+    }
     if (option.positional) {
       result.openAtPos('[', count).close(']');
     }
@@ -800,13 +826,12 @@ function formatUsageNames(option: OpaqueOption, names: ReadonlyArray<string>, re
 /**
  * Formats an option's parameter to be included in the description or the usage text.
  * @param option The option definition
- * @param names The valid option names
  * @param result The resulting string
  */
-function formatParam(option: OpaqueOption, names: ReadonlyArray<string>, result: AnsiString) {
-  const { type, inline, example, separator, positional, paramName } = option;
+function formatParam(option: OpaqueOption, result: AnsiString) {
+  const { type, inline, example, separator, paramName } = option;
   const [min, max] = getParamCount(option);
-  const optional = !min && max && !(positional && !names.length);
+  const optional = !min && max;
   const ellipsis =
     isCommand(type) || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
   if (inline) {
@@ -901,7 +926,7 @@ function formatRequiresExp<T>(
 ) {
   const { connectives } = config;
   const enclose = items.length > 1;
-  const flags = {
+  const flags: FormattingFlags = {
     open: enclose ? connectives.exprOpen : '',
     close: enclose ? connectives.exprClose : '',
   };

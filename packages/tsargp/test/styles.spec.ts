@@ -225,9 +225,10 @@ describe('AnsiString', () => {
     });
 
     it('split text with inline styles when the string has no default style', () => {
-      const str = new AnsiString().split(`${bold}type ${bold} script${bold}`);
+      const sty = style(tf.bold, tf.bold);
+      const str = new AnsiString().split(`${bold}type ${bold}${bold} script${bold}`);
       expect(str.strings).toEqual(['type', 'script']);
-      expect(str.styles).toEqual([bold + 'type', bold + 'script' + bold]);
+      expect(str.styles).toEqual([bold + 'type', sty + 'script' + bold]);
     });
 
     it('split text with inline styles when the string has a default style', () => {

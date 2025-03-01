@@ -1,4 +1,5 @@
 import type { Options, OptionValues } from 'tsargp';
+import { allHelpItems, HelpItem } from 'tsargp';
 
 /**
  * The option definitions for a multi-argument operation.
@@ -126,6 +127,13 @@ const mainOpts = {
     type: 'help',
     names: ['help'],
     synopsis: 'Prints this help message.',
+    sections: [
+      {
+        type: 'groups',
+        title: 'Options:',
+        items: allHelpItems.filter((item) => item !== HelpItem.positional),
+      },
+    ],
   },
   ...addOpts,
   ...subOpts,

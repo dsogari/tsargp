@@ -22,7 +22,7 @@ describe('validate', () => {
         cluster: '=',
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(`Option flag has invalid cluster letter '='.`);
+    expect(validate(options)).rejects.toThrow(`Option flag has invalid name '='.`);
   });
 
   it('throw an error on duplicate cluster letter in the same option', () => {
@@ -32,7 +32,7 @@ describe('validate', () => {
         cluster: 'aba',
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(`Option flag has duplicate cluster letter 'a'.`);
+    expect(validate(options)).rejects.toThrow(`Option flag has duplicate name 'a'.`);
   });
 
   it('throw an error on duplicate cluster letter across different options', () => {
@@ -46,7 +46,7 @@ describe('validate', () => {
         cluster: 'f',
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(`Option flag2 has duplicate cluster letter 'f'.`);
+    expect(validate(options)).rejects.toThrow(`Option flag2 has duplicate name 'f'.`);
   });
 
   it('return a warning on variadic function option with cluster letter', () => {

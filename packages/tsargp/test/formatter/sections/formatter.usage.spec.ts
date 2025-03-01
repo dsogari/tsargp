@@ -86,7 +86,8 @@ describe('rendering a usage section', () => {
       single3: {
         type: 'single',
         names: ['-s3'],
-        positional: true,
+        positional: '--',
+        paramName: 'arg',
       },
       single4: {
         type: 'single',
@@ -97,7 +98,7 @@ describe('rendering a usage section', () => {
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'usage' }];
     expect(format(options, sections).wrap()).toEqual(
-      '[-s1 <param>] -s2 <param> [[-s3] <param>] [-s4=true]\n',
+      '[-s1 <param>] -s2 <param> [-s4=true] [[(-s3|--)] <arg>]\n',
     );
   });
 
@@ -114,7 +115,8 @@ describe('rendering a usage section', () => {
       },
       array3: {
         type: 'array',
-        positional: true,
+        positional: '--',
+        paramName: 'args',
       },
       array4: {
         type: 'array',
@@ -125,7 +127,7 @@ describe('rendering a usage section', () => {
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'usage' }];
     expect(format(options, sections).wrap()).toEqual(
-      '[-a1 [<param>...]] -a2 [<param>...] [<param>...] [-a4[=true]]\n',
+      '[-a1 [<param>...]] -a2 [<param>...] [-a4[=true]] [--] [<args>...]\n',
     );
   });
 
@@ -146,6 +148,7 @@ describe('rendering a usage section', () => {
         type: 'function',
         positional: true,
         paramCount: 2,
+        paramName: 'args',
       },
       function4: {
         type: 'function',
@@ -157,7 +160,7 @@ describe('rendering a usage section', () => {
     } as const satisfies Options;
     const sections: HelpSections = [{ type: 'usage' }];
     expect(format(options, sections).wrap()).toEqual(
-      '[-f1 ...] -f2 <param>... [<param>...] [-f4[=true]]\n',
+      '[-f1 ...] -f2 <param>... [<args>...] [-f4[=true]]\n',
     );
   });
 
@@ -175,20 +178,27 @@ describe('rendering a usage section', () => {
         type: 'flag',
         names: ['-f3'],
       },
+      single: {
+        type: 'single',
+        names: ['-s'],
+        positional: '--',
+      },
     } as const satisfies Options;
     const sections0: HelpSections = [{ type: 'usage', filter: [] }]; // empty filter
     const sections1: HelpSections = [{ type: 'usage', filter: ['flag1'] }];
-    const sections2: HelpSections = [{ type: 'usage', filter: ['flag1'], exclude: true }];
+    const sections2: HelpSections = [{ type: 'usage', filter: ['flag1', 'single'], exclude: true }];
     const sections3: HelpSections = [{ type: 'usage', filter: ['flag1'], required: ['flag1'] }];
     const sections4: HelpSections = [{ type: 'usage', filter: ['flag2', 'flag1'] }];
     const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
-    const filter = ['-f1', '-f2'];
+    const sections6: HelpSections = [{ type: 'usage', filter: ['single', 'flag1'] }];
+    const filter = ['-f1', '-f2', '-s'];
     expect(format(options, sections0, filter).wrap()).toEqual('');
     expect(format(options, sections1, filter).wrap()).toEqual('[-f1]\n');
     expect(format(options, sections2, filter).wrap()).toEqual('[-f2]\n');
     expect(format(options, sections3, filter).wrap()).toEqual('-f1\n');
     expect(format(options, sections4, filter).wrap()).toEqual('[-f2] [-f1]\n');
     expect(format(options, sections5, filter).wrap()).toEqual(''); // usage was skipped
+    expect(format(options, sections6, filter).wrap()).toEqual('[-f1] [[(-s|--)] <param>]\n');
   });
 
   describe('when requirements are specified', () => {
@@ -308,7 +318,7 @@ describe('rendering a usage section', () => {
     });
   });
 
-  it('group options according to an adjacency list, with a filtered option', () => {
+  it('group options according to an adjacency list, with an option filter', () => {
     const options = {
       flag1: {
         type: 'flag',

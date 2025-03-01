@@ -27,7 +27,6 @@ export default tseslint.config(
     ...mdx.flat,
     rules: {
       ...mdx.flat.rules,
-      'jsdoc/require-jsdoc': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },

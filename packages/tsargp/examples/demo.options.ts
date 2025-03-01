@@ -7,6 +7,7 @@ import {
   notOf,
   tf,
   ext8,
+  rgb,
   numberInRange,
   config,
   allHelpItems,
@@ -36,7 +37,7 @@ export default {
         type: 'usage',
         title: 'Usage:',
         indent: 2,
-        filter: ['help', 'version', 'helpCmd'],
+        filter: ['help', 'version', 'helpEnv'],
         comment: `${style(fg.green)}# get help`,
       },
       {
@@ -51,7 +52,7 @@ export default {
         type: 'usage',
         indent: 2,
         breaks: 0,
-        filter: ['help', 'version', 'helpCmd', 'hello'],
+        filter: ['help', 'version', 'helpEnv', 'hello'],
         exclude: true,
         requires: { boolean: 'strChoice' },
       },
@@ -109,7 +110,7 @@ export default {
       return name !== this.names?.[1];
     },
     styles: {
-      names: style(fg.extended, ext8(138)),
+      names: style(fg.extended, rgb(160, 100, 64)),
       descr: style(tf.italic, tf.crossedOut),
     },
   },

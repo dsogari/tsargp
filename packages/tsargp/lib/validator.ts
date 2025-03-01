@@ -15,6 +15,7 @@ import { ErrorItem } from './enums.js';
 import {
   getParamCount,
   getOptionNames,
+  getOptionEnvVars,
   visitRequirements,
   isMessage,
   getNestedOptions,
@@ -144,16 +145,20 @@ async function validateOptions(context: ValidationContext) {
   const [options, flags, , , prefix] = context;
   const names = new Map<string, string>();
   const letters = new Map<string, string>();
+  const envVars = new Map<string, string>();
   let positional = ''; // to check for duplicate positional options
   for (const [key, option] of getEntries(options)) {
-    validateNames(context, names, letters, key, option);
-    await validateOption(context, key, option);
+    const prefixedKey = getSymbol(prefix + key);
+    validateNames(names, getOptionNames(option), prefixedKey, key);
+    validateNames(letters, option.cluster ?? '', prefixedKey, key);
+    validateNames(envVars, getOptionEnvVars(option), prefixedKey, key);
+    await validateOption(context, prefixedKey, key, option);
     if (option.positional !== undefined) {
       if (positional) {
         throw ErrorMessage.create(
           ErrorItem.duplicatePositionalOption,
           {},
-          getSymbol(prefix + key),
+          prefixedKey,
           getSymbol(prefix + positional),
         );
       }
@@ -166,24 +171,19 @@ async function validateOptions(context: ValidationContext) {
 }
 
 /**
- * Registers or validates an option's names.
- * @param context The validation context
- * @param nameToKey The map of option names to keys
- * @param letterToKey The map of cluster letters to key
+ * Registers and validates names.
+ * @param nameToKey The map of names to keys
+ * @param names The list of names
+ * @param prefixedKey The prefixed key
  * @param key The option key
- * @param option The option definition
- * @throws On invalid option name, duplicate name, invalid cluster letter or duplicate letter
+ * @throws On invalid name or duplicate name
  */
 function validateNames(
-  context: ValidationContext,
   nameToKey: Map<string, string>,
-  letterToKey: Map<string, string>,
+  names: string | ReadonlyArray<string>,
+  prefixedKey: symbol,
   key: string,
-  option: OpaqueOption,
 ) {
-  const [, , , , prefix] = context;
-  const prefixedKey = getSymbol(prefix + key);
-  const names = getOptionNames(option);
   for (const name of names) {
     if (name.includes('=')) {
       throw ErrorMessage.create(ErrorItem.invalidOptionName, {}, prefixedKey, name);
@@ -192,15 +192,6 @@ function validateNames(
       throw ErrorMessage.create(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
     }
     nameToKey.set(name, key);
-  }
-  for (const letter of option.cluster ?? '') {
-    if (letter.includes('=')) {
-      throw ErrorMessage.create(ErrorItem.invalidClusterLetter, {}, prefixedKey, letter);
-    }
-    if (letterToKey.has(letter)) {
-      throw ErrorMessage.create(ErrorItem.duplicateClusterLetter, {}, prefixedKey, letter);
-    }
-    letterToKey.set(letter, key);
   }
 }
 
@@ -253,13 +244,18 @@ function detectNamingIssues(context: ValidationContext, nameToKey: Map<string, s
 /**
  * Validates an option's attributes.
  * @param context The validation context
+ * @param prefixedKey The prefixed key
  * @param key The option key
  * @param option The option definition
- * @throws On invalid constraint definition, invalid default/example value or invalid requirements
+ * @throws On invalid constraint or invalid requirements
  */
-async function validateOption(context: ValidationContext, key: string, option: OpaqueOption) {
+async function validateOption(
+  context: ValidationContext,
+  prefixedKey: symbol,
+  key: string,
+  option: OpaqueOption,
+) {
   const [, flags, warning, visited, prefix] = context;
-  const prefixedKey = getSymbol(prefix + key);
   validateConstraints(context, prefixedKey, option);
   const { requires, requiredIf, type, options } = option;
   if (requires) {
@@ -313,21 +309,25 @@ function validateRequirement(
   requiredKey: string,
   requiredValue?: RequiresVal[string],
 ) {
+  /** @ignore */
+  function error(item: ErrorItem): never {
+    throw ErrorMessage.create(item, {}, prefixedKey);
+  }
   const [options, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + requiredKey);
   if (requiredKey === key) {
-    throw ErrorMessage.create(ErrorItem.invalidSelfRequirement, {}, prefixedKey);
+    throw error(ErrorItem.invalidSelfRequirement);
   }
   if (!(requiredKey in options)) {
-    throw ErrorMessage.create(ErrorItem.unknownRequiredOption, {}, prefixedKey);
+    throw error(ErrorItem.unknownRequiredOption);
   }
   const option = options[requiredKey];
   if (isMessage(option.type)) {
-    throw ErrorMessage.create(ErrorItem.invalidRequiredOption, {}, prefixedKey);
+    throw error(ErrorItem.invalidRequiredOption);
   }
   const noValue = {};
   if ((requiredValue ?? noValue) === noValue && (option.required || option.default !== undefined)) {
-    throw ErrorMessage.create(ErrorItem.invalidRequiredValue, {}, prefixedKey);
+    throw error(ErrorItem.invalidRequiredValue);
   }
 }
 
@@ -340,17 +340,16 @@ function validateRequirement(
  */
 function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
   const [, , warning] = context;
-  const { choices } = option;
+  const { choices, paramCount } = option;
   if (choices) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
       if (dup) {
-        throw ErrorMessage.create(ErrorItem.duplicateChoiceValue, {}, key, dup);
+        throw ErrorMessage.create(ErrorItem.duplicateParameterChoice, {}, key, dup);
       }
     }
   }
-  const { paramCount } = option;
   if (isObject(paramCount) && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
   }

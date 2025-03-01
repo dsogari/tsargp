@@ -1,4 +1,5 @@
 import type { Options, OptionValues, OpaqueOptionValues } from 'tsargp';
+import { allHelpItems, HelpItem } from 'tsargp';
 
 /**
  * The option definitions for the hello subcommand.
@@ -27,6 +28,7 @@ const options = {
         type: 'groups',
         title: 'Options:',
         layout: { param: { align: 'merge' } },
+        items: allHelpItems.filter((item) => item !== HelpItem.positional),
       },
     ],
     useFilter: true,

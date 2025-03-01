@@ -256,14 +256,22 @@ describe('format', () => {
       { type: 'usage', title: `section ${style(tf.clear)} title`, noWrap: true },
       { type: 'groups', title: `section ${style(tf.clear)} title`, noWrap: true },
     ];
-    expect(format(options, sections).wrap()).toEqual(
+    expect(format(options, sections).wrap(10, false, true)).toEqual(
       'section ' +
         '\x1b[0m' +
-        ' title\n\nsection ' +
+        ' title' +
+        '\n\n' +
+        'section ' +
         '\x1b[0m' +
-        ' text\n\nsection ' +
+        ' text' +
+        '\n\n' +
+        'section ' +
         '\x1b[0m' +
-        ' title\n\n[-f]\n\nsection ' +
+        ' title' +
+        '\n\n' +
+        '[-f]' +
+        '\n\n' +
+        'section ' +
         '\x1b[0m' +
         ' title\n\n  -f\n',
     );

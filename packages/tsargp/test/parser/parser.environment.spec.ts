@@ -1,17 +1,46 @@
-import { describe, expect, it, jest } from 'bun:test';
+import { afterEach, describe, expect, it, jest, spyOn } from 'bun:test';
 import { type Options } from '../../lib/options';
 import { parse } from '../../lib/parser';
+import * as utils from '../../lib/utils';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('a local file is specified', () => {
+  describe('read data from standard input', () => {
+    const readFileSpy = spyOn(utils, 'readFile');
+
+    afterEach(() => {
+      readFileSpy.mockRestore(); // restore original implementation
+    });
+
+    it('handle a single-valued option', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      readFileSpy.mockImplementation(async () => 'data');
+      expect(parse(options, [])).resolves.toEqual({ single: 'data' });
+      expect(options.single.parse).toHaveBeenCalledWith('data', {
+        // should have been { single: undefined } at the time of call
+        values: { single: 'data' },
+        index: NaN,
+        name: '0', // zero for standard input
+        comp: false,
+      });
+    });
+  });
+
+  describe('read data from a local file', () => {
     it('handle an array-valued option', () => {
       const options = {
         array: {
           type: 'array',
           names: ['-a'],
-          sources: ['ARRAY', new URL(`file://${import.meta.dirname}/../data/test-read-file.txt`)],
+          sources: ['ARRAY', new URL(`file://${import.meta.dir}/../data/test-read-file.txt`)],
           separator: '\n',
           parse: jest.fn((param) => param),
         },
@@ -38,7 +67,7 @@ describe('parse', () => {
     });
   });
 
-  describe('an environment variable is specified', () => {
+  describe('read data from an environment variable', () => {
     it('handle a flag option', () => {
       const options = {
         flag1: {

@@ -51,14 +51,14 @@ const multiOpts = {
     default: [],
     parse: Number,
     positional: true,
-    group: 'Arguments',
+    group: 'Arguments:',
   },
 } as const satisfies Options;
 ```
 
 Since this option accepts [positional] arguments, we do not want to give it a name. However, we set a [preferred name] that will be displayed in error messages, as well as a separate [group] for it to be displayed in the help message. This option is optional and [defaults] to an empty array. We [parse] the parameters as numbers.
 
-Now let's define a similar option for the parameters of a dual-argument operation. It has the same definition as above, with additional constraints: it is [required] and accepts [at most] two values.
+Now let's define a similar option for the parameters of a dual-argument operation. It has the same definition as above, but with additional constraints: it is [required] and accepts [at most] two values.
 
 ```ts
 const binaryOpts = {
@@ -148,11 +148,11 @@ With this in place, we can define each one of the basic operations, as follows:
   </Tabs.Tab>
 </Tabs>
 
-Notice how we use a [nested options] callback to provide the option definitions for each subcommand. This is necessary because JavaScript does not allow us to reference the containing object from one of its members, before its initialization. (The `mainOpts` variable will be defined later, and the above definitions will be embedded in it.)
+Notice how we use a [nested options] _callback_ to provide the definitions for each subcommand. This is necessary because JavaScript does not allow us to reference the containing object from one of its members, before initialization. The `mainOpts` will be defined later and will contain the above definitions, thus causing a recursive dependency.
 
-Inside the [parsing callback], we perform a typecast to access the values parsed for the subcommand. This is necessary because the library does not know the concrete type of our option values when it calls the callback (and the callback type cannot be defined in terms of a generic type parameter), so it must pass an _opaque_ reference to them.
+Inside the [parsing callback], we perform a typecast to access the values parsed for the subcommand. This is necessary because the library does not know the concrete type of our option values when it calls the callback (and the latter cannot be defined in terms of a generic type parameter), so it must pass an _opaque_ reference to them.
 
-From the values received in the callback, we select the one resulting from the next operation (if any), falling back to a default if this was the last operation. We then return the accumulated result of the operations performed so far, except if, in the case of `sub` and `mult`, two arguments are provided before another recursive call (then the result of that call is ignored).
+From the values received in the callback, we select the result from the next operation (if any), falling back to a default if this was the last operation. We then return the accumulated result so far. Except if, in the case of `sub` and `mult`, two arguments are provided before another recursive call, then the result of that call is ignored.
 
 <Callout type="info">
 
@@ -162,7 +162,7 @@ In this case, it is necessary to specify the return type of both callbacks. Othe
 
 ### Main definitions
 
-Finally, we can define our main command-line options:
+Finally, we can define our main command-line options. In the excerpt below, we provide a heading text for the default option [group], and omit the [help item] about positional arguments, since it is not needed:
 
 ```ts
 const mainOpts = {
@@ -170,6 +170,13 @@ const mainOpts = {
     type: 'help',
     names: ['help'],
     synopsis: 'Prints this help message.',
+    sections: [
+      {
+        type: 'groups',
+        title: 'Options:',
+        items: allHelpItems.filter((item) => item !== HelpItem.positional),
+      },
+    ],
   },
   ...addOpts,
   ...subOpts,
@@ -192,7 +199,7 @@ List of commands to try:
 - `calc sub` or `calc div` - should print an error message
 - `calc sub 1` or `calc div 1` - should print `NaN{:ts}`
 - `calc sub 1 2 3` or `calc div 1 2 3` - should print an error message
-- `calc add 1 sub 2 mult 3 div 4 2` - this is the aforementioned example that gives -3
+- `calc add 1 sub 2 mult 3 div 4 2` - this is the aforementioned example that yields -3
 
 {/* options references */}
 
@@ -206,3 +213,7 @@ List of commands to try:
 [parse]: ../library/options#parsing-callback
 [parsing callback]: ../library/options#parsing-callback
 [nested options]: ../library/options#nested-options
+
+{/* formatter references */}
+
+[help item]: ../library/formatter#help-items

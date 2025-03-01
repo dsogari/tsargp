@@ -494,7 +494,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
       case ArgType.afterMarker:
         return [i, prevInfo, arg, comp, prevMarker, true, true];
       case ArgType.parameter:
-        if (prevInfo?.[1].inline) {
+        if (prevInfo?.[1].inline === 'always') {
           if (!completing) {
             // ignore required inline parameters while completing
             throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(prevInfo[2]));

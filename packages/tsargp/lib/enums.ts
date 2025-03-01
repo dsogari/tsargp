@@ -33,7 +33,7 @@ export const enum ErrorItem {
    */
   missingParameter,
   /**
-   * Error raised when the parser fails to find a version file when handling the version option.
+   * Error raised when the parser fails to find a version file when parsing the version option.
    */
   versionFileNotFound,
   /**
@@ -69,7 +69,7 @@ export const enum ErrorItem {
    */
   missingInlineParameter,
   /**
-   * Error raised when an option has an invalid name.
+   * Error raised when an option has an invalid name, cluster letter or environment variable.
    */
   invalidOptionName,
   /**
@@ -90,7 +90,7 @@ export const enum ErrorItem {
    */
   invalidRequiredValue,
   /**
-   * Error raised when there are two identical option names.
+   * Error raised when there are duplicate option names, cluster letters or environment variables.
    */
   duplicateOptionName,
   /**
@@ -98,17 +98,9 @@ export const enum ErrorItem {
    */
   duplicatePositionalOption,
   /**
-   * Error raised produced when a choices constraint has a duplicate value.
+   * Error raised when a choices constraint has a duplicate value.
    */
-  duplicateChoiceValue,
-  /**
-   * Error raised when there are two identical cluster letters.
-   */
-  duplicateClusterLetter,
-  /**
-   * Error raised when an option has an invalid cluster letter.
-   */
-  invalidClusterLetter,
+  duplicateParameterChoice,
   /**
    * Warning produced when an option name is too similar to other names.
    */

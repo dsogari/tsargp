@@ -1,6 +1,6 @@
 {
   "name": "@tsargp/docs",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Documentation for tsargp",
   "homepage": "https://dsogari.github.io/tsargp/docs",
   "license": "MIT",
@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@codemirror/lang-javascript": "^6.2.3",
-    "@next/third-parties": "^15.1.7",
+    "@next/third-parties": "^15.2.0",
     "@svgr/webpack": "^8.1.0",
     "@tsconfig/bun": "^1.0.7",
     "@xterm/addon-fit": "^0.10.0",
@@ -26,13 +26,13 @@
     "codemirror": "^6.0.1",
     "local-web-server": "^5.4.0",
     "lz-string": "^1.5.0",
-    "next": "^15.1.7",
-    "nextra": "^4.2.11",
-    "nextra-theme-docs": "^4.2.11",
+    "next": "^15.2.0",
+    "nextra": "^4.2.13",
+    "nextra-theme-docs": "^4.2.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsargp": "workspace:*",
-    "typedoc": "^0.27.7",
+    "typedoc": "^0.27.9",
     "xterm-readline": "^1.1.2"
   },
   "scripts": {

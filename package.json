@@ -9,18 +9,18 @@
     "packages/docs"
   ],
   "devDependencies": {
-    "@cspell/eslint-plugin": "^8.17.3",
-    "cspell": "^8.17.3",
-    "eslint": "^9.20.1",
-    "eslint-config-next": "^15.1.7",
-    "eslint-plugin-jsdoc": "^48.11.0",
+    "@cspell/eslint-plugin": "^8.17.5",
+    "cspell": "^8.17.5",
+    "eslint": "^9.21.0",
+    "eslint-config-next": "^15.2.0",
+    "eslint-plugin-jsdoc": "^50.6.3",
     "eslint-plugin-mdx": "^3.1.5",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
-    "prettier": "^3.5.1",
-    "publint": "^0.2.12",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.24.0"
+    "prettier": "^3.5.2",
+    "publint": "^0.3.7",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.25.0"
   },
   "scripts": {
     "prepare": "husky"
