@@ -25,7 +25,7 @@ import { FileTree, Steps, Tabs } from 'nextra/components';
 
 Why use this library when there are already many good argument parsers on npm?
 
-One of the most distinctive features is the _declarative_ API. Very few libraries that we know of support this (at the time of writing, it's worth mentioning [meow], [yargs] and [oclif]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
+One of the most distinctive features is a _declarative_ API. Few libraries that we know of support this (at the time, it's worth mentioning [meow], [yargs], [oclif] and [command-line-usage]). Most others have either an imperative or a fluent interface, whereas **tsargp** offers a way to declare all of your command-line options in a single `object`.
 
 Moreover, by relying on TypeScript, it ensures that values resulting from argument parsing have _accurate_ data types, i.e., they reflect the attributes specified in the options' definitions. In particular, an option's value will be a union literal if you declare a parameter mapping in its definition. Even JSDoc comments are preserved in [IntelliSense]!
 
@@ -172,4 +172,5 @@ You can configure shell completion to use the main script as a source of complet
 [meow]: https://www.npmjs.com/package/meow
 [yargs]: https://yargs.js.org/
 [oclif]: https://oclif.io/
+[command-line-usage]: https://www.npmjs.com/package/command-line-usage
 [IntelliSense]: https://code.visualstudio.com/docs/editor/intellisense

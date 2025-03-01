@@ -1,35 +1,80 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSections } from '../../../lib/options';
 import { format } from '../../../lib/formatter';
+import { style } from '../../../lib/styles';
+import { tf } from '../../../lib/enums';
 
 describe('rendering a text section', () => {
-  it('skip a section with no content', () => {
+  it('skip a section with no heading and no content', () => {
     const sections: HelpSections = [{ type: 'text' }];
     expect(format({}, sections).wrap()).toEqual('');
   });
 
-  it('render the section content', () => {
-    const sections: HelpSections = [{ type: 'text', text: 'text' }];
-    expect(format({}, sections).wrap()).toEqual('text\n');
+  describe('rendering the section heading', () => {
+    it('avoid braking the heading with text', () => {
+      const sections: HelpSections = [{ type: 'text', heading: { text: 'text' } }];
+      expect(format({}, sections).wrap()).toEqual('text');
+    });
+
+    it('break the heading with no text', () => {
+      const sections: HelpSections = [{ type: 'text', heading: { breaks: 1 } }];
+      expect(format({}, sections).wrap()).toEqual('\n');
+    });
+
+    it('break the heading with text', () => {
+      const sections: HelpSections = [{ type: 'text', heading: { text: 'text', breaks: 1 } }];
+      expect(format({}, sections).wrap()).toEqual('\ntext');
+    });
+
+    it('indent the heading with text', () => {
+      const sections: HelpSections = [{ type: 'text', heading: { text: 'text', indent: 2 } }];
+      expect(format({}, sections).wrap()).toEqual('  text');
+    });
+
+    it('right-align the heading with text', () => {
+      const sections: HelpSections = [{ type: 'text', heading: { text: 'text', align: 'right' } }];
+      expect(format({}, sections).wrap(10, false, true)).toEqual('      text');
+    });
+
+    it('avoid splitting the heading with text', () => {
+      const sections: HelpSections = [
+        { type: 'text', heading: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
+      ];
+      expect(format({}, sections).wrap()).toEqual('text  spaces');
+    });
   });
 
-  it('indent the section content', () => {
-    const sections: HelpSections = [{ type: 'text', text: 'text', indent: 2 }];
-    expect(format({}, sections).wrap()).toEqual('  text\n');
-  });
+  describe('rendering the section content', () => {
+    it('avoid braking the content with text', () => {
+      const sections: HelpSections = [{ type: 'text', content: { text: 'text' } }];
+      expect(format({}, sections).wrap()).toEqual('text');
+    });
 
-  it('break the section content', () => {
-    const sections: HelpSections = [{ type: 'text', text: 'text', breaks: 1 }];
-    expect(format({}, sections).wrap()).toEqual('\ntext\n');
-  });
+    it('break the content with no text', () => {
+      const sections: HelpSections = [{ type: 'text', content: { breaks: 1 } }];
+      expect(format({}, sections).wrap()).toEqual('\n');
+    });
 
-  it('render the section heading, but avoid indenting it', () => {
-    const sections: HelpSections = [{ type: 'text', title: 'title', indent: 2 }];
-    expect(format({}, sections).wrap()).toEqual('title\n');
-  });
+    it('break the content with text', () => {
+      const sections: HelpSections = [{ type: 'text', content: { text: 'text', breaks: 1 } }];
+      expect(format({}, sections).wrap()).toEqual('\ntext');
+    });
 
-  it('break the section heading', () => {
-    const sections: HelpSections = [{ type: 'text', title: 'title', breaks: 1 }];
-    expect(format({}, sections).wrap()).toEqual('\ntitle\n');
+    it('indent the content with text', () => {
+      const sections: HelpSections = [{ type: 'text', content: { text: 'text', indent: 2 } }];
+      expect(format({}, sections).wrap()).toEqual('  text');
+    });
+
+    it('right-align the content with text', () => {
+      const sections: HelpSections = [{ type: 'text', content: { text: 'text', align: 'right' } }];
+      expect(format({}, sections).wrap(10, false, true)).toEqual('      text');
+    });
+
+    it('avoid splitting the content with text', () => {
+      const sections: HelpSections = [
+        { type: 'text', content: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
+      ];
+      expect(format({}, sections).wrap()).toEqual('text  spaces');
+    });
   });
 });

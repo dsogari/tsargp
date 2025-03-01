@@ -12,12 +12,13 @@ import type {
   Requires,
   RequirementCallback,
   RequiresEntry,
+  HelpTextArea,
 } from './options.js';
-import type { FormattingFlags, Style } from './styles.js';
+import type { FormattingFlags } from './styles.js';
 
 import { config } from './config.js';
-import { HelpItem, tf } from './enums.js';
-import { fmt, style, AnsiString, AnsiMessage } from './styles.js';
+import { HelpItem } from './enums.js';
+import { fmt, AnsiString, AnsiMessage } from './styles.js';
 import {
   getParamCount,
   getOptionNames,
@@ -34,6 +35,7 @@ import {
   getRequiredBy,
   isString,
   mergeValues,
+  regex,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -333,7 +335,7 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
 }
 
 /**
- * Build the help entries for a groups section.
+ * Builds the help entries for the selected option groups.
  * @param options The option definitions
  * @param keys The filtered option keys
  * @param buildFn The building function
@@ -341,7 +343,7 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
  * @param exclude True if the filter should exclude
  * @returns The option groups
  */
-function buildGroups(
+function buildEntries(
   options: OpaqueOptions,
   keys: ReadonlyArray<string>,
   buildFn: (option: OpaqueOption) => HelpEntry | undefined,
@@ -367,7 +369,7 @@ function buildGroups(
 }
 
 /**
- * Build the help entries for a groups section.
+ * Formats the help entries for a groups section.
  * @param options The option definitions
  * @param layout The help columns layout
  * @param keys The filtered option keys
@@ -377,7 +379,7 @@ function buildGroups(
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The option groups
  */
-function buildEntries(
+function formatGroups(
   options: OpaqueOptions,
   layout: HelpColumnsLayout,
   keys: ReadonlyArray<string>,
@@ -427,7 +429,7 @@ function buildEntries(
   let namesWidth = 0; // for non-slotted alignment
   let paramWidth = 0; // for non-slotted alignment
   let mergedWidth = 0; // names + param
-  const groups = buildGroups(options, keys, build, groupFilter, exclude);
+  const groups = buildEntries(options, keys, build, groupFilter, exclude);
   adjustEntries(layout, groups, slotWidths, namesWidth, paramWidth, mergedWidth);
   return groups;
 }
@@ -560,7 +562,7 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiStri
  * @param layout The help columns layout
  * @param option The option definition
  * @param items The help items
- * @returns The formatted string
+ * @returns The ANSI string
  */
 function formatDescription(
   options: OpaqueOptions,
@@ -577,7 +579,7 @@ function formatDescription(
       helpFunctions[item](option, config.helpPhrases[item], options, result);
     }
   }
-  return (result.count === count ? result.clear() : result).break();
+  return result.count === count ? result.clear() : result;
 }
 
 /**
@@ -596,79 +598,59 @@ function formatHelpSection(
   progName: string,
   result: AnsiMessage,
 ) {
-  const { type, title, breaks, noWrap, style: sty } = section;
-  const headingStyle = sty ?? style(tf.bold);
-  let curBreaks = breaks ?? (result.length ? 1 : 0); // to account for the first section
+  const { type, heading, content } = section;
   if (type === 'groups') {
     const { layout, filter, exclude, items, useEnv } = section;
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
-    const groups = buildEntries(options, mergedLayout, keys, items, filter, exclude, useEnv);
+    const groups = formatGroups(options, mergedLayout, keys, items, filter, exclude, useEnv);
     for (const [group, entries] of getEntries(groups)) {
-      const title2 = group || title;
-      const heading = title2
-        ? formatText(title2, 0, curBreaks, noWrap, headingStyle).break(2)
-        : new AnsiString(0, curBreaks);
-      result.push(heading);
-      for (const [names, param, descr] of entries) {
-        result.push(...names, param, descr);
+      // there is always at least one entry per group
+      if (heading) {
+        formatTextArea({ ...heading, text: group || heading.text }, result);
       }
-      curBreaks = 1; // to account for the last option description
+      if (content) {
+        formatTextArea({ ...content, text: group ? '' : content.text }, result);
+      }
+      for (const [names, param, descr] of entries) {
+        result.push(...names, param, descr.break()); // include trailing line feed
+      }
     }
   } else {
-    if (title) {
-      result.push(formatText(title, 0, curBreaks, noWrap, headingStyle).break());
-      curBreaks = 1; // to account for the space between title and content
+    if (heading) {
+      formatTextArea(heading, result);
     }
     if (type === 'usage') {
-      const count = result.length;
-      let { indent } = section;
+      const defSty = config.styles.text;
+      const prev: Array<AnsiString> = [];
+      let indent = content?.indent ?? 0;
+      let breaks = content?.breaks ?? 0;
       if (progName) {
-        result.push(formatText(progName, indent, curBreaks, true));
+        const str = new AnsiString(indent, breaks, false, defSty);
+        prev.push(str.word(progName, content?.style));
         indent = max(0, indent ?? 0) + progName.length + 1;
-        curBreaks = 0; // to avoid breaking between program name and usage text
+        breaks = 0;
       }
-      const str = formatUsage(keys, options, section, indent, curBreaks);
+      const str = new AnsiString(indent, breaks, content?.align === 'right', defSty);
+      formatUsage(keys, options, section, str);
       if (str.count) {
-        result.push(str.break());
-      } else {
-        result.length = count; // skip usage if there are no options
+        result.push(...prev, str.break()); // include trailing line feed
       }
-    } else {
-      const { text, indent } = section;
-      if (text) {
-        result.push(formatText(text, indent, curBreaks, noWrap).break());
-      }
+    } else if (content) {
+      formatTextArea(content, result);
     }
   }
 }
 
 /**
- * Formats a custom text to be included in a help section.
- * @param text The heading title or section text
- * @param indent The indentation level (negative values are replaced by zero)
- * @param breaks The number of line breaks (non-positive values are ignored)
- * @param noWrap True if the provided text should not be split
- * @param sty The style to apply to the text
- * @returns The ANSI string
+ * Formats a help text area to be included in a help message.
+ * @param area The text area
+ * @param result The resulting message
  */
-function formatText(
-  text: string,
-  indent?: number,
-  breaks?: number,
-  noWrap?: boolean,
-  sty?: Style,
-): AnsiString {
-  const defSty = config.styles.text;
-  const result = new AnsiString(indent, breaks, false, defSty);
-  if (noWrap) {
-    result.word(text, sty); // warning: may be larger than the terminal width
-  } else {
-    if (sty) {
-      result.openSty(sty);
-    }
-    result.split(text);
-  }
-  return result;
+function formatTextArea(area: HelpTextArea, result: AnsiMessage) {
+  const { text, style, align, indent, breaks, noSplit } = area;
+  const defSty = style ?? config.styles.text;
+  const str = new AnsiString(indent, breaks, align === 'right', defSty);
+  result.push(!text ? str : noSplit ? str.add(text.replace(regex.sgr, ''), text) : str.split(text));
 }
 
 /**
@@ -677,18 +659,14 @@ function formatText(
  * @param allKeys The filtered option keys
  * @param options The option definitions
  * @param section The help section
- * @param indent The indentation level (negative values are replaced by zero)
- * @param breaks The number of line breaks (non-positive values are ignored)
- * @returns The ANSI string
+ * @param result The resulting string
  */
 function formatUsage(
   allKeys: ReadonlyArray<string>,
   options: OpaqueOptions,
   section: HelpUsageSection,
-  indent?: number,
-  breaks?: number,
-): AnsiString {
-  const result = new AnsiString(indent, breaks, false, config.styles.text);
+  result: AnsiString,
+) {
   const { filter, exclude, required, requires, comment } = section;
   const visited = new Set<string>(exclude ? filter : []);
   const requiredKeys = new Set(required);
@@ -704,7 +682,11 @@ function formatUsage(
     }
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
-  return result.count === count ? result.clear() : comment ? result.split(comment) : result;
+  if (result.count === count) {
+    result.clear();
+  } else if (comment) {
+    result.split(comment);
+  }
 }
 
 /**

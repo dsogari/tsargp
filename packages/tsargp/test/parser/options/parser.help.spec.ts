@@ -31,28 +31,6 @@ describe('parse', () => {
       });
     });
 
-    it('throw a help message with usage and custom indentation', () => {
-      const options = {
-        help: {
-          type: 'help',
-          names: ['-h'],
-          group: 'group  heading',
-          sections: [
-            { type: 'usage', title: 'usage  heading' },
-            {
-              type: 'groups',
-              noWrap: true,
-              layout: { names: { indent: 0 } },
-            },
-          ],
-        },
-      } as const satisfies Options;
-      expect(parse(options, [])).resolves.not.toHaveProperty('help');
-      expect(parse(options, ['-h'], { progName: 'prog' })).rejects.toThrow(
-        `usage heading\n\nprog [-h]\n\ngroup  heading\n\n-h\n`,
-      );
-    });
-
     it('throw a help message with option filter', () => {
       const options = {
         flag1: {

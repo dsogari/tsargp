@@ -18,15 +18,15 @@ Get started with:
 ```ansi
 [0;1mArgument parser for TypeScript.[0m
 
-  [0;35m-h[0m, [0;35m--help[0m                      [0mA help option. Prints this help message.[0m Uses the next argument as
+        [0;35m-h[0m, [0;35m--help[0m                [0mA help option. Prints this help message.[0m Uses the next argument as
                                   the name of a subcommand.[0m Uses the remaining arguments as option
                                   filter.[0m
-  [0;35m--env[0m                           [0mA help option. Prints the available environment variables.[0m Uses
+             [0;35m--env[0m                [0mA help option. Prints the available environment variables.[0m Uses
                                   the remaining arguments as option filter.[0m
-  [0;35m-v[0m, [0;35m--version[0m                   [0mA version option. Prints the package version.[0m
-  [0;38;2;160;100;64m-f[0m, [0;38;2;160;100;64m--no-flag[0m                   [3;9mA flag option.[3;9m Deprecated for some reason.[3;9m
-  [0;35mhello[0m             [90m...           [0mA subcommand. Logs the arguments passed after it.[0m
-  [0;35m-b[0m, [0;35m--boolean[0m     [90m<param>       [0mA boolean option with:
+     [0;35m-v[0m, [0;35m--version[0m                [0mA version option. Prints the package version.[0m
+     [0;38;2;160;100;64m-f[0m, [0;38;2;160;100;64m--no-flag[0m                [3;9mA flag option.[3;9m Deprecated for some reason.[3;9m
+             [0;35mhello[0m  [90m...           [0mA subcommand. Logs the arguments passed after it.[0m
+     [0;35m-b[0m, [0;35m--boolean[0m  [90m<param>       [0mA boolean option with:
                                   * a paragraph
                                   - [4;38;5;223minline styles[39;24m
                                   1. and a list
@@ -36,23 +36,23 @@ Get started with:
 
 [0;1mString options:[0m
 
-  [0;35m-sr[0m, [0;35m--strRegex[0m   [90m<my str>      [0mA string option.[0m Can be clustered with [32m's'[0m.[0m Values must match the
+   [0;35m-sr[0m, [0;35m--strRegex[0m  [90m<my str>      [0mA string option.[0m Can be clustered with [32m's'[0m.[0m Values must match the
                                   regex [31m/^\d+$/[0m.[0m Defaults to [32m'123456789'[0m.[0m
   [0;35m-sc[0m, [0;35m--strChoice[0m  [90;32m'one'[90m         [0mA string option.[0m Disallows inline parameters.[0m Values must be one
                                   of {[32m'one'[0m, [32m'two'[0m}.[0m
-  [0;35m-sa[0m, [0;35m--strArray[0m   [90m[<param>...]  [0mA string array option.[0m Accepts multiple parameters.[0m Values can be
+   [0;35m-sa[0m, [0;35m--strArray[0m  [90m[<param>...]  [0mA string array option.[0m Accepts multiple parameters.[0m Values can be
                                   delimited with [32m','[0m.[0m Defaults to [[32m'one'[0m].[0m
-  [0;35m--strArrayLimit[0m   [90m[[32m'one'[90m...]    [0mA string array option.[0m Accepts multiple parameters.[0m Accepts
+   [0;35m--strArrayLimit[0m  [90m[[32m'one'[90m...]    [0mA string array option.[0m Accepts multiple parameters.[0m Accepts
                                   positional arguments that may be preceded by [35m--[0m.[0m Element count is
                                   limited to [33m3[0m.[0m
 
 [0;1mNumber options:[0m
 
-  [0;35m-nr[0m, [0;35m--numRange[0m   [90m<my num>      [0mA number option. The minimum accepted value is [33m-2[0m.[0m Can be
+   [0;35m-nr[0m, [0;35m--numRange[0m  [90m<my num>      [0mA number option. The minimum accepted value is [33m-2[0m.[0m Can be
                                   clustered with [32m'n'[0m.[0m Defaults to [33m-1.23[0m.[0m
   [0;35m-nc[0m, [0;35m--numChoice[0m  [90m=[33m1[90m            [0mA number option.[0m Requires inline parameters.[0m Values must be one of
                                   {[32m'1'[0m, [32m'2'[0m}.[0m
-  [0;35m-na[0m, [0;35m--numArray[0m   [90m[<param>...]  [0mA number array option.[0m Accepts multiple parameters.[0m Defaults to
+   [0;35m-na[0m, [0;35m--numArray[0m  [90m[<param>...]  [0mA number array option.[0m Accepts multiple parameters.[0m Defaults to
                                   [[33m1[0m, [33m2[0m].[0m
   [0;35m--numArrayUnique[0m  [90m[[32m'1,2'[90m...]    [0mA number array option.[0m Accepts multiple parameters.[0m Values can be
                                   delimited with [32m','[0m.[0m Can be specified multiple times.[0m Duplicate

@@ -323,16 +323,10 @@ describe('AnsiString', () => {
       });
 
       describe('the current column is not zero', () => {
-        it('shorten the current line by removing previous strings', () => {
+        it('avoid shortening the current line by removing previous strings', () => {
           const result = ['  '];
           new AnsiString().split('abc def').wrap(result, 2, 0, false, true);
-          expect(result).toEqual(['abc', ' def']);
-        });
-
-        it('shorten the current line by resizing previous strings', () => {
-          const result = ['   '];
-          new AnsiString().split('abc def').wrap(result, 2, 0, false, true);
-          expect(result).toEqual([' ', 'abc', ' def']);
+          expect(result).toEqual(['  ', ' abc', ' def']);
         });
 
         it('avoid adjusting the current line if the string is empty', () => {
@@ -348,18 +342,16 @@ describe('AnsiString', () => {
         });
 
         describe('emitting styles', () => {
-          const moveBack2 = seq(cs.cub, 2);
-
-          it('adjust the current line with a move sequence', () => {
+          it('adjust the current line with a single space even if spaces are not required', () => {
             const result: Array<string> = [];
             new AnsiString().split('abc def').wrap(result, 2, 0, true, false);
-            expect(result).toEqual(['' + moveBack2, 'abc', ' def']);
+            expect(result).toEqual([' abc', ' def']);
           });
 
-          it('not adjust the current line when spaces are required', () => {
+          it('adjust the current line with a single space when spaces are required', () => {
             const result: Array<string> = [];
             new AnsiString().split('abc def').wrap(result, 2, 0, true, true);
-            expect(result).toEqual(['abc', ' def']);
+            expect(result).toEqual([' abc', ' def']);
           });
         });
       });
@@ -389,10 +381,18 @@ describe('AnsiString', () => {
           expect(result).toEqual(['\n']);
         });
 
-        it('avoid adjusting the current line if the current column is the starting column', () => {
-          const result = ['  '];
-          new AnsiString(2).split('abc def').wrap(result, 2, 0, false, true);
-          expect(result).toEqual(['  ', 'abc', ' def']);
+        describe('the current column is not zero', () => {
+          it('avoid shortening the current line by resizing previous strings', () => {
+            const result = ['   '];
+            new AnsiString(2).split('abc def').wrap(result, 3, 0, false, true);
+            expect(result).toEqual(['   ', ' abc', ' def']);
+          });
+
+          it('avoid adjusting the current line if the current column is the starting column', () => {
+            const result = ['  '];
+            new AnsiString(2).split('abc def').wrap(result, 2, 0, false, true);
+            expect(result).toEqual(['  ', 'abc', ' def']);
+          });
         });
 
         describe('emitting styles', () => {

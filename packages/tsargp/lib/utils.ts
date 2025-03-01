@@ -478,6 +478,16 @@ export function max(a: number, b: number): number {
 }
 
 /**
+ * Gets the minimum of two numbers.
+ * @param a The first operand
+ * @param b The second operand
+ * @returns The minimum of the two
+ */
+export function min(a: number, b: number): number {
+  return a < b ? a : b;
+}
+
+/**
  * Gets the value of an environment variable.
  * @param name The variable name
  * @returns The variable value, if it exists; else undefined

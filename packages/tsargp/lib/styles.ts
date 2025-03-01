@@ -16,6 +16,7 @@ import {
   regex,
   selectAlternative,
   streamWidth,
+  min,
 } from './utils.js';
 
 export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };
@@ -619,13 +620,7 @@ export class AnsiString {
   ): number {
     /** @ignore */
     function move(from: number, to: number): string {
-      return to > from
-        ? emitSpaces
-          ? ' '.repeat(to - from)
-          : '' + sequence(cs.cuf, to - from)
-        : emitSpaces
-          ? ''
-          : '' + sequence(cs.cub, from - to);
+      return emitSpaces ? ' '.repeat(to - from) : '' + sequence(cs.cuf, to - from);
     }
     /** @ignore */
     function align() {
@@ -640,43 +635,27 @@ export class AnsiString {
       column = col;
       return result.push(str);
     }
-    const count = this.count;
-    if (!count) {
+    if (!this.count) {
       return column;
     }
-    column = max(0, column);
-    width = max(0, width);
-    let start = max(0, this.indent);
-
+    column = max(0, column); // sanitize
+    width = max(0, width); // sanitize
+    let start = max(0, min(this.indent, width || Infinity)); // sanitize
     const [strings, styledStrings, , , , maxLength] = this.context;
     const needToAlign = width && this.righty;
-    const largestFits = !width || width >= start + maxLength;
-    if (!largestFits) {
+
+    if (width && width < start + maxLength) {
       start = 0; // wrap to the first column instead
-    }
-    if (column !== start && strings[0]) {
-      const pad = largestFits ? move(column, start) : '\n';
-      if (pad) {
-        result.push(pad);
-      } else {
-        // adjust backwards: shorten the current line
-        let length = result.length;
-        for (; length && column > start; --length) {
-          const last = result[length - 1];
-          if (last.length > column - start) {
-            result[length - 1] = last.slice(0, start - column); // cut the last string
-            break;
-          }
-          column -= last.length;
-        }
-        result.length = length;
+      if (column && strings[0]) {
+        push('\n', 0); // break the first line
       }
-      column = start;
+    } else if (column < start && strings[0]) {
+      push(move(column, start), start); // pad until start
     }
 
     const indent = start ? move(0, start) : '';
     let j = result.length; // save index for right-alignment
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < this.count; i++) {
       let str = strings[i];
       const len = str.length;
       const styledStr = styledStrings[i];
@@ -693,7 +672,7 @@ export class AnsiString {
       }
       if (column === start) {
         push(str, column + len);
-      } else if (!width || column + 1 + len <= width) {
+      } else if (!width || column + len < width) {
         push(' ' + str, column + 1 + len);
       } else {
         align();

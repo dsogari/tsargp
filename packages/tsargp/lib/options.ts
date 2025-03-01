@@ -110,7 +110,7 @@ export type WithColumnLayout<A extends string = Alignment> = {
    */
   readonly indent: number;
   /**
-   * The number of line breaks to insert before each entry in this column. (Defaults to 0)
+   * The number of leading line feeds for this column. (Defaults to 0)
    */
   readonly breaks: number;
   /**
@@ -149,6 +149,36 @@ export type HelpColumnsLayout = {
 };
 
 /**
+ * Defines attributes for a help text area.
+ */
+export type HelpTextArea = {
+  /**
+   * The area text. May contain inline styles.
+   */
+  readonly text?: string;
+  /**
+   * The style of text. (Defaults to none)
+   */
+  readonly style?: Style;
+  /**
+   * The text alignment. (Defaults to 'left')
+   */
+  readonly align?: Alignment;
+  /**
+   * The indentation level. (Defaults to 0)
+   */
+  readonly indent?: number;
+  /**
+   * The number of leading line feeds. (Defaults to 0)
+   */
+  readonly breaks?: number;
+  /**
+   * True to disable text splitting. (Defaults to false)
+   */
+  readonly noSplit?: boolean;
+};
+
+/**
  * Defines attributes common to all help sections.
  */
 export type WithSectionKind<T extends string> = {
@@ -157,42 +187,13 @@ export type WithSectionKind<T extends string> = {
    */
   readonly type: T;
   /**
-   * The section heading or default group heading. May contain inline styles.
+   * The section heading.
    */
-  readonly title?: string;
+  readonly heading?: HelpTextArea;
   /**
-   * The style of the section heading or option group headings. (Defaults to tf.bold)
+   * The section content.
    */
-  readonly style?: Style;
-  /**
-   * The number of line breaks to insert before the section.
-   * (Defaults to 0 for the first section, 1 for others)
-   */
-  readonly breaks?: number;
-  /**
-   * True to disable wrapping of the provided text or headings.
-   */
-  readonly noWrap?: true;
-};
-
-/**
- * Defines attributes for a help section with text content.
- */
-export type WithSectionText = {
-  /**
-   * The section content. May contain inline styles.
-   */
-  readonly text?: string;
-};
-
-/**
- * Defines attributes for a help section with indentation.
- */
-export type WithSectionIndent = {
-  /**
-   * The indentation level of the section content. (Defaults to 0)
-   */
-  readonly indent?: number;
+  readonly content?: HelpTextArea;
 };
 
 /**
@@ -248,15 +249,12 @@ export type WithSectionGroups = {
 /**
  * A help text section.
  */
-export type HelpTextSection = WithSectionKind<'text'> & WithSectionText & WithSectionIndent;
+export type HelpTextSection = WithSectionKind<'text'>;
 
 /**
  * A help usage section.
  */
-export type HelpUsageSection = WithSectionKind<'usage'> &
-  WithSectionUsage &
-  WithSectionIndent &
-  WithSectionFilter;
+export type HelpUsageSection = WithSectionKind<'usage'> & WithSectionFilter & WithSectionUsage;
 
 /**
  * A help groups section.
