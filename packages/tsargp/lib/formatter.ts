@@ -12,13 +12,12 @@ import type {
   Requires,
   RequirementCallback,
   RequiresEntry,
-  HelpTextArea,
+  HelpTextBlock,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
 
 import { config } from './config.js';
 import { HelpItem } from './enums.js';
-import { fmt, AnsiString, AnsiMessage } from './styles.js';
 import {
   getParamCount,
   getOptionNames,
@@ -26,6 +25,7 @@ import {
   visitRequirements,
   isCommand,
 } from './options.js';
+import { fmt, AnsiString, AnsiMessage } from './styles.js';
 import {
   getSymbol,
   isArray,
@@ -404,12 +404,13 @@ function formatGroups(
       const nameLen = str.totalLen;
       if (nameLen) {
         if (prev) {
-          prev.close(optionSep);
+          prev.close(optionSep).popSty(); // pop the base text style
           prev.indent += slotInc; // length in non-slotted alignment
           namesLen += slotInc; // length in non-slotted alignment
         }
         prev = str;
       }
+      prev?.popSty(); // pop the base text style of the last name
       const inc = i < names.length - 1 ? slotInc : 0; // include sep in slot width
       slotWidths[i] = max(slotWidths[i] ?? 0, nameLen + inc); // longest across all entries
       str.indent = nameLen; // TODO: save the length, since we will need it in `adjustEntries`
@@ -523,14 +524,16 @@ function formatNames(
   if (hidden || !names?.length) {
     return [];
   }
-  const defSty = config.styles.text;
   const sty = option.styles?.names ?? config.styles.symbol;
   const result: Array<AnsiString> = [];
   let str: AnsiString | undefined;
   names.forEach((name) => {
     if (name) {
-      str = new AnsiString(0, str ? 0 : breaks, false, defSty); // break only on the first name
-      result.push(str.word(name, sty));
+      str = new AnsiString()
+        .break(str ? 0 : breaks) // break only on first name
+        .pushSty(config.styles.base) // base style will be popped later
+        .word(name, sty);
+      result.push(str);
     } else {
       result.push(new AnsiString());
     }
@@ -546,13 +549,11 @@ function formatNames(
  */
 function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
-  const defSty = option.styles?.param ?? config.styles.value;
-  const result = new AnsiString(0, breaks, false, defSty);
-  const count = result.count;
+  const result = new AnsiString().break(breaks).pushSty(config.styles.base);
   if (!hidden) {
     formatParam(option, result);
   }
-  return result.count === count ? result.clear() : result;
+  return result.maxLength ? result.popSty() : result.clear();
 }
 
 /**
@@ -571,15 +572,16 @@ function formatDescription(
   items: ReadonlyArray<HelpItem> = allHelpItems,
 ): AnsiString {
   const { hidden, breaks, align } = layout.descr;
-  const defSty = option.styles?.descr ?? config.styles.text;
-  const result = new AnsiString(0, breaks, align === 'right', defSty);
-  const count = result.count;
+  const result = new AnsiString(0, align === 'right')
+    .break(breaks)
+    .pushSty(config.styles.base)
+    .pushSty(option.styles?.descr);
   if (!hidden) {
     for (const item of items) {
       helpFunctions[item](option, config.helpPhrases[item], options, result);
     }
   }
-  return result.count === count ? result.clear() : result;
+  return result.maxLength ? result.popSty().popSty() : result.clear();
 }
 
 /**
@@ -600,16 +602,17 @@ function formatHelpSection(
 ) {
   const { type, heading, content } = section;
   if (type === 'groups') {
-    const { layout, filter, exclude, items, useEnv } = section;
+    const { layout, filter, exclude, items, useEnv, noBreakFirst } = section;
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
     const groups = formatGroups(options, mergedLayout, keys, items, filter, exclude, useEnv);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
-        formatTextArea({ ...heading, text: group || heading.text }, result);
+        const breaks = noBreakFirst && !result.length ? 0 : heading.breaks;
+        formatTextBlock({ ...heading, text: group || heading.text, breaks }, result);
       }
       if (content) {
-        formatTextArea({ ...content, text: group ? '' : content.text }, result);
+        formatTextBlock({ ...content, text: group ? '' : content.text }, result);
       }
       for (const [names, param, descr] of entries) {
         result.push(...names, param, descr.break()); // include trailing line feed
@@ -617,40 +620,52 @@ function formatHelpSection(
     }
   } else {
     if (heading) {
-      formatTextArea(heading, result);
+      formatTextBlock(heading, result);
     }
     if (type === 'usage') {
-      const defSty = config.styles.text;
+      const baseSty = config.styles.base;
       const prev: Array<AnsiString> = [];
       let indent = content?.indent ?? 0;
       let breaks = content?.breaks ?? 0;
       if (progName) {
-        const str = new AnsiString(indent, breaks, false, defSty);
-        prev.push(str.word(progName, content?.style));
+        const str = new AnsiString(indent)
+          .break(breaks)
+          .pushSty(baseSty)
+          .word(progName, content?.style) // use this style only for program name
+          .popSty();
+        prev.push(str);
         indent = max(0, indent ?? 0) + progName.length + 1;
         breaks = 0;
       }
-      const str = new AnsiString(indent, breaks, content?.align === 'right', defSty);
+      const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
       formatUsage(keys, options, section, str);
-      if (str.count) {
-        result.push(...prev, str.break()); // include trailing line feed
+      if (str.maxLength) {
+        result.push(...prev, str.popSty().break()); // include trailing line feed
       }
     } else if (content) {
-      formatTextArea(content, result);
+      formatTextBlock(content, result);
     }
   }
 }
 
 /**
- * Formats a help text area to be included in a help message.
- * @param area The text area
+ * Formats a help text block to be included in a help message.
+ * @param block The text block
  * @param result The resulting message
  */
-function formatTextArea(area: HelpTextArea, result: AnsiMessage) {
-  const { text, style, align, indent, breaks, noSplit } = area;
-  const defSty = style ?? config.styles.text;
-  const str = new AnsiString(indent, breaks, align === 'right', defSty);
-  result.push(!text ? str : noSplit ? str.add(text.replace(regex.sgr, ''), text) : str.split(text));
+function formatTextBlock(block: HelpTextBlock, result: AnsiMessage) {
+  const { text, style, align, indent, breaks, noSplit } = block;
+  const str = new AnsiString(indent, align === 'right').break(breaks ?? 0);
+  if (text) {
+    str.pushSty(config.styles.base).pushSty(style);
+    if (noSplit) {
+      str.add(text.replace(regex.sgr, ''), text);
+    } else {
+      str.split(text);
+    }
+    str.popSty().popSty();
+  }
+  result.push(str);
 }
 
 /**
@@ -672,7 +687,6 @@ function formatUsage(
   const requiredKeys = new Set(required);
   const requiredBy = requires && getRequiredBy(requires);
   const keys = exclude || !filter ? allKeys.slice() : filter.filter((key) => allKeys.includes(key));
-  const count = result.count;
   let hasPositional;
   for (const key of keys) {
     if (!hasPositional && isString(options[key].positional)) {
@@ -682,7 +696,7 @@ function formatUsage(
     }
     formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
-  if (result.count === count) {
+  if (!result.maxLength) {
     result.clear();
   } else if (comment) {
     result.split(comment);
@@ -718,10 +732,7 @@ function formatUsageOption(
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
     formatUsageNames(option, result);
-    const defSty = option.styles?.param ?? config.styles.value;
-    const param = new AnsiString(0, 0, false, defSty); // use an auxiliary string for param
-    formatParam(option, param);
-    result.other(param).closeSty(result.defSty); // need to reset result style
+    formatParam(option, result);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -736,7 +747,7 @@ function formatUsageOption(
         // skip enclosing brackets for positional option with optional parameters, because the names
         // are also optional, so it would not make sense, e.g.: [[-a] [<param>...]]
         if (!option.positional || min || !max) {
-          result.openAtPos('[', count).close(']');
+          result.openAt('[', count).close(']');
         }
       }
     }
@@ -800,7 +811,7 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
       styles.symbol = saved;
     }
     if (option.positional) {
-      result.openAtPos('[', count).close(']');
+      result.openAt('[', count).close(']');
     }
   }
 }
@@ -819,7 +830,10 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
-  result.open(optional ? '[' : '').open(inline ? '=' : '');
+  result
+    .pushSty(option.styles?.param ?? config.styles.value)
+    .open(optional ? '[' : '')
+    .open(inline ? '=' : '');
   if (example !== undefined) {
     let param = example;
     if (separator && isArray(param)) {
@@ -832,7 +846,7 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
     const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName || 'param'}>`;
     result.word(param + ellipsis);
   }
-  result.close(optional ? ']' : '');
+  result.close(optional ? ']' : '').popSty();
 }
 
 /**

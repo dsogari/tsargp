@@ -130,9 +130,10 @@ const mainOpts = {
     sections: [
       {
         type: 'groups',
-        heading: { text: 'Options:', style: style(tf.bold) },
+        heading: { text: 'Options:', style: style(tf.bold), breaks: 1 },
         content: { breaks: 2 },
         items: allHelpItems.filter((item) => item !== HelpItem.positional),
+        noBreakFirst: true,
       },
     ],
   },

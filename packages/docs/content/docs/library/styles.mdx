@@ -270,11 +270,11 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 | `symbol`  | Symbols (e.g., names) | `fg.magenta{:ts}`     |
 | `value`   | Unknown values        | `fg.brightBlack{:ts}` |
 | `url`     | URLs                  | `fg.cyan{:ts}`        |
-| `text`    | General text          | `tf.clear{:ts}`       |
+| `base`    | Base style            | none                  |
 
 <Callout type="default">
 
-To preserve previous styles for a particular element, you can assign it an empty `style(){:ts}`. If you need to disable text styling for your application as a whole, do the same for all elements.
+To preserve previous styles for a particular element, you can assign it an empty `style(){:ts}`. Do the same for all elements if you need to disable styling for your application as a whole (regardless of environment configuration).
 
 </Callout>
 

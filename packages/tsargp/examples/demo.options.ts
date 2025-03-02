@@ -16,6 +16,8 @@ import {
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 
+const footer = `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues${style(fg.default)}`;
+
 /**
  * The main option definitions.
  */
@@ -30,23 +32,24 @@ export default {
     sections: [
       {
         type: 'groups',
-        heading: { text: 'Argument parser for TypeScript.', style: style(tf.bold) },
+        heading: { text: 'Argument parser for TypeScript.', style: style(tf.bold), breaks: 1 },
         content: { breaks: 2 },
         items: allHelpItems.filter((item) => item !== HelpItem.sources),
         layout: { names: { align: 'right' } },
+        noBreakFirst: true,
       },
       {
         type: 'usage',
-        heading: { text: 'Usage:', style: style(tf.bold) },
+        heading: { text: 'Usage:', style: style(tf.bold), breaks: 1 },
         content: { indent: 2, breaks: 2 },
         filter: ['help', 'version', 'helpEnv'],
-        comment: `${style(fg.green)}# get help`,
+        comment: `${style(fg.green)}# get help${style(fg.default)}`,
       },
       {
         type: 'usage',
         content: { indent: 2 },
         filter: ['hello'],
-        comment: `${style(fg.green)}# execute the hello command`,
+        comment: `${style(fg.green)}# execute the hello command${style(fg.default)}`,
         required: ['hello'],
       },
       {
@@ -59,7 +62,7 @@ export default {
       {
         type: 'text',
         content: {
-          text: `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
+          text: footer,
           breaks: 1,
           noSplit: true,
         },
@@ -78,7 +81,7 @@ export default {
     sections: [
       {
         type: 'groups',
-        heading: { text: 'Argument parser for TypeScript.', style: style(tf.bold) },
+        heading: { text: 'Argument parser for TypeScript.', style: style(tf.bold), breaks: 1 },
         content: { breaks: 2 },
         layout: { param: { hidden: true } },
         items: envHelpItems,
@@ -87,7 +90,7 @@ export default {
       {
         type: 'text',
         content: {
-          text: `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
+          text: footer,
           breaks: 1,
           noSplit: true,
         },
@@ -166,7 +169,7 @@ export default {
     type: 'single',
     names: ['-nr', '--numRange'],
     sources: ['NUM_RANGE'],
-    synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${config.styles.text}.`,
+    synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${style(fg.default)}.`,
     group: 'Number options:',
     parse: numberInRange(
       [-2, Infinity],

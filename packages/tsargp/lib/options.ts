@@ -102,15 +102,15 @@ export type Alignment = 'left' | 'right';
  */
 export type WithColumnLayout<A extends string = Alignment> = {
   /**
-   * The text alignment for this column. (Defaults to 'left')
+   * The text alignment for the column. (Defaults to 'left')
    */
   readonly align: A;
   /**
-   * The indentation level for this column. (Defaults to 2)
+   * The indentation level for the column. (Defaults to 2)
    */
   readonly indent: number;
   /**
-   * The number of leading line feeds for this column. (Defaults to 0)
+   * The number of leading line feeds for the column. (Defaults to 0)
    */
   readonly breaks: number;
   /**
@@ -149,15 +149,15 @@ export type HelpColumnsLayout = {
 };
 
 /**
- * Defines attributes for a help text area.
+ * Defines attributes for a help text block.
  */
-export type HelpTextArea = {
+export type HelpTextBlock = {
   /**
-   * The area text. May contain inline styles.
+   * The text may contain inline styles. (Defaults to none)
    */
   readonly text?: string;
   /**
-   * The style of text. (Defaults to none)
+   * The fallback style. (Defaults to none)
    */
   readonly style?: Style;
   /**
@@ -175,7 +175,7 @@ export type HelpTextArea = {
   /**
    * True to disable text splitting. (Defaults to false)
    */
-  readonly noSplit?: boolean;
+  readonly noSplit?: true;
 };
 
 /**
@@ -189,11 +189,11 @@ export type WithSectionKind<T extends string> = {
   /**
    * The section heading.
    */
-  readonly heading?: HelpTextArea;
+  readonly heading?: HelpTextBlock;
   /**
    * The section content.
    */
-  readonly content?: HelpTextArea;
+  readonly content?: HelpTextBlock;
 };
 
 /**
@@ -201,7 +201,7 @@ export type WithSectionKind<T extends string> = {
  */
 export type WithSectionFilter = {
   /**
-   * A list of options keys or group names to include or exclude.
+   * A list of option keys or group names to include or exclude.
    */
   readonly filter?: ReadonlyArray<string>;
   /**
@@ -215,11 +215,11 @@ export type WithSectionFilter = {
  */
 export type WithSectionUsage = {
   /**
-   * A list of options that should be considered required in the usage.
+   * A list of option keys that should be considered required.
    */
   readonly required?: ReadonlyArray<string>;
   /**
-   * A map of option keys to required options.
+   * A mapping of option keys to required option keys.
    */
   readonly requires?: Readonly<Record<string, string>>;
   /**
@@ -244,6 +244,10 @@ export type WithSectionGroups = {
    * Whether option names should be replaced by environment variable names.
    */
   readonly useEnv?: true;
+  /**
+   * Whether the first group heading should have no leading line feeds.
+   */
+  readonly noBreakFirst?: true;
 };
 
 /**

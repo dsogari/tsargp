@@ -380,7 +380,7 @@ const enum TypeFace {
    */
   bold,
   /**
-   * Faint, decreased intensity, or dim.
+   * Faint, decreased intensity, or dim (lower opacity).
    */
   faint,
   /**
@@ -412,7 +412,7 @@ const enum TypeFace {
    */
   crossedOut,
   /**
-   * Primary font.
+   * Primary or default font.
    */
   primaryFont,
   /**
@@ -468,7 +468,7 @@ const enum TypeFace {
    */
   notItalicNorFraktur,
   /**
-   * Not underlined.
+   * Not underlined or doubly underlined.
    */
   notUnderlined,
   /**
@@ -478,7 +478,7 @@ const enum TypeFace {
   /**
    * Proportional spacing.
    */
-  proportionalSpacing,
+  proportionallySpaced,
   /**
    * Positive (not inverse).
    */
@@ -494,7 +494,7 @@ const enum TypeFace {
   /**
    * Disable proportional spacing.
    */
-  notProportionalSpacing = 50,
+  notProportionallySpaced = 50,
   /**
    * Framed.
    */
@@ -569,6 +569,9 @@ const enum ForegroundColor {
    * An extended foreground color. To be used with indexed or RGB colors.
    */
   extended,
+  /**
+   * The default foreground color.
+   */
   default,
   brightBlack = 90,
   brightRed,
@@ -596,6 +599,9 @@ const enum BackgroundColor {
    * An extended background color. To be used with indexed or RGB colors.
    */
   extended,
+  /**
+   * The default background color.
+   */
   default,
   brightBlack = 100,
   brightRed,
@@ -615,4 +621,8 @@ const enum UnderlineColor {
    * An extended underline color. To be used with indexed or RGB colors.
    */
   extended = 58,
+  /**
+   * The default underline color.
+   */
+  default,
 }

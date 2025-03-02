@@ -28,6 +28,14 @@ describe('rendering a groups section', () => {
         names: ['-f'],
       },
     } as const satisfies Options;
+    const options2 = {
+      ...options,
+      flag2: {
+        type: 'flag',
+        names: ['-f2'],
+        group: 'group',
+      },
+    } as const satisfies Options;
 
     it('skip the heading when there are no options', () => {
       const sections: HelpSections = [{ type: 'groups', heading: { text: 'text' } }];
@@ -47,6 +55,20 @@ describe('rendering a groups section', () => {
     it('break the heading with text', () => {
       const sections: HelpSections = [{ type: 'groups', heading: { text: 'text', breaks: 1 } }];
       expect(format(options, sections).wrap()).toEqual('\ntext -f\n');
+    });
+
+    it('break the heading with no text, except for the first heading', () => {
+      const sections: HelpSections = [
+        { type: 'groups', heading: { breaks: 1 }, noBreakFirst: true },
+      ];
+      expect(format(options2, sections).wrap()).toEqual('  -f\n\ngroup -f2\n');
+    });
+
+    it('break the heading with text, except for the first heading', () => {
+      const sections: HelpSections = [
+        { type: 'groups', heading: { text: 'text', breaks: 1 }, noBreakFirst: true },
+      ];
+      expect(format(options2, sections).wrap()).toEqual('text -f\n\ngroup -f2\n');
     });
 
     it('indent the heading with text', () => {

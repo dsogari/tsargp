@@ -104,32 +104,30 @@ describe('format', () => {
         default: 1,
         styles: {
           names: style(tf.bold),
-          descr: style(tf.clear, tf.faint),
+          descr: style(tf.italic),
         },
       },
     } as const satisfies Options;
     expect(format(options).wrap(0, true)).toEqual(
-      '  \x1b[0;1m' + // tf.clear comes from default config
+      '  \x1b[1m' + // activate bold style
         '-f' +
-        '\x1b[0m' +
+        '\x1b[22m' + // cancel bold style
         ', ' +
-        '\x1b[0;1m' + // each name has its own ANSI string
+        '\x1b[1m' + // each name has its own ANSI string
         '--flag' +
-        '\x1b[0m' +
+        '\x1b[22m' +
         ', ' +
-        '\x1b[0;1m' +
+        '\x1b[1m' +
         '--flag1' +
-        '\x1b[0m' +
+        '\x1b[22m' +
         '    ' +
-        '\x1b[0;2m' + // custom style merged with default one
-        'A flag option.' +
-        '\x1b[0;2m' + // each help item starts afresh
-        ' Defaults to ' +
+        '\x1b[3m' + // activate italic style
+        'A flag option. Defaults to ' +
         '\x1b[33m' +
         '1' +
-        '\x1b[0;2m' +
+        '\x1b[39m' + // italic remains active
         '.' +
-        '\x1b[0;2m' +
+        '\x1b[23m' + // cancel italic style
         '\n',
     );
   });
@@ -143,18 +141,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap(0, true)).toEqual(
-      '  \x1b[0;35m' +
-        '-f' +
-        '\x1b[0m' +
-        '    ' +
-        '\x1b[0m' +
-        'A ' +
-        '\x1b[1m' +
-        'flag' +
-        '\x1b[0m' +
-        ' option' +
-        '\x1b[0m' +
-        '\n',
+      '  \x1b[35m' + '-f' + '\x1b[39m' + '    A ' + '\x1b[1m' + 'flag' + '\x1b[0m' + ' option\n',
     );
   });
 
