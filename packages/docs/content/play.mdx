@@ -18,7 +18,6 @@ return {
     type: 'help',
     names: ['-h', '--help'],
     synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`,
-    group: 'Options:',
   },
 };`;
 
@@ -48,10 +47,27 @@ npm i -g tsargp && complete -C tsargp tsargp
 
 ## Things to try out
 
-### Validation errors
+### Names validation
 
 - check if an error is reported for duplicate option names
-- check if an error is reported for duplicate enumerated values
+- check if an error is reported for duplicate cluster letters
+- check if an error is reported for duplicate environment variable names
+
+### Constraints validation
+
+- check if an error is reported for duplicate parameter choices
+- check if an error is reported for invalid parameter count
+- check if an error is reported for a variadic option with an inline constraint
+
+### Requirements validation
+
+- check if an error is reported for an option requiring itself
+- check if an error is reported for an option requiring an unknown option
+- check if an error is reported for an option requiring a help or version option
+- check if an error is reported for an option requiring an option that is always required
+
+### Miscellaneous
+
 - check if an error is reported for duplicate positional options
 
 ### Validation warnings

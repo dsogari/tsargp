@@ -14,7 +14,6 @@
     "Resolve",
     "Args",
     "Promissory",
-    "NiladicOptionType",
     "OptionDataType",
     "WithRequired",
     "WithDefault",

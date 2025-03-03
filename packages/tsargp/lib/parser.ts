@@ -9,7 +9,7 @@ import type {
   OpaqueOptionValues,
   Requires,
   RequiresEntry,
-  ModuleResolutionCallback,
+  ResolutionCallback,
   RequirementCallback,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
@@ -28,7 +28,7 @@ import {
   isCommand,
   checkInline,
 } from './options.js';
-import { fmt, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
+import { formatFunctions, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
   getCmdLine,
   findSimilar,
@@ -77,7 +77,7 @@ export type ParsingFlags = {
    * A resolution function for JavaScript modules.
    * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
    */
-  readonly resolve?: ModuleResolutionCallback;
+  readonly resolve?: ResolutionCallback;
 };
 
 /**
@@ -1027,16 +1027,16 @@ function checkRequiresEntry(
     if (specified !== invert) {
       error.word(connectives.no);
     }
-    fmt.m(Symbol.for(name), error, {});
+    formatFunctions.m(Symbol.for(name), error, {});
     return false;
   }
   if (areEqual(actual, expected) !== negate) {
     return true;
   }
   const connective = negate !== invert ? connectives.notEquals : connectives.equals;
-  fmt.m(Symbol.for(name), error, {});
+  formatFunctions.m(Symbol.for(name), error, {});
   error.word(connective);
-  fmt.v(expected, error, {});
+  formatFunctions.v(expected, error, {});
   return false;
 }
 
@@ -1112,7 +1112,7 @@ async function checkRequirementCallback(
     if (negate !== invert) {
       error.word(config.connectives.not);
     }
-    fmt.v(callback, error, {});
+    formatFunctions.v(callback, error, {});
     return false;
   }
   return true;

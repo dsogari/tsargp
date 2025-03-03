@@ -178,7 +178,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 ### Array constraints
 
 1. check if the element count is limited to a certain amount (e.g., `-- a b c d`)
-2. check if duplicate values get removed (e.g., `--numArrayUnique 1,2,1,2`)
+2. check if duplicate values get removed, with their order preserved (e.g., `--numArrayUnique 2,1,2,1`)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -198,7 +198,7 @@ npm i -g tsargp && complete -C tsargp tsargp
 ```ansi
 {
   [90m...[0m
-  [0mnumArrayUnique[2m:[0m [ [0m[33m1[0m[0m[2m,[0m [0m[33m2[0m ][0m[2m,[0m
+  [0mnumArrayUnique[2m:[0m [ [0m[33m2[0m[0m[2m,[0m [0m[33m1[0m ][0m[2m,[0m
   [90m...[0m
 }
 ```
@@ -386,7 +386,7 @@ When an option is specified more than once, the retained value is usually the la
 
 ### Requirements
 
-1. check th the `-b` option cannot be specified without required options (e.g., try `-b yes` and see that it fails)
+1. check that the `-b` option cannot be specified without required options (e.g., try `-b yes` and see that it fails)
 2. check if the `-b` option can be specified with required options (e.g., `-b yes -sc one`)
 3. check if the `-b` option can be specified through an environment variable (e.g., `BOOLEAN=yes ...`; same result as above)
 
@@ -487,6 +487,6 @@ With the console panel open, slide the screen splitter until the terminal width 
 
 ### Toggle styles
 
-- check if styles can be omitted with `NO_COLOR` (e.g., `NO_COLOR=1 ...`)
-- check if styles are emitted with `FORCE_COLOR` (e.g., `NO_COLOR=1 FORCE_COLOR=1 ...`)
-- check if styles are emitted when resetting (e.g., `NO_COLOR= FORCE_COLOR= ...`)
+- check if styles can be omitted with the variable `NO_COLOR` (e.g., `NO_COLOR=1 ...`)
+- check if styles are emitted with the variable `FORCE_COLOR` (e.g., `NO_COLOR=1 FORCE_COLOR=1 ...`)
+- check if styles are emitted when resetting the variables (e.g., `NO_COLOR= FORCE_COLOR= ...`)

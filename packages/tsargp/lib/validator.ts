@@ -7,7 +7,7 @@ import type {
   RequiresVal,
   OpaqueOptions,
   NestedOptions,
-  ModuleResolutionCallback,
+  ResolutionCallback,
 } from './options.js';
 import type { NamingRules } from './utils.js';
 
@@ -75,7 +75,7 @@ export type ValidationFlags = {
    * A resolution function for JavaScript modules.
    * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
    */
-  readonly resolve?: ModuleResolutionCallback;
+  readonly resolve?: ResolutionCallback;
 };
 
 /**
