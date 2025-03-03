@@ -406,7 +406,13 @@ The positional marker should _not_ be included in the list of [option names], al
 
 #### Inline constraint
 
-The `inline` attribute, if present, indicates the option's treatment of [inline parameters]. It can be either `false{:ts}` to disallow, or `'always'{:ts}` to _always_ require inline parameters. By default, parameters are allowed (but not required) to be inlined with option names.
+The `inline` attribute, if present, indicates the option's treatment of [inline parameters]. Its value can be either of:
+
+- `false{:ts}` to disallow inline parameters
+- `'always'{:ts}` to _always_ require inline parameters
+- a mapping of option names to one of the above, indicating the constraint for specific names
+
+By default, parameters are allowed (but not required) to be inlined with any option name.
 
 #### Completion callback
 

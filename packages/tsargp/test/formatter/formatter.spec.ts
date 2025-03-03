@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { HelpSections, Options } from '../../lib/options';
+import type { HelpSection, HelpSections, Options } from '../../lib/options';
 import { tf } from '../../lib/enums';
 import { format } from '../../lib/formatter';
 import { style } from '../../lib/styles';
@@ -16,97 +16,19 @@ describe('format', () => {
         names: ['-f'],
       },
     } as const satisfies Options;
-
     expect(format(options, []).wrap()).toEqual('');
   });
 
-  it('handle filtering by option group', () => {
+  it('hide an option when it asks so', () => {
     const options = {
       flag: {
         type: 'flag',
-        names: ['-f'],
-        group: 'group',
-      },
-      single: {
-        type: 'single',
-        names: ['-s'],
-      },
-    } as const satisfies Options;
-    const sections0: HelpSections = [{ type: 'groups', filter: [] }]; // empty filter
-    const sections1: HelpSections = [{ type: 'groups', filter: [''] }];
-    const sections2: HelpSections = [{ type: 'groups', filter: ['group'] }];
-    expect(format(options, sections0).wrap()).toEqual(``);
-    expect(format(options, sections1).wrap()).toEqual(`  -s  <param>\n`);
-    expect(format(options, sections2).wrap()).toEqual(`group\n\n  -f\n`);
-  });
-
-  it('filter options using a single regular expression', () => {
-    const options = {
-      flag1: {
-        type: 'flag',
         names: ['-f', '--flag'],
-      },
-      flag2: {
-        type: 'flag',
         synopsis: 'A flag option',
-      },
-      single: {
-        type: 'single',
-        names: ['-s'],
+        group: null,
       },
     } as const satisfies Options;
-    const sections: HelpSections = [
-      {
-        type: 'groups',
-        layout: { descr: { absolute: true } },
-      },
-    ];
-    expect(format(options, sections, ['flag']).wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
-  });
-
-  it('filter an option with environment variable using multiple regular expressions', () => {
-    const options = {
-      flag1: {
-        type: 'flag',
-        names: ['-f'],
-      },
-      flag2: {
-        type: 'flag',
-      },
-      single: {
-        type: 'single',
-        names: ['-s'],
-        sources: ['SINGLE'],
-      },
-    } as const satisfies Options;
-    const sections: HelpSections = [{ type: 'groups', items: [] }];
-    expect(format(options, sections, ['-f', 'sing']).wrap()).toEqual(`  -f\n  -s  <param>\n`);
-  });
-
-  it('handle a help option', () => {
-    const options = {
-      help: {
-        type: 'help',
-        names: ['-h'],
-        useCommand: true,
-        useFilter: true,
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -h    ` +
-        `Uses the next argument as the name of a subcommand. ` +
-        `Uses the remaining arguments as option filter.\n`,
-    );
-  });
-
-  it('handle a function option', () => {
-    const options = {
-      function: {
-        type: 'function',
-        names: ['-f'],
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
+    expect(format(options).wrap()).toEqual('');
   });
 
   it('handle a command option', () => {
@@ -119,161 +41,168 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`  -c  ...\n`);
   });
 
-  it('handle an option that is always required', () => {
+  it('handle an option with no names or description', () => {
     const options = {
       flag: {
         type: 'flag',
-        names: ['-f'],
-        required: true,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f    Always required.\n`);
+    expect(format(options).wrap()).toEqual('\n');
   });
 
-  it('handle a flag option with an external reference', () => {
+  it('handle an option with no description', () => {
     const options = {
       flag: {
         type: 'flag',
         names: ['-f'],
-        link: new URL('https://dsogari.github.io/tsargp/docs'),
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual('  -f\n');
+  });
+
+  it('handle an option with empty names array', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: [],
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual('\n');
+  });
+
+  it('handle options with phantom names', () => {
+    const options = {
+      flag1: {
+        type: 'flag',
+        names: ['', ' ', null],
+        synopsis: 'A phantom option.',
+      },
+      flag2: {
+        type: 'flag',
+        names: [' ', '', null],
+        synopsis: 'A phantom option.',
+      },
+      flag3: {
+        type: 'flag',
+        names: [' ', null, '  '],
+        synopsis: 'A phantom option.',
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -f    Refer to https://dsogari.github.io/tsargp/docs for details.\n`,
+      '           A phantom option.\n' + // one unquoted name with spaces
+        '           A phantom option.\n' + // one unquoted name with spaces
+        '   ,       A phantom option.\n', // two unquoted names with spaces
     );
   });
 
-  it('handle a flag option deprecated for a reason', () => {
+  it('handle an option with custom styles', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f', '--flag', '--flag1'],
+        synopsis: 'A flag option.',
+        default: 1,
+        styles: {
+          names: style(tf.bold),
+          descr: style(tf.italic),
+        },
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap(0, true)).toEqual(
+      '  \x1b[1m' + // activate bold style
+        '-f' +
+        '\x1b[22m' + // cancel bold style
+        ', ' +
+        '\x1b[1m' + // each name has its own ANSI string
+        '--flag' +
+        '\x1b[22m' +
+        ', ' +
+        '\x1b[1m' +
+        '--flag1' +
+        '\x1b[22m' +
+        '    ' +
+        '\x1b[3m' + // activate italic style
+        'A flag option. Defaults to ' +
+        '\x1b[33m' +
+        '1' +
+        '\x1b[39m' + // italic remains active
+        '.' +
+        '\x1b[23m' + // cancel italic style
+        '\n',
+    );
+  });
+
+  it('handle an option with inline styles in the description', () => {
     const options = {
       flag: {
         type: 'flag',
         names: ['-f'],
-        deprecated: 'reason',
+        synopsis: `A ${style(tf.bold)}flag${style(tf.clear)} option`,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f    Deprecated for reason.\n`);
+    expect(format(options).wrap(0, true)).toEqual(
+      '  \x1b[35m' + '-f' + '\x1b[39m' + '    A ' + '\x1b[1m' + 'flag' + '\x1b[0m' + ' option\n',
+    );
   });
 
-  it('handle a flag option with cluster letters', () => {
+  it('handle an option with paragraphs in the description', () => {
     const options = {
       flag: {
         type: 'flag',
         names: ['-f'],
-        cluster: 'fF',
+        synopsis: `A flag option with
+          line breaks,\ttabs and ...
+
+          paragraphs`,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
+    expect(format(options).wrap()).toMatch(
+      /^ {2}-f {4}A flag option with line breaks, tabs and ...\n\n {8}paragraphs\n$/,
+    );
   });
 
-  it('handle a flag option that reads data from standard input', () => {
+  it('handle an option with lists in the description', () => {
     const options = {
       flag: {
         type: 'flag',
         names: ['-f'],
-        stdin: true,
+        synopsis: `A flag option with lists:
+          - item1
+          * item2
+          1. item3`,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f    Reads data from standard input.\n`);
-  });
-
-  it('handle a flag option with an environment variable', () => {
-    const options = {
-      flag: {
-        type: 'flag',
-        names: ['-f'],
-        sources: ['VAR', new URL('file://path')],
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -f    Reads environment data from VAR, file://path/.\n`,
+    expect(format(options).wrap()).toMatch(
+      /^ {2}-f {4}A flag option with lists:\n {8}- item1\n {8}\* item2\n {8}1\. item3\n$/,
     );
   });
 
-  it('handle a single-valued option that accepts positional arguments', () => {
-    const options = {
-      single: {
-        type: 'single',
-        names: ['-s'],
-        positional: true,
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
-  });
-
-  it('handle a single-valued option that accepts positional arguments after marker', () => {
-    const options = {
-      single: {
-        type: 'single',
-        names: ['-s'],
-        positional: '--',
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
-    );
-  });
-
-  it('handle an array-valued option whose parameters can be delimited', () => {
-    const options = {
-      array: {
-        type: 'array',
-        names: ['-a'],
-        separator: ',',
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
-    );
-  });
-
-  it('handle an array-valued option that can be specified multiple times', () => {
-    const options = {
-      array: {
-        type: 'array',
-        names: ['-a'],
-        append: true,
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Can be specified multiple times.\n`,
-    );
-  });
-
-  it('avoid splitting and wrapping section texts when explicitly asked', () => {
+  it('avoid splitting section texts when explicitly asked', () => {
     const options = {
       flag: {
         type: 'flag',
         names: ['-f'],
       },
     } as const satisfies Options;
+    const section: HelpSection = {
+      type: 'text',
+      heading: { text: `section ${style(tf.clear)} heading`, noSplit: true },
+      content: { text: `section ${style(tf.clear)} content`, noSplit: true },
+    };
     const sections: HelpSections = [
-      {
-        type: 'text',
-        title: `section ${style(tf.clear)} title`,
-        text: `section ${style(tf.clear)} text`,
-        noWrap: true,
-      },
-      { type: 'usage', title: `section ${style(tf.clear)} title`, noWrap: true },
-      { type: 'groups', title: `section ${style(tf.clear)} title`, noWrap: true },
+      { ...section, type: 'text' },
+      { ...section, type: 'usage' },
+      { ...section, type: 'groups' },
     ];
     expect(format(options, sections).wrap(10, false, true)).toEqual(
-      'section ' +
-        '\x1b[0m' +
-        ' title' +
-        '\n\n' +
-        'section ' +
-        '\x1b[0m' +
-        ' text' +
-        '\n\n' +
-        'section ' +
-        '\x1b[0m' +
-        ' title' +
-        '\n\n' +
-        '[-f]' +
-        '\n\n' +
-        'section ' +
-        '\x1b[0m' +
-        ' title\n\n  -f\n',
+      'section  heading\n' +
+        'section  content\n' +
+        'section  heading\n' +
+        'section  content\n' +
+        '[-f]\n' +
+        'section  heading\n' +
+        'section  content\n\n' +
+        '  -f\n',
     );
   });
 });

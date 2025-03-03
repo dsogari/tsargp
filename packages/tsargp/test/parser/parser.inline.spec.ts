@@ -143,6 +143,20 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['1'])).resolves.toEqual({ single: '1' });
     });
+
+    it('disallow inline parameters for specific option names', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
+          inline: { '-s': false },
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-s='])).rejects.toThrow(
+        `Option -s does not accept inline parameters.`,
+      );
+      expect(parse(options, ['--single='])).resolves.toEqual({ single: '' });
+    });
   });
 
   describe('inline parameters are required', () => {
@@ -203,6 +217,20 @@ describe('parse', () => {
         `Option --single requires an inline parameter.`,
       );
       expect(parse(options, ['-s', '1'], flags)).rejects.toThrow(
+        `Option --single requires an inline parameter.`,
+      );
+    });
+
+    it('require inline parameters for specific option names', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s', '--single'],
+          inline: { '--single': 'always' },
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-s', '1'])).resolves.toEqual({ single: '1' });
+      expect(parse(options, ['--single', '1'])).rejects.toThrow(
         `Option --single requires an inline parameter.`,
       );
     });

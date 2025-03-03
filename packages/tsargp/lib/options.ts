@@ -102,15 +102,15 @@ export type Alignment = 'left' | 'right';
  */
 export type WithColumnLayout<A extends string = Alignment> = {
   /**
-   * The text alignment for this column. (Defaults to 'left')
+   * The text alignment for the column. (Defaults to 'left')
    */
   readonly align: A;
   /**
-   * The indentation level for this column. (Defaults to 2)
+   * The indentation level for the column. (Defaults to 2)
    */
   readonly indent: number;
   /**
-   * The number of line breaks to insert before each entry in this column. (Defaults to 0)
+   * The number of leading line feeds for the column. (Defaults to 0)
    */
   readonly breaks: number;
   /**
@@ -149,6 +149,40 @@ export type HelpColumnsLayout = {
 };
 
 /**
+ * Defines attributes for a help text block.
+ */
+export type HelpTextBlock = {
+  /**
+   * The text. May contain inline styles. (Defaults to none)
+   */
+  readonly text?: string;
+  /**
+   * The fallback style. (Defaults to none)
+   */
+  readonly style?: Style;
+  /**
+   * The text alignment. (Defaults to 'left')
+   */
+  readonly align?: Alignment;
+  /**
+   * The indentation level. (Defaults to 0)
+   */
+  readonly indent?: number;
+  /**
+   * The number of leading line feeds. (Defaults to 0)
+   */
+  readonly breaks?: number;
+  /**
+   * Whether to disable text splitting. (Defaults to false)
+   */
+  readonly noSplit?: true;
+  /**
+   * Whether to avoid line feeds at the beginning of the message.
+   */
+  readonly noBreakFirst?: true;
+};
+
+/**
  * Defines attributes common to all help sections.
  */
 export type WithSectionKind<T extends string> = {
@@ -157,42 +191,13 @@ export type WithSectionKind<T extends string> = {
    */
   readonly type: T;
   /**
-   * The section heading or default group heading. May contain inline styles.
+   * The section heading.
    */
-  readonly title?: string;
+  readonly heading?: HelpTextBlock;
   /**
-   * The style of the section heading or option group headings. (Defaults to tf.bold)
+   * The section content.
    */
-  readonly style?: Style;
-  /**
-   * The number of line breaks to insert before the section.
-   * (Defaults to 0 for the first section, 1 for others)
-   */
-  readonly breaks?: number;
-  /**
-   * True to disable wrapping of the provided text or headings.
-   */
-  readonly noWrap?: true;
-};
-
-/**
- * Defines attributes for a help section with text content.
- */
-export type WithSectionText = {
-  /**
-   * The section content. May contain inline styles.
-   */
-  readonly text?: string;
-};
-
-/**
- * Defines attributes for a help section with indentation.
- */
-export type WithSectionIndent = {
-  /**
-   * The indentation level of the section content. (Defaults to 0)
-   */
-  readonly indent?: number;
+  readonly content?: HelpTextBlock;
 };
 
 /**
@@ -200,7 +205,7 @@ export type WithSectionIndent = {
  */
 export type WithSectionFilter = {
   /**
-   * A list of options keys or group names to include or exclude.
+   * A list of option keys or group names to include or exclude.
    */
   readonly filter?: ReadonlyArray<string>;
   /**
@@ -214,11 +219,11 @@ export type WithSectionFilter = {
  */
 export type WithSectionUsage = {
   /**
-   * A list of options that should be considered required in the usage.
+   * A list of option keys that should be considered required.
    */
   readonly required?: ReadonlyArray<string>;
   /**
-   * A map of option keys to required options.
+   * A mapping of option keys to required option keys.
    */
   readonly requires?: Readonly<Record<string, string>>;
   /**
@@ -248,15 +253,12 @@ export type WithSectionGroups = {
 /**
  * A help text section.
  */
-export type HelpTextSection = WithSectionKind<'text'> & WithSectionText & WithSectionIndent;
+export type HelpTextSection = WithSectionKind<'text'>;
 
 /**
  * A help usage section.
  */
-export type HelpUsageSection = WithSectionKind<'usage'> &
-  WithSectionUsage &
-  WithSectionIndent &
-  WithSectionFilter;
+export type HelpUsageSection = WithSectionKind<'usage'> & WithSectionFilter & WithSectionUsage;
 
 /**
  * A help groups section.
@@ -373,6 +375,11 @@ export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<s
  * The type of nested options for a subcommand.
  */
 export type NestedOptions = string | Promissory<Options> | (() => Promissory<Options>);
+
+/**
+ * The type of inline constraint.
+ */
+export type InlineConstraint = false | 'always' | Readonly<Record<string, false | 'always'>>;
 
 /**
  * A known value used in default values and parameter examples.
@@ -568,8 +575,12 @@ export type WithParam<I> = {
   readonly positional?: true | string;
   /**
    * Whether inline parameters should be disallowed or required for this option.
+   * Can be `false` to disallow or `'always'` to always require.
+   *
+   * It can also be a mapping of option names to one of the above, indicating whether the
+   * corresponding name disallows or requires inline parameters.
    */
-  readonly inline?: false | 'always';
+  readonly inline?: InlineConstraint;
   /**
    * A custom callback for word completion.
    */
@@ -1183,7 +1194,7 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 
 /**
  * Resolves the nested options of a subcommand.
- * @param option The command option
+ * @param option The option definition
  * @param resolve The module resolution callback
  * @returns The nested options
  */
@@ -1199,4 +1210,15 @@ export async function getNestedOptions(
   }
   // do not destructure `options`, because the callback might need to use `this`
   return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
+}
+
+/**
+ * Gets the inline constraint of an option name.
+ * @param option The option definition
+ * @param name The option name
+ * @returns The inline constraint
+ */
+export function checkInline(option: OpaqueOption, name: string): boolean | 'always' {
+  const { inline } = option;
+  return (isObject(inline) ? inline[name] : inline) ?? true;
 }

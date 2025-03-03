@@ -2,11 +2,11 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { ConnectiveWords } from './config.js';
-import type { ErrorItem, tf, fg, bg, ul } from './enums.js';
+import type { ErrorItem } from './enums.js';
 import type { Alias, Args, Enumerate } from './utils.js';
 
 import { config } from './config.js';
-import { cs } from './enums.js';
+import { cs, tf, fg, bg, ul } from './enums.js';
 import {
   getEntries,
   isArray,
@@ -16,6 +16,8 @@ import {
   regex,
   selectAlternative,
   streamWidth,
+  min,
+  getValues,
 } from './utils.js';
 
 export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };
@@ -25,9 +27,81 @@ export { formatFunctions as fmt };
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
+ * A mapping of styling attribute to its cancelling attribute.
+ */
+const cancellingAttribute: Readonly<Partial<Record<StyleAttr, StyleAttr>>> = {
+  [tf.alternative1]: tf.primaryFont,
+  [tf.alternative2]: tf.primaryFont,
+  [tf.alternative3]: tf.primaryFont,
+  [tf.alternative4]: tf.primaryFont,
+  [tf.alternative5]: tf.primaryFont,
+  [tf.alternative6]: tf.primaryFont,
+  [tf.alternative7]: tf.primaryFont,
+  [tf.alternative8]: tf.primaryFont,
+  [tf.alternative9]: tf.primaryFont,
+  [tf.bold]: tf.notBoldOrFaint,
+  [tf.faint]: tf.notBoldOrFaint,
+  [tf.italic]: tf.notItalicNorFraktur,
+  [tf.fraktur]: tf.notItalicNorFraktur,
+  [tf.underlined]: tf.notUnderlined,
+  [tf.doublyUnderlined]: tf.notUnderlined,
+  [tf.slowlyBlinking]: tf.notBlinking,
+  [tf.rapidlyBlinking]: tf.notBlinking,
+  [tf.inverse]: tf.notInverse,
+  [tf.invisible]: tf.notInvisible,
+  [tf.crossedOut]: tf.notCrossedOut,
+  [tf.proportionallySpaced]: tf.notProportionallySpaced,
+  [tf.framed]: tf.notFramedOrEncircled,
+  [tf.encircled]: tf.notFramedOrEncircled,
+  [tf.overlined]: tf.notOverlined,
+  [tf.ideogramUnderline]: tf.noIdeogram,
+  [tf.ideogramDoubleUnderline]: tf.noIdeogram,
+  [tf.ideogramOverline]: tf.noIdeogram,
+  [tf.ideogramDoubleOverline]: tf.noIdeogram,
+  [tf.ideogramStressMarking]: tf.noIdeogram,
+  [tf.superscript]: tf.notSuperscriptOrSubscript,
+  [tf.subscript]: tf.notSuperscriptOrSubscript,
+  [fg.black]: fg.default,
+  [fg.red]: fg.default,
+  [fg.green]: fg.default,
+  [fg.yellow]: fg.default,
+  [fg.blue]: fg.default,
+  [fg.magenta]: fg.default,
+  [fg.cyan]: fg.default,
+  [fg.white]: fg.default,
+  [fg.extended]: fg.default,
+  [fg.brightBlack]: fg.default,
+  [fg.brightRed]: fg.default,
+  [fg.brightGreen]: fg.default,
+  [fg.brightYellow]: fg.default,
+  [fg.brightBlue]: fg.default,
+  [fg.brightMagenta]: fg.default,
+  [fg.brightCyan]: fg.default,
+  [fg.brightWhite]: fg.default,
+  [bg.black]: bg.default,
+  [bg.red]: bg.default,
+  [bg.green]: bg.default,
+  [bg.yellow]: bg.default,
+  [bg.blue]: bg.default,
+  [bg.magenta]: bg.default,
+  [bg.cyan]: bg.default,
+  [bg.white]: bg.default,
+  [bg.extended]: bg.default,
+  [bg.brightBlack]: bg.default,
+  [bg.brightRed]: bg.default,
+  [bg.brightGreen]: bg.default,
+  [bg.brightYellow]: bg.default,
+  [bg.brightBlue]: bg.default,
+  [bg.brightMagenta]: bg.default,
+  [bg.brightCyan]: bg.default,
+  [bg.brightWhite]: bg.default,
+  [ul.extended]: ul.default,
+};
+
+/**
  * A map of data type to format specifier.
  */
-const typeMapping: DataTypeToFormatSpecifier = {
+const typeMapping: Readonly<Record<string, FormatSpecifier>> = {
   boolean: 'b',
   string: 's',
   symbol: 'm',
@@ -181,14 +255,19 @@ const formatFunctions: FormatFunctions = {
     } else {
       const { connectives } = config;
       result
-        .openSty(config.styles.value)
+        .pushSty(config.styles.value)
         .open(connectives.valueOpen)
         .split('' + value)
         .close(connectives.valueClose)
-        .closeSty(result.defSty);
+        .popSty();
     }
   },
 };
+
+/**
+ * The empty style. Converts to an empty string.
+ */
+const noStyle: Style = sgrSequence();
 
 //--------------------------------------------------------------------------------------------------
 // Public types
@@ -241,7 +320,7 @@ export type FormattingFlags = {
  * A control sequence introducer.
  * @template T The type of the sequence command
  */
-export type Sequence<T extends cs> = Array<number> & { cmd: T };
+export type Sequence<T extends cs> = Array<number | Array<number>> & { cmd: T };
 
 /**
  * A select graphics rendition sequence.
@@ -266,7 +345,12 @@ export type RgbColor = [2, Decimal, Decimal, Decimal];
 /**
  * A text styling attribute.
  */
-export type StyleAttr = tf | fg | bg | ul | IndColor | RgbColor;
+export type StyleAttr = tf | fg | bg | ul;
+
+/**
+ * An extended styling attribute.
+ */
+export type ExtendedAttr = StyleAttr | IndColor | RgbColor;
 
 /**
  * A format specifier.
@@ -299,44 +383,6 @@ export type FormatFunction = (value: any, result: AnsiString, flags: FormattingF
 export type FormatFunctions = Readonly<Record<FormatSpecifier, FormatFunction>>;
 
 //--------------------------------------------------------------------------------------------------
-// Internal types
-//--------------------------------------------------------------------------------------------------
-/**
- * The ANSI string context.
- */
-type AnsiContext = [
-  /**
-   * The list of internal strings without control sequences.
-   */
-  strings: Array<string>,
-  /**
-   * The list of internal strings with control sequences.
-   */
-  styledStrings: Array<string>,
-  /**
-   * The styles to be applied to the next string.
-   */
-  curStyle: Style,
-  /**
-   * Whether the first internal string should be merged with the previous string.
-   */
-  mergeLeft: boolean,
-  /**
-   * Whether the last internal string should be merged with the next string.
-   */
-  mergeRight: boolean,
-  /**
-   * The largest length among all internal strings.
-   */
-  maxLength: number,
-];
-
-/**
- * A mapping of data type to format specifier.
- */
-type DataTypeToFormatSpecifier = Readonly<Record<string, FormatSpecifier>>;
-
-//--------------------------------------------------------------------------------------------------
 // Classes
 //--------------------------------------------------------------------------------------------------
 /**
@@ -344,23 +390,39 @@ type DataTypeToFormatSpecifier = Readonly<Record<string, FormatSpecifier>>;
  */
 export class AnsiString {
   /**
-   * The ANSI string context.
+   * The list of strings without control sequences
    */
-  private context: AnsiContext = [[], [], sgrSequence(), false, false, 0];
+  public readonly strings: Array<string> = [];
 
   /**
-   * @returns The list of internal strings without control sequences
+   * The list of strings with control sequences
    */
-  get strings(): Array<string> {
-    return this.context[0];
-  }
+  public readonly styled: Array<string> = [];
 
   /**
-   * @returns The list of internal strings with control sequences
+   * The stack of styles.
    */
-  get styles(): Array<string> {
-    return this.context[1];
-  }
+  private readonly styles: Array<Style> = [];
+
+  /**
+   * The opening style.
+   */
+  private readonly curStyle: Style = sgrSequence();
+
+  /**
+   * Whether the first string should be merged with the previous string.
+   */
+  public mergeLeft: boolean = false;
+
+  /**
+   * Whether the last string should be merged with the next string.
+   */
+  public merge: boolean = false;
+
+  /**
+   * The largest length among all strings.
+   */
+  public maxLength: number = 0;
 
   /**
    * @returns The number of internal strings
@@ -373,50 +435,36 @@ export class AnsiString {
    * @returns The combined length including spaces (but with no wrapping)
    */
   get totalLen(): number {
+    let dec = 0;
     const len = this.strings.reduce(
-      (acc, str) => acc + (str.length ? str.length + 1 : acc && -1), // decrement on line feeds
+      (acc, str) => acc + (str.length ? ((dec = 1), str.length + 1) : dec && ((dec = 0), -1)),
       0,
     );
-    return len && len - 1;
-  }
-
-  /**
-   * @returns The mergeLeft flag value
-   */
-  get mergeLeft(): boolean {
-    return this.context[3];
-  }
-
-  /**
-   * Sets a flag to merge the next word with the last word.
-   * @param merge The flag value
-   */
-  set merge(merge: boolean) {
-    this.context[4] = merge;
+    return len - dec;
   }
 
   /**
    * Creates a ANSI string.
    * @param indent The starting column for this string (negative values are replaced by zero)
-   * @param breaks The initial number of line feeds (non-positive values are ignored)
    * @param righty True if the string should be right-aligned to the terminal width
-   * @param defSty The default style to use (defaults to none)
    */
   constructor(
     public indent: number = 0,
-    breaks: number = 0,
     public righty: boolean = false,
-    public defSty: Style = sgrSequence(),
-  ) {
-    this.break(breaks).context[2].push(...defSty);
-  }
+  ) {}
 
   /**
    * Removes all strings.
    * @returns The ANSI string instance
    */
   clear(): this {
-    this.context = [[], [], sgrSequence(), false, false, 0];
+    this.strings.length = 0;
+    this.styled.length = 0;
+    this.styles.length = 0;
+    this.curStyle.length = 0;
+    this.maxLength = 0;
+    this.mergeLeft = false;
+    this.merge = false;
     return this;
   }
 
@@ -426,76 +474,86 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   other(other: AnsiString): this {
-    if (other.count) {
-      const [thisStrings, thisStyledStrings, thisCurStyle] = this.context;
-      const [
-        otherStrings,
-        otherStyledStrings,
-        otherCurStyle,
-        otherMergeLeft,
-        otherMergeRight,
-        otherMaxLength,
-      ] = other.context;
-      const [firstString, ...restStrings] = otherStrings;
-      const [firstStyledString, ...restStyledStrings] = otherStyledStrings;
-      if (firstString.length) {
-        this.add(firstString, firstStyledString, otherMergeLeft);
-      } else {
-        // line feed
-        thisStrings.push(firstString);
-        thisStyledStrings.push(firstStyledString);
-      }
-      thisStrings.push(...restStrings);
-      thisStyledStrings.push(...restStyledStrings);
-      thisCurStyle.length = 0;
-      thisCurStyle.push(...otherCurStyle); // avoid taking the object reference
-      this.context[4] = otherMergeRight;
-      this.context[5] = max(this.context[5], otherMaxLength);
+    const [firstString, ...restStrings] = other.strings;
+    const [firstStyled, ...restStyled] = other.styled;
+    if (firstString) {
+      this.add(firstString, firstStyled, other.mergeLeft);
+    } else if (firstStyled) {
+      this.strings.push(firstString);
+      this.styled.push(firstStyled); // line feed
+      this.curStyle.length = 0; // reset opening style
+    }
+    this.strings.push(...restStrings);
+    this.styled.push(...restStyled);
+    this.styles.push(...other.styles);
+    this.curStyle.push(...other.curStyle);
+    this.maxLength = max(this.maxLength, other.maxLength);
+    this.merge = other.merge;
+    return this;
+  }
+
+  /**
+   * Prepends a word to the string at a specific position.
+   * This can only be done if the affected string does not contain leading styles.
+   * @param word The word to prepend (should contain no styles)
+   * @param pos The position of the previously added string
+   * @returns The ANSI string instance
+   */
+  openAt(word: string, pos: number): this {
+    if (pos >= this.count) {
+      return this.open(word);
+    }
+    if (pos >= 0) {
+      this.strings[pos] = word + this.strings[pos];
+      this.styled[pos] = word + this.styled[pos];
     }
     return this;
   }
 
   /**
-   * Prepends text to the string at a specific position.
-   * This can only be done if the affected string does not contain opening styles.
-   * @param text The opening text
-   * @param pos The position of the previously added string
+   * Pushes a style to the style stack.
+   * @param sty The style (does nothing if no style)
    * @returns The ANSI string instance
    */
-  openAtPos(text: string, pos: number): this {
-    if (pos >= this.count) {
-      return this.open(text);
-    }
-    if (pos >= 0) {
-      const [strings, styledStrings] = this.context;
-      strings[pos] = text + strings[pos];
-      styledStrings[pos] = text + styledStrings[pos];
-    }
-    return this;
+  pushSty(sty: Style = noStyle): this {
+    this.styles.push(sty);
+    return this.openSty(sty);
+  }
+
+  /**
+   * Pops a style from the style stack.
+   * @returns The ANSI string instance
+   */
+  popSty(): this {
+    const close = this.styles.pop();
+    const open = this.styles.at(-1);
+    return this.closeSty(mergeStyles(close, open));
   }
 
   /**
    * Opens with a style.
-   * @param sty The SGR sequence
+   * @param sty The style
    * @returns The ANSI string instance
    */
-  openSty(sty: Style): this {
-    this.context[2].push(...sty); // append to opening style
+  private openSty(sty: Style): this {
+    this.curStyle.push(...sty); // append to opening style
     return this;
   }
 
   /**
    * Closes with a style.
-   * @param sty The SGR sequence
+   * TODO: test this method.
+   * @param sty The style
    * @returns The ANSI string instance
    */
-  closeSty(sty: Style): this {
-    const count = this.count;
-    const [, styledStrings, curStyle] = this.context;
-    if (count && !curStyle.length) {
-      styledStrings[count - 1] += sty; // close with style
+  private closeSty(sty: Style): this {
+    if (this.curStyle.length) {
+      this.curStyle.length = 0; // reset opening style because it was not applied
+    } else if (this.maxLength) {
+      this.styled[this.count - 1] += sty; // close with style
+    } else {
+      this.openSty(sty); // fallback to opening if no strings
     }
-    curStyle.length = 0; // reset opening style
     return this;
   }
 
@@ -518,7 +576,11 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   close(word: string): this {
-    return this.add(word, word, true);
+    // keep this check
+    if (word) {
+      this.add(word, word, true);
+    }
+    return this;
   }
 
   /**
@@ -528,9 +590,8 @@ export class AnsiString {
    */
   break(count = 1): this {
     if (count > 0) {
-      const [strings, styledStrings] = this.context;
-      strings.push(''); // the only case where the string can be empty
-      styledStrings.push('\n'.repeat(count)); // special case for line feeds
+      this.strings.push(''); // the only case where the string can be empty
+      this.styled.push('\n'.repeat(count)); // special case for line feeds
       this.merge = false;
     }
     return this;
@@ -545,7 +606,7 @@ export class AnsiString {
   word(word: string, sty?: Style): this {
     if (word) {
       if (sty) {
-        this.openSty(sty).add(word, word).closeSty(this.defSty);
+        this.pushSty(sty).add(word, word).popSty();
       } else {
         this.add(word, word);
       }
@@ -555,8 +616,9 @@ export class AnsiString {
 
   /**
    * Appends a text.
+   * This is supposed to be a private method, but we need to call it from within the module.
    * @param text The text with no control sequences
-   * @param styledText The text with possible control sequences
+   * @param styledText The text with possible control sequences (should not be empty)
    * @param close True if the text should be merged with the previous string, if any
    * @returns The ANSI string instance
    */
@@ -566,21 +628,20 @@ export class AnsiString {
       return close ? this.closeSty(sty) : this.openSty(sty);
     }
     const count = this.count;
-    const [strings, styledStrings, curStyle, , mergeRight, maxLength] = this.context;
-    if (count && (mergeRight || close)) {
-      strings[count - 1] += text;
-      styledStrings[count - 1] += curStyle + styledText;
-      text = strings[count - 1]; // to update maxLength
+    if (count && (this.merge || close)) {
+      this.strings[count - 1] += text;
+      this.styled[count - 1] += this.curStyle + styledText;
+      text = this.strings[count - 1]; // to update maxLength
     } else {
-      strings.push(text);
-      styledStrings.push(curStyle + styledText);
+      this.strings.push(text);
+      this.styled.push(this.curStyle + styledText);
     }
-    if (!maxLength) {
-      this.context[3] = mergeRight || close;
+    if (!this.maxLength) {
+      this.mergeLeft = this.merge || close;
     }
-    this.context[5] = max(maxLength, text.length);
+    this.maxLength = max(this.maxLength, text.length);
+    this.curStyle.length = 0; // reset opening style
     this.merge = false;
-    curStyle.length = 0; // reset opening style
     return this;
   }
 
@@ -598,7 +659,7 @@ export class AnsiString {
         this.break(2);
       }
     });
-    return this.closeSty(this.defSty); // reset from possible inline styles
+    return this;
   }
 
   /**
@@ -619,13 +680,7 @@ export class AnsiString {
   ): number {
     /** @ignore */
     function move(from: number, to: number): string {
-      return to > from
-        ? emitSpaces
-          ? ' '.repeat(to - from)
-          : '' + sequence(cs.cuf, to - from)
-        : emitSpaces
-          ? ''
-          : '' + sequence(cs.cub, from - to);
+      return emitSpaces ? ' '.repeat(to - from) : '' + sequence(cs.cuf, to - from);
     }
     /** @ignore */
     function align() {
@@ -640,46 +695,29 @@ export class AnsiString {
       column = col;
       return result.push(str);
     }
-    const count = this.count;
-    if (!count) {
+    if (!this.count) {
       return column;
     }
-    column = max(0, column);
-    width = max(0, width);
-    let start = max(0, this.indent);
-
-    const [strings, styledStrings, , , , maxLength] = this.context;
+    column = max(0, column); // sanitize
+    width = max(0, width); // sanitize
+    let start = max(0, min(this.indent, width || Infinity)); // sanitize
     const needToAlign = width && this.righty;
-    const largestFits = !width || width >= start + maxLength;
-    if (!largestFits) {
+
+    if (width && width < start + this.maxLength) {
       start = 0; // wrap to the first column instead
-    }
-    if (column !== start && strings[0]) {
-      const pad = largestFits ? move(column, start) : '\n';
-      if (pad) {
-        result.push(pad);
-      } else {
-        // adjust backwards: shorten the current line
-        let length = result.length;
-        for (; length && column > start; --length) {
-          const last = result[length - 1];
-          if (last.length > column - start) {
-            result[length - 1] = last.slice(0, start - column); // cut the last string
-            break;
-          }
-          column -= last.length;
-        }
-        result.length = length;
+      if (column && this.strings[0]) {
+        push('\n', 0); // forcefully break the first line
       }
-      column = start;
+    } else if (column < start && this.strings[0]) {
+      push(move(column, start), start); // pad until start
     }
 
     const indent = start ? move(0, start) : '';
     let j = result.length; // save index for right-alignment
-    for (let i = 0; i < count; i++) {
-      let str = strings[i];
+    for (let i = 0; i < this.count; i++) {
+      let str = this.strings[i];
       const len = str.length;
-      const styledStr = styledStrings[i];
+      const styledStr = this.styled[i];
       if (!len) {
         align();
         j = push(styledStr, 0); // save index for right-alignment
@@ -693,7 +731,7 @@ export class AnsiString {
       }
       if (column === start) {
         push(str, column + len);
-      } else if (!width || column + 1 + len <= width) {
+      } else if (!width || column + len < width) {
         push(' ' + str, column + 1 + len);
       } else {
         align();
@@ -786,8 +824,12 @@ export class WarnMessage extends AnsiMessage {
    * @param args The phrase arguments
    */
   addCustom(phrase: string, flags?: FormattingFlags, ...args: Args) {
-    const str = new AnsiString(0, 0, false, config.styles.text);
-    this.push(str.format(phrase, flags, ...args).break());
+    const str = new AnsiString()
+      .pushSty(config.styles.base)
+      .format(phrase, flags, ...args)
+      .popSty()
+      .break();
+    this.push(str);
   }
 
   /**
@@ -924,10 +966,10 @@ function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
  * @param params The sequence parameters
  * @returns The control sequence
  */
-function sequence<T extends cs>(cmd: T, ...params: Array<number>): Sequence<T> {
+function sequence<T extends cs>(cmd: T, ...params: Array<number | Array<number>>): Sequence<T> {
   const seq = params as Sequence<T>;
   seq.toString = function () {
-    return this.length ? `\x1b[${this.join(';')}${this.cmd}` : '';
+    return this.length ? `\x1b[${this.flat().join(';')}${this.cmd}` : '';
   };
   seq.cmd = cmd;
   return seq;
@@ -938,8 +980,40 @@ function sequence<T extends cs>(cmd: T, ...params: Array<number>): Sequence<T> {
  * @param attrs The styling attributes
  * @returns The SGR sequence
  */
-function sgrSequence(...attrs: Array<StyleAttr>): Style {
-  return sequence(cs.sgr, ...attrs.flat());
+function sgrSequence(...attrs: Array<ExtendedAttr>): Style {
+  return sequence(cs.sgr, ...attrs);
+}
+
+/**
+ * Merges opening and closing styles.
+ * @param close The closing style (to cancel from current level)
+ * @param open The opening style (to reapply from parent level)
+ * @returns The merged style (i.e., with no redundant attributes)
+ */
+function mergeStyles(close?: Style, open: Style = noStyle): Style {
+  if (!close?.length) {
+    return noStyle; // skip if there is nothing to cancel
+  }
+  const attrs: Partial<Record<StyleAttr, ExtendedAttr>> = {};
+  for (const attr of close) {
+    // skip extended attributes
+    if (!isArray(attr)) {
+      const cancelAttr = cancellingAttribute[attr as StyleAttr] ?? (attr as StyleAttr);
+      if (cancelAttr) {
+        attrs[cancelAttr] = cancelAttr; // cancel attribute
+      }
+    }
+  }
+  for (const attr of open) {
+    // skip extended attributes
+    if (!isArray(attr)) {
+      const cancelAttr = cancellingAttribute[attr as StyleAttr] ?? (attr as StyleAttr);
+      if (cancelAttr in attrs) {
+        attrs[cancelAttr] = attr; // reapply only if it changed
+      }
+    }
+  }
+  return sgrSequence(...getValues(attrs)); // keys are sorted in ascending order
 }
 
 /**

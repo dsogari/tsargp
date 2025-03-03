@@ -26,6 +26,7 @@ import {
   valuesFor,
   getNestedOptions,
   isCommand,
+  checkInline,
 } from './options.js';
 import { fmt, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
@@ -363,7 +364,7 @@ async function parseArgs(context: ParseContext) {
       const [key, option, name] = info;
       [min, max] = getParamCount(option);
       const hasValue = value !== undefined;
-      if (!max || (!isPositional && (isMarker || option.inline === false))) {
+      if (!max || (!isPositional && (isMarker || checkInline(option, name) === false))) {
         if (comp) {
           throw new TextMessage();
         }
@@ -493,11 +494,12 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         return [i, positional, arg, comp, false, true, true];
       case ArgType.afterMarker:
         return [i, prevInfo, arg, comp, prevMarker, true, true];
-      case ArgType.parameter:
-        if (prevInfo?.[1].inline === 'always') {
+      case ArgType.parameter: {
+        const [, option, name] = prevInfo!;
+        if (checkInline(option, name) === 'always') {
           if (!completing) {
             // ignore required inline parameters while completing
-            throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(prevInfo[2]));
+            throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(name));
           }
           prevInfo = undefined;
           i--; // reprocess the current argument
@@ -505,8 +507,9 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
           return [i, prevInfo, arg, comp, prevMarker, false];
         }
         break; // continue looking for parameters or option names
+      }
       case ArgType.missingParameter:
-        reportMissingParameter(min, max, prevInfo?.[2] ?? '');
+        reportMissingParameter(min, max, prevInfo![2]);
     }
   }
   return [args.length];

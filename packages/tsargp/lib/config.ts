@@ -4,7 +4,7 @@
 import type { Style } from './styles.js';
 
 import { style } from './styles.js';
-import { fg, ErrorItem, HelpItem, tf } from './enums.js';
+import { fg, ErrorItem, HelpItem } from './enums.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -21,7 +21,7 @@ export const config: MessageConfig = {
     symbol: style(fg.magenta),
     value: style(fg.brightBlack),
     url: style(fg.cyan),
-    text: style(tf.clear),
+    base: style(),
   },
   connectives: {
     and: 'and',
@@ -142,9 +142,9 @@ export type MessageStyles = {
    */
   url: Style;
   /**
-   * The style of general text.
+   * The base style for all text.
    */
-  text: Style;
+  base: Style;
 };
 
 /**

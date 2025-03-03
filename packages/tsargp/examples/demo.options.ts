@@ -16,6 +16,8 @@ import {
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 
+const footer = `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues${style(fg.default)}`;
+
 /**
  * The main option definitions.
  */
@@ -30,36 +32,44 @@ export default {
     sections: [
       {
         type: 'groups',
-        title: `Argument parser for TypeScript.`,
+        heading: {
+          text: 'Argument parser for TypeScript.',
+          style: style(tf.bold),
+          breaks: 1,
+          noBreakFirst: true,
+        },
+        content: { breaks: 2 },
         items: allHelpItems.filter((item) => item !== HelpItem.sources),
+        layout: { names: { align: 'right' } },
       },
       {
         type: 'usage',
-        title: 'Usage:',
-        indent: 2,
+        heading: { text: 'Usage:', style: style(tf.bold), breaks: 1 },
+        content: { indent: 2, breaks: 2 },
         filter: ['help', 'version', 'helpEnv'],
-        comment: `${style(fg.green)}# get help`,
+        comment: `${style(fg.green)}# get help${style(fg.default)}`,
       },
       {
         type: 'usage',
-        indent: 2,
-        breaks: 0,
+        content: { indent: 2 },
         filter: ['hello'],
-        comment: `${style(fg.green)}# execute the hello command`,
+        comment: `${style(fg.green)}# execute the hello command${style(fg.default)}`,
         required: ['hello'],
       },
       {
         type: 'usage',
-        indent: 2,
-        breaks: 0,
+        content: { indent: 2 },
         filter: ['help', 'version', 'helpEnv', 'hello'],
         exclude: true,
         requires: { boolean: 'strChoice' },
       },
       {
         type: 'text',
-        text: `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
-        noWrap: true,
+        content: {
+          text: footer,
+          breaks: 1,
+          noSplit: true,
+        },
       },
     ],
     useCommand: true,
@@ -75,15 +85,24 @@ export default {
     sections: [
       {
         type: 'groups',
-        title: `Argument parser for TypeScript.`,
+        heading: {
+          text: 'Argument parser for TypeScript.',
+          style: style(tf.bold),
+          breaks: 1,
+          noBreakFirst: true,
+        },
+        content: { breaks: 2 },
         layout: { param: { hidden: true } },
         items: envHelpItems,
         useEnv: true,
       },
       {
         type: 'text',
-        text: `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues`,
-        noWrap: true,
+        content: {
+          text: footer,
+          breaks: 1,
+          noSplit: true,
+        },
       },
     ],
     useFilter: true,
@@ -159,7 +178,7 @@ export default {
     type: 'single',
     names: ['-nr', '--numRange'],
     sources: ['NUM_RANGE'],
-    synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${config.styles.text}.`,
+    synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${style(fg.default)}.`,
     group: 'Number options:',
     parse: numberInRange(
       [-2, Infinity],

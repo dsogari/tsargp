@@ -1,5 +1,5 @@
-import type { Options, OptionValues, OpaqueOptionValues } from 'tsargp';
-import { allHelpItems, HelpItem } from 'tsargp';
+import type { Options, OptionValues } from 'tsargp';
+import { allHelpItems, HelpItem, style, tf } from 'tsargp';
 
 /**
  * The option definitions for the hello subcommand.
@@ -23,10 +23,15 @@ const options = {
     names: ['-h', '--help'],
     synopsis: 'The help option for the hello command. Prints this help message.',
     sections: [
-      { type: 'usage', title: 'Usage:', indent: 2 },
+      {
+        type: 'usage',
+        heading: { text: 'Usage:', style: style(tf.bold) },
+        content: { indent: 2, breaks: 2 },
+      },
       {
         type: 'groups',
-        title: 'Options:',
+        heading: { text: 'Options:', style: style(tf.bold), breaks: 1 },
+        content: { breaks: 2 },
         layout: { param: { align: 'merge' } },
         items: allHelpItems.filter((item) => item !== HelpItem.positional),
       },
@@ -41,7 +46,7 @@ const options = {
     names: ['hello'],
     synopsis: 'A subcommand. Logs the arguments passed after it.',
     options: (): Options => options,
-    parse(param: OpaqueOptionValues): number {
+    parse(param): number {
       const vals = param as OptionValues<typeof options>;
       const calls = vals.hello ?? 0;
       console.log(`[tail call #${calls}]`, ...vals.args);
