@@ -377,6 +377,11 @@ export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<s
 export type NestedOptions = string | Promissory<Options> | (() => Promissory<Options>);
 
 /**
+ * The type of inline constraint.
+ */
+export type InlineConstraint = false | 'always' | Readonly<Record<string, false | 'always'>>;
+
+/**
  * A known value used in default values and parameter examples.
  */
 export type KnownValue = boolean | string | number | object;
@@ -569,9 +574,13 @@ export type WithParam<I> = {
    */
   readonly positional?: true | string;
   /**
-   * Whether inline parameters should be disallowed or required for this option.
+   * Whether inline parameters should be disallowed or required for this option. Can be `false` to
+   * disallow or `'always'` to always require.
+   *
+   * It can also be a mapping of option names to one of the above, indicating whether the
+   * corresponding name disallows or requires inline parameters.
    */
-  readonly inline?: false | 'always';
+  readonly inline?: InlineConstraint;
   /**
    * A custom callback for word completion.
    */
@@ -1185,7 +1194,7 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 
 /**
  * Resolves the nested options of a subcommand.
- * @param option The command option
+ * @param option The option definition
  * @param resolve The module resolution callback
  * @returns The nested options
  */
@@ -1201,4 +1210,15 @@ export async function getNestedOptions(
   }
   // do not destructure `options`, because the callback might need to use `this`
   return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
+}
+
+/**
+ * Gets the inline constraint of an option with or without name.
+ * @param option The option definition
+ * @param name The option name (if any)
+ * @returns The inline constraint
+ */
+export function checkInline(option: OpaqueOption, name: string = ''): boolean | 'always' {
+  const { inline } = option;
+  return (isObject(inline) ? inline[name] : inline) ?? true;
 }
