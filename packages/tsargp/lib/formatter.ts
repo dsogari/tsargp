@@ -643,7 +643,7 @@ function formatHelpSection(
         result.push(...prev, str.popSty().break()); // include trailing line feed
       }
     } else if (content) {
-      formatTextBlock(content, result);
+      formatTextBlock(content, result, 1); // include trailing line feed
     }
   }
 }
@@ -652,8 +652,9 @@ function formatHelpSection(
  * Formats a help text block to be included in a help message.
  * @param block The text block
  * @param result The resulting message
+ * @param breaksAfter The number of trailing line feeds (only if there is text)
  */
-function formatTextBlock(block: HelpTextBlock, result: AnsiMessage) {
+function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter: number = 0) {
   const { text, style, align, indent, breaks, noSplit } = block;
   const str = new AnsiString(indent, align === 'right').break(breaks ?? 0);
   if (text) {
@@ -663,7 +664,7 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage) {
     } else {
       str.split(text);
     }
-    str.popSty().popSty();
+    str.popSty().popSty().break(breaksAfter);
   }
   result.push(str);
 }

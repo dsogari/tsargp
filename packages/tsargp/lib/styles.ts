@@ -438,11 +438,12 @@ export class AnsiString {
    * @returns The combined length including spaces (but with no wrapping)
    */
   get totalLen(): number {
+    let dec = 0;
     const len = this.strings.reduce(
-      (acc, str) => acc + (str.length ? str.length + 1 : acc && -1), // decrement on line feeds
+      (acc, str) => acc + (str.length ? ((dec = 1), str.length + 1) : dec && ((dec = 0), -1)),
       0,
     );
-    return len && len - 1;
+    return len - dec;
   }
 
   /**
@@ -476,21 +477,21 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   other(other: AnsiString): this {
-    if (other.count) {
-      const [firstString, ...restStrings] = other.strings;
-      const [firstStyledString, ...restStyledStrings] = other.styled;
-      if (firstString.length) {
-        this.add(firstString, firstStyledString, other.mergeLeft);
-      } else {
-        // line feed
-        this.strings.push(firstString);
-        this.styled.push(firstStyledString);
-      }
-      this.strings.push(...restStrings);
-      this.styled.push(...restStyledStrings);
-      this.maxLength = max(this.maxLength, other.maxLength);
-      this.merge = other.merge;
+    const [firstString, ...restStrings] = other.strings;
+    const [firstStyled, ...restStyled] = other.styled;
+    if (firstString) {
+      this.add(firstString, firstStyled, other.mergeLeft);
+    } else if (firstStyled) {
+      this.strings.push(firstString);
+      this.styled.push(firstStyled); // line feed
+      this.curStyle.length = 0; // reset opening style
     }
+    this.strings.push(...restStrings);
+    this.styled.push(...restStyled);
+    this.styles.push(...other.styles);
+    this.curStyle.push(...other.curStyle);
+    this.maxLength = max(this.maxLength, other.maxLength);
+    this.merge = other.merge;
     return this;
   }
 
@@ -537,7 +538,7 @@ export class AnsiString {
    * @param sty The style
    * @returns The ANSI string instance
    */
-  openSty(sty: Style): this {
+  private openSty(sty: Style): this {
     this.curStyle.push(...sty);
     return this;
   }
@@ -547,7 +548,7 @@ export class AnsiString {
    * @param sty The style
    * @returns The ANSI string instance
    */
-  closeSty(sty: Style): this {
+  private closeSty(sty: Style): this {
     if (!this.curStyle.length && this.maxLength) {
       this.styled[this.count - 1] += sty; // close with style
     } else {
@@ -600,7 +601,11 @@ export class AnsiString {
    */
   word(word: string, sty?: Style): this {
     if (word) {
-      this.pushSty(sty).add(word, word).popSty();
+      if (sty) {
+        this.pushSty(sty).add(word, word).popSty();
+      } else {
+        this.add(word, word);
+      }
     }
     return this;
   }
@@ -1003,7 +1008,7 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
       }
     }
   }
-  return sgrSequence(...getValues(attrs));
+  return sgrSequence(...getValues(attrs)); // keys are sorted in ascending order
 }
 
 /**

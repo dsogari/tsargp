@@ -26,26 +26,29 @@ export default {
 You can enhance it with an introduction, usage and footer:
 
 ```ts
-import { type Options, style, fg } from 'tsargp';
+import { type Options, style, tf, fg } from 'tsargp';
 export default {
   help: {
     // ...
     sections: [
       {
-        type: 'text',
-        text: 'A command-line interface for <purpose>.',
-      },
-      {
         type: 'usage',
+        heading: { text: 'A command-line interface for <purpose>.' },
+        content: { breaks: 2 }, // line feeds from heading
       },
       {
         type: 'groups',
-        title: 'Options:', // heading for the default option group
-        style: style(tf.underlined), // underlined option group headings
+        heading: {
+          text: 'Options:', // heading for the default option group
+          style: style(tf.underlined), // underlined group headings
+          breaks: 1, // line feeds from previous section (+1)
+        },
       },
       {
         type: 'text',
-        text: `Refer to ${style(fg.brightBlack)}<website>${style(fg.default)} for support.`,
+        content: {
+          text: `Refer to ${style(fg.brightBlack)}<website>${style(fg.default)} for support.`,
+        },
       },
     ],
   },
