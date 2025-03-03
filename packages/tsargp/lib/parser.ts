@@ -509,7 +509,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         break; // continue looking for parameters or option names
       }
       case ArgType.missingParameter:
-        reportMissingParameter(min, max, prevInfo?.[2] ?? '');
+        reportMissingParameter(min, max, prevInfo![2]);
     }
   }
   return [args.length];

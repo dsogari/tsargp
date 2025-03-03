@@ -75,7 +75,7 @@ describe('AnsiString', () => {
     });
 
     it('clear the styles', () => {
-      const str = new AnsiString().pushSty(clr).word('type').clear().word('script');
+      const str = new AnsiString().pushSty(bold).word('type').clear().popSty().word('script');
       expect(str.strings).toEqual(['script']);
       expect(str.styled).toEqual(['script']);
     });
@@ -187,6 +187,8 @@ describe('AnsiString', () => {
     });
 
     describe('when neither string is empty', () => {
+      const cancel = style(tf.notBoldOrFaint);
+
       it('merge line feed from the other string', () => {
         const str1 = new AnsiString().break();
         const str2 = new AnsiString().open('type').other(str1).word('script');
@@ -213,7 +215,6 @@ describe('AnsiString', () => {
       it('preserve the opening style from the other string', () => {
         const str1 = new AnsiString().pushSty(bold);
         const str2 = new AnsiString().other(str1).word('type').popSty();
-        const cancel = style(tf.notBoldOrFaint);
         expect(str2.strings).toEqual(['type']);
         expect(str2.styled).toEqual([bold + 'type' + cancel]);
       });
@@ -221,7 +222,6 @@ describe('AnsiString', () => {
       it('preserve the style stack from the other string', () => {
         const str1 = new AnsiString().pushSty(bold).word('type');
         const str2 = new AnsiString().other(str1).popSty();
-        const cancel = style(tf.notBoldOrFaint);
         expect(str2.strings).toEqual(['type']);
         expect(str2.styled).toEqual([bold + 'type' + cancel]);
       });
@@ -257,6 +257,7 @@ describe('AnsiString', () => {
 
   describe('pushSty and popSty', () => {
     it('preserve order of pushed styles', () => {
+      const cancel = style(tf.notBoldOrFaint);
       const str = new AnsiString()
         .popSty() // does nothing
         .word('type')
@@ -264,14 +265,25 @@ describe('AnsiString', () => {
         .word('script')
         .pushSty(bold)
         .word('is')
-        .popSty() // should reapply tf.clear
+        .pushSty(cancel)
+        .word('very')
+        .popSty() // should reapply tf.bold
+        .word('very')
+        .popSty() // should not reapply tf.clear, but should cancel bold
         .word('much')
         .popSty() // tf.clear needs no cancelling
         .word('fun')
         .popSty(); // does nothing
-      const cancel = style(tf.clear, tf.notBoldOrFaint);
-      expect(str.strings).toEqual(['type', 'script', 'is', 'much', 'fun']);
-      expect(str.styled).toEqual(['type', clr + 'script', bold + 'is' + cancel, 'much', 'fun']);
+      expect(str.strings).toEqual(['type', 'script', 'is', 'very', 'very', 'much', 'fun']);
+      expect(str.styled).toEqual([
+        'type',
+        clr + 'script',
+        bold + 'is',
+        cancel + 'very' + bold,
+        'very' + cancel,
+        'much',
+        'fun',
+      ]);
     });
   });
 
@@ -282,14 +294,14 @@ describe('AnsiString', () => {
       expect(str.styled).toEqual(['⚠️', 'type', 'script']);
     });
 
-    it('split text with inline styles (1)', () => {
+    it('split text with duplicate inline styles', () => {
       const sty = style(tf.bold, tf.bold);
       const str = new AnsiString().split(`${bold}type ${bold}${bold} script${bold}`);
       expect(str.strings).toEqual(['type', 'script']);
       expect(str.styled).toEqual([bold + 'type', sty + 'script' + bold]);
     });
 
-    it('split text with inline styles (2)', () => {
+    it('split text with inline styles', () => {
       const str = new AnsiString().split(`type${bold} ${bold} ${bold}script`);
       expect(str.strings).toEqual(['type', 'script']);
       expect(str.styled).toEqual(['type' + bold, bold + '' + bold + 'script']);

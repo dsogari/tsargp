@@ -31,6 +31,20 @@ describe('rendering a usage section', () => {
       expect(format({}, sections).wrap()).toEqual('\ntext');
     });
 
+    it('avoid breaking before the heading with no text at the beginning of the message', () => {
+      const sections: HelpSections = [
+        { type: 'usage', heading: { breaks: 1, noBreakFirst: true } },
+      ];
+      expect(format({}, sections).wrap()).toEqual('');
+    });
+
+    it('avoid breaking before the heading with text at the beginning of the message', () => {
+      const sections: HelpSections = [
+        { type: 'usage', heading: { text: 'text', breaks: 1, noBreakFirst: true } },
+      ];
+      expect(format({}, sections).wrap()).toEqual('text');
+    });
+
     it('indent the heading with text', () => {
       const sections: HelpSections = [{ type: 'usage', heading: { text: 'text', indent: 2 } }];
       expect(format({}, sections).wrap()).toEqual('  text');
@@ -50,59 +64,66 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the section content', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+      },
+    } as const satisfies Options;
+
+    const options2 = {
+      ...options,
+      flag2: {
+        type: 'flag',
+        names: ['-f2'],
+      },
+    } as const satisfies Options;
+
     it('skip the content when there are no options', () => {
       const sections: HelpSections = [{ type: 'usage', content: { text: 'text' } }];
       expect(format({}, sections).wrap()).toEqual('');
     });
 
-    it('avoid braking the program name', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-        },
-      } as const satisfies Options;
+    it('avoid breaking the content with no text at the beginning of the message', () => {
+      const sections: HelpSections = [
+        { type: 'usage', content: { breaks: 1, noBreakFirst: true } },
+      ];
+      expect(format(options, sections).wrap()).toEqual('[-f]\n');
+    });
+
+    it('avoid breaking the content with text at the beginning of the message', () => {
+      const sections: HelpSections = [
+        { type: 'usage', content: { text: 'text', breaks: 1, noBreakFirst: true } },
+      ];
+      expect(format(options, sections).wrap()).toEqual('text [-f]\n');
+    });
+
+    it('avoid braking the program name, but include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, undefined, 'prog').wrap()).toEqual('prog [-f]\n');
     });
 
-    it('break the program name', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-        },
-      } as const satisfies Options;
+    it('break the program name, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage', content: { breaks: 1 } }];
       expect(format(options, sections, undefined, 'prog').wrap()).toEqual('\nprog [-f]\n');
     });
 
-    it('indent the program name', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-        },
-      } as const satisfies Options;
+    it('indent the program name, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage', content: { indent: 2 } }];
       expect(format(options, sections, undefined, 'prog').wrap()).toEqual('  prog [-f]\n');
     });
 
-    it('indent the options', () => {
-      const options = {
-        flag1: {
-          type: 'flag',
-          names: ['-f1'],
-        },
-        flag2: {
-          type: 'flag',
-          names: ['-f2'],
-        },
-      } as const satisfies Options;
+    it('indent the options, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections, undefined, 'prog').wrap(10, false, true)).toEqual(
-        'prog [-f1]\n     [-f2]\n',
+      expect(format(options2, sections, undefined, 'prog').wrap(10, false, true)).toEqual(
+        'prog [-f]\n     [-f2]\n',
       );
+    });
+
+    it('replace the program name by the content text', () => {
+      const sections: HelpSections = [{ type: 'usage', content: { text: 'text' } }];
+      expect(format(options, sections, undefined).wrap()).toEqual('text [-f]\n');
+      expect(format(options, sections, undefined, 'prog').wrap()).toEqual('text [-f]\n');
     });
   });
 

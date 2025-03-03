@@ -43,11 +43,13 @@ export default {
           style: style(tf.underlined), // underlined group headings
           breaks: 1, // line feeds from previous section (+1)
         },
+        content: { breaks: 2 }, // line feeds from heading
       },
       {
         type: 'text',
         content: {
           text: `Refer to ${style(fg.brightBlack)}<website>${style(fg.default)} for support.`,
+          breaks: 1, // line feeds from previous section (+1)
         },
       },
     ],

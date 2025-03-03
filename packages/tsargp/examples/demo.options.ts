@@ -32,11 +32,15 @@ export default {
     sections: [
       {
         type: 'groups',
-        heading: { text: 'Argument parser for TypeScript.', style: style(tf.bold), breaks: 1 },
+        heading: {
+          text: 'Argument parser for TypeScript.',
+          style: style(tf.bold),
+          breaks: 1,
+          noBreakFirst: true,
+        },
         content: { breaks: 2 },
         items: allHelpItems.filter((item) => item !== HelpItem.sources),
         layout: { names: { align: 'right' } },
-        noBreakFirst: true,
       },
       {
         type: 'usage',
@@ -81,7 +85,12 @@ export default {
     sections: [
       {
         type: 'groups',
-        heading: { text: 'Argument parser for TypeScript.', style: style(tf.bold), breaks: 1 },
+        heading: {
+          text: 'Argument parser for TypeScript.',
+          style: style(tf.bold),
+          breaks: 1,
+          noBreakFirst: true,
+        },
         content: { breaks: 2 },
         layout: { param: { hidden: true } },
         items: envHelpItems,

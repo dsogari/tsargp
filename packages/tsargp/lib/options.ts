@@ -153,7 +153,7 @@ export type HelpColumnsLayout = {
  */
 export type HelpTextBlock = {
   /**
-   * The text may contain inline styles. (Defaults to none)
+   * The text. May contain inline styles. (Defaults to none)
    */
   readonly text?: string;
   /**
@@ -173,9 +173,13 @@ export type HelpTextBlock = {
    */
   readonly breaks?: number;
   /**
-   * True to disable text splitting. (Defaults to false)
+   * Whether to disable text splitting. (Defaults to false)
    */
   readonly noSplit?: true;
+  /**
+   * Whether to avoid line feeds at the beginning of the message.
+   */
+  readonly noBreakFirst?: true;
 };
 
 /**
@@ -244,10 +248,6 @@ export type WithSectionGroups = {
    * Whether option names should be replaced by environment variable names.
    */
   readonly useEnv?: true;
-  /**
-   * Whether the first group heading should have no leading line feeds.
-   */
-  readonly noBreakFirst?: true;
 };
 
 /**
@@ -574,8 +574,8 @@ export type WithParam<I> = {
    */
   readonly positional?: true | string;
   /**
-   * Whether inline parameters should be disallowed or required for this option. Can be `false` to
-   * disallow or `'always'` to always require.
+   * Whether inline parameters should be disallowed or required for this option.
+   * Can be `false` to disallow or `'always'` to always require.
    *
    * It can also be a mapping of option names to one of the above, indicating whether the
    * corresponding name disallows or requires inline parameters.
@@ -1213,12 +1213,12 @@ export async function getNestedOptions(
 }
 
 /**
- * Gets the inline constraint of an option with or without name.
+ * Gets the inline constraint of an option name.
  * @param option The option definition
- * @param name The option name (if any)
+ * @param name The option name
  * @returns The inline constraint
  */
-export function checkInline(option: OpaqueOption, name: string = ''): boolean | 'always' {
+export function checkInline(option: OpaqueOption, name: string): boolean | 'always' {
   const { inline } = option;
   return (isObject(inline) ? inline[name] : inline) ?? true;
 }

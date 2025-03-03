@@ -254,15 +254,12 @@ const formatFunctions: FormatFunctions = {
       this[spec](value, result, flags);
     } else {
       const { connectives } = config;
-      result.pushSty(config.styles.value);
-      try {
-        result
-          .open(connectives.valueOpen)
-          .split('' + value)
-          .close(connectives.valueClose);
-      } finally {
-        result.popSty();
-      }
+      result
+        .pushSty(config.styles.value)
+        .open(connectives.valueOpen)
+        .split('' + value)
+        .close(connectives.valueClose)
+        .popSty();
     }
   },
 };
@@ -393,16 +390,6 @@ export type FormatFunctions = Readonly<Record<FormatSpecifier, FormatFunction>>;
  */
 export class AnsiString {
   /**
-   * The stack of styles.
-   */
-  private readonly styles: Array<Style> = [];
-
-  /**
-   * The opening style.
-   */
-  private readonly curStyle: Style = sgrSequence();
-
-  /**
    * The list of strings without control sequences
    */
   public readonly strings: Array<string> = [];
@@ -413,9 +400,14 @@ export class AnsiString {
   public readonly styled: Array<string> = [];
 
   /**
-   * The largest length among all strings.
+   * The stack of styles.
    */
-  public maxLength: number = 0;
+  private readonly styles: Array<Style> = [];
+
+  /**
+   * The opening style.
+   */
+  private readonly curStyle: Style = sgrSequence();
 
   /**
    * Whether the first string should be merged with the previous string.
@@ -426,6 +418,11 @@ export class AnsiString {
    * Whether the last string should be merged with the next string.
    */
   public merge: boolean = false;
+
+  /**
+   * The largest length among all strings.
+   */
+  public maxLength: number = 0;
 
   /**
    * @returns The number of internal strings
@@ -519,8 +516,8 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   pushSty(sty: Style = noStyle): this {
-    this.openSty(sty).styles.push(sty);
-    return this;
+    this.styles.push(sty);
+    return this.openSty(sty);
   }
 
   /**
@@ -539,20 +536,23 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   private openSty(sty: Style): this {
-    this.curStyle.push(...sty);
+    this.curStyle.push(...sty); // append to opening style
     return this;
   }
 
   /**
    * Closes with a style.
+   * TODO: test this method.
    * @param sty The style
    * @returns The ANSI string instance
    */
   private closeSty(sty: Style): this {
-    if (!this.curStyle.length && this.maxLength) {
+    if (this.curStyle.length) {
+      this.curStyle.length = 0; // reset opening style because it was not applied
+    } else if (this.maxLength) {
       this.styled[this.count - 1] += sty; // close with style
     } else {
-      this.openSty(sty); // open with style if the last style was not applied or if no strings
+      this.openSty(sty); // fallback to opening if no strings
     }
     return this;
   }
@@ -576,7 +576,11 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   close(word: string): this {
-    return this.add(word, word, true);
+    // keep this check
+    if (word) {
+      this.add(word, word, true);
+    }
+    return this;
   }
 
   /**
@@ -612,8 +616,9 @@ export class AnsiString {
 
   /**
    * Appends a text.
+   * This is supposed to be a private method, but we need to call it from within the module.
    * @param text The text with no control sequences
-   * @param styledText The text with possible control sequences
+   * @param styledText The text with possible control sequences (should not be empty)
    * @param close True if the text should be merged with the previous string, if any
    * @returns The ANSI string instance
    */
@@ -701,7 +706,7 @@ export class AnsiString {
     if (width && width < start + this.maxLength) {
       start = 0; // wrap to the first column instead
       if (column && this.strings[0]) {
-        push('\n', 0); // break the first line
+        push('\n', 0); // forcefully break the first line
       }
     } else if (column < start && this.strings[0]) {
       push(move(column, start), start); // pad until start
@@ -981,8 +986,8 @@ function sgrSequence(...attrs: Array<ExtendedAttr>): Style {
 
 /**
  * Merges opening and closing styles.
- * @param close The closing style (style to cancel from current level)
- * @param open The opening style (style to reapply from parent level)
+ * @param close The closing style (to cancel from current level)
+ * @param open The opening style (to reapply from parent level)
  * @returns The merged style (i.e., with no redundant attributes)
  */
 function mergeStyles(close?: Style, open: Style = noStyle): Style {
@@ -991,20 +996,20 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
   }
   const attrs: Partial<Record<StyleAttr, ExtendedAttr>> = {};
   for (const attr of close) {
+    // skip extended attributes
     if (!isArray(attr)) {
-      const cancelAttr = cancellingAttribute[attr as StyleAttr];
+      const cancelAttr = cancellingAttribute[attr as StyleAttr] ?? (attr as StyleAttr);
       if (cancelAttr) {
         attrs[cancelAttr] = cancelAttr; // cancel attribute
       }
     }
   }
   for (const attr of open) {
+    // skip extended attributes
     if (!isArray(attr)) {
-      const cancelAttr = cancellingAttribute[attr as StyleAttr];
-      if (!cancelAttr) {
-        attrs[attr as StyleAttr] = attr as ExtendedAttr; // attr is a cancelling attribute
-      } else if (cancelAttr in attrs) {
-        attrs[cancelAttr] = attr as ExtendedAttr; // reapply only if it changed
+      const cancelAttr = cancellingAttribute[attr as StyleAttr] ?? (attr as StyleAttr);
+      if (cancelAttr in attrs) {
+        attrs[cancelAttr] = attr; // reapply only if it changed
       }
     }
   }

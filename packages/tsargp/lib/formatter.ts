@@ -292,7 +292,7 @@ export function format(
   options: OpaqueOptions,
   sections: HelpSections = defaultSections,
   filter: ReadonlyArray<string> = [],
-  progName: string = '',
+  progName?: string,
 ): AnsiMessage {
   const keys = filterOptions(options, filter);
   const help = new AnsiMessage();
@@ -512,7 +512,7 @@ function adjustEntries(
  * @param layout The help columns layout
  * @param option The option definition
  * @param useEnv Whether option names should be replaced by environment variable names
- * @returns The list of formatted strings, one for each name
+ * @returns The list of ANSI strings, one for each name
  */
 function formatNames(
   layout: HelpColumnsLayout,
@@ -530,7 +530,7 @@ function formatNames(
   names.forEach((name) => {
     if (name) {
       str = new AnsiString()
-        .break(str ? 0 : breaks) // break only on first name
+        .break(str ? 0 : breaks) // break only on the first name
         .pushSty(config.styles.base) // base style will be popped later
         .word(name, sty);
       result.push(str);
@@ -545,7 +545,7 @@ function formatNames(
  * Formats an option's parameter to be printed on the terminal.
  * @param layout The help columns layout
  * @param option The option definition
- * @returns The formatted string
+ * @returns The ANSI string
  */
 function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
@@ -590,29 +590,28 @@ function formatDescription(
  * @param options The option definitions
  * @param section The help section
  * @param keys The filtered option keys
- * @param progName The program name
+ * @param progName The program name, if any
  * @param result The resulting message
  */
 function formatHelpSection(
   options: OpaqueOptions,
   section: HelpSection,
   keys: ReadonlyArray<string>,
-  progName: string,
+  progName: string = '',
   result: AnsiMessage,
 ) {
   const { type, heading, content } = section;
   if (type === 'groups') {
-    const { layout, filter, exclude, items, useEnv, noBreakFirst } = section;
+    const { layout, filter, exclude, items, useEnv } = section;
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
     const groups = formatGroups(options, mergedLayout, keys, items, filter, exclude, useEnv);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
-        const breaks = noBreakFirst && !result.length ? 0 : heading.breaks;
-        formatTextBlock({ ...heading, text: group || heading.text, breaks }, result);
+        formatTextBlock({ ...heading, text: group || heading.text }, result);
       }
       if (content) {
-        formatTextBlock({ ...content, text: group ? '' : content.text }, result);
+        formatTextBlock({ ...content, text: group ? '' : content.text }, result, 2);
       }
       for (const [names, param, descr] of entries) {
         result.push(...names, param, descr.break()); // include trailing line feed
@@ -626,16 +625,17 @@ function formatHelpSection(
       const baseSty = config.styles.base;
       const prev: Array<AnsiString> = [];
       let indent = content?.indent ?? 0;
-      let breaks = content?.breaks ?? 0;
+      let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
+      progName = content?.text ?? progName;
       if (progName) {
         const str = new AnsiString(indent)
           .break(breaks)
           .pushSty(baseSty)
-          .word(progName, content?.style) // use this style only for program name
+          .word(progName.replace(regex.sgr, ''), content?.style)
           .popSty();
         prev.push(str);
         indent = max(0, indent ?? 0) + progName.length + 1;
-        breaks = 0;
+        breaks = 0; // avoid breaking between program name and usage
       }
       const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
       formatUsage(keys, options, section, str);
@@ -649,14 +649,15 @@ function formatHelpSection(
 }
 
 /**
- * Formats a help text block to be included in a help message.
+ * Formats a text block to be included in a help section.
  * @param block The text block
  * @param result The resulting message
  * @param breaksAfter The number of trailing line feeds (only if there is text)
  */
 function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter: number = 0) {
-  const { text, style, align, indent, breaks, noSplit } = block;
-  const str = new AnsiString(indent, align === 'right').break(breaks ?? 0);
+  const { text, style, align, indent, breaks, noSplit, noBreakFirst } = block;
+  const breaksBefore = noBreakFirst && !result.length ? 0 : (breaks ?? 0);
+  const str = new AnsiString(indent, align === 'right').break(breaksBefore);
   if (text) {
     str.pushSty(config.styles.base).pushSty(style);
     if (noSplit) {

@@ -198,9 +198,10 @@ describe('format', () => {
       'section  heading\n' +
         'section  content\n' +
         'section  heading\n' +
+        'section  content\n' +
         '[-f]\n' +
         'section  heading\n' +
-        'section  content\n' +
+        'section  content\n\n' +
         '  -f\n',
     );
   });

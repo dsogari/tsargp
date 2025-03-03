@@ -86,7 +86,7 @@ Sections are a convenient way to organize the help content. There are three kind
 
 All section types share a set of properties:
 
-- `type` - tye type of section (required, can be `'text'{:ts}`, `'usage'{:ts}` or `'groups'{:ts}`)
+- `type` - the type of section (required, can be `'text'{:ts}`, `'usage'{:ts}` or `'groups'{:ts}`)
 - `heading` - the section heading (optional [text block], defaults to none)
 - `content` - the section content (optional [text block], defaults to none)
 
@@ -105,7 +105,8 @@ A text block contains the following optional properties:
 - `align` - the text alignment (can be `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` - the indentation level (defaults to `0{:ts}`)
 - `breaks` - the number of leading line feeds (defaults to `0{:ts}`)
-- `noSplit` - true to disable [text splitting] (defaults to `false{:ts}`)
+- `noSplit` - whether to disable [text splitting] (defaults to `false{:ts}`)
+- `noBreakFirst` - whether to avoid line feeds at the beginning of the message (defaults to `false{:ts}`)
 
 ### Text section
 
@@ -113,7 +114,7 @@ A text section can be used to write various kinds of content, such as introducti
 
 ### Usage section
 
-The [usage message] is a concise representation of a program's command line. It replaces the `content.text` property. Here is an example:
+The [usage message] is a concise representation of a program's command line. Here is an example:
 
 {/* cSpell:disable */}
 
@@ -131,7 +132,7 @@ The [usage message] is a concise representation of a program's command line. It 
 
 {/* cSpell:enable */}
 
-In addition to the [common properties], a usage section has the following optional properties:
+The `content.text` property of a usage section can be used to override the [program name]. In addition to the [common properties], this type of section has the following optional properties:
 
 - `filter` - a list of options to include or exclude (defaults to including all options)
 - `exclude` - whether the filter should exclude (defaults to `false{:ts}`)
@@ -171,16 +172,15 @@ Mutual exclusivity and multi-targeting are _not_ supported at this time. For tha
 
 ### Groups section
 
-A groups section is a collection of option groups and their help entries. The [option group] attribute is used as heading for each group, except for the _default_ group, which uses the `heading.text` property. The default group also uses the `content.text` property as a preface before listing its entries.
+A groups section is a collection of option groups and their help entries. The [option group] attribute is used as a heading for each group, except for the _default_ group, which borrows the `heading.text` property, if present. The default group also includes the value of `content.text`, if present, as a preface before listing its entries.
 
-In addition to the [common properties], a groups section has the following optional properties:
+In addition to the [common properties], this type of has the following optional properties:
 
 - `filter` - a list of group names to include or exclude (defaults to including all groups)
 - `exclude` - whether the filter should exclude (defaults to `false{:ts}`)
 - `layout` - an object with [column layout] settings for the section (see below)
 - `items` - the order of [help items] to be shown in option descriptions (defaults to all items)
 - `useEnv` - whether option names should be replaced by [environment variable] names (defaults to `false{:ts}`)
-- `noBreakFirst` - whether the first group heading should have no leading line feeds (defaults to `false{:ts}`)
 
 <Callout type="default">
 
@@ -343,6 +343,7 @@ This is inherently different from what a text search utility like GNU's `grep` w
 {/* parser references */}
 
 [inline parameters]: parser#inline-parameters
+[program name]: parser#program-name
 
 {/* styles references */}
 

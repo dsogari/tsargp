@@ -468,7 +468,7 @@ const enum TypeFace {
    */
   notItalicNorFraktur,
   /**
-   * Not underlined or doubly underlined.
+   * Not underlined (nor doubly underlined).
    */
   notUnderlined,
   /**
@@ -476,7 +476,7 @@ const enum TypeFace {
    */
   notBlinking,
   /**
-   * Proportional spacing.
+   * Enable proportional spacing.
    */
   proportionallySpaced,
   /**
