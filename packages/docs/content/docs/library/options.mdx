@@ -57,28 +57,28 @@ The option value (also called _parsed_ value) appears in the [resulting object].
 For example, here is the type definition for the values of the [Demo](../../demo.mdx) options:
 
 ```ts
-declare const values: {
-  readonly flag: boolean | undefined;
-  readonly hello: number | undefined;
-  readonly boolean: boolean;
-  readonly strRegex: string;
-  readonly numRange: number;
-  readonly strChoice: 'one' | 'two' | undefined;
-  readonly numChoice: number | undefined;
-  readonly strArray: readonly ['one'] | readonly string[];
-  readonly numArray: readonly [1, 2] | readonly number[];
-  readonly strArrayLimit: readonly string[] | undefined;
-  readonly numArrayUnique: readonly number[] | undefined;
-};
+declare const values: Readonly<{
+  flag: boolean | undefined;
+  hello: number | undefined;
+  boolean: boolean;
+  strRegex: string;
+  numRange: number;
+  strChoice: 'one' | 'two' | undefined;
+  numChoice: number | undefined;
+  strArray: readonly ['one'] | readonly string[];
+  numArray: readonly [1, 2] | readonly number[];
+  strArrayLimit: readonly string[] | undefined;
+  numArrayUnique: readonly number[] | undefined;
+}>;
 ```
 
-Notice that all properties in this object are `readonly{:ts}`. This is intentional: we strongly believe that the parsed values should _not_ be modified, because they reflect the command line. Generally, you can do any necessary transformations inside the [parsing callback]. Otherwise, you should consider creating complementary data structures.
+Notice that the properties in this object are `readonly{:ts}`. This is intentional: we believe that the parsed values should _not_ be modified, because they reflect the command line. Generally, you can do any necessary transformations inside the [parsing callback] and return arbitrary values, such as class instances, which should be enough for most purposes.
 
 A few additional remarks:
 
-- the initial value of any valued option is `undefined{:ts}`
-- the final value of any valued option cannot be `undefined{:ts}` if it either has a [default value] or is [always required]
-- if an [array] option declares a [default value] that is not an array, that value will be placed in a single-element array
+- the _initial_ value of any valued option is `undefined{:ts}`
+- the _final_ value of any valued option can be `undefined{:ts}`, unless it is [always required] or has a [default value]
+- if an [array] option declares a [default value] that is not an array, that value is converted to a single-element tuple
 - [help] and [version] options without the [save message] attribute do not have a value
 
 ### Option requirements
@@ -731,7 +731,7 @@ In the special case of _zero_, the [parsing callback] will receive a copy of all
 
 <Callout type="warning">
 
-If the data comes from the [environment], then the callback will receive an array with a single element as parameter, which may be _less_ than the expected count. To check if this is the case, you should inspect the `index` property of the [argument information], which should have the value `NaN{:ts}`.
+If the data comes from the [environment], then the callback will receive a single-element tuple as parameter, which may be _less_ than the expected count. To check if this is the case, you should inspect the `index` property of the [argument information], which should have the value `NaN{:ts}`.
 
 </Callout>
 

@@ -794,9 +794,11 @@ export type Options = Readonly<Record<string, Option>>;
  * A collection of option values.
  * @template T The type of the option definitions
  */
-export type OptionValues<T extends Options = Options> = Resolve<{
-  readonly [key in keyof T as OptionKeyType<T[key], key>]: OptionDataType<T[key]>;
-}>;
+export type OptionValues<T extends Options = Options> = Resolve<
+  Readonly<{
+    [key in keyof T as OptionKeyType<T[key], key>]: OptionDataType<T[key]>;
+  }>
+>;
 
 /**
  * The message option types.
@@ -925,7 +927,14 @@ type WithRegex = {
  * @template V The actual data type
  */
 type ArrayDataType<T extends Option, V> =
-  T extends WithOptionType<'array'> ? (V extends ReadonlyArray<infer _> ? V : [V]) : V;
+  T extends WithOptionType<'array'> ? (V extends ReadonlyArray<infer _> ? V : readonly [V]) : V;
+
+/**
+ * The data type of a value that may be a function or promise.
+ * @template T The actual data type
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ReturnDataType<T> = T extends (...args: any) => infer R ? Awaited<R> : Awaited<T>;
 
 /**
  * The data type of an option that may have a default value.
@@ -934,23 +943,21 @@ type ArrayDataType<T extends Option, V> =
 type DefaultDataType<T extends Option> = T extends { required: true }
   ? never
   : T extends { default: infer D }
-    ? D extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? ArrayDataType<T, Awaited<R>>
-      : ArrayDataType<T, Awaited<D>>
+    ? ArrayDataType<T, ReturnDataType<D>>
     : undefined;
+
+/**
+ * The data type of a value that mey be a set of option definitions.
+ * @template T The actual data type
+ */
+type OptionsDataType<T> = T extends Options ? T : never;
 
 /**
  * The data type of an option that may have nested options.
  * @template T The option definition type
  */
 type NestedOptionsDataType<T extends Option> = T extends { options: infer O }
-  ? O extends string
-    ? Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    : O extends (() => infer R extends Promissory<Options>)
-      ? OptionValues<Awaited<R>>
-      : O extends Promissory<Options>
-        ? OptionValues<Awaited<O>>
-        : never
+  ? OptionValues<OptionsDataType<ReturnDataType<O>>>
   : Record<never, never>;
 
 /**
@@ -958,10 +965,7 @@ type NestedOptionsDataType<T extends Option> = T extends { options: infer O }
  * @template T The option definition type
  * @template F The fallback data type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ParseDataType<T extends Option, F> = T extends { parse: (...args: any) => infer R }
-  ? Awaited<R>
-  : F;
+type ParseDataType<T extends Option, F> = T extends { parse: infer D } ? ReturnDataType<D> : F;
 
 /**
  * The data type of an option that may have choices.
@@ -1225,7 +1229,7 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
  */
 export async function getNestedOptions(option: OpaqueOption): Promise<OpaqueOptions> {
   // do not destructure `options`, because the callback might need to use `this`
-  return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
+  return isFunction(option.options) ? option.options() : (option.options ?? {});
 }
 
 /**

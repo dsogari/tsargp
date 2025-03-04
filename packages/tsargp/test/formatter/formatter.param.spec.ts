@@ -277,6 +277,17 @@ describe('format', () => {
       expect(format(options).wrap()).toEqual(`  -s  123\n`);
     });
 
+    it('handle an array-valued option with a number example value', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          example: 123,
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -a  [123...]  Accepts multiple parameters.\n`);
+    });
+
     it('handle an array-valued option with a boolean array example value', () => {
       const options = {
         array: {

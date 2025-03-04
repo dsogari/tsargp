@@ -75,9 +75,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-a', '0', '-a', '1'])).resolves.toEqual({ array: [0, 1] });
-      expect(parse(options, ['-a', '0,1', '-a', '2,3'])).resolves.toEqual({
-        array: [0, 1, 2, 3],
-      });
+      expect(parse(options, ['-a', '0,1', '-a', '2,3'])).resolves.toEqual({ array: [0, 1, 2, 3] });
     });
 
     it('throw an error on option with too many values', () => {

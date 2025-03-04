@@ -215,7 +215,7 @@ const enum ArgType {
  * @param options The option definitions
  * @param cmdLine The command line or arguments
  * @param flags The parsing flags
- * @returns The options' values
+ * @returns The frozen option values
  */
 export async function parse<T extends Options>(
   options: T,
@@ -224,13 +224,13 @@ export async function parse<T extends Options>(
 ): Promise<OptionValues<T>> {
   const values = valuesFor(options);
   await parseInto(options, values, cmdLine, flags);
-  return values;
+  return Object.freeze(values);
 }
 
 /**
  * Parses command-line arguments into option values.
  * @param options The option definitions
- * @param values The options' values to parse into
+ * @param values The option values to parse into
  * @param cmdLine The command line or arguments
  * @param flags The parsing flags
  * @returns The parsing result
