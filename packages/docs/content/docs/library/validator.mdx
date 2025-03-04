@@ -2,8 +2,6 @@
 title: Validator - Library - Docs
 ---
 
-import { Callout } from 'nextra/components';
-
 # Validator
 
 The `validator` module handles validation of option definitions. It provides a function that accepts a set of definitions and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
@@ -51,17 +49,13 @@ The following restrictions will raise an error for any option definition that fa
 - **Invalid required value** - An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is nullish (`null{:ts}` or `undefined{:ts}`).
 - **Duplicate positional option** - Since positional arguments have no name, they must pertain to exactly one option. Hence, there cannot be _two_ options with the [positional] attribute in the same definition level.
 
-<Callout type="info">
+> [!NOTE]
+>
+> `null{:ts}` values from the [option names] are ignored in name validation.
 
-`null{:ts}` values from the [option names] are ignored in name validation.
-
-</Callout>
-
-<Callout type="warning">
-
-The _satisfiability_ of option requirements is not verified, not only because [requirement callbacks] cannot be evaluated at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `allOf({ opt: 1 }, { opt: 2 }){:ts}` cannot be satisfied, but is hard to verify in general[^1]. You should ensure that this does not happen.
-
-</Callout>
+> [!WARNING]
+>
+> The _satisfiability_ of option requirements is not verified, not only because [requirement callbacks] cannot be evaluated at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `allOf({ opt: 1 }, { opt: 2 }){:ts}` cannot be satisfied, but is hard to verify in general[^1]. You should ensure that this does not happen.
 
 ### Validation warnings
 

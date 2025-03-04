@@ -2,8 +2,6 @@
 title: Parser - Library - Docs
 ---
 
-import { Callout } from 'nextra/components';
-
 # Parser
 
 The `parser` module handles parsing of command-line arguments. It provides functions that accept a set of option definitions and parse arguments into option values. They may also produce error and warning messages, which can be customized via [message configuration].
@@ -48,11 +46,9 @@ The parsing procedure can be configured via a `ParsingFlags` object that has som
 
 The `progName` property is a custom name for the main command, which is used to update the [process title] and is rendered in the [usage section] of help messages. It defaults to the _basename_ of the executing script, but can be suppressed by setting it to an empty string.
 
-<Callout type="info">
-
-This flag is ignored when [word completion] is in effect.
-
-</Callout>
+> [!NOTE]
+>
+> This flag is ignored when [word completion] is in effect.
 
 ### Completion index
 
@@ -70,11 +66,9 @@ The `clusterPrefix` property specifies the prefix for cluster arguments. If set,
 
 Option names have precedence over the cluster prefix. For example, if the prefix is a single dash and there's an option named `'-flag'{:ts}`, then an argument with this name will _not_ be considered a cluster argument. On the other hand, the cluster prefix has precedence over the [option prefix].
 
-<Callout type="default">
-
-The cluster prefix can be the empty string, in which case it behaves similarly to GNU's `tar` command.
-
-</Callout>
+> [!TIP]
+>
+> The cluster prefix can be the empty string, in which case it behaves similarly to GNU's `tar` command.
 
 ### Option prefix
 
@@ -139,11 +133,9 @@ When these variables are available, the parser enters into _completion_ mode: it
 
 The result of completion is a [text message], which should be printed on the terminal so that the completion builtins can perform the final completion step.
 
-<Callout type="info">
-
-The parser ignores any errors thrown by callbacks during completion. If an error is thrown by a completion callback, the default completion message (an empty list) will be thrown instead.
-
-</Callout>
+> [!NOTE]
+>
+> The parser ignores any errors thrown by callbacks during completion. If an error is thrown by a completion callback, the default completion message (an empty list) will be thrown instead.
 
 #### Completion algorithm
 
@@ -173,11 +165,9 @@ Since the completion builtins always expect a list of words as a result, the lib
 - option [requirements] are not verified
 - cluster arguments are immediately completed with the default completion message
 
-<Callout type="default">
-
-Other arguments are processed as usual, which means that a completion callback can inspect the values parsed before it, in order to make better suggestions based on those values.
-
-</Callout>
+> [!TIP]
+>
+> Other arguments are processed as usual, which means that a completion callback can inspect the values parsed before it, in order to make better suggestions based on those values.
 
 ### Requirements checking
 
@@ -186,11 +176,9 @@ When the parser evaluates option [requirements], it compares an option's value a
 - before calling the [parsing callback] of an option that has [break loop] set
 - before parsing a [subcommand]
 
-<Callout type="info">
-
-As has been mentioned previously, requirements are _not_ checked when [word completion] is in effect.
-
-</Callout>
+> [!NOTE]
+>
+> As has been mentioned previously, requirements are _not_ checked when [word completion] is in effect.
 
 ### Name suggestions
 
@@ -200,11 +188,9 @@ When the parser expects an option name and the current argument is not a valid o
 
 Option parameters may be passed on the command-line using the syntax `<name>=<param>`.
 
-<Callout type="info">
-
-This syntax cannot be used with the positional marker.
-
-</Callout>
+> [!NOTE]
+>
+> This syntax cannot be used with the positional marker.
 
 As is the case with standalone parameters, inline parameters do not conflict with option names, and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
@@ -225,11 +211,9 @@ The process title would be updated in the following way:
 3. `node script.js cmd1` - as soon as the `cmd1` subcommand is parsed
 4. `node script.js cmd1 cmd2` - as soon as the `cmd2` subcommand is parsed
 
-<Callout type="info">
-
-The title will remain in changed state after the parsing procedure returns.
-
-</Callout>
+> [!NOTE]
+>
+> The title will remain in changed state after the parsing procedure returns.
 
 Other option names are not used, not only because they would pollute the output of process management utilities (such as Linux's `ps`), but also because the process title reflects the current value of [program name], which appears in the [usage section] of help messages.
 

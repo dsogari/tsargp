@@ -1,19 +1,16 @@
 import dynamic from 'next/dynamic';
-import { Callout } from 'nextra/components';
 
 export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 <Demo />
 
-<Callout type="info">
-
-Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion all work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
-
-```sh copy
-npm i -g tsargp && complete -C tsargp tsargp
-```
-
-</Callout>
+> [!NOTE]
+>
+> Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion all work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
+>
+> ```sh copy
+> npm i -g tsargp && complete -C tsargp tsargp
+> ```
 
 ## Try it out
 
@@ -388,7 +385,6 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check that the `-b` option cannot be specified without required options (e.g., try `-b yes` and see that it fails)
 2. check if the `-b` option can be specified with required options (e.g., `-b yes -sc one`)
-3. check if the `-b` option can be specified through an environment variable (e.g., `BOOLEAN=yes ...`; same result as above)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -422,7 +418,8 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check if the `-f` option can be specified without a parameter (also, see the warning produced)
 2. check if the `-f` option can be negated with `--no-flag` (also, see the warning produced)
-3. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
+3. check if the `-f` option can be specified through an environment variable (e.g., `FLAG=` or `NO_FLAG=`; same result as above; use `clear` to reset variables)
+4. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -457,7 +454,7 @@ When an option is specified more than once, the retained value is usually the la
 
 </details>
 <details>
-  <summary>Expected output (3)</summary>
+  <summary>Expected output (4)</summary>
 {/* cSpell:disable */}
 
 ```ansi
@@ -487,6 +484,6 @@ With the console panel open, slide the screen splitter until the terminal width 
 
 ### Toggle styles
 
-- check if styles can be omitted with the variable `NO_COLOR` (e.g., `NO_COLOR=1 ...`)
-- check if styles are emitted with the variable `FORCE_COLOR` (e.g., `NO_COLOR=1 FORCE_COLOR=1 ...`)
-- check if styles are emitted when resetting the variables (e.g., `NO_COLOR= FORCE_COLOR= ...`)
+- check if styles can be omitted with the environment variable `NO_COLOR` (e.g., `NO_COLOR=1`)
+- check if styles are emitted with the variable `FORCE_COLOR` (e.g., `NO_COLOR=1 FORCE_COLOR=1`)
+- check if styles are emitted when resetting the variables (e.g., `NO_COLOR= FORCE_COLOR=`)

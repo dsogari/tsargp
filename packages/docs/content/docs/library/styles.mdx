@@ -2,8 +2,6 @@
 title: Styles - Library - Docs
 ---
 
-import { Callout } from 'nextra/components';
-
 # Styles
 
 The `styles` module handles text styling. It provides functions and classes that can be used to customize the display of text in terminals that support [escape sequences].
@@ -20,11 +18,9 @@ Styles are cumulative, i.e., they can be combined together depending on the kind
 
 In the next sections we present the various styling attributes available.
 
-<Callout type="warning">
-
-Not all of the attributes are supported in every terminal, so you should experiment with them before committing your code.
-
-</Callout>
+> [!WARNING]
+>
+> Not all of the attributes are supported in every terminal, so you should experiment with them before committing your code.
 
 ### Type faces
 
@@ -125,11 +121,9 @@ During splitting, numeric placeholders prefixed with a hashtag `#` may be extrac
 - by both the [parser] and [validator], to produce error and warning messages based on configured [error phrases]
 - by the [formatter], to assemble help items from configured [help phrases]
 
-<Callout type="info">
-
-This particular feature is only available in _phrases_, not in other text attributes.
-
-</Callout>
+> [!NOTE]
+>
+> This particular feature is only available in _phrases_, not in other text attributes.
 
 Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which is denoted internally by a single character. The available ones are:
 
@@ -197,11 +191,9 @@ There are different kinds of content that an application might want to print in 
 
 For convenience, all message classes have a `toString` method and a `message` property, both of which can be used to obtain a traditional `string{:ts}`. However, each class uses its own default terminal width to render the resulting string. The various classes are described below.
 
-<Callout type="default">
-
-All messages produced by the library are instances of one of these classes. So you can check the kind of a captured message through `instanceof{:ts}`.
-
-</Callout>
+> [!TIP]
+>
+> All messages produced by the library are instances of one of these classes. So you can check the kind of a captured message through `instanceof{:ts}`.
 
 ### ANSI message
 
@@ -221,11 +213,9 @@ The default values of these parameters depend on a few environment variables:
 
 When `FORCE_WIDTH` is not set, the default width used by this class is the `columns` property of the _standard output_ stream (i.e., `process.stdout{:ts}`). Therefore, this kind of message should be printed with `console.log{:ts}` or equivalent.
 
-<Callout type="info">
-
-When redirecting the output of a command (e.g., writing to a file or piping to another command), the associated stream may not have a `columns` property, thus defaulting to zero width.
-
-</Callout>
+> [!NOTE]
+>
+> When redirecting the output of a command (e.g., writing to a file or piping to another command), the associated stream may not have a `columns` property, thus defaulting to zero width.
 
 Generally, you should not alter the returned string after being wrapped, as this will mess up the disposition of text in the terminal. If you do need to, you can either _prepend_ text ending with a line feed `'\n'{:ts}`, or _append_ text starting with a line feed, as this will preserve the disposition of wrapped text. Alternatively, you can retrieve the underlying ANSI strings from the list and manipulate them before converting the message to string.
 
@@ -272,11 +262,9 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 | `url`     | URLs                  | `fg.cyan{:ts}`        |
 | `base`    | Base style            | none                  |
 
-<Callout type="default">
-
-To preserve previous styles for a particular element, you can assign it an empty `style(){:ts}`. Do the same for all elements if you need to disable styling for your application as a whole (regardless of environment configuration).
-
-</Callout>
+> [!TIP]
+>
+> To preserve previous styles for a particular element, you can assign it an empty `style(){:ts}`. Do the same for all elements if you need to disable styling for your application as a whole (regardless of environment configuration).
 
 #### Connective words
 
@@ -305,11 +293,9 @@ The `connectives` property specifies words used to format some text elements tha
 | `exprOpen`    | Opening bracket of an expression                    | `'('{:ts}`   |
 | `exprClose`   | Closing bracket of an expression                    | `')'{:ts}`   |
 
-<Callout type="info">
-
-Connective words should _not_ contain [inline styles] or line feeds.
-
-</Callout>
+> [!NOTE]
+>
+> Connective words should _not_ contain [inline styles] or line feeds.
 
 #### Error phrases
 
@@ -344,11 +330,9 @@ The `errorPhrases` property specifies custom phrases to use for error and warnin
 | `variadicWithClusterLetter`  | A variadic option declares cluster letters                                   | `'Variadic option #0 may only appear as the last option in a cluster.'{:ts}`                     | `#0` = the option's key                                                                       |
 | `invalidInlineConstraint`    | A variadic option declares an inline constraint                              | `'Option #0 has invalid inline constraint.'{:ts}`                                                | `#0` = the option's key                                                                       |
 
-<Callout type="info">
-
-Error phrases are formatted according to [text formatting] rules.
-
-</Callout>
+> [!NOTE]
+>
+> Error phrases are formatted according to [text formatting] rules.
 
 #### Help phrases
 
@@ -378,11 +362,9 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 | `deprecated` | The option's deprecation notice                                              | `'Deprecated for #0.'{:ts}`                                                      | `#0` = the deprecation notice  |
 | `link`       | The option's external resource hyperlink                                     | `'Refer to #0 for details.'{:ts}`                                                | `#0` = the hyperlink           |
 
-<Callout type="info">
-
-Help phrases are formatted according to [text formatting] rules.
-
-</Callout>
+> [!NOTE]
+>
+> Help phrases are formatted according to [text formatting] rules.
 
 {/* self references */}
 

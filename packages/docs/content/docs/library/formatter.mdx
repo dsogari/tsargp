@@ -3,7 +3,6 @@ title: Formatter - Library - Docs
 ---
 
 import HelpContent from './help-content.svg';
-import { Callout } from 'nextra/components';
 
 # Formatter
 
@@ -52,11 +51,9 @@ For example, if an option's names are `'-f'{:ts}`, `'-ff'{:ts}`, `null{:ts}` and
 
 Note how the absent name produced whitespace between its neighbors.
 
-<Callout type="info">
-
-Empty strings will also be suppressed, but names containing spaces will appear unquoted.
-
-</Callout>
+> [!NOTE]
+>
+> Empty strings will also be suppressed, but names containing spaces will appear unquoted.
 
 ### Parameter column
 
@@ -90,11 +87,9 @@ All section types share a set of properties:
 - `heading` - the section heading (optional [text block], defaults to none)
 - `content` - the section content (optional [text block], defaults to none)
 
-<Callout type="info">
-
-If the `content` is present and contains text, it will always include a _trailing_ line feed.
-
-</Callout>
+> [!NOTE]
+>
+> If the `content` is present and contains text, it will always include a _trailing_ line feed.
 
 #### Text block
 
@@ -140,17 +135,13 @@ The `content.text` property of a usage section can be used to override the [prog
 - `requires` - a mapping of options to required options (defaults to none)
 - `comment` - a commentary to append to the usage (defaults to none)
 
-<Callout type="default">
+> [!TIP]
+>
+> The `filter` property can be used to create multiple usages of the same command, with different options.
 
-The `filter` property can be used to create multiple usages of the same command, with different options.
-
-</Callout>
-
-<Callout type="info">
-
-In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which must come _last_ in the usage.
-
-</Callout>
+> [!NOTE]
+>
+> In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which must come _last_ in the usage.
 
 #### Option dependencies
 
@@ -164,11 +155,9 @@ The `requires` property is equivalent to an adjacency list, except that each sou
 | A and C require B                  | `[[A] B [C]]` | `[A] B C`               |
 | A requires B; C requires A         | `[[A [C]] B]` | `A C B`                 |
 
-<Callout type="info">
-
-Mutual exclusivity and multi-targeting are _not_ supported at this time. For that purpose, you have to create different usages. (The reason is that it is difficult to implement. We sincerely apologize.)
-
-</Callout>
+> [!NOTE]
+>
+> Mutual exclusivity and multi-targeting are _not_ supported at this time. For that purpose, you have to create different usages. (The reason is that it is difficult to implement. We sincerely apologize.)
 
 ### Groups section
 
@@ -182,17 +171,13 @@ In addition to the [common properties], this type of has the following optional 
 - `items` - the order of [help items] to be shown in option descriptions (defaults to all items)
 - `useEnv` - whether option names should be replaced by [environment variable] names (defaults to `false{:ts}`)
 
-<Callout type="default">
+> [!TIP]
+>
+> The `useEnv` property can be used to create a dedicated section for environment variables.
 
-The `useEnv` property can be used to create a dedicated section for environment variables.
-
-</Callout>
-
-<Callout type="info">
-
-In the case of an inclusion filter, groups are listed in the order specified in the filter.
-
-</Callout>
+> [!NOTE]
+>
+> In the case of an inclusion filter, groups are listed in the order specified in the filter.
 
 #### Column layout
 
@@ -246,11 +231,9 @@ The `names.align` property supports an additional value `'slot'{:ts}`, meaning t
 
 The `param.align` and `descr.align` properties support an additional value `'merge'{:ts}`, which instructs the formatter to merge the contents of the column with the previous one. This is useful, for instance, if you want option parameters to be inlined with option names. When using this value, both the `indent` and `breaks` properties are ignored.
 
-<Callout type="info">
-
-If either `param.align` is set to `'merge'{:ts}` or if `param.hidden{:ts}` is `true{:ts}` and `descr.align{:ts}` is set to `'merge'{:ts}`, then the `'slot'{:ts}` setting for `names.align` will be ignored.
-
-</Callout>
+> [!NOTE]
+>
+> If either `param.align` is set to `'merge'{:ts}` or if `param.hidden{:ts}` is `true{:ts}` and `descr.align{:ts}` is set to `'merge'{:ts}`, then the `'slot'{:ts}` setting for `names.align` will be ignored.
 
 Note that merging a column is not the same as using zero indentation. Indentation is always relative to the end of the previous column, which depends on the length of the _longest_ text in that column, across all entries. On the other hand, merging implies having no additional space between text in both columns.
 
@@ -296,21 +279,17 @@ Below is an excerpt of a help message produced with the above configuration, in 
 
 The `items` property of a groups section specifies the kinds of help items that should be displayed in option descriptions, and in which order. It is an array whose values can be one of the enumerators from `HelpItem`. The default is to print all items as they are listed in the enumeration type.
 
-<Callout type="default">
-
-You might want to use this to limit the amount of information in the help message.
-
-</Callout>
+> [!TIP]
+>
+> You might want to use this to limit the amount of information in the help message.
 
 ## Option filter
 
 The `filter` parameter of the `format` function lists patterns that will be searched in option definitions, to filter the options. The patterns are case-insensitive and match [option names], [synopsis] and [environment variable] names. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
-<Callout type="info">
-
-This is inherently different from what a text search utility like GNU's `grep` would produce. The formatter will render the whole _help entry_ of options matching the given patterns, not just the matching _lines_.
-
-</Callout>
+> [!NOTE]
+>
+> This is inherently different from what a text search utility like GNU's `grep` would produce. The formatter will render the whole _help entry_ of options matching the given patterns, not just the matching _lines_.
 
 {/* self references */}
 

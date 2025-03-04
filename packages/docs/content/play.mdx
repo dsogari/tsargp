@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic';
-import { Callout } from 'nextra/components';
 
 export const Play = dynamic(() => import('@components/play'), { ssr: false });
 export const Code = dynamic(() => import('@components/code'), { ssr: false });
@@ -25,25 +24,21 @@ return {
 
 <Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[178]} />
 
-<Callout type="default">
-
-Call `init` once to validate the option definitions. After that, you can `play` with your options. (Word completion will be available as well.)
-
-</Callout>
+> [!TIP]
+>
+> Call `init` once to validate the option definitions. After that, you can `play` with your options. (Word completion will be available as well.)
 
 ---
 
 <Play callbacks={callbacks} />
 
-<Callout type="info">
-
-Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion all work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
-
-```sh copy
-npm i -g tsargp && complete -C tsargp tsargp
-```
-
-</Callout>
+> [!NOTE]
+>
+> Terminal emulation has limited capabilities. Copy, paste, history, colorization, and completion all work, but not as seamlessly as in a real shell. For a smoother experience, you may want to try the demo locally:
+>
+> ```sh copy
+> npm i -g tsargp && complete -C tsargp tsargp
+> ```
 
 ## Things to try out
 

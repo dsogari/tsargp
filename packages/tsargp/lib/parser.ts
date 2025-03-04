@@ -109,9 +109,9 @@ type ParseContext = [
    */
   args: Array<string>,
   /**
-   * The set of options that were specified.
+   * The set of supplied options keys.
    */
-  specifiedKeys: Set<string>,
+  supplied: Set<string>,
   /**
    * True if word completion is in effect.
    */
@@ -277,9 +277,9 @@ function createContext(
       values[key] = undefined;
     }
   }
-  const specifiedKeys = new Set<string>();
+  const supplied = new Set<string>();
   const warning = new WarnMessage();
-  return [registry, values, args, specifiedKeys, completing, warning, flags];
+  return [registry, values, args, supplied, completing, warning, flags];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -338,7 +338,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParseContext) {
-  const [registry, values, args, specifiedKeys, completing, warning] = context;
+  const [registry, values, args, supplied, completing] = context;
   let prev: ParseEntry = [-1];
   let min = 0; // param count
   let max = 0; // param count
@@ -373,11 +373,8 @@ async function parseArgs(context: ParseContext) {
           throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       }
-      if (!completing && !specifiedKeys.has(key)) {
-        if (option.deprecated !== undefined) {
-          warning.add(ErrorItem.deprecatedOption, {}, getSymbol(name));
-        }
-        specifiedKeys.add(key);
+      if (!completing && !supplied.has(key)) {
+        addSupplied(context, info);
       }
       if (!max) {
         // comp === false
@@ -414,6 +411,19 @@ async function parseArgs(context: ParseContext) {
     throw new TextMessage(...words);
   }
   await checkRequired(context);
+}
+
+/**
+ * Parses the command-line arguments.
+ * @param context The parsing context
+ * @param info The option info
+ */
+function addSupplied(context: ParseContext, info: OptionInfo) {
+  const [key, option, name] = info;
+  if (option.deprecated !== undefined) {
+    context[5].add(ErrorItem.deprecatedOption, {}, getSymbol(name));
+  }
+  context[3].add(key);
 }
 
 /**
@@ -844,7 +854,7 @@ async function handleVersion(option: OpaqueOption): Promise<string> {
 // Requirements handling
 //--------------------------------------------------------------------------------------------------
 /**
- * Checks if required options were correctly specified.
+ * Checks if required options were correctly supplied.
  * This should only be called when completion is not in effect.
  * @param context The parsing context
  */
@@ -862,19 +872,19 @@ async function checkRequired(context: ParseContext) {
  * @returns A promise that must be awaited before continuing
  */
 async function checkDefaultValue(context: ParseContext, key: string) {
-  const [registry, values, , specifiedKeys] = context;
-  if (specifiedKeys.has(key)) {
+  const [registry, values, , supplied] = context;
+  if (supplied.has(key)) {
     return;
   }
   const option = registry.options[key];
   const { type, stdin, sources, preferredName, required } = option;
-  const names: Array<0 | string | URL> = stdin ? [0] : [];
-  names.push(...(sources ?? []));
-  for (const name of names) {
-    const param = isString(name) ? getEnv(name) : await readFile(name);
+  const allSources = [...(stdin ? [0] : []), ...(sources ?? [])];
+  for (const source of allSources) {
+    const param = isString(source) ? getEnv(source) : await readFile(source);
     if (param !== undefined) {
-      await parseParams(context, [key, option, `${name}`], NaN, [param]);
-      specifiedKeys.add(key);
+      const info: OptionInfo = [key, option, `${source}`];
+      await parseParams(context, info, NaN, [param]);
+      addSupplied(context, info);
       return;
     }
   }
@@ -900,25 +910,23 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   function check(requires: Requires, negate: boolean, invert: boolean) {
     return checkRequires(context, option, requires, error, negate, invert);
   }
-  const [registry, , , specifiedKeys] = context;
+  const [registry, , , supplied] = context;
   const option = registry.options[key];
   const { preferredName, requires, requiredIf } = option;
-  const specified = specifiedKeys.has(key);
+  const present = supplied.has(key);
   const error = new AnsiString();
   if (
-    (specified && requires && !(await check(requires, false, false))) ||
-    (!specified && requiredIf && !(await check(requiredIf, true, true)))
+    (present && requires && !(await check(requires, false, false))) ||
+    (!present && requiredIf && !(await check(requiredIf, true, true)))
   ) {
     const name = preferredName ?? '';
-    const kind = specified
-      ? ErrorItem.unsatisfiedRequirement
-      : ErrorItem.unsatisfiedCondRequirement;
+    const kind = present ? ErrorItem.unsatisfiedRequirement : ErrorItem.unsatisfiedCondRequirement;
     throw ErrorMessage.create(kind, {}, getSymbol(name), error);
   }
 }
 
 /**
- * Checks the requirements of an option that was specified.
+ * Checks the requirements of an option that was supplied.
  * @param context The parsing context
  * @param option The option definition
  * @param requires The option requirements
@@ -952,7 +960,7 @@ function checkRequires(
 }
 
 /**
- * Checks if a required option was specified with correct values.
+ * Checks if a required option was supplied with correct values.
  * @param context The parsing context
  * @param _option The requiring option definition
  * @param entry The required option key and value
@@ -969,19 +977,19 @@ function checkRequiresEntry(
   negate: boolean,
   invert: boolean,
 ): boolean {
-  const [registry, values, , specifiedKeys] = context;
+  const [registry, values, , supplied] = context;
   const [key, expected] = entry;
   const actual = values[key];
   const option = registry.options[key];
-  const specified = specifiedKeys.has(key) || actual !== undefined; // consider default values
+  const present = supplied.has(key) || actual !== undefined; // consider default values
   const required = expected !== null;
   const name = option.preferredName ?? '';
   const { connectives } = config;
-  if (!specified || !required || expected === undefined) {
-    if ((specified === required) !== negate) {
+  if (!present || !required || expected === undefined) {
+    if ((present === required) !== negate) {
       return true;
     }
-    if (specified !== invert) {
+    if (present !== invert) {
       error.word(connectives.no);
     }
     formatFunctions.m(Symbol.for(name), error, {});

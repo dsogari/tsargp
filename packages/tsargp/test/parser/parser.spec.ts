@@ -127,16 +127,17 @@ describe('parseInto', () => {
         },
         flag2: {
           type: 'flag',
-          names: ['-f2'],
+          sources: ['FLAG2'],
           deprecated: '',
         },
       } as const satisfies Options;
       const values = { flag1: undefined, flag2: undefined };
-      expect(parseInto(options, values, ['-f1', '-f2'])).resolves.toEqual({
+      process.env['FLAG2'] = '';
+      expect(parseInto(options, values, ['-f1'])).resolves.toEqual({
         warning: expect.objectContaining({
           message:
             `Option -f1 is deprecated and may be removed in future releases.\n` +
-            `Option -f2 is deprecated and may be removed in future releases.\n`,
+            `Option FLAG2 is deprecated and may be removed in future releases.\n`,
         }),
       });
     });

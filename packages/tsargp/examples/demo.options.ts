@@ -122,11 +122,11 @@ export default {
   flag: {
     type: 'flag',
     names: ['-f', '--no-flag'],
-    sources: ['FLAG'],
+    sources: ['FLAG', 'NO_FLAG'],
     synopsis: 'A flag option.',
     deprecated: 'some reason',
     parse(_, { name }) {
-      return name !== this.names?.[1];
+      return name !== this.names?.[1] && name !== this.sources?.[1];
     },
     styles: {
       names: style(fg.extended, rgb(160, 100, 64)),
