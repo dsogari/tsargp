@@ -33,14 +33,6 @@ The `noNamingIssues` property indicates whether the validator should skip detect
 
 The `noRecurse` property indicates whether the validator should skip recursion into [nested options].
 
-### Resolution callback
-
-The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
-
-```ts
-import.meta.resolve.bind(import.meta);
-```
-
 ## Validation rules
 
 There are two kinds of validation rules, depending on whether they generate an error or a warning. They are listed below.

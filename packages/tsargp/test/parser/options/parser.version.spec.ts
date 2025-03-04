@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../../lib/options';
-import { parse, ParsingFlags } from '../../../lib/parser';
+import { parse } from '../../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -36,11 +36,10 @@ describe('parse', () => {
         version: {
           type: 'version',
           names: ['-v'],
-          version: '../../data/with-version.json',
+          version: new URL(import.meta.resolve('../../data/with-version.json')),
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-      expect(parse(options, ['-v'], flags)).rejects.toThrow(/^0.0.0$/);
+      expect(parse(options, ['-v'])).rejects.toThrow(/^0.0.0$/);
     });
 
     it('throw a version message from a file that does not contain a version field', () => {
@@ -48,22 +47,10 @@ describe('parse', () => {
         version: {
           type: 'version',
           names: ['-v'],
-          version: '../../data/no-version.json',
+          version: new URL(import.meta.resolve('../../data/no-version.json')),
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-      expect(parse(options, ['-v'], flags)).rejects.toThrow(/^undefined$/);
-    });
-
-    it('throw an error when a module resolution function is not specified', () => {
-      const options = {
-        version: {
-          type: 'version',
-          names: ['-v'],
-          version: '../../data/with-version.json',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow('Missing module resolution function.');
+      expect(parse(options, ['-v'])).rejects.toThrow(/^undefined$/);
     });
 
     it('throw an error when a version file is not valid JSON', () => {
@@ -71,11 +58,10 @@ describe('parse', () => {
         version: {
           type: 'version',
           names: ['-v'],
-          version: '../../data/invalid.json',
+          version: new URL(import.meta.resolve('../../data/invalid.json')),
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-      expect(parse(options, ['-v'], flags)).rejects.toThrow(`JSON Parse error`);
+      expect(parse(options, ['-v'])).rejects.toThrow(`JSON Parse error`);
     });
 
     it('throw an error when a version file cannot be found', () => {
@@ -83,11 +69,10 @@ describe('parse', () => {
         version: {
           type: 'version',
           names: ['-v'],
-          version: '../../data/absent.json',
+          version: new URL(import.meta.resolve('../../data/absent.json')),
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-      expect(parse(options, ['-v'], flags)).rejects.toThrow(`Could not find a version JSON file.`);
+      expect(parse(options, ['-v'])).rejects.toThrow(`Could not find a version JSON file.`);
     });
   });
 });

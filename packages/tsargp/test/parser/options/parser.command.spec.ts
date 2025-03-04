@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test';
 import { type Options } from '../../../lib/options';
-import { parse, ParsingFlags } from '../../../lib/parser';
+import { parse } from '../../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -190,11 +190,10 @@ describe('parse', () => {
           command: {
             type: 'command',
             names: ['-c'],
-            options: '../../data/with-help',
+            options: async () => (await import('../../data/with-help')).default,
           },
         } as const satisfies Options;
-        const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-        expect(parse(options, ['-c', '-f'], flags)).resolves.toEqual({ command: { flag: true } });
+        expect(parse(options, ['-c', '-f'])).resolves.toEqual({ command: { flag: true } });
       });
     });
   });

@@ -1,13 +1,12 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import type { HelpItem } from './enums.js';
+import { ErrorItem, type HelpItem } from './enums.js';
 import type { AnsiMessage, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
-import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, getSymbol, isFunction, isObject, isString } from './utils.js';
+import { getEntries, getSymbol, isArray, isFunction, isObject, isString } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -216,7 +215,7 @@ export type WithSectionUsage = {
    */
   readonly required?: ReadonlyArray<string>;
   /**
-   * A mapping of option keys to required option keys.
+   * A record that maps option keys to required option keys.
    */
   readonly requires?: Readonly<Record<string, string>>;
   /**
@@ -297,7 +296,7 @@ export type OptionStyles = {
 export type RequiresExp = RequiresNot | RequiresAll | RequiresOne;
 
 /**
- * A mapping of option keys to required values.
+ * A record that maps option keys to required values.
  */
 export type RequiresVal = { readonly [key: string]: unknown };
 
@@ -305,7 +304,7 @@ export type RequiresVal = { readonly [key: string]: unknown };
  * An option requirement can be either:
  *
  * - an option key;
- * - a mapping of option keys to required values;
+ * - a record that maps option keys to required values;
  * - a requirement expression; or
  * - a requirement callback
  */
@@ -317,14 +316,6 @@ export type Requires = string | RequiresVal | RequiresExp | RequirementCallback;
  * @returns True if the requirements were satisfied
  */
 export type RequirementCallback = (values: OpaqueOptionValues) => Promissory<boolean>;
-
-/**
- * A JavaScript module resolution function.
- * To be used in non-browser environments only.
- * @param specifier The module specifier
- * @returns The resolved path
- */
-export type ResolutionCallback = (specifier: string) => string;
 
 /**
  * A callback for default values.
@@ -374,7 +365,7 @@ export type CompletionCallback = CustomCallback<
 /**
  * The type of nested options for a subcommand.
  */
-export type NestedOptions = string | Promissory<Options> | (() => Promissory<Options>);
+export type NestedOptions = Promissory<Options> | (() => Promissory<Options>);
 
 /**
  * The type of inline constraint.
@@ -576,7 +567,7 @@ export type WithParameter = {
    * Whether inline parameters should be disallowed or required for this option.
    * Can be `false` to disallow or `'always'` to always require.
    *
-   * It can also be a mapping of option names to one of the above, indicating whether the
+   * It can also be a record that maps option names to one of the above, indicating whether the
    * corresponding name disallows or requires inline parameters.
    */
   readonly inline?: InlineConstraint;
@@ -599,7 +590,7 @@ export type WithSelection = {
    */
   readonly choices?: ReadonlyArray<string>;
   /**
-   * The mapping of parameter values to option values.
+   * A record that maps parameter values to option values.
    */
   readonly mapping?: Readonly<Record<string, unknown>>;
   /**
@@ -632,10 +623,11 @@ export type WithHelp = {
  */
 export type WithVersion = {
   /**
-   * The version information as plain text (e.g., 0.1.0).
-   * It is not validated, but should not be empty or contain inline styles.
+   * The version information (e.g., a semantic version).
+   * If a `string`, it will not be validated, but should not contain inline styles.
+   * If a `URL`, it should be used in conjunction with the `resolve` parsing flag.
    */
-  readonly version?: string;
+  readonly version?: string | URL;
 };
 
 /**
@@ -737,7 +729,7 @@ export type CommandOption = WithOptionType<'command'> &
 export type FlagOption = WithOptionType<'flag'> &
   WithFlag &
   WithBasic &
-  WithOptionValue<''> &
+  WithOptionValue<null> &
   WithEnvironment &
   (WithDefault | WithRequired);
 
@@ -803,7 +795,7 @@ export type Options = Readonly<Record<string, Option>>;
  * @template T The type of the option definitions
  */
 export type OptionValues<T extends Options = Options> = Resolve<{
-  -readonly [key in keyof T]: OptionDataType<T[key]>;
+  readonly [key in keyof T as OptionKeyType<T[key], key>]: OptionDataType<T[key]>;
 }>;
 
 /**
@@ -832,7 +824,7 @@ export type OpaqueOption = WithOptionType<OptionType> &
   WithFlag &
   WithFunction &
   WithMessage &
-  WithOptionValue<'' & string & Array<string> & OpaqueOptionValues> &
+  WithOptionValue<any> & // eslint-disable-line @typescript-eslint/no-explicit-any
   WithEnvironment &
   WithParameter &
   WithSelection &
@@ -928,6 +920,14 @@ type WithRegex = {
 };
 
 /**
+ * The data type of a value that may have to be enforced to be an array.
+ * @template T The option definition type
+ * @template V The actual data type
+ */
+type ArrayDataType<T extends Option, V> =
+  T extends WithOptionType<'array'> ? (V extends ReadonlyArray<infer _> ? V : [V]) : V;
+
+/**
  * The data type of an option that may have a default value.
  * @template T The option definition type
  */
@@ -935,15 +935,15 @@ type DefaultDataType<T extends Option> = T extends { required: true }
   ? never
   : T extends { default: infer D }
     ? D extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? Awaited<R>
-      : Awaited<D>
+      ? ArrayDataType<T, Awaited<R>>
+      : ArrayDataType<T, Awaited<D>>
     : undefined;
 
 /**
  * The data type of an option that may have nested options.
  * @template T The option definition type
  */
-type OptionsDataType<T extends Option> = T extends { options: infer O }
+type NestedOptionsDataType<T extends Option> = T extends { options: infer O }
   ? O extends string
     ? Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
     : O extends (() => infer R extends Promissory<Options>)
@@ -983,14 +983,14 @@ type SelectionDataType<T extends Option, K = ChoiceDataType<T>> = T extends { ma
  */
 type ValueDataType<T extends Option> =
   T extends WithOptionType<'command'>
-    ? ParseDataType<T, OptionsDataType<T>>
+    ? ParseDataType<T, NestedOptionsDataType<T>>
     : T extends WithOptionType<'flag'>
       ? ParseDataType<T, true>
       : T extends WithOptionType<'single'>
         ? SelectionDataType<T>
         : T extends WithOptionType<'array'>
-          ? Array<SelectionDataType<T>>
-          : ParseDataType<T, Array<string>>;
+          ? ReadonlyArray<SelectionDataType<T>>
+          : ParseDataType<T, ReadonlyArray<string>>;
 
 /**
  * The data type of an option that throws a message.
@@ -998,6 +998,17 @@ type ValueDataType<T extends Option> =
  * @template M The message data type
  */
 type MessageDataType<T extends Option, M> = T extends { saveMessage: true } ? M | undefined : never;
+
+/**
+ * The data type of an option key.
+ * @template T The option definition type
+ * @template K The original key type
+ */
+type OptionKeyType<T extends Option, K> = T extends WithOptionType<MessageOptionType> & {
+  saveMessage?: undefined;
+}
+  ? never
+  : K;
 
 /**
  * The data type of an option value.
@@ -1209,20 +1220,10 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 /**
  * Resolves the nested options of a subcommand.
  * @param option The option definition
- * @param resolve The module resolution callback
  * @returns The nested options
  * @internal
  */
-export async function getNestedOptions(
-  option: OpaqueOption,
-  resolve?: ResolutionCallback,
-): Promise<OpaqueOptions> {
-  if (isString(option.options)) {
-    if (!resolve) {
-      throw ErrorMessage.create(ErrorItem.missingResolveCallback);
-    }
-    return (await import(resolve(option.options))).default;
-  }
+export async function getNestedOptions(option: OpaqueOption): Promise<OpaqueOptions> {
   // do not destructure `options`, because the callback might need to use `this`
   return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
 }
@@ -1237,4 +1238,25 @@ export async function getNestedOptions(
 export function checkInline(option: OpaqueOption, name: string): boolean | 'always' {
   const { inline } = option;
   return (isObject(inline) ? inline[name] : inline) ?? true;
+}
+
+/**
+ * Normalizes the value of an array-valued option and checks the validity of its element count.
+ * @param option The option definition
+ * @param name The option name (or key)
+ * @param value The option value
+ * @returns The normalized array
+ * @throws On value not satisfying the limit constraint
+ * @internal
+ */
+export function normalizeArray(option: OpaqueOption, name: symbol, value: unknown): Array<unknown> {
+  if (!isArray(value)) {
+    return [value];
+  }
+  const { unique, limit } = option;
+  const result = unique ? [...new Set(value)] : value.slice(); // the input may be read-only
+  if (limit && limit > 0 && result.length > limit) {
+    throw ErrorMessage.create(ErrorItem.limitConstraintViolation, {}, name, result.length, limit);
+  }
+  return result;
 }

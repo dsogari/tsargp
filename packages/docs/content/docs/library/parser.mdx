@@ -80,14 +80,6 @@ The cluster prefix can be the empty string, in which case it behaves similarly t
 
 The `optionPrefix` property specifies the prefix for option names. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
 
-### Resolution callback
-
-The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
-
-```ts
-import.meta.resolve.bind(import.meta);
-```
-
 ## Parsing features
 
 The set of features supported by the parser are described below.
@@ -262,7 +254,7 @@ Other option names are not used, not only because they would pollute the output 
 [cluster letters]: options#cluster-letters
 [cluster inline parameters]: options#cluster-inline-parameters
 [preferred name]: options#preferred-name
-[requirements]: options#forward-requirements
+[requirements]: options#option-requirements
 [requirement callback]: options#requirement-callback
 [default value callback]: options#default-value-callback
 [parsing callback]: options#parsing-callback

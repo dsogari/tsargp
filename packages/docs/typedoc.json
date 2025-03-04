@@ -14,6 +14,7 @@
     "Resolve",
     "Args",
     "Promissory",
+    "OptionKeyType",
     "OptionDataType",
     "WithRequired",
     "WithDefault",

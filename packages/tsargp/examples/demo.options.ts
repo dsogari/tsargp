@@ -114,7 +114,7 @@ export default {
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    version: '../../package.json',
+    version: import.meta.resolve && new URL(import.meta.resolve('../../package.json')),
   },
   /**
    * A flag option that is deprecated for some reason.

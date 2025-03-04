@@ -356,5 +356,57 @@ describe('format', () => {
         `  -a  ['1[,;]2'...]  Accepts multiple parameters. Values can be delimited with /[,;]/s.\n`,
       );
     });
+
+    it('handle an array-valued option with an example value with duplicates', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          example: [1, 1],
+          unique: true, // keep this
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toMatch(
+        '  -a  [1 1...]  Accepts multiple parameters. Duplicate values will be removed.\n',
+      );
+    });
+
+    it('handle a function option with a parameter count and a boolean array example value', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          example: [true, false],
+          paramCount: [1, Infinity],
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -f  true false...  Accepts multiple parameters.\n`);
+    });
+
+    it('handle a function option with a string array example value', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          example: ['one', 'two'],
+          paramCount: [1, Infinity],
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(
+        `  -f  'one' 'two'...  Accepts multiple parameters.\n`,
+      );
+    });
+
+    it('handle a function option with a number array example value', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          example: [1, 2],
+          paramCount: [1, Infinity],
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -f  1 2...  Accepts multiple parameters.\n`);
+    });
   });
 });

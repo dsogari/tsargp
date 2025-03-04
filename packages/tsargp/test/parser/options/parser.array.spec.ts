@@ -97,6 +97,28 @@ describe('parse', () => {
       );
     });
 
+    it('handle an option with a default value that is not an array', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          default: 1,
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.toEqual({ array: [1] });
+    });
+
+    it('handle an option with a default promise that does not resolve to an array', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          default: Promise.resolve(1),
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.toEqual({ array: [1] });
+    });
+
     it('handle an option that removes duplicates', () => {
       const options = {
         array: {

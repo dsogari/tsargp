@@ -121,11 +121,6 @@ export const enum ErrorItem {
    * Error raised when a variadic option declares an inline constraint.
    */
   invalidInlineConstraint,
-  /**
-   * Error raised when a JavaScript module needs to be loaded, but a module resolution function was
-   * not provided (either in the parsing flags or the validation flags).
-   */
-  missingResolveCallback,
 }
 
 /**

@@ -9,7 +9,6 @@ import type {
   OpaqueOptionValues,
   Requires,
   RequiresEntry,
-  ResolutionCallback,
   RequirementCallback,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
@@ -27,6 +26,7 @@ import {
   getNestedOptions,
   isCommand,
   checkInline,
+  normalizeArray,
 } from './options.js';
 import { formatFunctions, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
@@ -37,7 +37,6 @@ import {
   getEntries,
   getSymbol,
   getKeys,
-  isArray,
   findValue,
   getArgs,
   readFile,
@@ -73,11 +72,6 @@ export type ParsingFlags = {
    * If set, then arguments that have this prefix will always be considered an option name.
    */
   readonly optionPrefix?: string;
-  /**
-   * A resolution function for JavaScript modules.
-   * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
-   */
-  readonly resolve?: ResolutionCallback;
 };
 
 /**
@@ -641,8 +635,7 @@ async function parseParams(
     return ErrorMessage.create(kind, flags, getSymbol(name), ...args);
   }
   /** @ignore */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function parse1(param: any, def = param): unknown {
+  function parse1(param: unknown, def = param): unknown {
     // do not destructure `parse`, because the callback might need to use `this`
     return option.parse ? option.parse(param, seq) : def;
   }
@@ -661,7 +654,7 @@ async function parseParams(
     await checkRequired(context);
   }
   if (type === 'flag') {
-    values[key] = await parse1('', true);
+    values[key] = await parse1(null, true);
     return breakLoop;
   }
   if (separator) {
@@ -704,37 +697,9 @@ async function parseParams(
     for (const param of params) {
       prev.push(await parse2(param));
     }
-    values[key] = normalizeArray(option, name, prev);
+    values[key] = normalizeArray(option, getSymbol(name), prev);
   }
   return breakLoop;
-}
-
-/**
- * Normalizes the value of an array-valued option and checks the validity of its element count.
- * @template T The type of the array element
- * @param option The option definition
- * @param name The option name
- * @param value The option value
- * @returns The normalized array
- * @throws On value not satisfying the specified limit constraint
- */
-function normalizeArray<T>(option: OpaqueOption, name: string, value: Array<T>): Array<T> {
-  const { unique, limit } = option;
-  if (unique) {
-    const unique = new Set(value);
-    value.length = 0; // reuse the same array
-    value.push(...unique);
-  }
-  if (limit !== undefined && value.length > limit) {
-    throw ErrorMessage.create(
-      ErrorItem.limitConstraintViolation,
-      {},
-      getSymbol(name),
-      value.length,
-      limit,
-    );
-  }
-  return value;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -793,7 +758,7 @@ async function handleCommand(
   const [, values, , , comp, warning, flags] = context;
   const [key, option, name] = info;
   const { clusterPrefix, optionPrefix } = option;
-  const cmdOptions = await getNestedOptions(option, flags.resolve);
+  const cmdOptions = await getNestedOptions(option);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
   const progName = flags.progName && flags.progName + ' ' + name;
@@ -804,8 +769,7 @@ async function handleCommand(
   const seq = { values, index, name, comp };
   // comp === false, otherwise completion will have taken place by now
   // do not destructure `parse`, because the callback might need to use `this`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  values[key] = option.parse ? await option.parse(param as any, seq) : param;
+  values[key] = option.parse ? await option.parse(param, seq) : param;
 }
 
 /**
@@ -819,9 +783,7 @@ async function handleMessage(context: ParseContext, info: OptionInfo, rest: Arra
   const [, values] = context;
   const [key, option] = info;
   const message =
-    option.type === 'help'
-      ? await handleHelp(context, option, rest)
-      : await handleVersion(context, option);
+    option.type === 'help' ? await handleHelp(context, option, rest) : await handleVersion(option);
   if (option.saveMessage) {
     values[key] = message;
   } else {
@@ -849,7 +811,7 @@ async function handleHelp(
       (opt) => isCommand(opt.type) && !!opt.names?.includes(rest[0]),
     );
     if (cmdOpt?.options) {
-      const cmdOptions = await getNestedOptions(cmdOpt, context[6].resolve);
+      const cmdOptions = await getNestedOptions(cmdOpt);
       const helpOpt = findValue(cmdOptions, (opt) => opt.type === 'help');
       if (helpOpt) {
         registry = new OptionRegistry(cmdOptions);
@@ -862,22 +824,16 @@ async function handleHelp(
 }
 
 /**
- * Resolve the version string of a version option.
- * @param context The parsing context
+ * Resolves the version string of a version option.
  * @param option The version option
  * @returns The version string
  */
-async function handleVersion(context: ParseContext, option: OpaqueOption): Promise<string> {
+async function handleVersion(option: OpaqueOption): Promise<string> {
   const { version } = option;
-  if (!version?.endsWith('.json')) {
+  if (!(version instanceof URL)) {
     return version ?? '';
   }
-  const { resolve } = context[6];
-  if (!resolve) {
-    throw ErrorMessage.create(ErrorItem.missingResolveCallback);
-  }
-  const path = new URL(resolve(version));
-  const data = await readFile(path);
+  const data = await readFile(version);
   if (data !== undefined) {
     return JSON.parse(data).version;
   }
@@ -928,8 +884,9 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
+    // be careful to not modify the returned value, as it may be read-only
     const value = await (isFunction(option.default) ? option.default(values) : option.default);
-    values[key] = type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
+    values[key] = type === 'array' ? normalizeArray(option, getSymbol(name), value) : value;
   }
 }
 

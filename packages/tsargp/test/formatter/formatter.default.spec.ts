@@ -58,6 +58,23 @@ describe('format', () => {
       } as const satisfies Options;
       expect(format(options).wrap()).toMatch(`  -f    Defaults to [1, 2].\n`);
     });
+
+    it('handle an array value with duplicates', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          default: [1, 1],
+          unique: true, // keep this
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toMatch(
+        '  -a  [<param>...]  ' +
+          'Accepts multiple parameters. ' +
+          'Duplicate values will be removed.' +
+          ' Defaults to [1, 1].\n',
+      );
+    });
   });
 
   describe('a default value callback is specified', () => {
