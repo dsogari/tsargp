@@ -72,7 +72,7 @@ export class OptionRegistry {
 // Public types
 //--------------------------------------------------------------------------------------------------
 /**
- * A (closed) numeric range.
+ * A closed numeric range with positive length.
  *
  * In a valid range, the minimum should be strictly less than the maximum.
  */
