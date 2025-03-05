@@ -437,9 +437,8 @@ export type WithBasic = {
   /**
    * The option names, as they appear on the command-line (e.g. `-h` or `--help`).
    *
-   * Names cannot contain whitespace or the equals sign `=` (since it may act as option-parameter
-   * separator). Empty names or `null`s can be specified in order to skip the respective "slot" in
-   * the help message names column.
+   * Names cannot contain the equals sign `=`, since it may be used as option-parameter separator.
+   * `null`s can be specified in order to skip the respective "slot" in the help message names column.
    */
   readonly names?: ReadonlyArray<string | null>;
   /**

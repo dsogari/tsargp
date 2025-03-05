@@ -6,15 +6,17 @@ title: Styles - Library - Docs
 
 The `styles` module handles text styling. It provides functions and classes that can be used to customize the display of text in terminals that support [escape sequences].
 
-## Styling attributes
+## Style
 
-The `Style` type behaves like a string consisting of Select Graphic Rendition ([SGR]) sequences. It can be created with the `style` function, which accepts a list of styling attributes as parameters. The resulting object can be used in any part of the API that expects this type. It can also be concatenated and embedded in text attributes, such as:
+The `Style` type behaves like a string consisting of Select Graphic Rendition ([SGR]) sequences. It can be created with the `style` function, which accepts a list of [styling attributes] as parameters. The resulting object can be used in any part of the API that expects this type. It can also be concatenated and embedded in text attributes, such as:
 
 - [option synopsis] and [deprecation notice]
 - [help section] titles and texts
 - [error phrases] and [help phrases]
 
-Styles are cumulative, i.e., they can be combined together depending on the kind of styling attribute. For instance, the style `tf.bold{:ts}` can be combined with `fg.green{:ts}` to render text in **bold** intensity with <span style={{color: 'green'}}>green</span> foreground color.
+Styles are cumulative, i.e., they can be combined depending on the kind of styling attribute. For instance, `tf.bold{:ts}` can be combined with `fg.green{:ts}` to render text in **bold** intensity with <span style={{color: 'green'}}>green</span> foreground color.
+
+## Styling attribute
 
 In the next sections we present the various styling attributes available.
 
@@ -22,93 +24,99 @@ In the next sections we present the various styling attributes available.
 >
 > Not all of the attributes are supported in every terminal, so you should experiment with them before committing your code.
 
-### Type faces
+### Typeface
 
-The `tf` enumeration declares text type faces that can be combined together. They are listed below.
+The `tf` enumeration declares text typefaces that can be combined. They are listed below.
 
 - Enabling attributes:
-  - `bold` - bold or increased intensity
-  - `faint` - faint, decreased intensity, or dim
-  - `italic` - italic
-  - `underlined` - underlined
-  - `slowlyBlinking` - slowly blinking
-  - `rapidlyBlinking` - rapidly blinking
-  - `inverse` - reverse video or inverse (flips foreground and background color)
-  - `invisible` - invisible, concealed or hidden
-  - `crossedOut` - crossed-out or strikethrough
-  - `doublyUnderlined` - doubly underlined
-  - `proportionalSpacing` - proportional spacing
+  - `bold` -- bold or increased intensity
+  - `faint` -- faint, decreased intensity, or dim (lower opacity)
+  - `italic` -- italic type
+  - `underlined` -- underlined
+  - `slowlyBlinking` -- slowly blinking
+  - `rapidlyBlinking` -- rapidly blinking
+  - `inverse` -- reverse video or inverse (flips foreground and background color)
+  - `invisible` -- invisible, concealed or hidden
+  - `crossedOut` -- crossed-out or strikethrough
+  - `doublyUnderlined` -- doubly underlined
+  - `proportionallySpaced` -- enable proportional spacing
 - Font-changing attributes:
-  - `primaryFont` - primary font
-  - `alternative[1-9]` - alternative font 1 through 9
-  - `fraktur` - black-letter font
+  - `primaryFont` -- primary font
+  - `alternative[1--9]` - alternative font 1 through 9
+  - `fraktur` -- black-letter font
 - Ideogram attributes:
-  - `ideogramUnderline` - ideogram underline or right side line
-  - `ideogramDoubleUnderline` - ideogram double underline, or double line on the right side
-  - `ideogramOverline` - ideogram overline or left side line
-  - `ideogramDoubleOverline` - ideogram double overline, or double line on the left side
-  - `ideogramStressMarking` - ideogram stress marking
+  - `ideogramUnderline` -- ideogram underline or right side line
+  - `ideogramDoubleUnderline` -- ideogram double underline, or double line on the right side
+  - `ideogramOverline` -- ideogram overline or left side line
+  - `ideogramDoubleOverline` -- ideogram double overline, or double line on the left side
+  - `ideogramStressMarking` -- ideogram stress marking
 - Miscellaneous attributes:
-  - `framed` - framed
-  - `encircled` - encircled
-  - `overlined` - overlined
-  - `superscript` - superscript
-  - `subscript` - subscript
+  - `framed` -- framed
+  - `encircled` -- encircled
+  - `overlined` -- overlined
+  - `superscript` -- superscript
+  - `subscript` -- subscript
 - Resetting attributes:
-  - `clear` - resets any other preceding SGR attribute
-  - `notBoldOrFaint` - normal intensity (neither bold nor faint)
-  - `notItalicNorFraktur` - regular face (neither italic nor black-letter)
-  - `notUnderlined` - not underlined
-  - `notBlinking` - steady (not blinking)
-  - `notInverse` - positive (not inverse)
-  - `notInvisible` - visible (reveal, or not hidden)
-  - `notCrossedOut` - not crossed out (no strikethrough)
-  - `notProportionalSpacing` - disable proportional spacing
-  - `notFramedOrEncircled` - neither framed nor encircled
-  - `notOverlined` - not overlined
-  - `noIdeogram` - no ideogram attributes
-  - `notSuperscriptOrSubscript` - neither superscript nor subscript
+  - `clear` -- resets any other preceding attribute
+  - `notBoldOrFaint` -- normal intensity (neither bold nor faint)
+  - `notItalicOrFraktur` -- regular type (neither italic nor black-letter)
+  - `notUnderlined` -- not underlined
+  - `notBlinking` -- steady (not blinking)
+  - `notInverse` -- positive (not inverse)
+  - `notInvisible` -- visible (reveal, or not hidden)
+  - `notCrossedOut` -- not crossed out (no strikethrough)
+  - `notProportionallySpaced` -- disable proportional spacing
+  - `notFramedOrEncircled` -- neither framed nor encircled
+  - `notOverlined` -- not overlined
+  - `noIdeogram` -- no ideogram attributes
+  - `notSuperscriptOrSubscript` -- neither superscript nor subscript
 
-### Predefined colors
+> [!NOTE]
+>
+> Usually, client code does not need to worry about resetting attributes, as this is handled by the library.
+
+### Predefined color
 
 The `fg` and `bg` enumerations declare foreground and background colors, respectively. They both have the same set of predefined colors, which are listed below.
 
-- `default` - the default color
+- `default` -- the default color (this is a resetting attribute)
 - Standard colors:
-  - `black` - black
-  - `red` - red
-  - `green` - green
-  - `yellow` - yellow
-  - `blue` - blue
-  - `magenta` - magenta
-  - `cyan` - cyan
-  - `white` - white
+  - `black` -- black
+  - `red` -- red
+  - `green` -- green
+  - `yellow` -- yellow
+  - `blue` -- blue
+  - `magenta` -- magenta
+  - `cyan` -- cyan
+  - `white` -- white
 - High-intensity colors:
-  - `brightBlack` - bright black (gray)
-  - `brightRed` - bright red
-  - `brightGreen` - bright green
-  - `brightYellow` - bright yellow
-  - `brightBlue` - bright blue
-  - `brightMagenta` - bright magenta
-  - `brightCyan` - bright cyan
-  - `brightWhite` - bright white
+  - `brightBlack` -- bright "black" (i.e., gray)
+  - `brightRed` -- bright red
+  - `brightGreen` -- bright green
+  - `brightYellow` -- bright yellow
+  - `brightBlue` -- bright blue
+  - `brightMagenta` -- bright magenta
+  - `brightCyan` -- bright cyan
+  - `brightWhite` -- bright white
 
-### Extended colors
+### Extended color
 
 In addition to predefined colors, `fg` and `bg` have a special enumerator called `extended`. It must be followed by additional attributes, which can be obtained through one of the auxiliary functions below:
 
-- `ext8` - creates an 8-bit indexed color
-- `rgb` - creates a 24-bit RGB color
+- `ext8` -- creates an 8-bit indexed color
+- `rgb` -- creates a 24-bit RGB color
 
 There is also a `ul` enumeration with this enumerator, for underline colors. For example, to set the underline color to <span style={{textDecoration: 'underline', textDecorationColor: 'orange'}}>orange</span> (`#FFA500`):
 
-```ts
+```ts twoslash
+import { style, rgb, ul } from 'tsargp';
+// ---cut---
 style(ul.extended, rgb(255, 165, 0));
 ```
 
 ## ANSI string
 
-The `AnsiString` is an internal component that handles the construction of strings to be printed on a terminal. It has methods for splitting, appending, and wrapping strings with or without control sequences. The main logic implemented in this class is divided into _splitting_ and _wrapping_, as is explained in the next subsections.
+The `AnsiString` is an internal component that handles the construction of strings that can be printed in a terminal. It has methods for splitting, appending, and wrapping strings with or without control sequences. The main logic implemented in this class is divided into _splitting_ and _wrapping_, as is explained in the next subsections.
 
 ### Text splitting
 
@@ -127,16 +135,16 @@ During splitting, numeric placeholders prefixed with a hashtag `#` may be extrac
 
 Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which is denoted internally by a single character. The available ones are:
 
-- `b` - a boolean value
-- `s` - a string value
-- `n` - a number value
-- `r` - a regular expression
-- `m` - a symbol value (e.g., option name)
-- `t` - another ANSI string
-- `u` - a URL hyperlink
-- `a` - an array value
-- `o` - an object value
-- `v` - an unknown value (enclosed in angle brackets, like the [parameter column])
+- `b` -- a `boolean{:ts}` value
+- `s` -- a `string{:ts}` value
+- `n` -- a `number{:ts}` value
+- `r` -- a `RegExp{:ts}` value
+- `m` -- a `symbol{:ts}` value (e.g., option name)
+- `t` -- another ANSI string
+- `u` -- a `URL{:ts}` value
+- `a` -- an array or tuple
+- `o` -- an `object{:ts}`
+- `v` -- an `unknown{:ts}` value (enclosed in angle brackets, like the [parameter column])
 
 When a phrase includes placeholders, they indicate where in the phrase to place the corresponding value. If a phrase has multiple alternatives (depending on the context), different pieces of text may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`.
 
@@ -148,7 +156,7 @@ When splitting text, the ANSI string will try its best to preserve inline styles
 
 #### Paragraphs and lists
 
-Although Markdown syntax is not fully supported, paragraphs and itemized/numbered lists are formatted in a Markdown-ish fashion. For example, the following text
+Although [Markdown] syntax is not fully supported, paragraphs and itemized/numbered lists are formatted in a Markdown-ish fashion. For example, the following text
 
 ```ansi
 A paragraph with
@@ -179,7 +187,13 @@ The following features are supported in text wrapping.
 
 #### Indentation level
 
-The ANSI string has an optional indentation level, i.e., the starting terminal column of each line of text. When wrapping text to the desired width, the ANSI string will attempt to respect this setting, but if the desired width does not accommodate the length of the largest word, it will instead wrap lines to the first terminal column.
+The ANSI string has an optional indentation level, i.e., the starting terminal column of each _new_ line of text.
+
+When wrapping text to the desired width, the ANSI string will attempt to respect this setting, but if the desired width does not accommodate the length of the _largest_ word, it will disregard the indentation level.
+
+> [!NOTE]
+>
+> The first line is only affected by this setting if the current cursor position is _less_ than the configured value.
 
 #### Text alignment
 
@@ -189,7 +203,7 @@ The ANSI string has an optional flag that indicates whether the text should be a
 
 There are different kinds of content that an application might want to print in the terminal. We denote them "messages" and provide a specific class for each kind of message that the library can produce.
 
-For convenience, all message classes have a `toString` method and a `message` property, both of which can be used to obtain a traditional `string{:ts}`. However, each class uses its own default terminal width to render the resulting string. The various classes are described below.
+For convenience, all message classes have a `toString` method and a `message` property, both of which can be used to obtain a plain `string{:ts}`. However, each class uses its own default terminal width to render the resulting string. The various classes are described below.
 
 > [!TIP]
 >
@@ -197,19 +211,19 @@ For convenience, all message classes have a `toString` method and a `message` pr
 
 ### ANSI message
 
-The `AnsiMessage` class wraps a list of ANSI strings. It is the type used for help messages. It provides a `wrap` method to get a traditional string, accepting the following optional parameters:
+The `AnsiMessage` class wraps a list of ANSI strings and is the type used for help messages. It provides a `wrap` method to get a plain string, accepting the following optional parameters:
 
-- `width` - the desired terminal width (use `0{:ts}` to avoid wrapping)
-- `emitStyles` - whether styles should be emitted
-- `emitSpaces` - whether spaces should be emitted instead of move sequences
+- `width` -- the desired terminal width (`0{:ts}` means no wrapping)
+- `emitStyles` -- whether styles should be emitted
+- `emitSpaces` -- whether spaces should be emitted instead of move sequences
 
 The default values of these parameters depend on a few environment variables:
 
-- `FORCE_WIDTH` - force the terminal width to a specific value (otherwise, see below)
-- `FORCE_COLOR` - force _emission_ of styles regardless of the terminal width
-- `NO_COLOR` - force _omission_ of styles regardless of the terminal width
-- `TERM` - set to `'dumb'{:ts}` to achieve the same behavior as `NO_COLOR`
-- `FORCE_SPACES` - force _emission_ of spaces when the terminal width is non-zero
+- `FORCE_WIDTH` -- force the terminal width to a specific value (otherwise, see below)
+- `FORCE_COLOR` -- force _emission_ of styles regardless of the terminal width
+- `NO_COLOR` -- force _omission_ of styles regardless of the terminal width
+- `TERM` -- set to `'dumb'{:ts}` to achieve the same behavior as `NO_COLOR`
+- `FORCE_SPACES` -- force _emission_ of spaces when the terminal width is non-zero
 
 When `FORCE_WIDTH` is not set, the default width used by this class is the `columns` property of the _standard output_ stream (i.e., `process.stdout{:ts}`). Therefore, this kind of message should be printed with `console.log{:ts}` or equivalent.
 
@@ -217,7 +231,11 @@ When `FORCE_WIDTH` is not set, the default width used by this class is the `colu
 >
 > When redirecting the output of a command (e.g., writing to a file or piping to another command), the associated stream may not have a `columns` property, thus defaulting to zero width.
 
-Generally, you should not alter the returned string after being wrapped, as this will mess up the disposition of text in the terminal. If you do need to, you can either _prepend_ text ending with a line feed `'\n'{:ts}`, or _append_ text starting with a line feed, as this will preserve the disposition of wrapped text. Alternatively, you can retrieve the underlying ANSI strings from the list and manipulate them before converting the message to string.
+Generally, you should refrain from altering the returned string after being wrapped, as this would mess up the disposition of text in the terminal. If you must, you can either _prepend_ text ending with line feeds, or _append_ text starting with line feeds, as this will preserve the disposition of wrapped text.
+
+> [!TIP]
+>
+> Alternatively, you can retrieve the underlying strings and manipulate them before calling the `wrap` method.
 
 ### Warning message
 
@@ -227,8 +245,8 @@ When `FORCE_WIDTH` is not set, the default width used by this class is the `colu
 
 It also offers two methods that are used by the library:
 
-- `add` - appends a ANSI message formatted from one of the [error phrases]
-- `addCustom` - appends a ANSI message formatted from a custom phrase
+- `add` -- appends a ANSI message formatted from one of the [error phrases]
+- `addCustom` -- appends a ANSI message formatted from a custom phrase
 
 ### Error message
 
@@ -236,16 +254,16 @@ The `ErrorMessage` class is a specialization of the standard `Error` class, used
 
 Similarly to the warning message, it offers two static methods that are used by the library:
 
-- `create` - creates an error message formatted from one of the [error phrases]
-- `createCustom` - creates an error message formatted from a custom phrase
+- `create` -- creates an error message formatted from one of the [error phrases]
+- `createCustom` -- creates an error message formatted from a custom phrase
 
 ### Text message
 
-The `TextMessage` class represents a list of plain text lines with no wrapping. It is the type used for completion words. It produces a string delimited by line feeds, and should be printed with `console.log{:ts}` or equivalent.
+The `TextMessage` class represents a list of text lines with no wrapping and is the type used for completion words. It produces a string delimited by line feeds, and should be printed with `console.log{:ts}` or equivalent.
 
 ### Message configuration
 
-ANSI-based messages produced by the library can be customized via the global `config`. This object is a singleton instance of the `MessageConfig` type, which contains the properties described below.
+ANSI-based messages produced by the library can be customized via the global `config` object, which is a singleton instance of the `MessageConfig` type, containing the properties described below.
 
 #### Message styles
 
@@ -264,7 +282,7 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 
 > [!TIP]
 >
-> To preserve previous styles for a particular element, you can assign it an empty `style(){:ts}`. Do the same for all elements if you need to disable styling for your application as a whole (regardless of environment configuration).
+> To preserve previous styles for a particular element, you can assign it an empty `Style{:ts}`. Or, to disable styling for your application as a whole (regardless of environment configuration), do the same for all elements.
 
 #### Connective words
 
@@ -328,7 +346,7 @@ The `errorPhrases` property specifies custom phrases to use for error and warnin
 | `mixedNamingConvention`      | A name slot contains names with different naming conventions                 | `'#0: Name slot #1 has mixed naming conventions: #2.'{:ts}`                                      | `#0` = the subcommand prefix[^1]; `#1` = the [name slot] index; `#2` = the naming conventions |
 | `invalidParamCount`          | A function option has an invalid parameter count                             | `'Option #0 has invalid parameter count #1.'{:ts}`                                               | `#0` = the option's key; `#1` = the parameter count                                           |
 | `variadicWithClusterLetter`  | A variadic option declares cluster letters                                   | `'Variadic option #0 may only appear as the last option in a cluster.'{:ts}`                     | `#0` = the option's key                                                                       |
-| `invalidInlineConstraint`    | A variadic option declares an inline constraint                              | `'Option #0 has invalid inline constraint.'{:ts}`                                                | `#0` = the option's key                                                                       |
+| `invalidInlineConstraint`    | A variadic option declares an invalid inline constraint                      | `'Option #0 has invalid inline constraint.'{:ts}`                                                | `#0` = the option's key                                                                       |
 
 > [!NOTE]
 >
@@ -338,29 +356,29 @@ The `errorPhrases` property specifies custom phrases to use for error and warnin
 
 The `helpPhrases` property specifies custom phrases to use for each kind of [help item] that may appear in a help message. It has the following settings, whose keys are enumerators from `HelpItem`:
 
-| Help item    | Description                                                                  | Default phrase                                                                   | Placeholders                   |
-| ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------ |
-| `synopsis`   | The option's synopsis                                                        | `'#0'{:ts}`                                                                      | `#0` = the option's synopsis   |
-| `cluster`    | The option's cluster letters                                                 | `'Can be clustered with #0.'{:ts}`                                               | `#0` = the cluster letters     |
-| `separator`  | The parameter delimiter of a non-niladic option                              | `'Values can be delimited with #0.'{:ts}`                                        | `#0` = the parameter separator |
-| `paramCount` | The parameter count of a variadic or polyadic option                         | `'Accepts (multiple\|#0\|at most #0\|at least #0\|between #0) parameters.'{:ts}` | `#0` = the parameter count     |
-| `positional` | Whether the option accepts positional arguments                              | `'Accepts positional arguments(\| that may be preceded by #0).'{:ts}`            | `#0` = the positional marker   |
-| `inline`     | The option's treatment of inline parameters                                  | `'(Disallows\|Requires) inline parameters.'{:ts}`                                |                                |
-| `append`     | Whether an array-valued option can be specified multiple times               | `'Can be specified multiple times.'{:ts}`                                        |                                |
-| `choices`    | The option's parameter choices                                               | `'Values must be one of #0.'{:ts}`                                               | `#0` = the parameter choices   |
-| `regex`      | The regular expression that parameters should match                          | `'Values must match the regex #0.'{:ts}`                                         | `#0` = the regular expression  |
-| `unique`     | Whether duplicate elements will be removed from an array-valued option value | `'Duplicate values will be removed.'{:ts}`                                       |                                |
-| `limit`      | The element count limit of an array-valued option                            | `'Element count is limited to #0.'{:ts}`                                         | `#0` = the count limit         |
-| `stdin`      | Whether the option accepts data from standard input                          | `'Reads data from standard input.'{:ts}`                                         |                                |
-| `sources`    | The option's environment data sources                                        | `'Reads environment data from #0.'{:ts}`                                         | `#0` = the data sources        |
-| `requires`   | The option's forward requirements                                            | `'Requires #0.'{:ts}`                                                            | `#0` = the requirements        |
-| `required`   | Whether the option is always required                                        | `'Always required.'{:ts}`                                                        |                                |
-| `requiredIf` | The option's conditional requirements                                        | `'Required if #0.'{:ts}`                                                         | `#0` = the requirements        |
-| `default`    | The option's default value                                                   | `'Defaults to #0.'{:ts}`                                                         | `#0` = the default value       |
-| `useCommand` | Whether a help option uses the next argument as the name of a subcommand     | `'Uses the next argument as the name of a subcommand.'{:ts}`                     |                                |
-| `useFilter`  | Whether a help option uses the remaining arguments as option filter          | `'Uses the remaining arguments as option filter.'{:ts}`                          |                                |
-| `deprecated` | The option's deprecation notice                                              | `'Deprecated for #0.'{:ts}`                                                      | `#0` = the deprecation notice  |
-| `link`       | The option's external resource hyperlink                                     | `'Refer to #0 for details.'{:ts}`                                                | `#0` = the hyperlink           |
+| Help item    | Description                                                                  | Default phrase                                                                   | Placeholders                     |
+| ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- |
+| `synopsis`   | The option's synopsis                                                        | `'#0'{:ts}`                                                                      | `#0` = the [option synopsis]     |
+| `cluster`    | The option's cluster letters                                                 | `'Can be clustered with #0.'{:ts}`                                               | `#0` = the [cluster letters]     |
+| `separator`  | The parameter delimiter of a non-niladic option                              | `'Values can be delimited with #0.'{:ts}`                                        | `#0` = the [parameter separator] |
+| `paramCount` | The parameter count of a variadic or polyadic option                         | `'Accepts (multiple\|#0\|at most #0\|at least #0\|between #0) parameters.'{:ts}` | `#0` = the [parameter count]     |
+| `positional` | Whether the option accepts positional arguments                              | `'Accepts positional arguments(\| that may be preceded by #0).'{:ts}`            | `#0` = the [positional marker]   |
+| `inline`     | The option's treatment of inline parameters                                  | `'(Disallows\|Requires) inline parameters.'{:ts}`                                |                                  |
+| `append`     | Whether an array-valued option can be specified multiple times               | `'Can be specified multiple times.'{:ts}`                                        |                                  |
+| `choices`    | The option's parameter choices                                               | `'Values must be one of #0.'{:ts}`                                               | `#0` = the [parameter choices]   |
+| `regex`      | The regular expression that parameters should match                          | `'Values must match the regex #0.'{:ts}`                                         | `#0` = the [regular expression]  |
+| `unique`     | Whether duplicate elements will be removed from an array-valued option value | `'Duplicate values will be removed.'{:ts}`                                       |                                  |
+| `limit`      | The element count limit of an array-valued option                            | `'Element count is limited to #0.'{:ts}`                                         | `#0` = the [count limit]         |
+| `stdin`      | Whether the option accepts data from standard input                          | `'Reads data from standard input.'{:ts}`                                         |                                  |
+| `sources`    | The option's environment data sources                                        | `'Reads environment data from #0.'{:ts}`                                         | `#0` = the [data sources]        |
+| `requires`   | The option's forward requirements                                            | `'Requires #0.'{:ts}`                                                            | `#0` = the [requirements]        |
+| `required`   | Whether the option is always required                                        | `'Always required.'{:ts}`                                                        |                                  |
+| `requiredIf` | The option's conditional requirements                                        | `'Required if #0.'{:ts}`                                                         | `#0` = the [requirements]        |
+| `default`    | The option's default value                                                   | `'Defaults to #0.'{:ts}`                                                         | `#0` = the [default value]       |
+| `useCommand` | Whether a help option uses the next argument as the name of a subcommand     | `'Uses the next argument as the name of a subcommand.'{:ts}`                     |                                  |
+| `useFilter`  | Whether a help option uses the remaining arguments as option filter          | `'Uses the remaining arguments as option filter.'{:ts}`                          |                                  |
+| `deprecated` | The option's deprecation notice                                              | `'Deprecated for #0.'{:ts}`                                                      | `#0` = the [deprecation notice]  |
+| `link`       | The option's external resource hyperlink                                     | `'Refer to #0 for details.'{:ts}`                                                | `#0` = the [media hyperlink]     |
 
 > [!NOTE]
 >
@@ -370,6 +388,7 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 
 [^1]: The subcommand prefix is a series of option keys interspersed with periods, denoting the current level in a hierarchical definition. It begins as the empty string and is appended with a [subcommand]'s key whenever one is encountered. It also appears in other validation errors, prefixing the option's key (e.g.: `cmd1.cmd2.flag`).
 
+[styling attributes]: #styling-attribute
 [inline styles]: #inline-styles
 [text formatting]: #text-splitting
 [error phrases]: #error-phrases
@@ -381,6 +400,18 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [deprecation notice]: options#deprecation-notice
 [subcommand]: options#command-option
 [requirements]: options#option-requirements
+[cluster letters]: options#cluster-letters
+[parameter separator]: options#parameter-separator
+[parameter count]: options#parameter-count
+[positional marker]: options#positional--marker
+[parameter choices]: options#parameter-choices
+[regular expression]: options#regular-expression
+[count limit]: options#element-count-limit
+[data sources]: options#data-sources
+[requirements]: options#option-requirements
+[default value]: options#default-value
+[deprecation notice]: options#deprecation-notice
+[media hyperlink]: options#media-hyperlink
 
 {/* parser references */}
 
@@ -399,8 +430,9 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [name slot]: formatter#name-slots
 [help item]: formatter#help-items
 
-{/* styles references */}
+{/* external references */}
 
 [bug report]: https://github.com/dsogari/tsargp/issues/new?labels=bug
 [SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [escape sequences]: https://en.wikipedia.org/wiki/ANSI_escape_code
+[Markdown]: https://daringfireball.net/projects/markdown/

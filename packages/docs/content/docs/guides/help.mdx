@@ -10,8 +10,9 @@ In this guide, we will be creating a command-line interface that provides differ
 
 The most straightforward way to provide help for your CLI is by declaring a [help option]. In its simplest form, it has the following definition:
 
-```ts
+```ts twoslash
 import { type Options } from 'tsargp';
+// ---cut---
 export default {
   help: {
     type: 'help',
@@ -23,10 +24,12 @@ export default {
 
 You can enhance it with an introduction, usage and footer:
 
-```ts
+```ts twoslash
 import { type Options, style, tf, fg } from 'tsargp';
+// ---cut---
 export default {
   help: {
+    type: 'help',
     // ...
     sections: [
       {
@@ -57,17 +60,19 @@ export default {
 
 You can also customize the layout of the [groups section], e.g.:
 
-```ts
+```ts twoslash
 import { type Options, HelpItem, style, tf, config } from 'tsargp';
-
+// ---cut---
 config.helpPhrases[HelpItem.synopsis] = '💡 #0'; // option synopsis with emoji
 
 export default {
   help: {
+    type: 'help',
     // ...
     sections: [
       // ...
       {
+        type: 'groups',
         // ...
         layout: {
           names: { indent: 4 }, // indent option names by 4 spaces
@@ -117,11 +122,11 @@ cli help cmd
 cli cmd --help
 ```
 
-To achieve this, we have to define a "helper" subcommand that accepts the name of another subcommand for which the help message should be produced. Let's start with the option definitions for the subcommands:
+To achieve this, we have to create a "helper" subcommand that accepts the name of another subcommand for which the help message should be produced. Below is an example where we define the options for the subcommands, and then define those for the main command:
 
-```ts
-import { type Options } from 'tsargp';
-
+```ts twoslash
+import { type Options, type OptionValues, parse } from 'tsargp';
+// ---cut---
 const cmd1Opts = {
   // option definitions for cmd1, including its '--help'...
 } as const satisfies Options;
@@ -140,12 +145,6 @@ const helpOpts = {
     required: true, // error if called without a subcommand name
   },
 } as const satisfies Options;
-```
-
-Now we can define the main command options:
-
-```ts
-import { type Options, type OptionValues, parse } from 'tsargp';
 
 export default {
   cmd1: {
