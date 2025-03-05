@@ -73,7 +73,7 @@ The `tf` enumeration declares text typefaces that can be combined. They are list
 
 > [!NOTE]
 >
-> Usually, client code does not need to worry about resetting attributes, as this is handled by the library.
+> Usually, client code does not need to worry about resetting attributes, except when using [inline styles].
 
 ### Predefined color
 
@@ -150,9 +150,13 @@ When a phrase includes placeholders, they indicate where in the phrase to place 
 
 #### Inline styles
 
-Text can contain inline styles. This applies not only to phrases, but to text attributes as well, which the formatter splits into words before adding to the help message.
+Text can contain inline styles. This applies not only to phrases, but to text attributes as well (which the [formatter] splits into words before including in a [help message]).
 
 When splitting text, the ANSI string will try its best to preserve inline styles. However, if you find some corner case that is not currently covered by our unit tests, please submit a [bug report].
+
+> [!TIP]
+>
+> You can also use external styling packages for this purpose, such as the ubiquitous [chalk].
 
 #### Paragraphs and lists
 
@@ -197,7 +201,7 @@ When wrapping text to the desired width, the ANSI string will attempt to respect
 
 #### Text alignment
 
-The ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary. This feature is used by the formatter in the help message's [description column].
+The ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary. This feature is used by the [formatter] in the [description column] of [help messages].
 
 ## Messages
 
@@ -211,7 +215,7 @@ For convenience, all message classes have a `toString` method and a `message` pr
 
 ### ANSI message
 
-The `AnsiMessage` class wraps a list of ANSI strings and is the type used for help messages. It provides a `wrap` method to get a plain string, accepting the following optional parameters:
+The `AnsiMessage` class wraps a list of ANSI strings and is the type used for [help messages]. It provides a `wrap` method to get a plain string, accepting the following optional parameters:
 
 - `width` -- the desired terminal width (`0{:ts}` means no wrapping)
 - `emitStyles` -- whether styles should be emitted
@@ -354,7 +358,7 @@ The `errorPhrases` property specifies custom phrases to use for error and warnin
 
 #### Help phrases
 
-The `helpPhrases` property specifies custom phrases to use for each kind of [help item] that may appear in a help message. It has the following settings, whose keys are enumerators from `HelpItem`:
+The `helpPhrases` property specifies custom phrases to use for each kind of [help item] that may appear in a [help message]. It has the following settings, whose keys are enumerators from `HelpItem`:
 
 | Help item    | Description                                                                  | Default phrase                                                                   | Placeholders                     |
 | ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------- |
@@ -423,6 +427,8 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 {/* formatter references */}
 
 [formatter]: formatter
+[help message]: formatter#help-message
+[help messages]: formatter#help-message
 [help section]: formatter#help-sections
 [description column]: formatter#description-column
 [parameter column]: formatter#parameter-column
@@ -435,3 +441,4 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [escape sequences]: https://en.wikipedia.org/wiki/ANSI_escape_code
 [Markdown]: https://daringfireball.net/projects/markdown/
+[chalk]: https://www.npmjs.com/package/chalk

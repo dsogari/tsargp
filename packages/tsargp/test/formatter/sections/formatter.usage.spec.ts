@@ -265,6 +265,7 @@ describe('rendering a usage section', () => {
       const sections4: HelpSections = [{ type: 'usage', filter: ['flag2', 'flag1'] }];
       const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
       const sections6: HelpSections = [{ type: 'usage', filter: ['single', 'flag1'] }];
+      const sections7: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
       const filter = ['-f1', '-f2', '-s'];
       expect(format(options, sections0, filter).wrap()).toEqual('');
       expect(format(options, sections1, filter).wrap()).toEqual('[-f1]\n');
@@ -273,6 +274,7 @@ describe('rendering a usage section', () => {
       expect(format(options, sections4, filter).wrap()).toEqual('[-f2] [-f1]\n');
       expect(format(options, sections5, filter).wrap()).toEqual(''); // usage was skipped
       expect(format(options, sections6, filter).wrap()).toEqual('[-f1] [[(-s|--)] <param>]\n');
+      expect(format(options, sections7, filter).wrap()).toEqual('');
     });
   });
 

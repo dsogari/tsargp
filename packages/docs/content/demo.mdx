@@ -16,10 +16,10 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 ### Basic commands
 
-- `clear` clear the screen
-- `tsargp -h` print the help message
-- `tsargp ...` play with option values
-- `tsargp` view the options' default values
+- `clear` -- clear the screen
+- `tsargp -h` -- print the help message
+- `tsargp ...` -- play with option values
+- `tsargp` -- view the default values
 
 <details>
   <summary>Expected output</summary>
@@ -478,7 +478,7 @@ Open the browser console with `F12`, to see the messages logged by the subcomman
 
 With the console panel open, slide the screen splitter until the terminal width changes, then run the help option.
 
-- check if words in the options' descriptions get wrapped correctly
+- check if words in the option descriptions get wrapped correctly
 - check if words in the usage section get wrapped correctly
 - check if words in the footer do _not_ get wrapped (because it was configured that way)
 
