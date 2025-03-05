@@ -13,7 +13,7 @@ The `formatter` module handles formatting of help messages. It provides a functi
 The result of formatting is a help message consisting of [ANSI strings], which may contain [escape sequences] and are meant to be printed in a terminal. Visually, it is composed of the following kinds of content:
 
 - **entry** -- the text lines pertaining to a single option
-- **item** -- a piece of information in an option's description
+- **item** -- a piece of information in an option description
 - **group** -- a set of entries corresponding to an [option group]
 - **section** -- like the section of a document (may be a collection of groups)
 - **column** -- a horizontal division (as formed by a vertical ruler) across all entries in a section
@@ -22,12 +22,14 @@ This is better illustrated by the figure below:
 
 <HelpContent style={{ maxWidth: '500', margin: '20px 20px 0px' }} />
 
+### Obtaining a new message
+
 To generate a help message, you must call the `format` function. It accepts the following parameters:
 
 - `options` -- the option definitions (required)
 - `sections` -- a list of [help sections] to include in the message (optional, defaults to a single [groups section])
 - `filter` -- an [option filter] to select a subset of options (optional, defaults to none)
-- `progName` -- a [program name] to display in usage sections (optional, defaults to none)
+- `progName` -- a [program name] to display in [usage sections] (optional, defaults to none)
 
 It returns a [ANSI message] with the formatted sections.
 
@@ -55,7 +57,7 @@ For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}
 
 > [!WARNING]
 >
-> You should generally avoid names containing spaces, as they will appear unquoted.
+> You should generally avoid displaying names with spaces, as they will appear unquoted.
 
 ### Parameter column
 
@@ -105,9 +107,14 @@ A text block contains the following optional properties:
 - `noSplit` -- whether to disable [text splitting] (defaults to `false{:ts}`)
 - `noBreakFirst` -- whether to avoid line feeds at the beginning of the message (defaults to `false{:ts}`)
 
+The `noBreakFirst` is useful in two cases:
+
+- in a **groups** section with many groups, to ensure that the first group heading will have no leading line feed; or
+- when it is not known whether previous sections will have content (e.g., if the help can be invoked with an [option filter])
+
 ### Text section
 
-A text section can be used to write various kinds of content, such as introduction, instructions, afterword, copyright notice or external references. It contains only the [common properties].
+A **text** section can be used to write various kinds of content, such as introduction, instructions, afterword, copyright notice or external references. It contains only the [common properties].
 
 ### Usage section
 
@@ -129,7 +136,7 @@ The [usage message] is a concise representation of the command-line structure. H
 
 {/* cSpell:enable */}
 
-The `content.text` property of a usage section can be used to override the [program name]. In addition to the [common properties], this type of section has the following optional properties:
+The `content.text` property of a **usage** section can be used to override the [program name]. In addition to the [common properties], this type of section has the following optional properties:
 
 - `filter` -- a list of options to include or exclude (defaults to including all options)
 - `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
@@ -163,7 +170,7 @@ The `requires` property is equivalent to an adjacency list, except that each sou
 
 ### Groups section
 
-A groups section is a collection of option groups and their help entries. The [option group] attribute is used as a heading for each group, except for the _default_ group, which borrows the `heading.text` property, if present. The default group also includes the value of `content.text`, if present, as a preface before listing its entries.
+A **groups** section is a collection of option groups and their help entries. The [option group] attribute is used as a heading for each group, except for the _default_ group, which borrows the `heading.text` property, if present. The default group also includes the value of `content.text`, if present, as a preface before listing its entries.
 
 In addition to the [common properties], this type of section has the following optional properties:
 
@@ -171,7 +178,7 @@ In addition to the [common properties], this type of section has the following o
 - `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
 - `layout` -- an object with [column layout] settings for the section (see below)
 - `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
-- `useEnv` -- whether option names should be replaced by [environment variable] names (defaults to `false{:ts}`)
+- `useEnv` -- whether option names should be replaced with [environment variable] names (defaults to `false{:ts}`)
 
 > [!TIP]
 >
@@ -183,13 +190,13 @@ In addition to the [common properties], this type of section has the following o
 
 #### Column layout
 
-The layout of a groups section can be configured via a partial `HelpColumnsLayout` object containing three properties: `names`, `param` and `descr`. Each of which can be used to customize the layout of the corresponding [help column] -- applied to all help entries in the section -- and contains the following optional settings:
+The layout of a **groups** section can be configured via a partial `HelpColumnsLayout` object containing three properties: `names`, `param` and `descr`. Each of which can be used to customize the layout of the corresponding [help column] -- applied to all help entries in the section -- and contains the following optional settings:
 
 - `align` -- text alignment for the column (can be `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` -- indentation level for the column (must be non-negative if `absolute` is `true{:ts}`, defaults to `2{:ts}`)
 - `breaks` -- number of line feeds to insert before each entry at the start of the column (defaults to `0{:ts}`)
 - `hidden` -- whether the column should be hidden (defaults to `false{:ts}`)
-- `absolute` -- whether the indentation level should be relative to the beginning of the line instead of the end of the previous column (not available for the `names` column, defaults to `false{:ts}`)
+- `absolute` -- whether the indentation level should be relative to the terminal's left boundary instead of the end of the previous column (not available for the `names` column, defaults to `false{:ts}`)
 
 Here's a graph showing a single help entry with default layout in a terminal with 60-character width:
 
@@ -282,7 +289,7 @@ Below is an excerpt of a help message produced with the above configuration, in 
 
 #### Help items
 
-The `items` property of a groups section specifies the kinds of help items that should be displayed in option descriptions, and in which order. It is an array whose values can be one of the enumerators from `HelpItem`. The default is to print all items as they are listed in the enumeration type.
+The `items` property of a **groups** section specifies the kinds of help items that should be displayed in option descriptions, and in which order. It is an array whose values can be one of the enumerators from `HelpItem`. The default is to print all items as they are listed in the enumeration type.
 
 > [!TIP]
 >
@@ -290,7 +297,7 @@ The `items` property of a groups section specifies the kinds of help items that 
 
 ## Option filter
 
-The `filter` parameter of the `format` function lists patterns that will be searched for in option definitions, to filter the options. The patterns are case-insensitive and match [option names], [synopsis] and [environment variable] names. If multiple patterns are provided, any matched one will suffice to include an option in the message.
+The `filter` parameter of the `format` function lists patterns that will be searched for in option [definitions], to filter the options. The patterns are case-insensitive and match [option names], [synopsis] and [environment variable] names. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
 > [!NOTE]
 >
@@ -301,6 +308,7 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [^1]: _polyadic_ means that the option accepts more than one parameter, but the parameter count is not variable
 
 [groups section]: #groups-section
+[usage sections]: #usage-section
 [option filter]: #option-filter
 [help sections]: #help-sections
 [help column]: #help-columns

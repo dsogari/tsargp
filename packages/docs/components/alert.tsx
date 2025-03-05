@@ -4,6 +4,7 @@
 'use no memo';
 
 import type { ComponentProps, FC, ReactNode } from 'react';
+import clsx from 'clsx';
 
 type CustomComponentType = FC<{ type: AlertType; children: ReactNode }>;
 type BlockquoteType = FC<ComponentProps<'blockquote'>>;
@@ -11,6 +12,19 @@ type AlertType = (typeof ALERT_NAMES)[number];
 
 const ALERT_RE = /^\s*\[!(?<name>.*?)]\s*$/;
 const ALERT_NAMES = ['note', 'tip', 'quote', 'warning', 'caution'] as const;
+const CLASS_NAME = clsx(
+  'x:not-first:mt-6',
+  'x:border-gray-300',
+  'x:italic',
+  'x:text-gray-700',
+  'x:dark:border-gray-700',
+  'x:dark:text-gray-400',
+  'x:border-s-2',
+  'x:ps-6',
+);
+
+// The default blockquote component
+const Blockquote: BlockquoteType = (props) => <blockquote className={CLASS_NAME} {...props} />;
 
 /**
  * Checks whether a name is a valid alert.
@@ -32,32 +46,28 @@ function invalidAlert(name: string): Error {
 
 /**
  * Combines a blockquote component with a custom component that handles alerts.
- * @param custom The custom component
- * @param Component The blockquote component
+ * @param Custom The custom component
+ * @param Default The default component
  * @returns The combined component
  */
 export function withAlert(
-  custom: CustomComponentType,
-  Component: BlockquoteType | 'blockquote' = 'blockquote',
+  Custom: CustomComponentType,
+  Default: BlockquoteType = Blockquote,
 ): BlockquoteType {
   return function Blockquote(props) {
     const { children } = props;
     if (Array.isArray(children)) {
       const text = children[1].props.children;
       if (typeof text === 'string') {
-        const alertName = text.match(ALERT_RE)?.groups?.['name'].toLowerCase();
-        if (alertName) {
-          if (!isAlert(alertName)) {
-            throw invalidAlert(alertName);
+        const name = text.match(ALERT_RE)?.groups?.['name'].toLowerCase();
+        if (name) {
+          if (!isAlert(name)) {
+            throw invalidAlert(name);
           }
-          return custom({
-            ...props,
-            type: alertName as AlertType,
-            children: children.slice(2),
-          });
+          return Custom({ ...props, type: name, children: children.slice(2) });
         }
       }
     }
-    return <Component {...props} />;
+    return <Default {...props} />;
   };
 }

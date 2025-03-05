@@ -4,11 +4,13 @@ title: Validator - Library - Docs
 
 # Validator
 
-The `validator` module handles validation of option definitions. It provides a function that accepts a set of [definitions] and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
+The `validator` module handles validation of option [definitions]. It provides a function that accepts a set of definitions and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
 
 ## Option validation
 
 We use the term _validation_ to refer to the "sanity check" of option definitions. It is meant for use during development, whereas in production it would impose an unnecessary performance penalty on your application. In this sense, validations behave like assertions: they ensure that your program will work as expected when delivered to end-users.
+
+### Validating the options
 
 To validate a set of definitions, you must call the `validate` function. It accepts the following parameters:
 
@@ -17,7 +19,7 @@ To validate a set of definitions, you must call the `validate` function. It acce
 
 It returns a promise that resolves to a `ValidationResult` object containing the following property:
 
-- `warning` -- a [warning message] consisting of warnings encountered during the validation procedure, if any
+- `warning` -- a [warning message] consisting of warnings encountered in the validation procedure, if any
 
 ## Validation flags
 
@@ -42,7 +44,7 @@ The following restrictions will raise an error for any option definition that fa
 - **Invalid option name** -- An [option name], [positional marker], [cluster letter] or [environment variable] name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. Any other Unicode character is allowed (including whitespace).
 - **Duplicate option name** -- An option should not have duplicate names (including all of the above), and there cannot be two options with the same name.
 - **Duplicate parameter choice** -- In an option with [parameter choices], the choices must not contain duplicate values.
-- **Invalid parameter count** -- In a function option with a range [parameter count], the minimum value should be strictly less than the maximum, but not less than zero.
+- **Invalid parameter count** -- In a [function] option with a range [parameter count], the minimum value should be strictly less than the maximum, but not less than zero.
 - **Option requiring itself** -- An option must not declare a requirement that references itself.
 - **Unknown required option** -- An option must not declare a requirement that references an _unknown_ option.
 - **Invalid required option** -- An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
@@ -63,7 +65,7 @@ The following restrictions will produce a warning that is returned by the valida
 
 - **Too similar names** -- When two [option names] are very similar (e.g., if they differ by a single character in a five-character name), this could be a development mistake or, worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the [Gestalt] algorithm.
 - **Mixed naming convention** -- When a [name slot] contains names with different naming conventions (e.g., all uppercase vs all lowercase), this could be a sign of code review neglect or, worse, it can make reasoning about your application difficult. Thus, the validator tries to find names within a slot that contain mixed naming patterns.
-- **Variadic option with cluster letter** -- A [variadic] option that declares [cluster letters] must always be the last option in a cluster argument. This includes [subcommands], [array] options and [function] options with a variable [parameter count]. This might not be the intended behavior and, if so, you should consider alternatives.
+- **Variadic option with cluster letter** -- A [variadic] option that declares [cluster letters] must always be the _last_ option in a [cluster] argument. This includes [subcommands], [array] options and [function] options with a variable [parameter count]. This might not be the intended behavior and, if so, you should consider alternatives.
 
 {/* self references */}
 
@@ -113,6 +115,7 @@ The following restrictions will produce a warning that is returned by the valida
 
 {/* parser references */}
 
+[cluster]: parser#cluster-prefix
 [name suggestions]: parser#name-suggestions
 [inline parameter]: parser#inline-parameters
 
