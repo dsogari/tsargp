@@ -4,7 +4,7 @@ title: Parser - Library - Docs
 
 # Parser
 
-The `parser` module handles parsing of command-line arguments. It provides functions that accept a set of option [definitions] and parse arguments into [option values]. They may also produce error and warning messages, which can be customized via [message configuration].
+The `parser` module handles parsing of command-line arguments. It provides functions that accept a set of option [definitions] and parse arguments into option values. They may also produce error and warning messages, which can be customized via [message configuration].
 
 ## Option values
 
@@ -32,7 +32,7 @@ The `parseInto` function is more flexible, as it allows you to pass an existing 
 
 - `values` -- the option values to parse into (required)
 
-Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of option definitions. You can use the `valuesFor` function to create an object for just this purpose.
+Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of definitions. You can use the `valuesFor` function to create an object for just this purpose.
 
 This function returns a promise that resolves to a `ParsingResult` object containing the following property:
 
@@ -119,7 +119,7 @@ The information gathered by the parser is saved in an object that is passed as p
   - the name specified on the command line
   - the option's [preferred name], if the sequence comes from [positional] arguments
   - an environment [data source], if the data comes from the [environment]
-  - `'0'{:ts}`, if the data comes from the standard input
+  - `'0'{:ts}`, if the data comes from the [standard input]
 - `comp` -- True if performing [word completion]. Only available for the [parsing callback].
 - `prev` -- The option parameters preceding the word being completed, if any. Only available for the [completion callback]. Will be empty for [single-valued] options.
 
@@ -197,7 +197,7 @@ Option parameters may be passed on the command-line using the syntax `<name>=<pa
 >
 > This syntax cannot be used with the [positional marker].
 
-As is the case with standalone parameters, inline parameters do not conflict with [option names], and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
+As is the case with standalone parameters, inlined ones do not conflict with [option names], and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
 Cluster arguments may also have inline parameters, but their syntax is different. A [cluster] argument is considered to have an inline parameter if it contains an unknown letter that is _not the first_ one in the cluster. In this case, the first letter _must_ correspond to an option and the rest to its parameter. See [cluster inline parameters] for further details.
 
@@ -237,6 +237,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 
 {/* options references */}
 
+[standard input]: options#accept-input
 [non-niladic]: options#non-niladic-options
 [definitions]: options#option-definition
 [help]: options#help-option

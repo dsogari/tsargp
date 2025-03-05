@@ -10,6 +10,8 @@ The `validator` module handles validation of option [definitions]. It provides a
 
 We use the term _validation_ to refer to the "sanity check" of option definitions. It is meant for use during development, whereas in production it would impose an unnecessary performance penalty on your application. In this sense, validations behave like assertions: they ensure that your program will work as expected when delivered to end-users.
 
+### Validating the options
+
 To validate a set of definitions, you must call the `validate` function. It accepts the following parameters:
 
 - `options` -- the option definitions (required)

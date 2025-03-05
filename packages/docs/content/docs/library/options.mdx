@@ -68,7 +68,7 @@ A few additional remarks:
 
 ### Option requirements
 
-An option options can be configured with _requirements_, which are specifications of inter-dependencies between options and/or option values in the same definition level.
+An option can be configured with _requirements_, which are specifications of inter-dependencies between options and/or option values in the same definition level.
 
 ### Option constraints
 
@@ -143,7 +143,7 @@ The `styles` attribute, if present, specifies custom [styling attributes] for ea
 
 #### Media hyperlink
 
-The `link` attribute, if present, specifies the URL of an external resource or media. It will be included in the option description in the help message.
+The `link` attribute, if present, specifies the URL of an external resource or media. It will be included in the option's description in the help message.
 
 ### Message attributes
 
@@ -195,7 +195,7 @@ The following rules apply to cluster arguments:
 
 ##### Cluster inline parameters
 
-Cluster arguments may be considered to have [inline parameters] if they contain at least one unknown letter that is _not the first_. For example, using the same option [definitions] as above, the command line `cli -s'my str' -n123{:sh}` would be parsed as `cli --str 'my str' --num 123{:sh}`.
+Cluster arguments may be considered to have [inline parameters] if they contain at least one unknown letter that is _not the first_. For example, using the previous definitions, the command line `cli -s'my str' -n123{:sh}` would be parsed as `cli --str 'my str' --num 123{:sh}`.
 
 Notice how the parameters appear "glued" to the cluster letter (i.e., with no intervening space), and they contain characters that are not valid cluster letters. However, the first letter _must_ be valid for the argument to be considered a cluster.
 
@@ -623,7 +623,7 @@ The `limit` attribute, if present, indicates the maximum allowed number of eleme
 
 ### Function option
 
-The **function** option exists for the sole purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parsing callback], if one is specified, or the [parsed values] themselves.
+The **function** option exists for the sole purpose of being configured with an expected parameter count, and is the only option that can accept between zero and one parameter. Its value will be either the result of the [parsing callback], if one is specified, or the parameters themselves.
 
 The callback receives the list of option parameters as its first parameter, and should return the parsed value. As a special case, this list may contain _all_ the remaining command-line arguments (see [parameter count] below).
 
