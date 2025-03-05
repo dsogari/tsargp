@@ -9,7 +9,6 @@ import type {
   OpaqueOptionValues,
   Requires,
   RequiresEntry,
-  ModuleResolutionCallback,
   RequirementCallback,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
@@ -27,8 +26,9 @@ import {
   getNestedOptions,
   isCommand,
   checkInline,
+  normalizeArray,
 } from './options.js';
-import { fmt, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
+import { formatFunctions, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
 import {
   getCmdLine,
   findSimilar,
@@ -37,7 +37,6 @@ import {
   getEntries,
   getSymbol,
   getKeys,
-  isArray,
   findValue,
   getArgs,
   readFile,
@@ -73,11 +72,6 @@ export type ParsingFlags = {
    * If set, then arguments that have this prefix will always be considered an option name.
    */
   readonly optionPrefix?: string;
-  /**
-   * A resolution function for JavaScript modules.
-   * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
-   */
-  readonly resolve?: ModuleResolutionCallback;
 };
 
 /**
@@ -115,9 +109,9 @@ type ParseContext = [
    */
   args: Array<string>,
   /**
-   * The set of options that were specified.
+   * The set of supplied option keys.
    */
-  specifiedKeys: Set<string>,
+  supplied: Set<string>,
   /**
    * True if word completion is in effect.
    */
@@ -221,7 +215,7 @@ const enum ArgType {
  * @param options The option definitions
  * @param cmdLine The command line or arguments
  * @param flags The parsing flags
- * @returns The options' values
+ * @returns The frozen option values
  */
 export async function parse<T extends Options>(
   options: T,
@@ -230,13 +224,13 @@ export async function parse<T extends Options>(
 ): Promise<OptionValues<T>> {
   const values = valuesFor(options);
   await parseInto(options, values, cmdLine, flags);
-  return values;
+  return Object.freeze(values);
 }
 
 /**
  * Parses command-line arguments into option values.
  * @param options The option definitions
- * @param values The options' values to parse into
+ * @param values The option values to parse into
  * @param cmdLine The command line or arguments
  * @param flags The parsing flags
  * @returns The parsing result
@@ -283,9 +277,9 @@ function createContext(
       values[key] = undefined;
     }
   }
-  const specifiedKeys = new Set<string>();
+  const supplied = new Set<string>();
   const warning = new WarnMessage();
-  return [registry, values, args, specifiedKeys, completing, warning, flags];
+  return [registry, values, args, supplied, completing, warning, flags];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -344,7 +338,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParseContext) {
-  const [registry, values, args, specifiedKeys, completing, warning] = context;
+  const [registry, values, args, supplied, completing] = context;
   let prev: ParseEntry = [-1];
   let min = 0; // param count
   let max = 0; // param count
@@ -379,11 +373,8 @@ async function parseArgs(context: ParseContext) {
           throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       }
-      if (!completing && !specifiedKeys.has(key)) {
-        if (option.deprecated !== undefined) {
-          warning.add(ErrorItem.deprecatedOption, {}, getSymbol(name));
-        }
-        specifiedKeys.add(key);
+      if (!completing && !supplied.has(key)) {
+        addSupplied(context, info);
       }
       if (!max) {
         // comp === false
@@ -420,6 +411,19 @@ async function parseArgs(context: ParseContext) {
     throw new TextMessage(...words);
   }
   await checkRequired(context);
+}
+
+/**
+ * Adds an option to the set of supplied options.
+ * @param context The parsing context
+ * @param info The option info
+ */
+function addSupplied(context: ParseContext, info: OptionInfo) {
+  const [key, option, name] = info;
+  if (option.deprecated !== undefined) {
+    context[5].add(ErrorItem.deprecatedOption, {}, getSymbol(name));
+  }
+  context[3].add(key);
 }
 
 /**
@@ -641,8 +645,7 @@ async function parseParams(
     return ErrorMessage.create(kind, flags, getSymbol(name), ...args);
   }
   /** @ignore */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function parse1(param: any, def = param): unknown {
+  function parse1(param: unknown, def = param): unknown {
     // do not destructure `parse`, because the callback might need to use `this`
     return option.parse ? option.parse(param, seq) : def;
   }
@@ -661,7 +664,7 @@ async function parseParams(
     await checkRequired(context);
   }
   if (type === 'flag') {
-    values[key] = await parse1('', true);
+    values[key] = await parse1(null, true);
     return breakLoop;
   }
   if (separator) {
@@ -704,37 +707,9 @@ async function parseParams(
     for (const param of params) {
       prev.push(await parse2(param));
     }
-    values[key] = normalizeArray(option, name, prev);
+    values[key] = normalizeArray(option, getSymbol(name), prev);
   }
   return breakLoop;
-}
-
-/**
- * Normalizes the value of an array-valued option and checks the validity of its element count.
- * @template T The type of the array element
- * @param option The option definition
- * @param name The option name
- * @param value The option value
- * @returns The normalized array
- * @throws On value not satisfying the specified limit constraint
- */
-function normalizeArray<T>(option: OpaqueOption, name: string, value: Array<T>): Array<T> {
-  const { unique, limit } = option;
-  if (unique) {
-    const unique = new Set(value);
-    value.length = 0; // reuse the same array
-    value.push(...unique);
-  }
-  if (limit !== undefined && value.length > limit) {
-    throw ErrorMessage.create(
-      ErrorItem.limitConstraintViolation,
-      {},
-      getSymbol(name),
-      value.length,
-      limit,
-    );
-  }
-  return value;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -793,7 +768,7 @@ async function handleCommand(
   const [, values, , , comp, warning, flags] = context;
   const [key, option, name] = info;
   const { clusterPrefix, optionPrefix } = option;
-  const cmdOptions = await getNestedOptions(option, flags.resolve);
+  const cmdOptions = await getNestedOptions(option);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
   const progName = flags.progName && flags.progName + ' ' + name;
@@ -804,8 +779,7 @@ async function handleCommand(
   const seq = { values, index, name, comp };
   // comp === false, otherwise completion will have taken place by now
   // do not destructure `parse`, because the callback might need to use `this`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  values[key] = option.parse ? await option.parse(param as any, seq) : param;
+  values[key] = option.parse ? await option.parse(param, seq) : param;
 }
 
 /**
@@ -818,10 +792,9 @@ async function handleCommand(
 async function handleMessage(context: ParseContext, info: OptionInfo, rest: Array<string>) {
   const [, values] = context;
   const [key, option] = info;
-  const message =
-    option.type === 'help'
-      ? await handleHelp(context, option, rest)
-      : await handleVersion(context, option);
+  const message = await (option.type === 'help'
+    ? handleHelp(context, option, rest)
+    : handleVersion(option));
   if (option.saveMessage) {
     values[key] = message;
   } else {
@@ -849,7 +822,7 @@ async function handleHelp(
       (opt) => isCommand(opt.type) && !!opt.names?.includes(rest[0]),
     );
     if (cmdOpt?.options) {
-      const cmdOptions = await getNestedOptions(cmdOpt, context[6].resolve);
+      const cmdOptions = await getNestedOptions(cmdOpt);
       const helpOpt = findValue(cmdOptions, (opt) => opt.type === 'help');
       if (helpOpt) {
         registry = new OptionRegistry(cmdOptions);
@@ -862,22 +835,16 @@ async function handleHelp(
 }
 
 /**
- * Resolve the version string of a version option.
- * @param context The parsing context
+ * Resolves the version string of a version option.
  * @param option The version option
  * @returns The version string
  */
-async function handleVersion(context: ParseContext, option: OpaqueOption): Promise<string> {
+async function handleVersion(option: OpaqueOption): Promise<string> {
   const { version } = option;
-  if (!version?.endsWith('.json')) {
+  if (!(version instanceof URL)) {
     return version ?? '';
   }
-  const { resolve } = context[6];
-  if (!resolve) {
-    throw ErrorMessage.create(ErrorItem.missingResolveCallback);
-  }
-  const path = new URL(resolve(version));
-  const data = await readFile(path);
+  const data = await readFile(version);
   if (data !== undefined) {
     return JSON.parse(data).version;
   }
@@ -888,7 +855,7 @@ async function handleVersion(context: ParseContext, option: OpaqueOption): Promi
 // Requirements handling
 //--------------------------------------------------------------------------------------------------
 /**
- * Checks if required options were correctly specified.
+ * Checks if required options were correctly supplied.
  * This should only be called when completion is not in effect.
  * @param context The parsing context
  */
@@ -906,19 +873,19 @@ async function checkRequired(context: ParseContext) {
  * @returns A promise that must be awaited before continuing
  */
 async function checkDefaultValue(context: ParseContext, key: string) {
-  const [registry, values, , specifiedKeys] = context;
-  if (specifiedKeys.has(key)) {
+  const [registry, values, , supplied] = context;
+  if (supplied.has(key)) {
     return;
   }
   const option = registry.options[key];
   const { type, stdin, sources, preferredName, required } = option;
-  const names: Array<0 | string | URL> = stdin ? [0] : [];
-  names.push(...(sources ?? []));
-  for (const name of names) {
-    const param = isString(name) ? getEnv(name) : await readFile(name);
+  const allSources = [...(stdin ? [0] : []), ...(sources ?? [])];
+  for (const source of allSources) {
+    const param = isString(source) ? getEnv(source) : await readFile(source);
     if (param !== undefined) {
-      await parseParams(context, [key, option, `${name}`], NaN, [param]);
-      specifiedKeys.add(key);
+      const info: OptionInfo = [key, option, `${source}`];
+      await parseParams(context, info, NaN, [param]);
+      addSupplied(context, info);
       return;
     }
   }
@@ -928,8 +895,9 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   }
   if ('default' in option) {
     // do not destructure `default`, because the callback might need to use `this`
+    // be careful to not modify the returned value, as it may be read-only
     const value = await (isFunction(option.default) ? option.default(values) : option.default);
-    values[key] = type === 'array' && isArray(value) ? normalizeArray(option, name, value) : value;
+    values[key] = type === 'array' ? normalizeArray(option, getSymbol(name), value) : value;
   }
 }
 
@@ -943,25 +911,23 @@ async function checkRequiredOption(context: ParseContext, key: string) {
   function check(requires: Requires, negate: boolean, invert: boolean) {
     return checkRequires(context, option, requires, error, negate, invert);
   }
-  const [registry, , , specifiedKeys] = context;
+  const [registry, , , supplied] = context;
   const option = registry.options[key];
   const { preferredName, requires, requiredIf } = option;
-  const specified = specifiedKeys.has(key);
+  const present = supplied.has(key);
   const error = new AnsiString();
   if (
-    (specified && requires && !(await check(requires, false, false))) ||
-    (!specified && requiredIf && !(await check(requiredIf, true, true)))
+    (present && requires && !(await check(requires, false, false))) ||
+    (!present && requiredIf && !(await check(requiredIf, true, true)))
   ) {
     const name = preferredName ?? '';
-    const kind = specified
-      ? ErrorItem.unsatisfiedRequirement
-      : ErrorItem.unsatisfiedCondRequirement;
+    const kind = present ? ErrorItem.unsatisfiedRequirement : ErrorItem.unsatisfiedCondRequirement;
     throw ErrorMessage.create(kind, {}, getSymbol(name), error);
   }
 }
 
 /**
- * Checks the requirements of an option that was specified.
+ * Checks the requirements of an option that was supplied.
  * @param context The parsing context
  * @param option The option definition
  * @param requires The option requirements
@@ -995,7 +961,7 @@ function checkRequires(
 }
 
 /**
- * Checks if a required option was specified with correct values.
+ * Checks if an option was supplied with required values.
  * @param context The parsing context
  * @param _option The requiring option definition
  * @param entry The required option key and value
@@ -1012,31 +978,31 @@ function checkRequiresEntry(
   negate: boolean,
   invert: boolean,
 ): boolean {
-  const [registry, values, , specifiedKeys] = context;
+  const [registry, values, , supplied] = context;
   const [key, expected] = entry;
   const actual = values[key];
   const option = registry.options[key];
-  const specified = specifiedKeys.has(key) || actual !== undefined; // consider default values
+  const present = supplied.has(key) || actual !== undefined; // consider default values
   const required = expected !== null;
   const name = option.preferredName ?? '';
   const { connectives } = config;
-  if (!specified || !required || expected === undefined) {
-    if ((specified === required) !== negate) {
+  if (!present || !required || expected === undefined) {
+    if ((present === required) !== negate) {
       return true;
     }
-    if (specified !== invert) {
+    if (present !== invert) {
       error.word(connectives.no);
     }
-    fmt.m(Symbol.for(name), error, {});
+    formatFunctions.m(Symbol.for(name), error, {});
     return false;
   }
   if (areEqual(actual, expected) !== negate) {
     return true;
   }
   const connective = negate !== invert ? connectives.notEquals : connectives.equals;
-  fmt.m(Symbol.for(name), error, {});
+  formatFunctions.m(Symbol.for(name), error, {});
   error.word(connective);
-  fmt.v(expected, error, {});
+  formatFunctions.v(expected, error, {});
   return false;
 }
 
@@ -1112,7 +1078,7 @@ async function checkRequirementCallback(
     if (negate !== invert) {
       error.word(config.connectives.not);
     }
-    fmt.v(callback, error, {});
+    formatFunctions.v(callback, error, {});
     return false;
   }
   return true;

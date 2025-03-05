@@ -2,24 +2,22 @@
 title: Validator - Library - Docs
 ---
 
-import { Callout } from 'nextra/components';
-
 # Validator
 
-The `validator` module handles validation of option definitions. It provides a function that accepts a set of definitions and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
+The `validator` module handles validation of option definitions. It provides a function that accepts a set of [definitions] and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
 
 ## Option validation
 
 We use the term _validation_ to refer to the "sanity check" of option definitions. It is meant for use during development, whereas in production it would impose an unnecessary performance penalty on your application. In this sense, validations behave like assertions: they ensure that your program will work as expected when delivered to end-users.
 
-To validate a set of option definitions, you must call the `validate` function. It accepts the following parameters:
+To validate a set of definitions, you must call the `validate` function. It accepts the following parameters:
 
-- `options` - the option definitions (required)
-- `flags` - an object containing the [validation flags] (optional)
+- `options` -- the option definitions (required)
+- `flags` -- an object containing the [validation flags] (optional)
 
 It returns a promise that resolves to a `ValidationResult` object containing the following property:
 
-- `warning` - a [warning message] consisting of warnings encountered during the validation procedure, if any
+- `warning` -- a [warning message] consisting of warnings encountered during the validation procedure, if any
 
 ## Validation flags
 
@@ -27,19 +25,11 @@ The validation procedure can be configured via a `ValidationFlags` object that h
 
 ### Skip naming issues
 
-The `noNamingIssues` property indicates whether the validator should skip detection of naming inconsistencies
+The `noNamingIssues` property indicates whether the validator should skip detection of naming inconsistencies.
 
 ### Skip recursion
 
 The `noRecurse` property indicates whether the validator should skip recursion into [nested options].
-
-### Resolution callback
-
-The `resolve` property specifies a resolution function for [JavaScript modules]. It is used in places where a module is expected to be dynamically loaded. It is meant for use in non-browser environments and should generally have the following value (see [import.meta.resolve]):
-
-```ts
-import.meta.resolve.bind(import.meta);
-```
 
 ## Validation rules
 
@@ -49,35 +39,31 @@ There are two kinds of validation rules, depending on whether they generate an e
 
 The following restrictions will raise an error for any option definition that fails to satisfy it, with an explanatory message that may include the option's key.
 
-- **Invalid option name** - An [option name], [positional marker], [cluster letter] or [environment variable] name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. Any other Unicode character is allowed (including whitespace).
-- **Duplicate option name** - An option should not have duplicate names (including all of the above), and there cannot be two options with the same name.
-- **Duplicate parameter choice** - In an option with [parameter choices], the choices must _not_ contain duplicate values.
-- **Invalid parameter count** - In a function option with a range [parameter count], the minimum value should be strictly less than the maximum, but not less than zero.
-- **Option requiring itself** - An option must not declare a requirement that references itself.
-- **Unknown required option** - An option must not declare a requirement that references an _unknown_ option.
-- **Invalid required option** - An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
-- **Invalid required value** - An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is nullish (`null{:ts}` or `undefined{:ts}`).
-- **Duplicate positional option** - Since positional arguments have no name, they must pertain to exactly one option. Hence, there cannot be _two_ options with the [positional] attribute in the same definition level.
+- **Invalid option name** -- An [option name], [positional marker], [cluster letter] or [environment variable] name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. Any other Unicode character is allowed (including whitespace).
+- **Duplicate option name** -- An option should not have duplicate names (including all of the above), and there cannot be two options with the same name.
+- **Duplicate parameter choice** -- In an option with [parameter choices], the choices must not contain duplicate values.
+- **Invalid parameter count** -- In a function option with a range [parameter count], the minimum value should be strictly less than the maximum, but not less than zero.
+- **Option requiring itself** -- An option must not declare a requirement that references itself.
+- **Unknown required option** -- An option must not declare a requirement that references an _unknown_ option.
+- **Invalid required option** -- An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
+- **Invalid required value** -- An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is _nullish_ (i.e., `null{:ts}` or `undefined{:ts}`).
+- **Duplicate positional option** -- Since positional arguments have no name, they must pertain to exactly one option. Hence, there cannot be _two_ options with the [positional] attribute in the same definition level.
 
-<Callout type="info">
+> [!NOTE]
+>
+> `null{:ts}` values from the [option names] are ignored in name validation.
 
-`null{:ts}` values from the [option names] are ignored in name validation.
-
-</Callout>
-
-<Callout type="warning">
-
-The _satisfiability_ of option requirements is not verified, not only because [requirement callbacks] cannot be evaluated at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `allOf({ opt: 1 }, { opt: 2 }){:ts}` cannot be satisfied, but is hard to verify in general[^1]. You should ensure that this does not happen.
-
-</Callout>
+> [!WARNING]
+>
+> The _satisfiability_ of option requirements is not verified, not only because [requirement callbacks] cannot be evaluated at validation time, but also because [requirement expressions] can be arbitrarily complex. For example, a simple expression like `allOf({ opt: 1 }, { opt: 2 }){:ts}` cannot be satisfied, but is hard to verify in general[^1]. You should ensure that this does not happen.
 
 ### Validation warnings
 
 The following restrictions will produce a warning that is returned by the validation procedure.
 
-- **Too similar names** - When two [option names] are very similar (e.g., if they differ by a single character in a five-character name), this may be a development mistake or, worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the [Gestalt] algorithm.
-- **Mixed naming convention** - When a [name slot] contains names with different naming conventions (e.g., all uppercase vs all lowercase), this may be a sign of code review neglect or, worse, it can make reasoning about your application difficult. Thus, the validator tries to find names within a slot that contain mixed naming patterns.
-- **Variadic option with cluster letter** - A variadic option that declares [cluster letters] must always be the last option in a cluster argument. This includes [subcommands], array-valued options and function options with a variable [parameter count]. This might not be the intended behavior and if so, you should consider alternatives.
+- **Too similar names** -- When two [option names] are very similar (e.g., if they differ by a single character in a five-character name), this could be a development mistake or, worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the [Gestalt] algorithm.
+- **Mixed naming convention** -- When a [name slot] contains names with different naming conventions (e.g., all uppercase vs all lowercase), this could be a sign of code review neglect or, worse, it can make reasoning about your application difficult. Thus, the validator tries to find names within a slot that contain mixed naming patterns.
+- **Variadic option with cluster letter** -- A [variadic] option that declares [cluster letters] must always be the last option in a cluster argument. This includes [subcommands], [array] options and [function] options with a variable [parameter count]. This might not be the intended behavior and, if so, you should consider alternatives.
 
 {/* self references */}
 
@@ -88,6 +74,10 @@ The following restrictions will produce a warning that is returned by the valida
 
 {/* options references */}
 
+[array]: options#array-valued-option
+[function]: options#function-option
+[variadic]: options#option-parameters
+[definitions]: options#option-definition
 [help]: options#help-option
 [version]: options#version-option
 [subcommands]: options#command-option

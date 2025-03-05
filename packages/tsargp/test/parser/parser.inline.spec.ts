@@ -221,6 +221,24 @@ describe('parse', () => {
       );
     });
 
+    it('throw an error on function option with missing inline parameter', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['--function'],
+          cluster: 'f',
+          inline: 'always',
+          paramCount: [1, 2],
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['--function', '1'])).rejects.toThrow(
+        `Option --function requires an inline parameter.`,
+      );
+      expect(parse(options, ['-f', '1'], flags)).rejects.toThrow(
+        `Option --function requires an inline parameter.`,
+      );
+    });
+
     it('require inline parameters for specific option names', () => {
       const options = {
         single: {

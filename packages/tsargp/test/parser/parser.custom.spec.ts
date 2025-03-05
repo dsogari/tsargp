@@ -16,17 +16,19 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toEqual({ flag: undefined });
       expect(options.flag.parse).not.toHaveBeenCalled();
-      expect(parse(options, ['-f'])).resolves.toEqual({ flag: '' });
-      expect(options.flag.parse).toHaveBeenCalledWith('', {
-        values: { flag: '' }, // should have been { flag: undefined } at the time of call
+      expect(parse(options, ['-f'])).resolves.toEqual({ flag: null });
+      expect(options.flag.parse).toHaveBeenCalledWith(null, {
+        // should have been { flag: undefined } at the time of call
+        values: { flag: null },
         index: 0,
         name: '-f',
         comp: false,
       });
       options.flag.parse.mockClear();
-      expect(parse(options, ['-f', '-f'])).resolves.toEqual({ flag: '' });
-      expect(options.flag.parse).toHaveBeenCalledWith('', {
-        values: { flag: '' }, // should have been { flag: undefined } at the time of call
+      expect(parse(options, ['-f', '-f'])).resolves.toEqual({ flag: null });
+      expect(options.flag.parse).toHaveBeenCalledWith(null, {
+        // should have been { flag: undefined } at the time of call
+        values: { flag: null },
         index: 0,
         name: '-f',
         comp: false,
@@ -48,10 +50,7 @@ describe('parse', () => {
           names: ['-f2'],
         },
       } as const satisfies Options;
-      expect(parse(options, ['-f2', '-f1'])).resolves.toEqual({
-        flag1: undefined,
-        flag2: true,
-      });
+      expect(parse(options, ['-f2', '-f1'])).resolves.toEqual({ flag1: undefined, flag2: true });
     });
 
     it('break the parsing loop when the option explicitly asks so', () => {
@@ -68,10 +67,7 @@ describe('parse', () => {
           parse: jest.fn(),
         },
       } as const satisfies Options;
-      expect(parse(options, ['-f1', '-f2'])).resolves.toEqual({
-        flag1: 'abc',
-        flag2: undefined,
-      });
+      expect(parse(options, ['-f1', '-f2'])).resolves.toEqual({ flag1: 'abc', flag2: undefined });
       expect(options.flag1.parse).toHaveBeenCalled();
       expect(options.flag2.parse).not.toHaveBeenCalled();
     });
@@ -87,13 +83,13 @@ describe('parse', () => {
       } as const satisfies Options;
       process.env['FLAG'] = '1';
       expect(parse(options, [])).resolves.toEqual({ flag: true });
-      expect(options.flag.parse).toHaveBeenCalledWith('', {
-        values: { flag: true }, // should have been { flag: undefined } at the time of call
+      expect(options.flag.parse).toHaveBeenCalledWith(null, {
+        // should have been { flag: undefined } at the time of call
+        values: { flag: true },
         index: NaN,
         name: 'FLAG',
         comp: false,
       });
-      expect(options.flag.parse).toHaveBeenCalled();
     });
 
     it('handle a single-valued option with value from positional argument', () => {
@@ -107,13 +103,15 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['1', '2'])).resolves.toEqual({ single: '2' });
       expect(options.single.parse).toHaveBeenCalledWith('1', {
-        values: { single: '2' }, // should have been { single: undefined } at the time of call
+        // should have been { single: undefined } at the time of call
+        values: { single: '2' },
         index: 0,
         name: 'preferred',
         comp: false,
       });
       expect(options.single.parse).toHaveBeenCalledWith('2', {
-        values: { single: '2' }, // should have been { single: undefined } at the time of call
+        // should have been { single: undefined } at the time of call
+        values: { single: '2' },
         index: 1,
         name: 'preferred',
         comp: false,
@@ -132,13 +130,15 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['1', '2'])).resolves.toEqual({ array: ['1', '2'] });
       expect(options.array.parse).toHaveBeenCalledWith('1', {
-        values: { array: ['1', '2'] }, // should have been { single: undefined } at the time of call
+        // should have been { single: undefined } at the time of call
+        values: { array: ['1', '2'] },
         index: 0,
         name: 'preferred',
         comp: false,
       });
       expect(options.array.parse).toHaveBeenCalledWith('2', {
-        values: { array: ['1', '2'] }, // should have been { single: undefined } at the time of call
+        // should have been { single: undefined } at the time of call
+        values: { array: ['1', '2'] },
         index: 0, // index of the first argument in the sequence
         name: 'preferred',
         comp: false,
@@ -157,6 +157,19 @@ describe('parse', () => {
       expect(parse(options, ['-s', '123'])).resolves.toEqual({ single: 123 });
       expect(parse(options, ['-s', '0'])).rejects.toThrow(`-s '0' [1, Infinity]`);
       expect(parse(options, ['-s', 'a'])).rejects.toThrow(`-s 'a' [1, Infinity]`);
+    });
+
+    it('handle an array-valued option with a parsing callback that throws', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          parse: numberInRange([1, Infinity], '#0 #1 #2.'),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-a', '123'])).resolves.toEqual({ array: [123] });
+      expect(parse(options, ['-a', '0'])).rejects.toThrow(`-a '0' [1, Infinity]`);
+      expect(parse(options, ['-a', 'a'])).rejects.toThrow(`-a 'a' [1, Infinity]`);
     });
 
     it('handle an array-valued option with a parsing callback', () => {
@@ -183,12 +196,12 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['-f', '1'])).resolves.toEqual({ function: ['1'] });
       expect(options.function.parse).toHaveBeenCalledWith(['1'], {
-        values: { function: ['1'] }, // should have been { function: undefined } at the time of call
+        // should have been { function: undefined } at the time of call
+        values: { function: ['1'] },
         index: 0,
         name: '-f',
         comp: false,
       });
-      expect(options.function.parse).toHaveBeenCalledTimes(1);
     });
   });
 });

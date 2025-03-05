@@ -7,7 +7,6 @@ import type {
   RequiresVal,
   OpaqueOptions,
   NestedOptions,
-  ModuleResolutionCallback,
 } from './options.js';
 import type { NamingRules } from './utils.js';
 
@@ -20,6 +19,7 @@ import {
   isMessage,
   getNestedOptions,
   isCommand,
+  normalizeArray,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import {
@@ -71,11 +71,6 @@ export type ValidationFlags = {
    * Whether the validation procedure should skip recursion into nested options.
    */
   readonly noRecurse?: boolean;
-  /**
-   * A resolution function for JavaScript modules.
-   * Use `import.meta.resolve.bind(import.meta)`. Use in non-browser environments only.
-   */
-  readonly resolve?: ModuleResolutionCallback;
 };
 
 /**
@@ -266,7 +261,7 @@ async function validateOption(
   }
   if (!flags.noRecurse && isCommand(type) && options && !visited.has(options)) {
     visited.add(options);
-    const cmdOptions = await getNestedOptions(option, flags.resolve);
+    const cmdOptions = await getNestedOptions(option);
     // create a new context, to avoid changing the behavior of functions up in the call stack
     await validateOptions([cmdOptions, flags, warning, visited, prefix + key + '.']);
   }
@@ -340,7 +335,7 @@ function validateRequirement(
  */
 function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
   const [, , warning] = context;
-  const { choices, paramCount } = option;
+  const { type, choices, paramCount, example, default: def } = option;
   if (choices) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
@@ -359,5 +354,9 @@ function validateConstraints(context: ValidationContext, key: symbol, option: Op
   }
   if (min < max && option.cluster) {
     warning.add(ErrorItem.variadicWithClusterLetter, {}, key);
+  }
+  if (type === 'array') {
+    normalizeArray(option, key, example); // ignored if undefined
+    normalizeArray(option, key, def); // ignored if undefined
   }
 }

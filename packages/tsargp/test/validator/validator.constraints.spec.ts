@@ -151,4 +151,36 @@ describe('validate', () => {
       );
     });
   });
+
+  describe('when an array option has invalid element count', () => {
+    it('throw an error on option with example value with too many values', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          example: [1, 2, 2],
+          unique: true,
+          limit: 1,
+        },
+      } as const satisfies Options;
+      expect(validate(options)).rejects.toThrow(
+        `Option array has too many values: 2. Should have at most 1.`,
+      );
+    });
+
+    it('throw an error on option with default value with too many values', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          default: [1, 2, 2],
+          unique: true,
+          limit: 1,
+        },
+      } as const satisfies Options;
+      expect(validate(options)).rejects.toThrow(
+        `Option array has too many values: 2. Should have at most 1.`,
+      );
+    });
+  });
 });

@@ -7,7 +7,7 @@ import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, getSymbol, isFunction, isObject, isString } from './utils.js';
+import { getEntries, getSymbol, isArray, isFunction, isObject, isString } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -48,6 +48,7 @@ export class RequiresNot {
 
 /**
  * Implements a registry of option definitions.
+ * @internal
  */
 export class OptionRegistry {
   readonly names: Map<string, string> = new Map<string, string>();
@@ -69,23 +70,10 @@ export class OptionRegistry {
 }
 
 //--------------------------------------------------------------------------------------------------
-// Constants
-//--------------------------------------------------------------------------------------------------
-/**
- * The types of options that throw messages.
- */
-const messageOptionTypes = ['help', 'version'] as const;
-
-/**
- * The types of options that accept no parameter.
- */
-const niladicOptionTypes = [...messageOptionTypes, 'command', 'flag'] as const;
-
-//--------------------------------------------------------------------------------------------------
 // Public types
 //--------------------------------------------------------------------------------------------------
 /**
- * A (closed) numeric range.
+ * A closed numeric range with positive length.
  *
  * In a valid range, the minimum should be strictly less than the maximum.
  */
@@ -94,17 +82,22 @@ export type Range = readonly [min: number, max: number];
 /**
  * A text alignment setting.
  */
-export type Alignment = 'left' | 'right';
+export type TextAlignment = 'left' | 'right';
+
+/**
+ * A column alignment setting.
+ */
+export type ColumnAlignment = TextAlignment | 'slot' | 'merge';
 
 /**
  * Defines layout attributes common to all help columns.
- * @template A The type of text alignment
+ * @template T The type of text alignment
  */
-export type WithColumnLayout<A extends string = Alignment> = {
+export type WithColumnLayout<T extends ColumnAlignment = TextAlignment> = {
   /**
    * The text alignment for the column. (Defaults to 'left')
    */
-  readonly align: A;
+  readonly align: T;
   /**
    * The indentation level for the column. (Defaults to 2)
    */
@@ -137,15 +130,15 @@ export type HelpColumnsLayout = {
   /**
    * The settings for the names column.
    */
-  readonly names: WithColumnLayout<Alignment | 'slot'>;
+  readonly names: WithColumnLayout<TextAlignment | 'slot'>;
   /**
    * The settings for the parameter column.
    */
-  readonly param: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
+  readonly param: WithColumnLayout<TextAlignment | 'merge'> & WithAbsoluteLayout;
   /**
    * The settings for the description column.
    */
-  readonly descr: WithColumnLayout<Alignment | 'merge'> & WithAbsoluteLayout;
+  readonly descr: WithColumnLayout<TextAlignment | 'merge'> & WithAbsoluteLayout;
 };
 
 /**
@@ -163,7 +156,7 @@ export type HelpTextBlock = {
   /**
    * The text alignment. (Defaults to 'left')
    */
-  readonly align?: Alignment;
+  readonly align?: TextAlignment;
   /**
    * The indentation level. (Defaults to 0)
    */
@@ -185,9 +178,9 @@ export type HelpTextBlock = {
 /**
  * Defines attributes common to all help sections.
  */
-export type WithSectionKind<T extends string> = {
+export type WithSection<T extends HelpSectionType> = {
   /**
-   * The kind of section.
+   * The type of section.
    */
   readonly type: T;
   /**
@@ -223,7 +216,7 @@ export type WithSectionUsage = {
    */
   readonly required?: ReadonlyArray<string>;
   /**
-   * A mapping of option keys to required option keys.
+   * A record that maps option keys to required option keys.
    */
   readonly requires?: Readonly<Record<string, string>>;
   /**
@@ -251,19 +244,24 @@ export type WithSectionGroups = {
 };
 
 /**
+ * The help section types.
+ */
+export type HelpSectionType = 'text' | 'usage' | 'groups';
+
+/**
  * A help text section.
  */
-export type HelpTextSection = WithSectionKind<'text'>;
+export type HelpTextSection = WithSection<'text'>;
 
 /**
  * A help usage section.
  */
-export type HelpUsageSection = WithSectionKind<'usage'> & WithSectionFilter & WithSectionUsage;
+export type HelpUsageSection = WithSection<'usage'> & WithSectionFilter & WithSectionUsage;
 
 /**
  * A help groups section.
  */
-export type HelpGroupsSection = WithSectionKind<'groups'> & WithSectionFilter & WithSectionGroups;
+export type HelpGroupsSection = WithSection<'groups'> & WithSectionFilter & WithSectionGroups;
 
 /**
  * A help section.
@@ -299,20 +297,15 @@ export type OptionStyles = {
 export type RequiresExp = RequiresNot | RequiresAll | RequiresOne;
 
 /**
- * A mapping of option keys to required values.
+ * A record that maps option keys to required values.
  */
 export type RequiresVal = { readonly [key: string]: unknown };
-
-/**
- * An entry from the required values object.
- */
-export type RequiresEntry = readonly [key: string, value: unknown];
 
 /**
  * An option requirement can be either:
  *
  * - an option key;
- * - a mapping of option keys to required values;
+ * - a record that maps option keys to required values;
  * - a requirement expression; or
  * - a requirement callback
  */
@@ -324,14 +317,6 @@ export type Requires = string | RequiresVal | RequiresExp | RequirementCallback;
  * @returns True if the requirements were satisfied
  */
 export type RequirementCallback = (values: OpaqueOptionValues) => Promissory<boolean>;
-
-/**
- * A JavaScript module resolution function.
- * To be used in non-browser environments only.
- * @param specifier The module specifier
- * @returns The resolved path
- */
-export type ModuleResolutionCallback = (specifier: string) => string;
 
 /**
  * A callback for default values.
@@ -363,18 +348,25 @@ export type CustomCallback<P, I, R> = (param: P, info: I) => R;
  * @template P The parameter data type
  * @template R The result data type
  */
-export type ParsingCallback<P, R = unknown> = CustomCallback<P, WithArgInfo & WithCompInfo, R>;
+export type ParsingCallback<P, R = unknown> = CustomCallback<
+  P,
+  WithArgumentInfo & WithCompletionInfo,
+  R
+>;
 
 /**
  * A callback for custom word completion.
- * @template I The type of argument information
  */
-export type CompletionCallback<I> = CustomCallback<string, I, Promissory<Array<string>>>;
+export type CompletionCallback = CustomCallback<
+  string,
+  WithArgumentInfo & WithPreviousInfo,
+  Promissory<Array<string>>
+>;
 
 /**
  * The type of nested options for a subcommand.
  */
-export type NestedOptions = string | Promissory<Options> | (() => Promissory<Options>);
+export type NestedOptions = Promissory<Options> | (() => Promissory<Options>);
 
 /**
  * The type of inline constraint.
@@ -389,7 +381,7 @@ export type KnownValue = boolean | string | number | object;
 /**
  * Information about the current argument sequence in the parsing loop.
  */
-export type WithArgInfo = {
+export type WithArgumentInfo = {
   /**
    * The previously parsed values.
    * It is an opaque type that should be cast to {@link OptionValues}`<typeof your_options>`.
@@ -411,7 +403,7 @@ export type WithArgInfo = {
 /**
  * Information about word completion, to be used by custom parsing callbacks.
  */
-export type WithCompInfo = {
+export type WithCompletionInfo = {
   /**
    * Whether word completion is in effect.
    */
@@ -419,9 +411,9 @@ export type WithCompInfo = {
 };
 
 /**
- * Information about word completion, to be used by completion callbacks.
+ * Extra information about word completion, to be used by completion callbacks.
  */
-export type WithPrevInfo = {
+export type WithPreviousInfo = {
   /**
    * The parameters preceding the word being completed, if any.
    */
@@ -432,7 +424,7 @@ export type WithPrevInfo = {
  * Defines the type of an option.
  * @template T The option type
  */
-export type WithType<T extends string> = {
+export type WithOptionType<T extends OptionType> = {
   /**
    * The option type.
    */
@@ -446,9 +438,8 @@ export type WithBasic = {
   /**
    * The option names, as they appear on the command-line (e.g. `-h` or `--help`).
    *
-   * Names cannot contain whitespace or the equals sign `=` (since it may act as option-parameter
-   * separator). Empty names or `null`s can be specified in order to skip the respective "slot" in
-   * the help message names column.
+   * Names cannot contain the equals sign `=`, since it may be used as option-parameter separator.
+   * `null`s can be specified in order to skip the respective "slot" in the help message names column.
    */
   readonly names?: ReadonlyArray<string | null>;
   /**
@@ -494,9 +485,9 @@ export type WithMessage = {
 
 /**
  * Defines attributes common to options that have values.
- * @template P The type of parse parameter
+ * @template T The type of parse parameter
  */
-export type WithValue<P> = {
+export type WithOptionValue<T> = {
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
    */
@@ -524,16 +515,16 @@ export type WithValue<P> = {
   /**
    * A custom callback for parsing the option parameter(s).
    */
-  readonly parse?: ParsingCallback<P>;
+  readonly parse?: ParsingCallback<T>;
 };
 
 /**
  * Defines attributes for options that may read data from the environment.
  */
-export type WithEnv = {
+export type WithEnvironment = {
   /**
    * True to read data from the standard input, if the option is not specified in the command-line.
-   * This has precedence over {@link WithEnv.sources}.
+   * This has precedence over {@link WithEnvironment.sources}.
    */
   readonly stdin?: true;
   /**
@@ -550,9 +541,8 @@ export type WithEnv = {
 
 /**
  * Defines attributes for options that may have parameters.
- * @template I The type of argument information for completion callbacks
  */
-export type WithParam<I> = {
+export type WithParameter = {
   /**
    * The option example value. Replaces the option type in the help message parameter column.
    */
@@ -577,14 +567,14 @@ export type WithParam<I> = {
    * Whether inline parameters should be disallowed or required for this option.
    * Can be `false` to disallow or `'always'` to always require.
    *
-   * It can also be a mapping of option names to one of the above, indicating whether the
+   * It can also be a record that maps option names to one of the above, indicating whether the
    * corresponding name disallows or requires inline parameters.
    */
   readonly inline?: InlineConstraint;
   /**
    * A custom callback for word completion.
    */
-  readonly complete?: CompletionCallback<I>;
+  readonly complete?: CompletionCallback;
 };
 
 /**
@@ -600,7 +590,7 @@ export type WithSelection = {
    */
   readonly choices?: ReadonlyArray<string>;
   /**
-   * The mapping of parameter values to option values.
+   * A record that maps parameter values to option values.
    */
   readonly mapping?: Readonly<Record<string, unknown>>;
   /**
@@ -633,10 +623,11 @@ export type WithHelp = {
  */
 export type WithVersion = {
   /**
-   * The version information as plain text (e.g., 0.1.0).
-   * It is not validated, but should not be empty or contain inline styles.
+   * The version information (e.g., a semantic version).
+   * If a `string`, it will not be validated, but should not contain inline styles.
+   * If a `URL`, it should be used in conjunction with `import.meta.resolve`.
    */
-  readonly version?: string;
+  readonly version?: string | URL;
 };
 
 /**
@@ -716,41 +707,41 @@ export type WithFunction = {
 /**
  * An option that throws a help message.
  */
-export type HelpOption = WithType<'help'> & WithBasic & WithHelp & WithMessage;
+export type HelpOption = WithOptionType<'help'> & WithBasic & WithHelp & WithMessage;
 
 /**
  * An option that throws a version information.
  */
-export type VersionOption = WithType<'version'> & WithVersion & WithBasic & WithMessage;
+export type VersionOption = WithOptionType<'version'> & WithVersion & WithBasic & WithMessage;
 
 /**
  * An option that executes a command.
  */
-export type CommandOption = WithType<'command'> &
+export type CommandOption = WithOptionType<'command'> &
   WithCommand &
   WithBasic &
-  WithValue<OpaqueOptionValues> &
+  WithOptionValue<OpaqueOptionValues> &
   (WithDefault | WithRequired);
 
 /**
  * An option that has a value, but is niladic.
  */
-export type FlagOption = WithType<'flag'> &
+export type FlagOption = WithOptionType<'flag'> &
   WithFlag &
   WithBasic &
-  WithValue<''> &
-  WithEnv &
+  WithOptionValue<null> &
+  WithEnvironment &
   (WithDefault | WithRequired);
 
 /**
  * An option that has a single value and requires a single parameter.
  */
-export type SingleOption = WithType<'single'> &
+export type SingleOption = WithOptionType<'single'> &
   WithSingle &
   WithBasic &
-  WithValue<string> &
-  WithEnv &
-  WithParam<WithArgInfo> &
+  WithOptionValue<string> &
+  WithEnvironment &
+  WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName) &
@@ -759,12 +750,12 @@ export type SingleOption = WithType<'single'> &
 /**
  * An option that has an array value and accepts zero or more parameters.
  */
-export type ArrayOption = WithType<'array'> &
+export type ArrayOption = WithOptionType<'array'> &
   WithArray &
   WithBasic &
-  WithValue<string> &
-  WithEnv &
-  WithParam<WithArgInfo & WithPrevInfo> &
+  WithOptionValue<string> &
+  WithEnvironment &
+  WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName) &
@@ -773,12 +764,12 @@ export type ArrayOption = WithType<'array'> &
 /**
  * An option that has any value and can be configured with a parameter count.
  */
-export type FunctionOption = WithType<'function'> &
+export type FunctionOption = WithOptionType<'function'> &
   WithFunction &
   WithBasic &
-  WithValue<Array<string>> &
-  WithEnv &
-  WithParam<WithArgInfo & WithPrevInfo> &
+  WithOptionValue<Array<string>> &
+  WithEnvironment &
+  WithParameter &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName);
 
@@ -803,9 +794,21 @@ export type Options = Readonly<Record<string, Option>>;
  * A collection of option values.
  * @template T The type of the option definitions
  */
-export type OptionValues<T extends Options = Options> = Resolve<{
-  -readonly [key in keyof T]: OptionDataType<T[key]>;
-}>;
+export type OptionValues<T extends Options = Options> = Resolve<
+  Readonly<{
+    [key in keyof T as OptionKeyType<T[key], key>]: OptionDataType<T[key]>;
+  }>
+>;
+
+/**
+ * The message option types.
+ */
+export type MessageOptionType = 'help' | 'version';
+
+/**
+ * The niladic option types.
+ */
+export type NiladicOptionType = MessageOptionType | 'command' | 'flag';
 
 /**
  * The option types.
@@ -815,7 +818,7 @@ export type OptionType = NiladicOptionType | 'single' | 'array' | 'function';
 /**
  * An opaque option definition.
  */
-export type OpaqueOption = WithType<OptionType> &
+export type OpaqueOption = WithOptionType<OptionType> &
   WithBasic &
   WithHelp &
   WithVersion &
@@ -823,9 +826,9 @@ export type OpaqueOption = WithType<OptionType> &
   WithFlag &
   WithFunction &
   WithMessage &
-  WithValue<'' & string & Array<string> & OpaqueOptionValues> &
-  WithEnv &
-  WithParam<WithArgInfo & WithPrevInfo> &
+  WithOptionValue<any> & // eslint-disable-line @typescript-eslint/no-explicit-any
+  WithEnvironment &
+  WithParameter &
   WithSelection &
   WithArray;
 
@@ -839,34 +842,31 @@ export type OpaqueOptions = Readonly<Record<string, OpaqueOption>>;
  */
 export type OpaqueOptionValues = Record<string, unknown>;
 
-/**
- * Information regarding an option.
- */
-export type OptionInfo = [key: string, option: OpaqueOption, name: string];
-
 //--------------------------------------------------------------------------------------------------
 // Internal types
 //--------------------------------------------------------------------------------------------------
 /**
- * The message option types.
+ * An entry from the required values object.
+ * @internal
  */
-type MessageOptionType = (typeof messageOptionTypes)[number];
+export type RequiresEntry = readonly [key: string, value: unknown];
 
 /**
- * The niladic option types.
+ * Information regarding an option.
+ * @internal
  */
-type NiladicOptionType = (typeof niladicOptionTypes)[number];
+export type OptionInfo = [key: string, option: OpaqueOption, name: string];
 
 /**
  * Removes mutually exclusive attributes from an option that is always `required`.
  */
 type WithRequired = {
   /**
-   * @deprecated mutually exclusive with {@link WithValue.required}
+   * @deprecated mutually exclusive with {@link WithOptionValue.required}
    */
   readonly default?: never;
   /**
-   * @deprecated mutually exclusive with {@link WithValue.required}
+   * @deprecated mutually exclusive with {@link WithOptionValue.required}
    */
   readonly requiredIf?: never;
 };
@@ -876,7 +876,8 @@ type WithRequired = {
  */
 type WithDefault = {
   /**
-   * @deprecated mutually exclusive with {@link WithValue.default} and {@link WithValue.requiredIf}
+   * @deprecated mutually exclusive with {@link WithOptionValue.default} and
+   * {@link WithOptionValue.requiredIf}
    */
   readonly required?: never;
 };
@@ -886,7 +887,7 @@ type WithDefault = {
  */
 type WithExample = {
   /**
-   * @deprecated mutually exclusive with {@link WithParam.example}
+   * @deprecated mutually exclusive with {@link WithParameter.example}
    */
   readonly paramName?: never;
 };
@@ -896,7 +897,7 @@ type WithExample = {
  */
 type WithParamName = {
   /**
-   * @deprecated mutually exclusive with {@link WithParam.paramName}
+   * @deprecated mutually exclusive with {@link WithParameter.paramName}
    */
   readonly example?: never;
 };
@@ -922,29 +923,42 @@ type WithRegex = {
 };
 
 /**
+ * The data type of a value that may have to be enforced to be an array.
+ * @template T The option definition type
+ * @template V The actual data type
+ */
+type ArrayDataType<T extends Option, V> =
+  T extends WithOptionType<'array'> ? (V extends ReadonlyArray<infer _> ? V : readonly [V]) : V;
+
+/**
+ * The data type of a value that may be a function or promise.
+ * @template T The actual data type
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ReturnDataType<T> = T extends (...args: any) => infer R ? Awaited<R> : Awaited<T>;
+
+/**
  * The data type of an option that may have a default value.
  * @template T The option definition type
  */
 type DefaultDataType<T extends Option> = T extends { required: true }
   ? never
   : T extends { default: infer D }
-    ? D extends (...args: any) => infer R // eslint-disable-line @typescript-eslint/no-explicit-any
-      ? Awaited<R>
-      : Awaited<D>
+    ? ArrayDataType<T, ReturnDataType<D>>
     : undefined;
+
+/**
+ * The data type of a value that mey be a set of option definitions.
+ * @template T The actual data type
+ */
+type OptionsDataType<T> = T extends Options ? T : never;
 
 /**
  * The data type of an option that may have nested options.
  * @template T The option definition type
  */
-type OptionsDataType<T extends Option> = T extends { options: infer O }
-  ? O extends string
-    ? Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    : O extends (() => infer R extends Promissory<Options>)
-      ? OptionValues<Awaited<R>>
-      : O extends Promissory<Options>
-        ? OptionValues<Awaited<O>>
-        : never
+type NestedOptionsDataType<T extends Option> = T extends { options: infer O }
+  ? OptionValues<OptionsDataType<ReturnDataType<O>>>
   : Record<never, never>;
 
 /**
@@ -952,10 +966,7 @@ type OptionsDataType<T extends Option> = T extends { options: infer O }
  * @template T The option definition type
  * @template F The fallback data type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ParseDataType<T extends Option, F> = T extends { parse: (...args: any) => infer R }
-  ? Awaited<R>
-  : F;
+type ParseDataType<T extends Option, F> = T extends { parse: infer D } ? ReturnDataType<D> : F;
 
 /**
  * The data type of an option that may have choices.
@@ -976,15 +987,15 @@ type SelectionDataType<T extends Option, K = ChoiceDataType<T>> = T extends { ma
  * @template T The option definition type
  */
 type ValueDataType<T extends Option> =
-  T extends WithType<'command'>
-    ? ParseDataType<T, OptionsDataType<T>>
-    : T extends WithType<'flag'>
+  T extends WithOptionType<'command'>
+    ? ParseDataType<T, NestedOptionsDataType<T>>
+    : T extends WithOptionType<'flag'>
       ? ParseDataType<T, true>
-      : T extends WithType<'single'>
+      : T extends WithOptionType<'single'>
         ? SelectionDataType<T>
-        : T extends WithType<'array'>
-          ? Array<SelectionDataType<T>>
-          : ParseDataType<T, Array<string>>;
+        : T extends WithOptionType<'array'>
+          ? ReadonlyArray<SelectionDataType<T>>
+          : ParseDataType<T, ReadonlyArray<string>>;
 
 /**
  * The data type of an option that throws a message.
@@ -994,13 +1005,24 @@ type ValueDataType<T extends Option> =
 type MessageDataType<T extends Option, M> = T extends { saveMessage: true } ? M | undefined : never;
 
 /**
+ * The data type of an option key.
+ * @template T The option definition type
+ * @template K The original key type
+ */
+type OptionKeyType<T extends Option, K> = T extends WithOptionType<MessageOptionType> & {
+  saveMessage?: undefined;
+}
+  ? never
+  : K;
+
+/**
  * The data type of an option value.
  * @template T The option definition type
  */
 type OptionDataType<T extends Option> =
-  T extends WithType<'help'>
+  T extends WithOptionType<'help'>
     ? MessageDataType<T, AnsiMessage>
-    : T extends WithType<'version'>
+    : T extends WithOptionType<'version'>
       ? MessageDataType<T, string>
       : ValueDataType<T> | DefaultDataType<T>;
 
@@ -1013,6 +1035,7 @@ type OptionDataType<T extends Option> =
  * @param letterToKey The map of cluster letters to key
  * @param key The option key
  * @param option The option definition
+ * @internal
  */
 function registerNames(
   nameToKey: Map<string, string>,
@@ -1036,6 +1059,7 @@ function registerNames(
  * Gets a list of option names, including the positional marker.
  * @param option The option definition
  * @returns The option names
+ * @internal
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
   const names = option.names?.slice().filter(isString) ?? [];
@@ -1049,6 +1073,7 @@ export function getOptionNames(option: OpaqueOption): Array<string> {
  * Gets a list of environment variables for an option.
  * @param option The option definition
  * @returns The variable names
+ * @internal
  */
 export function getOptionEnvVars(option: OpaqueOption): Array<string> {
   return option.sources?.filter(isString) ?? [];
@@ -1058,24 +1083,27 @@ export function getOptionEnvVars(option: OpaqueOption): Array<string> {
  * Tests if an option type is that of a message-valued option.
  * @param type The option type
  * @returns True if the option type is message
+ * @internal
  */
 export function isMessage(type: OptionType): type is MessageOptionType {
-  return messageOptionTypes.includes(type as MessageOptionType);
+  return ['help', 'version'].includes(type);
 }
 
 /**
  * Tests if an option type is that of a niladic option.
  * @param type The option type
  * @returns True if the option type is niladic
+ * @internal
  */
 export function isNiladic(type: OptionType): type is NiladicOptionType {
-  return niladicOptionTypes.includes(type as NiladicOptionType);
+  return isMessage(type) || ['command', 'flag'].includes(type);
 }
 
 /**
  * Tests if an option type is that of a command option.
  * @param type The option type
  * @returns True if the option type is command
+ * @internal
  */
 export function isCommand(type: OptionType): type is 'command' {
   return type === 'command';
@@ -1085,6 +1113,7 @@ export function isCommand(type: OptionType): type is 'command' {
  * Gets the parameter count of an option as a numeric range.
  * @param option The option definition
  * @returns The count range
+ * @internal
  */
 export function getParamCount(option: OpaqueOption): Range {
   if (isNiladic(option.type)) {
@@ -1112,6 +1141,7 @@ export function getParamCount(option: OpaqueOption): Range {
  * @param valFn The callback to process a requirement object
  * @param cbkFn The callback to process a requirement callback
  * @returns The result of the callback
+ * @internal
  */
 export function visitRequirements<T>(
   requires: Requires,
@@ -1195,21 +1225,12 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 /**
  * Resolves the nested options of a subcommand.
  * @param option The option definition
- * @param resolve The module resolution callback
  * @returns The nested options
+ * @internal
  */
-export async function getNestedOptions(
-  option: OpaqueOption,
-  resolve?: ModuleResolutionCallback,
-): Promise<OpaqueOptions> {
-  if (isString(option.options)) {
-    if (!resolve) {
-      throw ErrorMessage.create(ErrorItem.missingResolveCallback);
-    }
-    return (await import(resolve(option.options))).default;
-  }
+export async function getNestedOptions(option: OpaqueOption): Promise<OpaqueOptions> {
   // do not destructure `options`, because the callback might need to use `this`
-  return await (isFunction(option.options) ? option.options() : (option.options ?? {}));
+  return isFunction(option.options) ? option.options() : (option.options ?? {});
 }
 
 /**
@@ -1217,8 +1238,30 @@ export async function getNestedOptions(
  * @param option The option definition
  * @param name The option name
  * @returns The inline constraint
+ * @internal
  */
 export function checkInline(option: OpaqueOption, name: string): boolean | 'always' {
   const { inline } = option;
   return (isObject(inline) ? inline[name] : inline) ?? true;
+}
+
+/**
+ * Normalizes the value of an array-valued option and checks the validity of its element count.
+ * @param option The option definition
+ * @param name The option name (or key)
+ * @param value The option value
+ * @returns The normalized array
+ * @throws On value not satisfying the limit constraint
+ * @internal
+ */
+export function normalizeArray(option: OpaqueOption, name: symbol, value: unknown): Array<unknown> {
+  if (!isArray(value)) {
+    return [value]; // convert to a single-element tuple
+  }
+  const { unique, limit } = option;
+  const result = unique ? [...new Set(value)] : value.slice(); // the input may be read-only
+  if (limit && limit > 0 && limit < result.length) {
+    throw ErrorMessage.create(ErrorItem.limitConstraintViolation, {}, name, result.length, limit);
+  }
+  return result;
 }

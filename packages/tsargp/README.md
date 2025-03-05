@@ -33,7 +33,7 @@ By convention, we keep command-line options separate from the main script which 
 
 ### Define command-line options
 
-You should define the options and export them by default as a single object. Below is an example. In the documentation, you will learn about the different option types and their attributes.
+You should define the options and export them by default as a single object. Below is an example.
 
 ```ts
 import { type Options /*...*/ } from 'tsargp';
@@ -43,9 +43,11 @@ export default {
 } as const satisfies Options;
 ```
 
+In the documentation, you will learn about the different option types and their attributes.
+
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is just an example. The documentation shows how to parse them into an existing object or class instance, specify parsing flags, and emit warnings.
+There are multiple ways to parse the command-line arguments. Below is an example.
 
 ```ts
 #!/usr/bin/env node
@@ -65,9 +67,11 @@ try {
 }
 ```
 
+The documentation also shows how to parse them into an existing object or class instance, specify parsing flags, and emit warnings.
+
 ### Validate options in test script
 
-You should check the validity of command-line options during development. The documentation also shows how to check for inconsistencies in option naming, among other things.
+You should check the validity of command-line options during development. Below is an example.
 
 ```ts
 import { validate } from 'tsargp';
@@ -80,6 +84,8 @@ describe('cli', () => {
   });
 });
 ```
+
+The documentation also shows how to check for inconsistencies in option naming, among other things.
 
 ### Enable word completion (optional)
 

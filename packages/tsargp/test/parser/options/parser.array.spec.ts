@@ -75,9 +75,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-a', '0', '-a', '1'])).resolves.toEqual({ array: [0, 1] });
-      expect(parse(options, ['-a', '0,1', '-a', '2,3'])).resolves.toEqual({
-        array: [0, 1, 2, 3],
-      });
+      expect(parse(options, ['-a', '0,1', '-a', '2,3'])).resolves.toEqual({ array: [0, 1, 2, 3] });
     });
 
     it('throw an error on option with too many values', () => {
@@ -95,6 +93,28 @@ describe('parse', () => {
       expect(parse(options, ['-a', 'a,b'])).rejects.toThrow(
         `Option -a has too many values: 2. Should have at most 1.`,
       );
+    });
+
+    it('handle an option with a default value that is not an array', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          default: 1,
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.toEqual({ array: [1] });
+    });
+
+    it('handle an option with a default promise that does not resolve to an array', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          default: Promise.resolve(1),
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.toEqual({ array: [1] });
     });
 
     it('handle an option that removes duplicates', () => {

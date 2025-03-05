@@ -564,8 +564,8 @@ export function isObject(value: unknown): value is object {
  * @param value The value
  * @returns True if the value is a function
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function isFunction(value: unknown): value is Function {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isFunction(value: unknown): value is (...args: any) => any {
   return typeof value === 'function';
 }
 

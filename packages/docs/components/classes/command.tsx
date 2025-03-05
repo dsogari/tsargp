@@ -195,12 +195,12 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
   private onTab() {
     // @ts-expect-error since we need to use the private line buffer
     const buffer: { buf: string; pos: number } = this.readline.state.line;
-    const cmdLine = processEnvVars(buffer.buf.trimStart());
+    const cmdLine = processEnvVars(buffer.buf);
     if (!cmdLine) {
       return; // happens when there is no command beyond the environment variables
     }
     const [command, line] = cmdLine;
-    const pos = buffer.pos - (buffer.buf.length - line.length);
+    const pos = buffer.pos - (buffer.buf.length - line.length); // adjust the cursor position
     if (pos <= 0) {
       return; // happens when the cursor is positioned before the start of the command
     }
@@ -246,14 +246,14 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
 
   /**
    * Fires when the user enters a line.
-   * @param line The command-line
+   * @param line The command line
    */
   private async onInput(line: string) {
-    const cmdLine = processEnvVars(line.trimStart());
+    const cmdLine = processEnvVars(line);
     if (cmdLine) {
       const [command, line] = cmdLine;
       if (command === 'clear') {
-        this.term.clear();
+        this.clear();
       } else if (this.commands.includes(command)) {
         await this.run(line);
       } else {
@@ -264,8 +264,18 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
   }
 
   /**
+   * Clear the terminal and any environment variable.
+   */
+  private clear() {
+    this.term.clear();
+    for (const key in process.env) {
+      delete process.env[key];
+    }
+  }
+
+  /**
    * Runs or completes a command.
-   * @param _line The command-line
+   * @param _line The command line
    * @param _compIndex The completion index, if any
    */
   protected async run(_line: string, _compIndex?: number) {}
@@ -280,11 +290,12 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
 }
 
 /**
- * Parse and set environment variables from a command-line
- * @param line The command-line
- * @returns The command and line, or undefined if nothing remains after parsing env. vars
+ * Parse and set environment variables from a command line
+ * @param line The command line
+ * @returns The command and line, or undefined if nothing remains after parsing the variables
  */
-function processEnvVars(line: string) {
+function processEnvVars(line: string): [string, string] | undefined {
+  line = line.trimStart();
   do {
     const [command, rest] = line.split(/ +(.*)/, 2);
     if (!command.includes('=')) {
@@ -294,5 +305,4 @@ function processEnvVars(line: string) {
     process.env[name] = value; // mocked by webpack
     line = rest;
   } while (line);
-  return undefined;
 }

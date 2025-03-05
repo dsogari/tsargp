@@ -24,8 +24,9 @@ import {
   getOptionEnvVars,
   visitRequirements,
   isCommand,
+  checkInline,
 } from './options.js';
-import { fmt, AnsiString, AnsiMessage } from './styles.js';
+import { formatFunctions, AnsiString, AnsiMessage } from './styles.js';
 import {
   getSymbol,
   isArray,
@@ -808,7 +809,7 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
     const saved = styles.symbol;
     try {
       styles.symbol = option.styles?.names ?? saved; // use configured style, if any
-      fmt.a(names.map(getSymbol), result, flags);
+      formatFunctions.a(names.map(getSymbol), result, flags);
     } finally {
       styles.symbol = saved;
     }
@@ -824,7 +825,8 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
  * @param result The resulting string
  */
 function formatParam(option: OpaqueOption, result: AnsiString) {
-  const { type, inline, example, separator, paramName } = option;
+  const { type, example, separator, paramName } = option;
+  const inline = checkInline(option, option.names?.findLast(isString) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && max;
   const ellipsis =
@@ -842,7 +844,7 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
-    fmt.v(param, result, { sep: '', open: '', close: '' });
+    formatFunctions.v(param, result, { sep: '', open: '', close: '' });
     result.close(ellipsis);
   } else {
     const param = !max ? '' : paramName?.includes('<') ? paramName : `<${paramName || 'param'}>`;
@@ -902,7 +904,7 @@ function formatRequiredKey(
     result.word(config.connectives.no);
   }
   const name = options[requiredKey].preferredName ?? '';
-  fmt.m(getSymbol(name), result, {});
+  formatFunctions.m(getSymbol(name), result, {});
 }
 
 /**
@@ -929,7 +931,7 @@ function formatRequiresExp<T>(
     close: enclose ? connectives.exprClose : '',
   };
   const sep = isAll === negate ? connectives.or : connectives.and;
-  fmt.a(items, result, { ...flags, sep, custom, mergePrev: false });
+  formatFunctions.a(items, result, { ...flags, sep, custom, mergePrev: false });
 }
 
 /**
@@ -953,11 +955,11 @@ function formatRequiredValue(
     result.word(connectives.no);
   }
   const name = option.preferredName ?? '';
-  fmt.m(getSymbol(name), result, {});
+  formatFunctions.m(getSymbol(name), result, {});
   if (!requireAbsent && !requirePresent) {
     const connective = negate ? connectives.notEquals : connectives.equals;
     result.word(connective);
-    fmt.v(value, result, {});
+    formatFunctions.v(value, result, {});
   }
 }
 
@@ -976,5 +978,5 @@ function formatRequirementCallback(
   if (negate) {
     result.word(config.connectives.not);
   }
-  fmt.v(callback, result, {});
+  formatFunctions.v(callback, result, {});
 }

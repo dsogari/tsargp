@@ -40,7 +40,7 @@ describe('parse', () => {
         array: {
           type: 'array',
           names: ['-a'],
-          sources: ['ARRAY', new URL(`file://${import.meta.dir}/../data/test-read-file.txt`)],
+          sources: ['ARRAY', new URL(import.meta.resolve('../data/test-read-file.txt'))],
           separator: '\n',
           parse: jest.fn((param) => param),
         },

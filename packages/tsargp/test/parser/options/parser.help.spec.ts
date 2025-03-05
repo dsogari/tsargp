@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../../lib/options';
-import { parse, ParsingFlags } from '../../../lib/parser';
+import { parse } from '../../../lib/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -13,7 +13,7 @@ describe('parse', () => {
           names: [''],
         },
       } as const satisfies Options;
-      expect(parse(options, [])).resolves.not.toHaveProperty('help');
+      expect(parse(options, [])).resolves.toEqual({});
       expect(parse(options, [''])).rejects.toThrow(`\n`);
     });
 
@@ -128,11 +128,10 @@ describe('parse', () => {
         command: {
           type: 'command',
           names: ['-c'],
-          options: '../../data/no-help',
+          options: async () => (await import('../../data/no-help')).default,
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-      expect(parse(options, ['-h', '-c'], flags)).rejects.toThrow('  -c  ...\n');
+      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -c  ...\n');
     });
 
     it('throw the help message of a subcommand with a dynamic module with a help option', () => {
@@ -146,11 +145,10 @@ describe('parse', () => {
         command: {
           type: 'command',
           names: ['-c'],
-          options: '../../data/with-help',
+          options: async () => (await import('../../data/with-help')).default,
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { resolve: import.meta.resolve.bind(import.meta) };
-      expect(parse(options, ['-h', '-c'], flags)).rejects.toThrow('  -f\n');
+      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -f\n');
     });
   });
 });

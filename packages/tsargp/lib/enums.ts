@@ -118,14 +118,9 @@ export const enum ErrorItem {
    */
   variadicWithClusterLetter,
   /**
-   * Error raised when a variadic option declares an inline constraint.
+   * Error raised when a variadic option declares an invalid inline constraint.
    */
   invalidInlineConstraint,
-  /**
-   * Error raised when a JavaScript module needs to be loaded, but a module resolution function was
-   * not provided (either in the parsing flags or the validation flags).
-   */
-  missingResolveCallback,
 }
 
 /**
@@ -368,11 +363,11 @@ const enum ControlSequence {
 }
 
 /**
- * A predefined text type face.
+ * A predefined text typeface.
  */
 const enum TypeFace {
   /**
-   * Reset or normal. Resets any other preceding SGR attribute.
+   * Reset or normal. Resets any other preceding attribute.
    */
   clear,
   /**
@@ -384,7 +379,7 @@ const enum TypeFace {
    */
   faint,
   /**
-   * Italic.
+   * Italic type.
    */
   italic,
   /**
@@ -464,9 +459,9 @@ const enum TypeFace {
    */
   notBoldOrFaint,
   /**
-   * Regular face (neither italic nor black-letter).
+   * Regular type (neither italic nor black-letter).
    */
-  notItalicNorFraktur,
+  notItalicOrFraktur,
   /**
    * Not underlined (nor doubly underlined).
    */

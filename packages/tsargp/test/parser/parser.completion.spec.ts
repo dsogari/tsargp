@@ -110,13 +110,12 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^-f$/);
-      expect(options.flag.parse).toHaveBeenCalledWith('', {
+      expect(options.flag.parse).toHaveBeenCalledWith(null, {
         values: { flag: undefined },
         index: 0,
         name: '-f',
         comp: true,
       });
-      expect(options.flag.parse).toHaveBeenCalled();
     });
 
     it('ignore an error thrown by a parsing callback of a single-valued option', () => {
@@ -136,7 +135,6 @@ describe('parse', () => {
         name: '-s',
         comp: true,
       });
-      expect(options.single.parse).toHaveBeenCalled();
     });
 
     it('ignore an error thrown by a parsing callback of an array-valued option', () => {
@@ -156,7 +154,6 @@ describe('parse', () => {
         name: '-a',
         comp: true,
       });
-      expect(options.array.parse).toHaveBeenCalled();
     });
 
     it('ignore an error thrown by a parsing callback of a function option', () => {
@@ -176,7 +173,6 @@ describe('parse', () => {
         name: '-f',
         comp: true,
       });
-      expect(options.function.parse).toHaveBeenCalled();
     });
   });
 

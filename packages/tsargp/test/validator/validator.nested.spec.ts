@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { type Options } from '../../lib/options';
-import { validate, ValidationFlags } from '../../lib/validator';
+import { validate } from '../../lib/validator';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -42,13 +42,12 @@ describe('validate', () => {
         options: {
           cmd2: {
             type: 'command',
-            options: '../data/invalid',
+            options: async () => (await import('../data/invalid')).default,
           },
         },
       },
     } as const satisfies Options;
-    const flags: ValidationFlags = { resolve: import.meta.resolve.bind(import.meta) };
-    expect(validate(options, flags)).rejects.toThrow(`Option cmd1.cmd2.flag has invalid name '='.`);
+    expect(validate(options)).rejects.toThrow(`Option cmd1.cmd2.flag has invalid name '='.`);
   });
 
   it('skip nested options when configured that way', () => {

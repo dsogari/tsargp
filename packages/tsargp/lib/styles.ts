@@ -21,7 +21,6 @@ import {
 } from './utils.js';
 
 export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };
-export { formatFunctions as fmt };
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -29,7 +28,7 @@ export { formatFunctions as fmt };
 /**
  * A mapping of styling attribute to its cancelling attribute.
  */
-const cancellingAttribute: Readonly<Partial<Record<StyleAttr, StyleAttr>>> = {
+const cancellingAttribute: Readonly<Partial<Record<StylingAttribute, StylingAttribute>>> = {
   [tf.alternative1]: tf.primaryFont,
   [tf.alternative2]: tf.primaryFont,
   [tf.alternative3]: tf.primaryFont,
@@ -41,8 +40,8 @@ const cancellingAttribute: Readonly<Partial<Record<StyleAttr, StyleAttr>>> = {
   [tf.alternative9]: tf.primaryFont,
   [tf.bold]: tf.notBoldOrFaint,
   [tf.faint]: tf.notBoldOrFaint,
-  [tf.italic]: tf.notItalicNorFraktur,
-  [tf.fraktur]: tf.notItalicNorFraktur,
+  [tf.italic]: tf.notItalicOrFraktur,
+  [tf.fraktur]: tf.notItalicOrFraktur,
   [tf.underlined]: tf.notUnderlined,
   [tf.doublyUnderlined]: tf.notUnderlined,
   [tf.slowlyBlinking]: tf.notBlinking,
@@ -112,8 +111,9 @@ const typeMapping: Readonly<Record<string, FormatSpecifier>> = {
 
 /**
  * The formatting function for each data type.
+ * @internal
  */
-const formatFunctions: FormatFunctions = {
+export const formatFunctions: FormattingFunctions = {
   /**
    * The formatting function for boolean values.
    * @param value The boolean value
@@ -277,7 +277,7 @@ const noStyle: Style = sgrSequence();
  * @param this The ANSI string to append to
  * @param arg The placeholder or argument
  */
-export type FormatCallback<T = string> = (this: AnsiString, arg: T) => void;
+export type FormattingCallback<T = string> = (this: AnsiString, arg: T) => void;
 
 /**
  * The formatting flags.
@@ -313,49 +313,58 @@ export type FormattingFlags = {
   /**
    * A custom callback to format arguments.
    */
-  readonly custom?: FormatCallback<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly custom?: FormattingCallback<any>;
 };
 
 /**
- * A control sequence introducer.
+ * A control sequence parameter.
+ */
+export type SequenceParameter = number | Array<number>;
+
+/**
+ * A control sequence.
  * @template T The type of the sequence command
  */
-export type Sequence<T extends cs> = Array<number | Array<number>> & { cmd: T };
+export type ControlSequence<T extends cs> = Array<SequenceParameter> & { cmd: T };
 
 /**
  * A select graphics rendition sequence.
  */
-export type Style = Sequence<cs.sgr>;
+export type Style = ControlSequence<cs.sgr>;
 
 /**
  * An 8-bit decimal number.
  */
-export type Decimal = Alias<Enumerate<256>>;
+export type DecimalValue = Alias<Enumerate<256>>;
 
 /**
  * An 8-bit indexed color.
  */
-export type IndColor = [5, Decimal];
+export type IndexedColor = [5, DecimalValue];
 
 /**
  * A 24-bit RGB color.
  */
-export type RgbColor = [2, Decimal, Decimal, Decimal];
+export type RgbColor = [2, DecimalValue, DecimalValue, DecimalValue];
 
 /**
  * A text styling attribute.
  */
-export type StyleAttr = tf | fg | bg | ul;
+export type StylingAttribute = tf | fg | bg | ul;
 
 /**
  * An extended styling attribute.
  */
-export type ExtendedAttr = StyleAttr | IndColor | RgbColor;
+export type ExtendedAttribute = StylingAttribute | IndexedColor | RgbColor;
 
+//--------------------------------------------------------------------------------------------------
+// Internal types
+//--------------------------------------------------------------------------------------------------
 /**
  * A format specifier.
  */
-export type FormatSpecifier =
+type FormatSpecifier =
   | 'a' // array
   | 'b' // boolean
   | 's' // string
@@ -375,12 +384,12 @@ export type FormatSpecifier =
  * @param flags The formatting flags
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type FormatFunction = (value: any, result: AnsiString, flags: FormattingFlags) => void;
+type FormattingFunction = (value: any, result: AnsiString, flags: FormattingFlags) => void;
 
 /**
  * A set of formatting functions.
  */
-export type FormatFunctions = Readonly<Record<FormatSpecifier, FormatFunction>>;
+type FormattingFunctions = Readonly<Record<FormatSpecifier, FormattingFunction>>;
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -651,7 +660,7 @@ export class AnsiString {
    * @param format An optional callback to process placeholders
    * @returns The ANSI string instance
    */
-  split(text: string, format?: FormatCallback): this {
+  split(text: string, format?: FormattingCallback): this {
     const paragraphs = text.split(regex.para);
     paragraphs.forEach((paragraph, i) => {
       splitParagraph(this, paragraph, format);
@@ -751,7 +760,7 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   format(phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
-    const formatFn: FormatCallback | undefined =
+    const formatFn: FormattingCallback | undefined =
       args &&
       function (spec) {
         const index = Number(spec.slice(1));
@@ -919,7 +928,7 @@ export class TextMessage extends Array<string> {
  * @param para The paragraph to be split
  * @param format An optional callback to process placeholders
  */
-function splitParagraph(result: AnsiString, para: string, format?: FormatCallback) {
+function splitParagraph(result: AnsiString, para: string, format?: FormattingCallback) {
   const count = result.count;
   para.split(regex.item).forEach((item, i) => {
     if (i % 2 === 0) {
@@ -939,7 +948,7 @@ function splitParagraph(result: AnsiString, para: string, format?: FormatCallbac
  * @param item The list item to be split
  * @param format An optional callback to process placeholders
  */
-function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
+function splitItem(result: AnsiString, item: string, format?: FormattingCallback) {
   const boundFormat = format?.bind(result);
   const words = item.split(regex.space);
   for (const word of words) {
@@ -966,8 +975,8 @@ function splitItem(result: AnsiString, item: string, format?: FormatCallback) {
  * @param params The sequence parameters
  * @returns The control sequence
  */
-function sequence<T extends cs>(cmd: T, ...params: Array<number | Array<number>>): Sequence<T> {
-  const seq = params as Sequence<T>;
+function sequence<T extends cs>(cmd: T, ...params: Array<SequenceParameter>): ControlSequence<T> {
+  const seq = params as ControlSequence<T>;
   seq.toString = function () {
     return this.length ? `\x1b[${this.flat().join(';')}${this.cmd}` : '';
   };
@@ -980,8 +989,17 @@ function sequence<T extends cs>(cmd: T, ...params: Array<number | Array<number>>
  * @param attrs The styling attributes
  * @returns The SGR sequence
  */
-function sgrSequence(...attrs: Array<ExtendedAttr>): Style {
+function sgrSequence(...attrs: Array<ExtendedAttribute>): Style {
   return sequence(cs.sgr, ...attrs);
+}
+
+/**
+ * Checks if a sequence parameter is a standard (i.e., non-extended) styling attribute.
+ * @param param The sequence parameter
+ * @returns True if the parameter is a standard attribute
+ */
+function isStandardAttr(param: SequenceParameter): param is StylingAttribute {
+  return !isArray(param);
 }
 
 /**
@@ -994,26 +1012,26 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
   if (!close?.length) {
     return noStyle; // skip if there is nothing to cancel
   }
-  const attrs: Partial<Record<StyleAttr, ExtendedAttr>> = {};
+  const params: Partial<Record<StylingAttribute, ExtendedAttribute>> = {};
   for (const attr of close) {
     // skip extended attributes
-    if (!isArray(attr)) {
-      const cancelAttr = cancellingAttribute[attr as StyleAttr] ?? (attr as StyleAttr);
+    if (isStandardAttr(attr)) {
+      const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (cancelAttr) {
-        attrs[cancelAttr] = cancelAttr; // cancel attribute
+        params[cancelAttr] = cancelAttr; // cancel attribute
       }
     }
   }
   for (const attr of open) {
     // skip extended attributes
-    if (!isArray(attr)) {
-      const cancelAttr = cancellingAttribute[attr as StyleAttr] ?? (attr as StyleAttr);
-      if (cancelAttr in attrs) {
-        attrs[cancelAttr] = attr; // reapply only if it changed
+    if (isStandardAttr(attr)) {
+      const cancelAttr = cancellingAttribute[attr] ?? attr;
+      if (cancelAttr in params) {
+        params[cancelAttr] = attr; // reapply only if it changed
       }
     }
   }
-  return sgrSequence(...getValues(attrs)); // keys are sorted in ascending order
+  return sgrSequence(...getValues(params)); // keys are sorted in ascending order
 }
 
 /**
@@ -1023,7 +1041,7 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
  * @param text The string (must be a sequence of control sequences)
  * @returns The control sequence
  */
-function seqFromText<T extends cs>(cmd: T, text: string): Sequence<T> {
+function seqFromText<T extends cs>(cmd: T, text: string): ControlSequence<T> {
   const params = text
     .split('\x1b[') // assumes that there is no text between sequences
     .slice(1) // discard text before the first sequence
@@ -1037,7 +1055,7 @@ function seqFromText<T extends cs>(cmd: T, text: string): Sequence<T> {
  * @param index The color index
  * @returns The color attribute
  */
-function indexedColor(index: Decimal): IndColor {
+function indexedColor(index: DecimalValue): IndexedColor {
   return [5, index];
 }
 
@@ -1048,6 +1066,6 @@ function indexedColor(index: Decimal): IndColor {
  * @param b The blue component
  * @returns The color attribute
  */
-function rgbColor(r: Decimal, g: Decimal, b: Decimal): RgbColor {
+function rgbColor(r: DecimalValue, g: DecimalValue, b: DecimalValue): RgbColor {
   return [2, r, g, b];
 }
