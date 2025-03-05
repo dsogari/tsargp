@@ -1,10 +1,11 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import { ErrorItem, type HelpItem } from './enums.js';
+import type { HelpItem } from './enums.js';
 import type { AnsiMessage, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
+import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
 import { getEntries, getSymbol, isArray, isFunction, isObject, isString } from './utils.js';
 
@@ -484,9 +485,9 @@ export type WithMessage = {
 
 /**
  * Defines attributes common to options that have values.
- * @template P The type of parse parameter
+ * @template T The type of parse parameter
  */
-export type WithOptionValue<P> = {
+export type WithOptionValue<T> = {
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
    */
@@ -514,7 +515,7 @@ export type WithOptionValue<P> = {
   /**
    * A custom callback for parsing the option parameter(s).
    */
-  readonly parse?: ParsingCallback<P>;
+  readonly parse?: ParsingCallback<T>;
 };
 
 /**
@@ -624,7 +625,7 @@ export type WithVersion = {
   /**
    * The version information (e.g., a semantic version).
    * If a `string`, it will not be validated, but should not contain inline styles.
-   * If a `URL`, it should be used in conjunction with the `resolve` parsing flag.
+   * If a `URL`, it should be used in conjunction with `import.meta.resolve`.
    */
   readonly version?: string | URL;
 };
@@ -875,7 +876,8 @@ type WithRequired = {
  */
 type WithDefault = {
   /**
-   * @deprecated mutually exclusive with {@link WithOptionValue.default} and {@link WithOptionValue.requiredIf}
+   * @deprecated mutually exclusive with {@link WithOptionValue.default} and
+   * {@link WithOptionValue.requiredIf}
    */
   readonly required?: never;
 };
@@ -1254,11 +1256,11 @@ export function checkInline(option: OpaqueOption, name: string): boolean | 'alwa
  */
 export function normalizeArray(option: OpaqueOption, name: symbol, value: unknown): Array<unknown> {
   if (!isArray(value)) {
-    return [value];
+    return [value]; // convert to a single-element tuple
   }
   const { unique, limit } = option;
   const result = unique ? [...new Set(value)] : value.slice(); // the input may be read-only
-  if (limit && limit > 0 && result.length > limit) {
+  if (limit && limit > 0 && limit < result.length) {
     throw ErrorMessage.create(ErrorItem.limitConstraintViolation, {}, name, result.length, limit);
   }
   return result;

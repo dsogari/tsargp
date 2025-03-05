@@ -152,7 +152,7 @@ describe('validate', () => {
     });
   });
 
-  describe('when an option has invalid element count', () => {
+  describe('when an array option has invalid element count', () => {
     it('throw an error on option with example value with too many values', () => {
       const options = {
         array: {

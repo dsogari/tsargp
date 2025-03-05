@@ -15,6 +15,7 @@
     "compspec",
     "compdef",
     "oclif",
+    "twoslash",
     "mult",
     "vals",
     "descr",
@@ -22,8 +23,7 @@
     "punct",
     "charmap",
     "ruleset",
-    "rulesets",
-    "twoslash"
+    "rulesets"
   ],
   "ignoreRegExpList": ["gh-username", "ga-measurement-id"],
   "ignorePaths": [

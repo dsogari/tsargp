@@ -200,7 +200,7 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
       return; // happens when there is no command beyond the environment variables
     }
     const [command, line] = cmdLine;
-    const pos = buffer.pos - (buffer.buf.length - line.length); // adjust the completion index
+    const pos = buffer.pos - (buffer.buf.length - line.length); // adjust the cursor position
     if (pos <= 0) {
       return; // happens when the cursor is positioned before the start of the command
     }
@@ -264,7 +264,7 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
   }
 
   /**
-   * Clear the terminal and environment variables.
+   * Clear the terminal and any environment variable.
    */
   private clear() {
     this.term.clear();

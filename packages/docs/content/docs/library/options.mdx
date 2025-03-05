@@ -42,7 +42,7 @@ Each type of option expects a different number of parameters on the command line
 - **delimited** -- values can be delimited with a [parameter separator]
 - **appended** -- can be [supplied] multiple times and have [values appended]
 - **configurable** -- can be configured with a [parameter count]
-- **inline** -- allows parameters to be [inlined] with option names
+- **inline** -- allows parameters to be [inlined] with [option names]
 
 ### Option value
 
@@ -68,7 +68,7 @@ A few additional remarks:
 
 ### Option requirements
 
-An option may declare _requirements_ in its definition, which are specifications of inter-dependencies between options and/or option values in the same definition level.
+In its definition, an option may declare _requirements_, which are specifications of inter-dependencies between options and/or option values in the same definition level.
 
 ### Option constraints
 
@@ -338,7 +338,7 @@ The parser only reads _readily_ available data, without waiting for new input. T
 The `sources` attribute, if present, lists names of environment data sources from which the option value should be read, in case it is supplied _neither_ on the command line _nor_ through the [standard input]. Its elements can be either of:
 
 - `string{:ts}` -- an environment _variable_; or
-- `URL{:ts}` -- the path of a _local file_ (use with `import.meta.resolve`)
+- `URL{:ts}` -- the path of a _local file_ (to be used with `import.meta.resolve`)
 
 The reason why we did not use a dedicated `env` attribute for environment variables was a design choice: since the sources are tried in the specified order, you can mix the two types of values in order of priority.
 
@@ -516,8 +516,8 @@ In addition to the sets of [basic] and [value] attributes, this option has the a
 
 The `options` attribute, if present, specifies a set of option definitions for the subcommand. Its value can be either of:
 
-- `object{:ts}` -- a record containing the option definitions (or a promise thereof);
-- a callback that returns the option definitions (or a promise thereof); or
+- `object{:ts}` -- a record containing the option definitions (or a promise thereof); or
+- a callback that returns the option definitions (or a promise thereof)
 
 A callback is useful for various reasons, but especially because it allows:
 

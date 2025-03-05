@@ -313,7 +313,8 @@ export type FormattingFlags = {
   /**
    * A custom callback to format arguments.
    */
-  readonly custom?: FormattingCallback<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly custom?: FormattingCallback<any>;
 };
 
 /**
@@ -358,7 +359,7 @@ export type StylingAttribute = tf | fg | bg | ul;
 export type ExtendedAttribute = StylingAttribute | IndexedColor | RgbColor;
 
 //--------------------------------------------------------------------------------------------------
-// Public types
+// Internal types
 //--------------------------------------------------------------------------------------------------
 /**
  * A format specifier.
@@ -993,11 +994,11 @@ function sgrSequence(...attrs: Array<ExtendedAttribute>): Style {
 }
 
 /**
- * Checks if an SGR sequence parameter is a non-extended styling attribute.
+ * Checks if a sequence parameter is a standard (i.e., non-extended) styling attribute.
  * @param param The sequence parameter
- * @returns The SGR sequence
+ * @returns True if the parameter is a standard attribute
  */
-function isStyleAttr(param: SequenceParameter): param is StylingAttribute {
+function isStandardAttr(param: SequenceParameter): param is StylingAttribute {
   return !isArray(param);
 }
 
@@ -1014,7 +1015,7 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
   const params: Partial<Record<StylingAttribute, ExtendedAttribute>> = {};
   for (const attr of close) {
     // skip extended attributes
-    if (isStyleAttr(attr)) {
+    if (isStandardAttr(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (cancelAttr) {
         params[cancelAttr] = cancelAttr; // cancel attribute
@@ -1023,7 +1024,7 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
   }
   for (const attr of open) {
     // skip extended attributes
-    if (isStyleAttr(attr)) {
+    if (isStandardAttr(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (cancelAttr in params) {
         params[cancelAttr] = attr; // reapply only if it changed

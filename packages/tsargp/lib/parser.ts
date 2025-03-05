@@ -109,7 +109,7 @@ type ParseContext = [
    */
   args: Array<string>,
   /**
-   * The set of supplied options keys.
+   * The set of supplied option keys.
    */
   supplied: Set<string>,
   /**
@@ -414,7 +414,7 @@ async function parseArgs(context: ParseContext) {
 }
 
 /**
- * Parses the command-line arguments.
+ * Adds an option to the set of supplied options.
  * @param context The parsing context
  * @param info The option info
  */
@@ -792,8 +792,9 @@ async function handleCommand(
 async function handleMessage(context: ParseContext, info: OptionInfo, rest: Array<string>) {
   const [, values] = context;
   const [key, option] = info;
-  const message =
-    option.type === 'help' ? await handleHelp(context, option, rest) : await handleVersion(option);
+  const message = await (option.type === 'help'
+    ? handleHelp(context, option, rest)
+    : handleVersion(option));
   if (option.saveMessage) {
     values[key] = message;
   } else {
@@ -960,7 +961,7 @@ function checkRequires(
 }
 
 /**
- * Checks if a required option was supplied with correct values.
+ * Checks if an option was supplied with required values.
  * @param context The parsing context
  * @param _option The requiring option definition
  * @param entry The required option key and value
