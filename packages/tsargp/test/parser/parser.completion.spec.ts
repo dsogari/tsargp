@@ -478,7 +478,7 @@ describe('parse', () => {
         /^\[{"type":"single","name":"-s"}]$/,
       );
       expect(parse(options, 'cmd -s ', { compIndex: 7 })).rejects.toThrow(
-        /^\[{"type":"parameter","displayName":"-s","name":"abc"}]$/,
+        /^\[{"type":"parameter","name":"abc","displayName":"-s"}]$/,
       );
     });
 
@@ -494,7 +494,7 @@ describe('parse', () => {
         /^\[{"type":"array","name":"-a"}]$/,
       );
       expect(parse(options, 'cmd -a ', { compIndex: 7 })).rejects.toThrow(
-        /^\[{"type":"parameter","displayName":"-a","name":"abc"},{"type":"array","name":"-a"}]$/,
+        /^\[{"type":"parameter","name":"abc","displayName":"-a"},{"type":"array","name":"-a"}]$/,
       );
     });
   });

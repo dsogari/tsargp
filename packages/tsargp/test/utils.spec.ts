@@ -253,7 +253,7 @@ describe('readFile', () => {
 
   it('return data read from a local file', () => {
     const path = `${import.meta.dirname}/data/test-read-file.txt`;
-    expect(readFile(path)).resolves.toEqual('test\nread\nfile');
+    expect(readFile(path)).resolves.toMatch(/^test\r?\nread\r?\nfile$/);
   });
 });
 

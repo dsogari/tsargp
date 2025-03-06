@@ -11,6 +11,7 @@ import type {
   RequiresEntry,
   RequirementCallback,
   CompletionSuggestion,
+  OptionType,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -96,6 +97,28 @@ export type ParsingResult = {
  * The command line or command-line arguments.
  */
 export type CommandLine = string | Array<string>;
+
+/**
+ * A suggestion emitted by the parser.
+ */
+export type ParserSuggestion = CompletionSuggestion & {
+  /**
+   * The type of suggestion (i.e., the type of command-line argument).
+   */
+  type: OptionType | 'parameter';
+  /**
+   * The suggestion name (or the value used for traditional shell completion).
+   */
+  name: string;
+  /**
+   * The option name, in case of parameter suggestions.
+   */
+  displayName?: string;
+  /**
+   * The option synopsis, if any.
+   */
+  synopsis?: string;
+};
 
 //--------------------------------------------------------------------------------------------------
 // Internal types
@@ -560,7 +583,7 @@ function reportUnknownName(context: ParseContext, name: string): never {
  * Reports a completion message.
  * @param suggestions The completion suggestions
  */
-function reportCompletion(suggestions: Array<CompletionSuggestion> = []): never {
+function reportCompletion(suggestions: Array<ParserSuggestion> = []): never {
   throw getEnv('COMP_JSON')
     ? new JsonMessage(...suggestions)
     : new TextMessage(...suggestions.map((suggestion) => suggestion.name));
@@ -572,9 +595,9 @@ function reportCompletion(suggestions: Array<CompletionSuggestion> = []): never 
  * @param comp The word being completed
  * @returns The completion suggestions
  */
-function completeName(registry: OptionRegistry, comp: string = ''): Array<CompletionSuggestion> {
+function completeName(registry: OptionRegistry, comp: string = ''): Array<ParserSuggestion> {
   /** @ignore */
-  function fromName(name: string) {
+  function fromName(name: string): ParserSuggestion {
     const { type, synopsis } = options[names.get(name)!];
     return { type, name, synopsis };
   }
@@ -601,10 +624,10 @@ async function completeParameter(
   index: number,
   prev: Array<string>,
   comp = '',
-): Promise<Array<CompletionSuggestion>> {
+): Promise<Array<ParserSuggestion>> {
   const [, option, name] = info;
   const { synopsis, choices, normalize } = option;
-  const base = { type: 'parameter', displayName: name, synopsis };
+  const base: ParserSuggestion = { type: 'parameter', name: '', displayName: name, synopsis };
   if (option.complete) {
     try {
       // avoid destructuring, because the callback might need to use `this`

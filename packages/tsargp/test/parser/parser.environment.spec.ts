@@ -41,7 +41,7 @@ describe('parse', () => {
           type: 'array',
           names: ['-a'],
           sources: ['ARRAY', new URL(import.meta.resolve('../data/test-read-file.txt'))],
-          separator: '\n',
+          separator: /\r?\n/,
           parse: jest.fn((param) => param),
         },
       } as const satisfies Options;
