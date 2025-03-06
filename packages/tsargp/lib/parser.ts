@@ -10,6 +10,7 @@ import type {
   Requires,
   RequiresEntry,
   RequirementCallback,
+  CompletionSuggestion,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -28,7 +29,14 @@ import {
   checkInline,
   normalizeArray,
 } from './options.js';
-import { formatFunctions, WarnMessage, TextMessage, AnsiString, ErrorMessage } from './styles.js';
+import {
+  formatFunctions,
+  WarnMessage,
+  TextMessage,
+  AnsiString,
+  ErrorMessage,
+  JsonMessage,
+} from './styles.js';
 import {
   getCmdLine,
   findSimilar,
@@ -360,7 +368,7 @@ async function parseArgs(context: ParseContext) {
       const hasValue = value !== undefined;
       if (!max || (!isPositional && (isMarker || checkInline(option, name) === false))) {
         if (comp) {
-          throw new TextMessage();
+          reportCompletion();
         }
         if (hasValue) {
           if (completing) {
@@ -404,11 +412,11 @@ async function parseArgs(context: ParseContext) {
       break; // finished
     }
     // comp === true
-    const words = await completeParameter(values, info, i, args.slice(k, j), value);
+    const suggestions = await completeParameter(values, info, i, args.slice(k, j), value);
     if (suggestNames || (j > i && j - k >= min)) {
-      words.push(...completeName(registry, value));
+      suggestions.push(...completeName(registry, value));
     }
-    throw new TextMessage(...words);
+    reportCompletion(suggestions);
   }
   await checkRequired(context);
 }
@@ -469,26 +477,25 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
               : ArgType.unknownOption;
     switch (argType) {
       case ArgType.optionName: {
+        const option = options[optionKey!];
         if (comp && value === undefined) {
-          throw new TextMessage(name);
+          const { type, synopsis } = option;
+          const suggestion = { type, name, synopsis };
+          reportCompletion([suggestion]);
         }
-        const isMarker = name === positional?.[1].positional;
-        const newInfo: OptionInfo | undefined = optionKey
-          ? isMarker
-            ? positional
-            : [optionKey, options[optionKey], name]
-          : undefined;
+        const isMarker = name === option.positional;
+        const newInfo: OptionInfo | undefined = isMarker ? positional : [optionKey!, option, name];
         return [i, newInfo, value, comp, isMarker, true, false];
       }
       case ArgType.cluster:
         if (comp) {
-          throw new TextMessage();
+          reportCompletion();
         }
         i--; // the cluster argument was removed
         break; // the cluster argument was canonicalized
       case ArgType.unknownOption:
         if (comp) {
-          throw new TextMessage(...completeName(registry, arg));
+          reportCompletion(completeName(registry, arg));
         }
         if (!completing) {
           reportUnknownName(context, name);
@@ -550,14 +557,33 @@ function reportUnknownName(context: ParseContext, name: string): never {
 }
 
 /**
+ * Reports a completion message.
+ * @param suggestions The completion suggestions
+ */
+function reportCompletion(suggestions: Array<CompletionSuggestion> = []): never {
+  throw getEnv('COMP_JSON')
+    ? new JsonMessage(...suggestions)
+    : new TextMessage(...suggestions.map((suggestion) => suggestion.name));
+}
+
+/**
  * Completes an option name.
  * @param registry The option registry
- * @param prefix The name prefix, if any
- * @returns The completion words
+ * @param comp The word being completed
+ * @returns The completion suggestions
  */
-function completeName(registry: OptionRegistry, prefix?: string): Array<string> {
-  const names = [...registry.names.keys()];
-  return prefix ? names.filter((name) => name.startsWith(prefix)) : names;
+function completeName(registry: OptionRegistry, comp: string = ''): Array<CompletionSuggestion> {
+  /** @ignore */
+  function fromName(name: string) {
+    const { type, synopsis } = options[names.get(name)!];
+    return { type, name, synopsis };
+  }
+  const { options, names } = registry;
+  return names
+    .keys()
+    .filter((name) => name.startsWith(comp))
+    .map(fromName)
+    .toArray();
 }
 
 /**
@@ -567,7 +593,7 @@ function completeName(registry: OptionRegistry, prefix?: string): Array<string> 
  * @param index The starting index of the argument sequence
  * @param prev The preceding parameters, if any
  * @param comp The word being completed
- * @returns The completion words
+ * @returns The completion suggestions
  */
 async function completeParameter(
   values: OpaqueOptionValues,
@@ -575,26 +601,26 @@ async function completeParameter(
   index: number,
   prev: Array<string>,
   comp = '',
-): Promise<Array<string>> {
+): Promise<Array<CompletionSuggestion>> {
   const [, option, name] = info;
-  let words: Array<string>;
+  const { synopsis, choices, normalize } = option;
+  const base = { type: 'parameter', displayName: name, synopsis };
   if (option.complete) {
     try {
-      // do not destructure `complete`, because the callback might need to use `this`
-      words = (await option.complete(comp, { values, index, name, prev })) ?? [];
+      // avoid destructuring, because the callback might need to use `this`
+      const suggestions = await option.complete(comp, { values, index, name, prev });
+      return suggestions.map((suggestion) =>
+        isString(suggestion) ? { ...base, name: suggestion } : { ...suggestion, ...base },
+      );
     } catch (_err) {
-      // do not propagate errors during completion
-      words = [];
-    }
-  } else {
-    const { choices, normalize } = option;
-    words = choices?.slice() ?? [];
-    if (comp) {
-      comp = normalize?.(comp) ?? comp;
-      words = words.filter((word) => word.startsWith(comp));
+      return [];
     }
   }
-  return words;
+  if (choices) {
+    comp &&= normalize?.(comp) ?? comp;
+    return choices.filter((word) => word.startsWith(comp)).map((name) => ({ ...base, name }));
+  }
+  return [];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -619,7 +645,7 @@ async function tryParseParams(
     return await parseParams(context, info, index, params);
   } catch (err) {
     // do not propagate parsing errors during completion
-    if (!context[4] || err instanceof TextMessage) {
+    if (!context[4] || err instanceof TextMessage || err instanceof JsonMessage) {
       throw err;
     }
     return false;
@@ -646,7 +672,7 @@ async function parseParams(
   }
   /** @ignore */
   function parse1(param: unknown, def = param): unknown {
-    // do not destructure `parse`, because the callback might need to use `this`
+    // avoid destructuring, because the callback might need to use `this`
     return option.parse ? option.parse(param, seq) : def;
   }
   /** @ignore */
@@ -778,7 +804,7 @@ async function handleCommand(
   warning.push(...cmdContext[5]);
   const seq = { values, index, name, comp };
   // comp === false, otherwise completion will have taken place by now
-  // do not destructure `parse`, because the callback might need to use `this`
+  // avoid destructuring, because the callback might need to use `this`
   values[key] = option.parse ? await option.parse(param, seq) : param;
 }
 
@@ -894,9 +920,9 @@ async function checkDefaultValue(context: ParseContext, key: string) {
     throw ErrorMessage.create(ErrorItem.missingRequiredOption, {}, getSymbol(name));
   }
   if ('default' in option) {
-    // do not destructure `default`, because the callback might need to use `this`
-    // be careful to not modify the returned value, as it may be read-only
+    // avoid destructuring, because the callback might need to use `this`
     const value = await (isFunction(option.default) ? option.default(values) : option.default);
+    // be careful to not modify the returned value, as it may be read-only
     values[key] = type === 'array' ? normalizeArray(option, getSymbol(name), value) : value;
   }
 }

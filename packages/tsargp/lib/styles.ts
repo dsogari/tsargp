@@ -919,6 +919,25 @@ export class TextMessage extends Array<string> {
   }
 }
 
+/**
+ * A JSON message.
+ */
+export class JsonMessage extends Array<object> {
+  /**
+   * @returns The wrapped message
+   */
+  override toString(): string {
+    return JSON.stringify(this);
+  }
+
+  /**
+   * @returns The wrapped message
+   */
+  get message(): string {
+    return '' + this;
+  }
+}
+
 //--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
-import { describe, expect, it, jest } from 'bun:test';
-import { TextMessage } from '../../lib/styles';
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
+import { JsonMessage, TextMessage } from '../../lib/styles';
 import { type Options } from '../../lib/options';
 import { type ParsingFlags, parse } from '../../lib/parser';
 
@@ -33,6 +33,19 @@ describe('parse', () => {
       },
     } as const satisfies Options;
     expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^abc$/);
+  });
+
+  it('throw suggestions from a parsing callback', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        parse() {
+          throw new JsonMessage({ name: 'abc' });
+        },
+      },
+    } as const satisfies Options;
+    expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^\[{"name":"abc"}]$/);
   });
 
   describe('parsing errors occur during completion', () => {
@@ -441,6 +454,48 @@ describe('parse', () => {
       } as const satisfies Options;
       const flags: ParsingFlags = { clusterPrefix: '', compIndex: 7 };
       expect(parse(options, 'cmd sf  rest', flags)).rejects.toThrow(/^one$/);
+    });
+  });
+
+  describe('emitting JSON with a list of suggestions', () => {
+    beforeEach(() => {
+      process.env['COMP_JSON'] = '1';
+    });
+
+    afterEach(() => {
+      delete process.env['COMP_JSON'];
+    });
+
+    it('handle a single-valued option', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          complete: () => ['abc'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -s', { compIndex: 6 })).rejects.toThrow(
+        /^\[{"type":"single","name":"-s"}]$/,
+      );
+      expect(parse(options, 'cmd -s ', { compIndex: 7 })).rejects.toThrow(
+        /^\[{"type":"parameter","displayName":"-s","name":"abc"}]$/,
+      );
+    });
+
+    it('handle an array-valued option', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          complete: () => ['abc'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -a', { compIndex: 6 })).rejects.toThrow(
+        /^\[{"type":"array","name":"-a"}]$/,
+      );
+      expect(parse(options, 'cmd -a ', { compIndex: 7 })).rejects.toThrow(
+        /^\[{"type":"parameter","displayName":"-a","name":"abc"},{"type":"array","name":"-a"}]$/,
+      );
     });
   });
 

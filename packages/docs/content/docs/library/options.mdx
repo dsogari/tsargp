@@ -121,6 +121,8 @@ The `synopsis` attribute, if present, specifies a brief summary of the option's 
 
 The `deprecated` attribute, if present, specifies the reason for the option being deprecated. It will be formatted in the help message according to [text formatting] rules.
 
+Note that the library does not provide a deprecation mechanism for specific values within attributes, such as [option names], [parameter choices] or [data sources]. For that effect, you will have to explain it in the option [synopsis].
+
 > [!TIP]
 >
 > When a deprecated option is [supplied] it generates a [warning message], which you may want to print in the terminal. It can be obtained by destructuring the result of the [`parseInto`] function.

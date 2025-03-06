@@ -51,8 +51,19 @@ export class RequiresNot {
  * @internal
  */
 export class OptionRegistry {
+  /**
+   * A map of option names to option keys.
+   */
   readonly names: Map<string, string> = new Map<string, string>();
+
+  /**
+   * A map of cluster letters to option keys.
+   */
   readonly letters: Map<string, string> = new Map<string, string>();
+
+  /**
+   * Information regarding the positional option, if any.
+   */
   readonly positional: OptionInfo | undefined;
 
   /**
@@ -360,7 +371,7 @@ export type ParsingCallback<P, R = unknown> = CustomCallback<
 export type CompletionCallback = CustomCallback<
   string,
   WithArgumentInfo & WithPreviousInfo,
-  Promissory<Array<string>>
+  Promissory<Array<string | CompletionSuggestion>>
 >;
 
 /**
@@ -419,6 +430,19 @@ export type WithPreviousInfo = {
    */
   prev: Array<string>;
 };
+
+/**
+ * A completion suggestion.
+ * May be injected with additional properties by the parser.
+ *
+ * We recommend extending the `Suggestion` type from `@withfig/autocomplete-types`.
+ */
+export interface CompletionSuggestion {
+  /**
+   * The suggestion name. Used for traditional shell completion.
+   */
+  name: string;
+}
 
 /**
  * Defines the type of an option.
