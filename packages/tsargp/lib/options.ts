@@ -433,13 +433,17 @@ export type WithPreviousInfo = {
 
 /**
  * A completion suggestion.
- * May be injected with additional properties by the parser.
  *
- * We recommend extending the `Suggestion` type from `@withfig/autocomplete-types`.
+ * It will be injected with additional properties by the parser:
+ * - `type` - `'parameter'`
+ * - `synopsis` - the option synopsis
+ * - `displayName` - the option name
+ *
+ * We recommend also extending the `Suggestion` type from `@withfig/autocomplete-types`.
  */
 export interface CompletionSuggestion {
   /**
-   * The suggestion name. Used for traditional shell completion.
+   * The suggestion name (or the value used for traditional shell completion).
    */
   name: string;
 }

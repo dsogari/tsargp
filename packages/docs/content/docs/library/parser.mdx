@@ -174,6 +174,17 @@ Since completion builtins always expect a word list as a result, the parser must
 >
 > Other arguments are processed as usual, which means that a [completion callback] can inspect the previously parsed values, in order to make better suggestions based on those values.
 
+#### Completion suggestions
+
+Depending on the value of the `COMP_JSON` environment variable, the parser may emit an enhanced version of completion words, called _suggestions_. They are produced as an instance of the [JSON message]. From the parser perspective, a suggestion is an object with the following properties:
+
+- `name` -- the suggestion name (or the value used for traditional shell completion)
+- `type` -- the [option type] or `'parameter'{:ts}`
+- `synopsis` -- the [option synopsis]
+- `displayName` -- the option name, if the suggestion pertains to an [option parameter]
+
+From the client code perspective, suggestions are the result of a [completion callback], each of which can be either a plain `string{:ts}` or an object extending `CompletionSuggestion` with a `name` string property. It will be injected with the above properties by the parser. We recommend also extending the `Suggestion` type from [autocomplete-types].
+
 ### Requirements checking
 
 When the parser evaluates option [requirements], it compares an [option value] against any value required by other options. Generally, this analysis is performed after _all_ arguments have been parsed, but it may be performed in two additional situations:
@@ -237,6 +248,9 @@ Other [option names] are not used, not only because they would pollute the outpu
 
 {/* options references */}
 
+[option type]: options#option-type
+[option synopsis]: options#option-synopsis
+[option parameter]: options#option-parameters
 [standard input]: options#accept-input
 [non-niladic]: options#non-niladic-options
 [definitions]: options#option-definition
@@ -270,6 +284,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [warning message]: styles#warning-message
 [ANSI strings]: styles#ansi-string
 [text message]: styles#text-message
+[JSON message]: styles#json-message
 
 {/* formatter references */}
 
@@ -284,3 +299,4 @@ Other [option names] are not used, not only because they would pollute the outpu
 [JavaScript modules]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
 [import.meta.resolve]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta/resolve
 [frozen]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
+[autocomplete-types]: https://www.npmjs.com/package/@withfig/autocomplete-types

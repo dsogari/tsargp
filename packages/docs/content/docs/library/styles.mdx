@@ -263,7 +263,11 @@ Similarly to the warning message, it offers two static methods that are used by 
 
 ### Text message
 
-The `TextMessage` class represents a list of text lines with no wrapping and is the type used for completion words. It produces a string delimited by line feeds, and should be printed with `console.log{:ts}` or equivalent.
+The `TextMessage` class represents a list of text lines with no wrapping and is the type used for [completion words]. It produces a string delimited by line feeds, and should be printed with `console.log{:ts}` or equivalent.
+
+### JSON message
+
+The `JsonMessage` class represents a list of JavaScript objects and is the type used for [completion suggestions]. It produces a serialized JSON string, and should be printed with `console.log{:ts}` or equivalent.
 
 ### Message configuration
 
@@ -419,6 +423,8 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 {/* parser references */}
 
 [parser]: parser
+[completion words]: parser#word-completion
+[completion suggestions]: parser#completion-suggestions
 
 {/* validator references */}
 
