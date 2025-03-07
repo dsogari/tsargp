@@ -436,8 +436,8 @@ export type WithPreviousInfo = {
  *
  * It will be injected with additional properties by the parser:
  * - `type` - `'parameter'`
- * - `synopsis` - the option synopsis
- * - `displayName` - the option name
+ * - `synopsis` - the option synopsis, if any
+ * - `displayName` - the supplied option name
  *
  * We recommend also extending the `Suggestion` type from `@withfig/autocomplete-types`.
  */

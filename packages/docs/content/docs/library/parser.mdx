@@ -102,7 +102,7 @@ Besides, the asynchronous version has the benefit of allowing us to perform some
 
 An argument sequence is the occurrence of an option in the command line with possible parameters. To determine the start end end of a sequence, the parser looks for [option names] or [positional] arguments once it finishes parsing the previous option, or if the latter is [variadic].
 
-For example, if the option initiating a sequence is [array-valued], the parser starts looking for a new option as soon as it advances to the next argument, since that may be either an option parameter or the start of a new sequence.
+For example, if the option initiating a sequence is [array-valued], the parser starts looking for a new option as soon as it advances to the next argument, since that may be either an [option parameter] or the start of a new sequence.
 
 The same is true for function options with a _variable_ [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option specification (even if it is a new occurrence of the same option).
 
@@ -113,10 +113,10 @@ The information gathered by the parser is saved in an object that is passed as p
 - `values` -- The previously parsed values. It it passed as an opaque object and should be cast to `OptionValues<typeof your_options>{:ts}`.
 - `index` -- The starting index of the argument sequence. It will point to one of the following:
   - the occurrence of the option name
-  - the first option parameter, if the sequence comes from [positional] arguments
+  - the first [option parameter], if the sequence comes from [positional] arguments
   - `NaN{:ts}`, if the data comes from the [environment]
 - `name` -- The option name. Can be either of:
-  - the name specified on the command line
+  - the name that was [supplied] on the command line
   - the option's [preferred name], if the sequence comes from [positional] arguments
   - an environment [data source], if the data comes from the [environment]
   - `'0'{:ts}`, if the data comes from the [standard input]
@@ -154,7 +154,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
-3. If the option was specified neither through a [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
+3. If the option was [supplied] neither through a [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
@@ -176,12 +176,12 @@ Since completion builtins always expect a word list as a result, the parser must
 
 #### Completion suggestions
 
-Depending on the value of the `COMP_JSON` environment variable, the parser may emit an enhanced version of completion words, called _suggestions_. They are produced as an instance of the [JSON message]. From the parser perspective, a suggestion is an object with the following properties:
+Depending on the value of the `COMP_JSON` environment variable, the parser may emit an enhanced version of completion words, called _suggestions_. They are produced as an instance of the [JSON message]. From the parser perspective, a suggestion is a `ParserSuggestion` object with the following properties:
 
 - `name` -- the suggestion name (or the value used for traditional shell completion)
-- `type` -- the [option type] or `'parameter'{:ts}`
-- `synopsis` -- the [option synopsis]
-- `displayName` -- the option name, if the suggestion pertains to an [option parameter]
+- `type` -- the type of argument being suggested (either the [option type] or `'parameter'{:ts}`)
+- `synopsis` -- the [option synopsis], if any
+- `displayName` -- the [supplied] option name, in case the suggestion pertains to an [option parameter]
 
 From the client code perspective, suggestions are the result of a [completion callback], each of which can be either a plain `string{:ts}` or an object extending `CompletionSuggestion` with a `name` string property. It will be injected with the above properties by the parser. We recommend also extending the `Suggestion` type from [autocomplete-types].
 
@@ -202,7 +202,7 @@ When the parser expects an option name and the current argument is not a valid o
 
 ### Inline parameters
 
-Option parameters may be passed on the command-line using the syntax `<name>=<param>`.
+An [option parameter] may be passed on the command-line using the syntax `<name>=<param>`.
 
 > [!NOTE]
 >
@@ -248,6 +248,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 
 {/* options references */}
 
+[supplied]: options#option-supply
 [option type]: options#option-type
 [option synopsis]: options#option-synopsis
 [option parameter]: options#option-parameters

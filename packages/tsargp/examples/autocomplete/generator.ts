@@ -26,9 +26,10 @@ export function createGenerator(options: Options, flags: ParsingFlags): Fig.Gene
   return {
     custom: async (tokens) => {
       try {
+        // this will run in the completion engine process
         process.env['COMP_JSON'] = '1';
         process.env['COMP_POINT'] = '1';
-        await parse(options, tokens, flags);
+        await parse(options, tokens.slice(1), flags);
       } catch (err) {
         if (err instanceof JsonMessage) {
           return err.map(convertSuggestion);

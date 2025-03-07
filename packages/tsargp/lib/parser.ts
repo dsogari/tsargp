@@ -103,13 +103,9 @@ export type CommandLine = string | Array<string>;
  */
 export type ParserSuggestion = CompletionSuggestion & {
   /**
-   * The type of suggestion (i.e., the type of command-line argument).
+   * The type of argument being suggested.
    */
   type: OptionType | 'parameter';
-  /**
-   * The suggestion name (or the value used for traditional shell completion).
-   */
-  name: string;
   /**
    * The option name, in case of parameter suggestions.
    */

@@ -25,11 +25,11 @@ export const enum ErrorItem {
    */
   unsatisfiedRequirement,
   /**
-   * Error raised when an option that is always required was not specified.
+   * Error raised when an option that is always required was not supplied.
    */
   missingRequiredOption,
   /**
-   * Error raised when an option is specified without one of its expected parameter(s).
+   * Error raised when an option is supplied without one of its expected parameter(s).
    */
   missingParameter,
   /**
@@ -37,7 +37,7 @@ export const enum ErrorItem {
    */
   versionFileNotFound,
   /**
-   * Error raised when an option is specified with an inline parameter, despite it being disallowed.
+   * Error raised when an option is supplied with an inline parameter, despite it being disallowed.
    */
   disallowedInlineParameter,
   /**
@@ -53,7 +53,7 @@ export const enum ErrorItem {
    */
   limitConstraintViolation,
   /**
-   * Warning produced when a deprecated option is specified on the command-line.
+   * Warning produced when a deprecated option is supplied on the command-line.
    */
   deprecatedOption,
   /**
@@ -61,11 +61,11 @@ export const enum ErrorItem {
    */
   unsatisfiedCondRequirement,
   /**
-   * Error raised when a variadic option is specified in the middle of a cluster argument.
+   * Error raised when a variadic option is supplied in the middle of a cluster argument.
    */
   invalidClusterOption,
   /**
-   * Error raised when an option is specified with no inline parameter, despite it being required.
+   * Error raised when an option is supplied with no inline parameter, despite it being required.
    */
   missingInlineParameter,
   /**
@@ -152,7 +152,7 @@ export const enum HelpItem {
    */
   inline,
   /**
-   * Whether an array-valued option can be specified multiple times.
+   * Whether an array-valued option can be supplied multiple times.
    */
   append,
   /**
