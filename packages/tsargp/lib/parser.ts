@@ -4,6 +4,7 @@
 import type {
   Options,
   OptionInfo,
+  OptionType,
   OptionValues,
   OpaqueOption,
   OpaqueOptionValues,
@@ -11,7 +12,6 @@ import type {
   RequiresEntry,
   RequirementCallback,
   CompletionSuggestion,
-  OptionType,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -499,8 +499,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         const option = options[optionKey!];
         if (comp && value === undefined) {
           const { type, synopsis } = option;
-          const suggestion = { type, name, synopsis };
-          reportCompletion([suggestion]);
+          reportCompletion([{ type, name, synopsis }]);
         }
         const isMarker = name === option.positional;
         const newInfo: OptionInfo | undefined = isMarker ? positional : [optionKey!, option, name];
@@ -619,7 +618,7 @@ async function completeParameter(
   info: OptionInfo,
   index: number,
   prev: Array<string>,
-  comp = '',
+  comp: string = '',
 ): Promise<Array<ParserSuggestion>> {
   const [, option, name] = info;
   const { synopsis, choices, normalize } = option;
@@ -629,7 +628,7 @@ async function completeParameter(
       // avoid destructuring, because the callback might need to use `this`
       const suggestions = await option.complete(comp, { values, index, name, prev });
       return suggestions.map((suggestion) =>
-        isString(suggestion) ? { ...base, name: suggestion } : { ...suggestion, ...base },
+        isString(suggestion) ? { ...base, name: suggestion } : { ...base, ...suggestion },
       );
     } catch (_err) {
       return [];

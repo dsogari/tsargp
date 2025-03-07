@@ -9,9 +9,6 @@ export default {
   description: 'Execute the tsargp Calc CLI',
   args: {
     name: 'args',
-    generators: createGenerator(options, {
-      clusterPrefix: '-',
-      optionPrefix: '-',
-    }),
+    generators: createGenerator(options),
   },
 } as const satisfies Fig.Subcommand;

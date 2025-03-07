@@ -2,7 +2,7 @@ import type { Options, ParsingFlags, ParserSuggestion } from 'tsargp';
 import { parse, JsonMessage } from 'tsargp';
 
 /**
- * Converts a suggestion emitted by parser to another that can be consumed by Fig.
+ * Converts a suggestion emitted by the parser to one that can be consumed by Fig.
  * @param suggestion The parser suggestion
  * @returns The Fig suggestion
  */
@@ -22,7 +22,7 @@ function convertSuggestion(suggestion: object): Fig.Suggestion {
  * @param flags The parsing flags
  * @returns The suggestion generator
  */
-export function createGenerator(options: Options, flags: ParsingFlags): Fig.Generator {
+export function createGenerator(options: Options, flags?: ParsingFlags): Fig.Generator {
   return {
     custom: async (tokens) => {
       try {

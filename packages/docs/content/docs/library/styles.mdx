@@ -267,7 +267,7 @@ The `TextMessage` class represents a list of text lines with no wrapping and is 
 
 ### JSON message
 
-The `JsonMessage` class represents a list of JavaScript objects and is the type used for [completion suggestions]. It produces a serialized JSON string, and should be printed with `console.log{:ts}` or equivalent.
+The `JsonMessage` class represents a list of opaque objects and is the type used for [completion suggestions]. It produces a serialized JSON string, and should be printed with `console.log{:ts}` or equivalent.
 
 ### Message configuration
 
@@ -338,7 +338,7 @@ The `errorPhrases` property specifies custom phrases to use for error and warnin
 | `choiceConstraintViolation`  | An option parameter fails to satisfy a choice constraint                    | `'Invalid parameter to #0: #1. Value must be one of: #2.'{:ts}`                                  | `#0` = the supplied option name; `#1` = the supplied value; `#2` = the choices                |
 | `regexConstraintViolation`   | An option parameter fails to satisfy a regex constraint                     | `'Invalid parameter to #0: #1. Value must match the regex #2.'{:ts}`                             | `#0` = the supplied option name; `#1` = the supplied value; `#2` = the regex                  |
 | `limitConstraintViolation`   | An option value fails to satisfy a count limit constraint                   | `'Option #0 has too many values: #1. Should have at most #2.'{:ts}`                              | `#0` = the supplied option name; `#1` = the element count; `#2` = the limit                   |
-| `deprecatedOption`           | A deprecated option is supplied on the command-line                         | `'Option #0 is deprecated and may be removed in future releases.'{:ts}`                          | `#0` = the supplied option name                                                               |
+| `deprecatedOption`           | A deprecated option is supplied on the command line                         | `'Option #0 is deprecated and may be removed in future releases.'{:ts}`                          | `#0` = the supplied option name                                                               |
 | `unsatisfiedCondRequirement` | An option's conditional requirement is not satisfied                        | `'Option #0 is required if #1.'{:ts}`                                                            | `#0` = the supplied option name; `#1` = the requirements                                      |
 | `invalidClusterOption`       | A variadic option option is supplied in the middle of a cluster argument    | `'Option letter #0 must be the last in a cluster.'{:ts}`                                         | `#0` = the supplied cluster letter                                                            |
 | `missingInlineParameter`     | An option is supplied with no inline parameter, despite it being required   | `'Option #0 requires an inline parameter.'{:ts}`                                                 | `#0` = the supplied option name                                                               |
