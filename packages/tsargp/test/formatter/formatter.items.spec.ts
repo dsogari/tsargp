@@ -110,7 +110,7 @@ describe('format', () => {
     );
   });
 
-  it('handle an array-valued option that can be specified multiple times', () => {
+  it('handle an array-valued option that can be supplied multiple times', () => {
     const options = {
       array: {
         type: 'array',
@@ -119,7 +119,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Can be specified multiple times.\n`,
+      `  -a  [<param>...]  Accepts multiple parameters. Can be supplied multiple times.\n`,
     );
   });
 

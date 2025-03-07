@@ -253,7 +253,7 @@ export default {
     limit: 3,
   },
   /**
-   * A number array option that can be specified multiple times, whose elements are unique.
+   * A number array option that can be supplied multiple times, whose elements are unique.
    */
   numArrayUnique: {
     type: 'array',

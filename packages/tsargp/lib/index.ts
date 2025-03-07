@@ -16,6 +16,7 @@ export {
   AnsiString,
   AnsiMessage,
   ErrorMessage,
+  JsonMessage,
   TextMessage,
   WarnMessage,
 } from './styles.js';

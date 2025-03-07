@@ -84,7 +84,7 @@ export const config: MessageConfig = {
     [HelpItem.separator]: 'Values can be delimited with #0.',
     [HelpItem.paramCount]: 'Accepts (multiple|#0|at most #0|at least #0|between #0) parameters.',
     [HelpItem.positional]: 'Accepts positional arguments(| that may be preceded by #0).',
-    [HelpItem.append]: 'Can be specified multiple times.',
+    [HelpItem.append]: 'Can be supplied multiple times.',
     [HelpItem.choices]: 'Values must be one of #0.',
     [HelpItem.regex]: 'Values must match the regex #0.',
     [HelpItem.unique]: 'Duplicate values will be removed.',

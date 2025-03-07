@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { parse } from 'tsargp';
 import options from './calc.options.js';
 

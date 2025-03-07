@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -13,6 +13,7 @@
   "devDependencies": {
     "@tsconfig/bun": "^1.0.7",
     "@types/bun": "^1.2.4",
+    "@withfig/autocomplete-types": "^1.31.0",
     "typescript": "^5.8.2"
   },
   "exports": {
@@ -52,7 +53,7 @@
   "license": "MIT",
   "scripts": {
     "prepare": "bun run dist",
-    "dist": "tsc -b && tsc -b examples && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "dist": "tsc -b && tsc -b examples/autocomplete && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "type": "module",
   "types": "./dist/lib/index.d.ts"

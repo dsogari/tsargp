@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { parseInto, valuesFor } from 'tsargp';
 import options from './demo.options.js';
 
