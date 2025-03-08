@@ -18,7 +18,7 @@ tsargp ...        # play with option values
 tsargp hello ...  # test the hello command
 ```
 
-See the [source](examples/demo.options.ts).
+See the [source](/packages/tsargp/examples/demo.options.ts).
 
 ## Quick Start
 
@@ -87,9 +87,9 @@ describe('cli', () => {
 
 The documentation also shows how to check for inconsistencies in option naming, among other things.
 
-### Enable word completion (optional)
+### Enable completion (optional)
 
-You can configure shell completion to use the main script as a source of completion words. This is handled automatically by the library. You just need to register it with the completion builtins.
+You can configure shell completion to use the main script as a source of completion words or suggestions. This is handled automatically by the library. You just need to register it with the completion engine.
 
 ```sh
 complete -o default -C <path_to_main_script> cli
