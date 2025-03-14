@@ -1,6 +1,6 @@
 {
   "name": "@tsargp/docs",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "Documentation for tsargp",
   "homepage": "https://dsogari.github.io/tsargp/docs",
   "license": "MIT",
@@ -36,9 +36,9 @@
     "xterm-readline": "^1.1.2"
   },
   "scripts": {
-    "prepublishOnly": "bun run dist",
+    "prepublishOnly": "bun run build",
     "dev": "next",
-    "dist": "typedoc && next build",
+    "build": "typedoc && next build",
     "serve": "ln -snf \"`pwd`/dist\" dist/tsargp && ws -d dist"
   }
 }

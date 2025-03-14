@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -56,8 +56,8 @@
   ],
   "license": "MIT",
   "scripts": {
-    "prepare": "bun run dist",
-    "dist": "tsc -b && tsc -b examples/autocomplete && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "prepare": "bun run build",
+    "build": "tsc -b && tsc -b examples/autocomplete && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "type": "module",
   "types": "./dist/lib/index.d.ts"

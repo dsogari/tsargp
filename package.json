@@ -28,8 +28,5 @@
   "prettier": {
     "printWidth": 100,
     "singleQuote": true
-  },
-  "dependencies": {
-    "monorepo": "."
   }
 }
