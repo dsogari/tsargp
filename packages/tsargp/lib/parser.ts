@@ -11,7 +11,7 @@ import type {
   Requires,
   RequiresEntry,
   RequirementCallback,
-  CompletionSuggestion,
+  ICompletionSuggestion,
 } from './options.js';
 import type { AnsiMessage, FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -101,7 +101,7 @@ export type CommandLine = string | Array<string>;
 /**
  * A suggestion emitted by the parser.
  */
-export type ParserSuggestion = CompletionSuggestion & {
+export type ParserSuggestion = ICompletionSuggestion & {
   /**
    * The type of argument being suggested.
    */

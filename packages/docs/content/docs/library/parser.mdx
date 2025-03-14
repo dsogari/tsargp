@@ -183,7 +183,7 @@ Depending on the value of the `COMP_JSON` environment variable, the parser may e
 - `synopsis` -- the [option synopsis], if any
 - `displayName` -- the [supplied] option name, in case the suggestion pertains to an [option parameter]
 
-From the client code perspective, suggestions are the result of a [completion callback]. Each of which can be a plain `string{:ts}` or an object extending `CompletionSuggestion`. It will be injected with the above properties by the parser and overridden by client properties. We recommend extending the `Suggestion` type from [autocomplete-types].
+From the client code perspective, suggestions are the result of a [completion callback]. Each of which can be a plain `string{:ts}` or an object extending `ICompletionSuggestion`. It will be injected with the above properties by the parser and overridden by client properties. We recommend extending the `Suggestion` type from [autocomplete-types].
 
 ### Requirements checking
 

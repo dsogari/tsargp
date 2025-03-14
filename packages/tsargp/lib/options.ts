@@ -371,7 +371,7 @@ export type ParsingCallback<P, R = unknown> = CustomCallback<
 export type CompletionCallback = CustomCallback<
   string,
   WithArgumentInfo & WithPreviousInfo,
-  Promissory<Array<string | CompletionSuggestion>>
+  Promissory<Array<string | ICompletionSuggestion>>
 >;
 
 /**
@@ -441,7 +441,7 @@ export type WithPreviousInfo = {
  *
  * We recommend also extending the `Suggestion` type from `@withfig/autocomplete-types`.
  */
-export interface CompletionSuggestion {
+export interface ICompletionSuggestion {
   /**
    * The suggestion name (or the value used for traditional shell completion).
    */
