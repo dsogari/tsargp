@@ -11,7 +11,7 @@ import {
   notOf,
   valuesFor,
   visitRequirements,
-} from '../lib/options';
+} from '../src/options';
 
 describe('OptionRegistry', () => {
   describe('constructor', () => {

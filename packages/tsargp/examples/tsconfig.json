@@ -6,5 +6,5 @@
     "composite": true
   },
   "exclude": ["./autocomplete"],
-  "references": [{ "path": "../lib" }]
+  "references": [{ "path": "../src" }]
 }

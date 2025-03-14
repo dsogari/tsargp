@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import type { HelpSections, Options } from '../../lib/options';
-import { format } from '../../lib/formatter';
+import type { HelpSections, Options } from '../../src/options';
+import { format } from '../../src/formatter';
 
 describe('format', () => {
   describe('specifying an option filter', () => {

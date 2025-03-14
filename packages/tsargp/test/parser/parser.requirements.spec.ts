@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test';
-import { type Options, allOf, oneOf, notOf } from '../../lib/options';
-import { parse } from '../../lib/parser';
+import { type Options, allOf, oneOf, notOf } from '../../src/options';
+import { parse } from '../../src/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
