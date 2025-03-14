@@ -80,12 +80,12 @@ The parser can emit a list of words or even fully featured suggestion objects fo
 
 ### Define folder structure
 
-For best modularity, you should keep command-line options separate from the main script. Below are possible folder structures for the related source code.
+For best modularity, you should keep command-line options separate from the main script. Below are possible folder structures for the related source code:
 
 <Tabs items={['Flat', 'Nested', 'Flat with test', 'Nested with test']}>
   <Tabs.Tab>
     <FileTree>
-      <FileTree.Folder name="lib" defaultOpen>
+      <FileTree.Folder name="src" defaultOpen>
         <FileTree.File name="cli.options.spec.ts" />
         <FileTree.File name="cli.options.ts" />
         <FileTree.File name="cli.ts" />
@@ -94,7 +94,7 @@ For best modularity, you should keep command-line options separate from the main
   </Tabs.Tab>
   <Tabs.Tab>
     <FileTree>
-      <FileTree.Folder name="lib" defaultOpen>
+      <FileTree.Folder name="src" defaultOpen>
         <FileTree.Folder name="cli" defaultOpen>
           <FileTree.File name="options.spec.ts" />
           <FileTree.File name="options.ts" />
@@ -105,7 +105,7 @@ For best modularity, you should keep command-line options separate from the main
   </Tabs.Tab>
   <Tabs.Tab>
     <FileTree>
-      <FileTree.Folder name="lib" defaultOpen>
+      <FileTree.Folder name="src" defaultOpen>
         <FileTree.File name="cli.options.ts" />
         <FileTree.File name="cli.ts" />
       </FileTree.Folder>
@@ -116,7 +116,7 @@ For best modularity, you should keep command-line options separate from the main
   </Tabs.Tab>
   <Tabs.Tab>
     <FileTree>
-      <FileTree.Folder name="lib" defaultOpen>
+      <FileTree.Folder name="src" defaultOpen>
         <FileTree.Folder name="cli" defaultOpen>
           <FileTree.File name="options.ts" />
           <FileTree.File name="main.ts" />
@@ -154,7 +154,7 @@ In the documentation, you will learn about the different option types and their 
 
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is an example.
+There are multiple ways to parse the command-line arguments. Below is an example:
 
 ```ts copy filename="cli.ts" {3,13}
 #!/usr/bin/env node
@@ -174,13 +174,13 @@ try {
 }
 ```
 
-Notice how we include the option definitions from the sibling file. We also capture any errors raised by the library and choose what to do with them based on their type. Usually, they will be either a help message, a version message or a completion message.
+Notice how we include the option definitions from the sibling file. We also capture any errors raised by the library and choose what to do based on their type. Usually, they will be either a help message, a version message or a completion message.
 
 The documentation also shows how to _return_ (not throw) the help or version messages, how to parse arguments into an existing object, specify parsing flags, emit warnings, and much more.
 
 ### Validate options in test script
 
-Do not forget to sanity-check the options during development. Below is an example.
+Do not forget to sanity-check the options during development. Below is an example:
 
 ```ts copy filename="cli.options.spec.ts" {2}
 import { validate } from 'tsargp';
@@ -198,17 +198,17 @@ The documentation also shows how to check for inconsistencies in option naming, 
 
 ### Enable completion (optional)
 
-You can configure the shell to use the main script as a source of completion words or suggestions. This is handled automatically by the library. You just need to register it with the native completion engine.
+You can configure the user's terminal to use the main script as a source of completion words or suggestions. This is handled automatically by the library. You just need to register your application with the native completion engine. Below are examples for various shells:
 
 <Tabs items={['Bash', 'PowerShell', 'Zsh', 'Fish', 'Nushell', 'Fig']}>
   <Tabs.Tab>
-    ```bash copy /cli/ /<path_to_main_script>/
-    complete -o default -C <path_to_main_script> cli
+    ```bash copy /<cli_name>/ /<path_to_main_script>/
+    complete -o default -C <path_to_main_script> <cli_name>
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```ps copy /cli/ /<path_to_main_script>/
-    Register-ArgumentCompleter -Native -CommandName cli -ScriptBlock {
+    ```ps copy /<cli_name>/ /<path_to_main_script>/
+    Register-ArgumentCompleter -Native -CommandName <cli_name> -ScriptBlock {
       param($word, $cmdLine, $cursorPos)
         $env:BUFFER="$cmdLine"; $env:CURSOR=$cursorPos
         <path_to_main_script>
@@ -217,20 +217,20 @@ You can configure the shell to use the main script as a source of completion wor
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```zsh copy /cli/ /<path_to_main_script>/
-    compdef 'export BUFFER CURSOR; _values cli `<path_to_main_script>`' cli
+    ```zsh copy /<cli_name>/ /<path_to_main_script>/
+    compdef 'export BUFFER CURSOR; _values <cli_name> `<path_to_main_script>`' <cli_name>
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```fish copy /cli/ /<path_to_main_script>/
-    complete cli -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
+    ```fish copy /<cli_name>/ /<path_to_main_script>/
+    complete <cli_name> -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```nu copy /cli/ /<path_to_main_script>/
+    ```nu copy /<cli_name>/ /<path_to_main_script>/
     $env.config.completions.external.completer = {|spans|
       {
-        cli: {
+        <cli_name>: {
           with-env { BUFFER: ($spans | str join ' ') } { <path_to_main_script> } | lines
         }
       } | get $spans.0 | each { || do $in }
@@ -242,7 +242,7 @@ You can configure the shell to use the main script as a source of completion wor
   </Tabs.Tab>
 </Tabs>
 
-In case of installing through a package manager, the latter will probably create a [shim] for the script, so you should take that into account when writing documentation for your application.
+When users install through a package manager, the latter will probably create a [shim] for the script, so you should take that into account when writing documentation for your application.
 
 </Steps>
 
