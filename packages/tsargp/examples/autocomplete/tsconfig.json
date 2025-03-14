@@ -3,7 +3,6 @@
   "compilerOptions": {
     "types": ["bun", "@withfig/autocomplete-types"],
     "outDir": "../../dist/examples/.fig/autocomplete/build",
-    "declarationMap": true,
     "composite": true
   },
   "references": [{ "path": ".." }]

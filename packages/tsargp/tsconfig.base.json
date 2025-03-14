@@ -4,8 +4,10 @@
     "types": ["bun"],
     "allowJs": false, // https://stackoverflow.com/a/42691024/4725347
     "noEmit": false,
+    "sourceMap": true,
     "incremental": true,
     "stripInternal": true,
+    "declarationMap": true,
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false, // https://github.com/microsoft/TypeScript/issues/40344
     "disableSourceOfProjectReferenceRedirect": true
