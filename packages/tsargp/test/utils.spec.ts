@@ -9,7 +9,7 @@ import {
   getArgs,
   selectAlternative,
   matchNamingRules,
-} from '../lib/utils';
+} from '../src/utils';
 
 describe('gestaltSimilarity', () => {
   it('return NaN on empty strings', () => {

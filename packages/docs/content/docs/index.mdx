@@ -44,7 +44,7 @@ By relying on [TypeScript], it guarantees that the values resulting from argumen
 <details>
   <summary>Built-in **completion**</summary>
   
-The parser can emit a list of words or even fully featured suggestion objects for the purpose of [tab-completion], which is performed by the terminal's native completion engine, if one is available. The only configuration required is to register the final executable in the end-user's shell.
+The parser can emit a list of words or even fully featured suggestion objects for the purpose of [tab-completion], which is performed by the native completion engine (if one is available). The only configuration required is to register the final executable in the end-user's terminal.
 
 </details>
 
@@ -80,35 +80,83 @@ The parser can emit a list of words or even fully featured suggestion objects fo
 
 ### Define folder structure
 
-By convention, we keep command-line options separate from the main script which uses them. Assuming your application name is `cli`, here's a possible folder structure for the related source code:
+For best modularity, you should keep command-line options separate from the main script. Below are possible folder structures for the related source code:
 
-<FileTree>
-  <FileTree.Folder name="lib" defaultOpen>
-    <FileTree.File name="cli.options.spec.ts" />
-    <FileTree.File name="cli.options.ts" />
-    <FileTree.File name="cli.ts" />
-  </FileTree.Folder>
-</FileTree>
+<Tabs items={['Flat', 'Nested', 'Flat with test', 'Nested with test']}>
+  <Tabs.Tab>
+    <FileTree>
+      <FileTree.Folder name="src" defaultOpen>
+        <FileTree.File name="cli.options.spec.ts" />
+        <FileTree.File name="cli.options.ts" />
+        <FileTree.File name="cli.ts" />
+      </FileTree.Folder>
+    </FileTree>
+  </Tabs.Tab>
+  <Tabs.Tab>
+    <FileTree>
+      <FileTree.Folder name="src" defaultOpen>
+        <FileTree.Folder name="cli" defaultOpen>
+          <FileTree.File name="options.spec.ts" />
+          <FileTree.File name="options.ts" />
+          <FileTree.File name="main.ts" />
+        </FileTree.Folder>
+      </FileTree.Folder>
+    </FileTree>
+  </Tabs.Tab>
+  <Tabs.Tab>
+    <FileTree>
+      <FileTree.Folder name="src" defaultOpen>
+        <FileTree.File name="cli.options.ts" />
+        <FileTree.File name="cli.ts" />
+      </FileTree.Folder>
+      <FileTree.Folder name="test" defaultOpen>
+        <FileTree.File name="cli.options.spec.ts" />
+      </FileTree.Folder>
+    </FileTree>
+  </Tabs.Tab>
+  <Tabs.Tab>
+    <FileTree>
+      <FileTree.Folder name="src" defaultOpen>
+        <FileTree.Folder name="cli" defaultOpen>
+          <FileTree.File name="options.ts" />
+          <FileTree.File name="main.ts" />
+        </FileTree.Folder>
+      </FileTree.Folder>
+      <FileTree.Folder name="test" defaultOpen>
+        <FileTree.Folder name="cli" defaultOpen>
+          <FileTree.File name="options.spec.ts" />
+        </FileTree.Folder>
+      </FileTree.Folder>
+    </FileTree>
+  </Tabs.Tab>
+</Tabs>
 
 ### Define command-line options
 
-You should define the available options and export them by default as a single object. Below is an example.
+Here we define the available options and export them by default as a single object:
 
-```ts copy filename="cli.options.ts" {4}
+```ts copy filename="cli.options.ts" {10}
 import { type Options /*...*/ } from 'tsargp';
 
 export default {
-  // definitions go here...
+  help: {
+    type: 'help'
+    names: ['-h', '--help'],
+    synopsis: 'Prints this help message',
+  }
+  // more definitions go here...
 } as const satisfies Options;
 ```
+
+Since we want value types to be inferred from option definitions, we do not give the object an _explicit_ type. Instead, we declare it as `const`. On the other hand, we use the `satisfies` keyword to ensure that the object conforms to a valid set of option definitions.
 
 In the documentation, you will learn about the different option types and their attributes.
 
 ### Parse arguments in main script
 
-There are multiple ways to parse the command-line arguments. Below is an example.
+There are multiple ways to parse the command-line arguments. Below is an example:
 
-```ts copy filename="cli.ts" {3}
+```ts copy filename="cli.ts" {3,13}
 #!/usr/bin/env node
 import { parse } from 'tsargp';
 import options from './cli.options.js';
@@ -121,16 +169,18 @@ try {
     console.error(`${err}`); // genuine errors
     process.exitCode = 1;
   } else {
-    console.log(`${err}`); // help message, version or completion words
+    console.log(`${err}`); // help, version or completion
   }
 }
 ```
 
-The documentation also shows how to parse into an existing object or class instance, specify parsing flags, and emit warnings.
+Notice how we include the option definitions from the sibling file. We also capture any errors raised by the library and choose what to do based on their type. Usually, they will be either a help message, a version message or a completion message.
+
+The documentation also shows how to _return_ (not throw) the help or version messages, how to parse arguments into an existing object, specify parsing flags, emit warnings, and much more.
 
 ### Validate options in test script
 
-You should check the validity of command-line options during development. Below is an example.
+Do not forget to sanity-check the options during development. Below is an example:
 
 ```ts copy filename="cli.options.spec.ts" {2}
 import { validate } from 'tsargp';
@@ -148,17 +198,17 @@ The documentation also shows how to check for inconsistencies in option naming, 
 
 ### Enable completion (optional)
 
-You can configure shell completion to use the main script as a source of completion words or suggestions. This is handled automatically by the library. You just need to register it with the completion engine.
+You can configure the user's terminal to use the main script as a source of completion words or suggestions. This is handled automatically by the library. You just need to register your application with the native completion engine. Below are examples for various shells:
 
 <Tabs items={['Bash', 'PowerShell', 'Zsh', 'Fish', 'Nushell', 'Fig']}>
   <Tabs.Tab>
-    ```bash copy /cli/ /<path_to_main_script>/
-    complete -o default -C <path_to_main_script> cli
+    ```bash copy /<cli_name>/ /<path_to_main_script>/
+    complete -o default -C <path_to_main_script> <cli_name>
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```ps copy /cli/ /<path_to_main_script>/
-    Register-ArgumentCompleter -Native -CommandName cli -ScriptBlock {
+    ```ps copy /<cli_name>/ /<path_to_main_script>/
+    Register-ArgumentCompleter -Native -CommandName <cli_name> -ScriptBlock {
       param($word, $cmdLine, $cursorPos)
         $env:BUFFER="$cmdLine"; $env:CURSOR=$cursorPos
         <path_to_main_script>
@@ -167,20 +217,20 @@ You can configure shell completion to use the main script as a source of complet
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```zsh copy /cli/ /<path_to_main_script>/
-    compdef 'export BUFFER CURSOR; _values cli `<path_to_main_script>`' cli
+    ```zsh copy /<cli_name>/ /<path_to_main_script>/
+    compdef 'export BUFFER CURSOR; _values <cli_name> `<path_to_main_script>`' <cli_name>
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```fish copy /cli/ /<path_to_main_script>/
-    complete cli -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
+    ```fish copy /<cli_name>/ /<path_to_main_script>/
+    complete <cli_name> -f -a '(set -x BUFFER (commandline -c); <path_to_main_script>; set -e BUFFER)'
     ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```nu copy /cli/ /<path_to_main_script>/
+    ```nu copy /<cli_name>/ /<path_to_main_script>/
     $env.config.completions.external.completer = {|spans|
       {
-        cli: {
+        <cli_name>: {
           with-env { BUFFER: ($spans | str join ' ') } { <path_to_main_script> } | lines
         }
       } | get $spans.0 | each { || do $in }
@@ -191,6 +241,8 @@ You can configure shell completion to use the main script as a source of complet
     Support for [Fig] is limited because the upstream project is somewhat lacking. For instance, it has been integrated into AWS and it does not currently support Linux or Windows. Still, you may be able to use it on MacOS with the provided examples. Look in the [autocomplete] folder for reference.
   </Tabs.Tab>
 </Tabs>
+
+When users install through a package manager, the latter will probably create a [shim] for the script, so you should take that into account when writing documentation for your application.
 
 </Steps>
 
@@ -209,3 +261,4 @@ You can configure shell completion to use the main script as a source of complet
 [npm]: https://www.npmjs.com/search?q=keywords%3Aargument%2Cparser
 [TypeScript]: https://www.typescriptlang.org/
 [tab-completion]: https://en.wikipedia.org/wiki/Command-line_completion
+[shim]: https://en.wikipedia.org/wiki/Shim_(computing)

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options, HelpSections } from '../../../lib/options';
-import { format } from '../../../lib/formatter';
-import { style } from '../../../lib/styles';
-import { tf } from '../../../lib/enums';
+import type { Options, HelpSections } from '../../../src/options';
+import { format } from '../../../src/formatter';
+import { style } from '../../../src/styles';
+import { tf } from '../../../src/enums';
 
 describe('rendering a usage section', () => {
   it('skip a section with no heading and no content', () => {

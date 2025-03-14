@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options } from '../../lib/options';
-import { format } from '../../lib/formatter';
+import type { Options } from '../../src/options';
+import { format } from '../../src/formatter';
 
 describe('format', () => {
   it('handle an option that is always required', () => {

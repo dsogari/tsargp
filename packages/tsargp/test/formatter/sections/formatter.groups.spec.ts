@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options, HelpSections } from '../../../lib/options';
-import { format } from '../../../lib/formatter';
-import { HelpItem, tf } from '../../../lib/enums';
-import { style } from '../../../lib/styles';
+import type { Options, HelpSections } from '../../../src/options';
+import { format } from '../../../src/formatter';
+import { HelpItem, tf } from '../../../src/enums';
+import { style } from '../../../src/styles';
 
 describe('rendering a groups section', () => {
   const options = {

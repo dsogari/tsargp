@@ -6,5 +6,5 @@
     "removeComments": true,
     "preserveConstEnums": true
   },
-  "include": ["./lib/enums.ts"]
+  "include": ["src/enums.ts"]
 }
