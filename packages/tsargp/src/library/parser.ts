@@ -918,15 +918,10 @@ async function checkRequired(context: ParseContext) {
  */
 async function checkDefaultValue(context: ParseContext, key: string) {
   /** @ignore */
-  async function read(source: string | number | URL): Promise<boolean> {
-    const param = isString(source) ? getEnv(source) : await readFile(source);
-    if (param !== undefined) {
-      const info: OptionInfo = [key, option, `${source}`];
-      await parseParams(context, info, NaN, [param]);
-      addSupplied(context, info);
-      return true;
-    }
-    return false;
+  async function parseData(data: string, name: string) {
+    const info: OptionInfo = [key, option, name];
+    await parseParams(context, info, NaN, [data]);
+    addSupplied(context, info);
   }
   const [registry, values, , supplied] = context;
   if (supplied.has(key)) {
@@ -935,11 +930,15 @@ async function checkDefaultValue(context: ParseContext, key: string) {
   const option = registry.options[key];
   const { type, stdin, sources, preferredName, required } = option;
   for (const source of sources ?? []) {
-    if (await read(source)) {
+    const data = isString(source) ? getEnv(source) : await readFile(source);
+    if (data !== undefined) {
+      await parseData(data, `${source}`);
       return;
     }
   }
-  if (stdin && (required || !process?.stdin?.isTTY) && (await read(0))) {
+  if (stdin && (required || !process?.stdin?.isTTY)) {
+    const data = (await readFile(0)) ?? '\n'; // standard input always exists and has a trailing break
+    await parseData(data.slice(0, -1), '0');
     return;
   }
   const name = preferredName ?? '';

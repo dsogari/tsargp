@@ -10,7 +10,7 @@ describe('parse', () => {
     const readFileSpy = spyOn(utils, 'readFile');
 
     beforeAll(() => {
-      readFileSpy.mockImplementation(async () => 'data');
+      readFileSpy.mockImplementation(async () => 'data\n\n');
     });
 
     afterAll(() => {
@@ -28,10 +28,10 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       process.stdin.isTTY = true;
-      expect(parse(options, [])).resolves.toEqual({ single: 'data' });
-      expect(options.single.parse).toHaveBeenCalledWith('data', {
+      expect(parse(options, [])).resolves.toEqual({ single: 'data\n' });
+      expect(options.single.parse).toHaveBeenCalledWith('data\n', {
         // should have been { single: undefined } at the time of call
-        values: { single: 'data' },
+        values: { single: 'data\n' },
         index: NaN,
         name: '0', // zero for standard input
         comp: false,
@@ -48,10 +48,10 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       process.stdin.isTTY = false;
-      expect(parse(options, [])).resolves.toEqual({ single: 'data' });
-      expect(options.single.parse).toHaveBeenCalledWith('data', {
+      expect(parse(options, [])).resolves.toEqual({ single: 'data\n' });
+      expect(options.single.parse).toHaveBeenCalledWith('data\n', {
         // should have been { single: undefined } at the time of call
-        values: { single: 'data' },
+        values: { single: 'data\n' },
         index: NaN,
         name: '0', // zero for standard input
         comp: false,

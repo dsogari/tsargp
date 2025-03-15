@@ -323,7 +323,7 @@ Options that may read data from the environment share some attributes, as descri
 
 #### Data sources
 
-The `sources` attribute, if present, lists names of environment data sources from which the option value should be read, in case it is supplied _neither_ on the command line _nor_ through the [standard input]. Its elements can be either of:
+The `sources` attribute, if present, lists names of environment data sources from which the option value should be read, in case it is not supplied on the command line. Its elements can be either of:
 
 - `string{:ts}` -- an environment _variable_; or
 - `URL{:ts}` -- the path of a _local file_ (to be used with `import.meta.resolve`)
