@@ -159,7 +159,7 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s3'],
           positional: '--',
-          paramName: 'arg',
+          paramName: '<arg>',
         },
         single4: {
           type: 'single',
@@ -188,7 +188,7 @@ describe('rendering a usage section', () => {
         array3: {
           type: 'array',
           positional: '--',
-          paramName: 'args',
+          paramName: '<args>',
         },
         array4: {
           type: 'array',
@@ -220,7 +220,7 @@ describe('rendering a usage section', () => {
           type: 'function',
           positional: true,
           paramCount: 2,
-          paramName: 'args',
+          paramName: '<args>',
         },
         function4: {
           type: 'function',

@@ -217,7 +217,7 @@ describe('format', () => {
           paramName: 'my_param',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s  <my_param>\n`);
+      expect(format(options).wrap()).toEqual(`  -s  my_param\n`);
     });
 
     it('handle a single-valued option with an empty parameter name', () => {
@@ -229,17 +229,6 @@ describe('format', () => {
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s  <param>\n`);
-    });
-
-    it('handle a single-valued option with a parameter name with angle brackets', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          paramName: '<token>=<value>',
-        },
-      } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s  <token>=<value>\n`);
     });
   });
 

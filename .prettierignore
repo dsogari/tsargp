@@ -7,4 +7,3 @@
 *.svg
 CODEOWNERS
 LICENSE
-packages/tsargp/test/data/invalid.json

@@ -354,7 +354,7 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      '  -s1, --single <param>\n  <long-parameter-name>\n  -s3=<param>\n  --array[=<param>]\n',
+      '  -s1, --single <param>\n  long-parameter-name\n  -s3=<param>\n  --array[=<param>]\n',
     );
   });
 
@@ -390,7 +390,7 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s1, --single <param>\n  <long-parameter-name>\n  -s3=<param>\n  --array[=<param>]\n`,
+      `  -s1, --single <param>\n  long-parameter-name\n  -s3=<param>\n  --array[=<param>]\n`,
     );
   });
 
@@ -427,7 +427,7 @@ describe('format', () => {
     ];
     expect(format(options, sections).wrap()).toEqual(
       '  -s1, --single <param>\n' +
-        '                <long-parameter-name>\n' +
+        '                long-parameter-name\n' +
         '            -s3=<param>\n' +
         '        --array[=<param>]\n',
     );
