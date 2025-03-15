@@ -49,17 +49,17 @@ describe('parse', () => {
     describe('when a repository URL cannot be found in the package.json file', () => {
       it('return undefined when the file cannot be found', () => {
         const url = new URL(import.meta.resolve('./data/absent.json'));
-        expect(sectionFooter(url, '')).resolves.toBeUndefined();
+        expect(sectionFooter(url)).resolves.toBeUndefined();
       });
 
       it('throw an error when the file is not valid JSON', () => {
         const url = new URL(import.meta.resolve('./data/invalid.jsonc'));
-        expect(sectionFooter(url, '')).rejects.toThrow('JSON Parse error');
+        expect(sectionFooter(url)).rejects.toThrow('JSON Parse error');
       });
 
       it('return undefined when the file does not contain a repository field', () => {
         const url = new URL(import.meta.resolve('./data/empty.json'));
-        expect(sectionFooter(url, '')).resolves.toBeUndefined();
+        expect(sectionFooter(url)).resolves.toBeUndefined();
       });
     });
 
