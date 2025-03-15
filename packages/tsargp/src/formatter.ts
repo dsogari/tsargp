@@ -847,7 +847,7 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
     formatFunctions.v(param, result, { sep: '', open: '', close: '' });
     result.close(ellipsis);
   } else {
-    const param = !max ? '' : paramName || '<param>';
+    const param = !max ? '' : (paramName ?? '<param>');
     result.word(param + ellipsis);
   }
   result.close(optional ? ']' : '').popSty();

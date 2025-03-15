@@ -228,7 +228,7 @@ describe('format', () => {
           paramName: '',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s  <param>\n`);
+      expect(format(options).wrap()).toEqual(`  -s\n`);
     });
   });
 
