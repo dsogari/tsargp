@@ -200,21 +200,19 @@ export function getArgs(line: string, compIndex = NaN): Array<string> {
 }
 
 /**
- * Reads data from a file, if available. Does not block to wait for new data.
+ * Reads data from a file. It may block to wait for new data.
  * @param file The file path, descriptor or URL
  * @returns The file data, if any
  */
 export async function readFile(file: string | number | URL): Promise<string | undefined> {
-  if (file || !process?.stdin?.isTTY) {
-    try {
-      const { readFileSync } = await import('fs');
-      return readFileSync?.(file).toString();
-    } catch (err) {
-      type ErrnoException = { code?: string };
-      const code = (err as ErrnoException).code ?? '';
-      if (!['ENOENT', 'EAGAIN'].includes(code)) {
-        throw err;
-      }
+  try {
+    const { readFileSync } = await import('fs');
+    return readFileSync?.(file).toString();
+  } catch (err) {
+    type ErrnoException = { code?: string };
+    const code = (err as ErrnoException).code ?? '';
+    if (!['ENOENT', 'EAGAIN'].includes(code)) {
+      throw err;
     }
   }
 }

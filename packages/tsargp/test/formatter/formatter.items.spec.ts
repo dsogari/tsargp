@@ -57,7 +57,9 @@ describe('format', () => {
         stdin: true,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f    Reads data from standard input.\n`);
+    expect(format(options).wrap()).toEqual(
+      `  -f    If not supplied, will be read from the standard input.\n`,
+    );
   });
 
   it('handle a flag option with an environment variable', () => {
@@ -69,7 +71,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -f    Reads environment data from VAR, file://path/.\n`,
+      `  -f    If not supplied on the command line, will be read from VAR or file://path/.\n`,
     );
   });
 

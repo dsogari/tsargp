@@ -172,13 +172,13 @@ export const enum HelpItem {
    */
   limit,
   /**
-   * Whether the option accepts data from standard input.
-   */
-  stdin,
-  /**
    * The option's environment data sources.
    */
   sources,
+  /**
+   * Whether the option reads data from the standard input.
+   */
+  stdin,
   /**
    * The option's forward requirements.
    */
