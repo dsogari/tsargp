@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -18,7 +18,7 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/lib/index.d.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.min.js"
     },
     "./enums": {
@@ -29,9 +29,13 @@
       "types": "./dist/examples/index.d.ts",
       "default": "./dist/examples/index.js"
     },
-    "./lib": {
-      "types": "./dist/lib/index.d.ts",
-      "default": "./dist/lib/index.js"
+    "./library": {
+      "types": "./dist/library/index.d.ts",
+      "default": "./dist/library/index.js"
+    },
+    "./utility": {
+      "types": "./dist/utility/index.d.ts",
+      "default": "./dist/utility/index.js"
     }
   },
   "bin": {
@@ -43,7 +47,6 @@
   "description": "Argument parser for TypeScript",
   "files": [
     "dist/**/*.{js,ts,map}",
-    "examples/**/*.ts",
     "src/**/*.ts"
   ],
   "homepage": "https://dsogari.github.io/tsargp",
@@ -57,8 +60,8 @@
   "license": "MIT",
   "scripts": {
     "prepare": "bun run build",
-    "build": "tsc -b && tsc -b examples/autocomplete && bun build dist/lib/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "build": "tsc -b && tsc -b src && bun build dist/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "type": "module",
-  "types": "./dist/lib/index.d.ts"
+  "types": "./dist/index.d.ts"
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options } from '../../src/options';
-import { format } from '../../src/formatter';
+import type { Options } from '../../src/library';
+import { format } from '../../src/library';
 
 describe('format', () => {
   describe('when inline parameters are required', () => {

@@ -117,5 +117,5 @@ bun publish   # publish to npm registry
 
 [documentation]: https://dsogari.github.io/tsargp/docs
 [online demo]: https://dsogari.github.io/tsargp/demo
-[demo source]: examples/demo.options.ts
+[demo source]: src/examples/demo.options.ts
 [shim]: https://en.wikipedia.org/wiki/Shim_(computing)

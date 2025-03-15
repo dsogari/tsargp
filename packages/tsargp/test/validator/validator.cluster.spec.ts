@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options } from '../../src/options';
-import { validate } from '../../src/validator';
+import type { Options } from '../../src/library';
+import { validate } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 

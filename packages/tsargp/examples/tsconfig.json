@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../dist/examples",
-    "composite": true
-  },
-  "exclude": ["./autocomplete"],
-  "references": [{ "path": "../src" }]
-}

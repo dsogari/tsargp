@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options } from '../../src/options';
-import { format } from '../../src/formatter';
+import type { Options } from '../../src/library';
+import { format } from '../../src/library';
 
 describe('format', () => {
   it('handle a single-valued option with a regex constraint', () => {

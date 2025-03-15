@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
-import { JsonMessage, TextMessage } from '../../src/styles';
-import { type Options } from '../../src/options';
-import { type ParsingFlags, parse } from '../../src/parser';
+import type { Options, ParsingFlags } from '../../src/library';
+import { parse, JsonMessage, TextMessage } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 

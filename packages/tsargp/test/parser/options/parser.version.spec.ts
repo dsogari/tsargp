@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options } from '../../../src/options';
-import { parse } from '../../../src/parser';
+import type { Options } from '../../../src/library';
+import { parse } from '../../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -47,7 +47,7 @@ describe('parse', () => {
         version: {
           type: 'version',
           names: ['-v'],
-          version: new URL(import.meta.resolve('../../data/no-version.json')),
+          version: new URL(import.meta.resolve('../../data/empty.json')),
         },
       } as const satisfies Options;
       expect(parse(options, ['-v'])).rejects.toThrow(/^undefined$/);
@@ -61,7 +61,7 @@ describe('parse', () => {
           version: new URL(import.meta.resolve('../../data/invalid.jsonc')),
         },
       } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(`JSON Parse error`);
+      expect(parse(options, ['-v'])).rejects.toThrow('JSON Parse error');
     });
 
     it('throw an error when a version file cannot be found', () => {
@@ -72,7 +72,7 @@ describe('parse', () => {
           version: new URL(import.meta.resolve('../../data/absent.json')),
         },
       } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(`Could not find a version JSON file.`);
+      expect(parse(options, ['-v'])).rejects.toThrow('Could not find a version JSON file.');
     });
   });
 });

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, jest } from 'bun:test';
+import type { Options } from '../src/library';
 import {
-  type Options,
   getOptionNames,
   getParamCount,
   isMessage,
@@ -11,7 +11,7 @@ import {
   notOf,
   valuesFor,
   visitRequirements,
-} from '../src/options';
+} from '../src/library';
 
 describe('OptionRegistry', () => {
   describe('constructor', () => {
