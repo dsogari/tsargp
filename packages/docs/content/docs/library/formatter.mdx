@@ -67,13 +67,16 @@ This column is rendered according to the following rules:
 - else, if it contains an [example value], render this value
 - otherwise
   - if it contains a [parameter name], render this name
-  - else, render the word `'param'{:ts}`
-  - and, if not already the case, enclose the result in angle brackets `'<>'{:ts}`
+  - else, render the word `'<param>'{:ts}`
 - and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
 - and, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
 - and, if it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`
 
 The result might be something like `=<param>` or `[<param>...]`.
+
+> [!TIP]
+>
+> You can use an empty [parameter name] to suppress what would be rendered in its place. Just beware of options that accept a single parameter, as its display is especially important in [usage sections].
 
 ### Description column
 

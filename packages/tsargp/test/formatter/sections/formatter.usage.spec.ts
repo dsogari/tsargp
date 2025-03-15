@@ -159,7 +159,7 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s3'],
           positional: '--',
-          paramName: 'arg',
+          paramName: '<arg>',
         },
         single4: {
           type: 'single',
@@ -188,7 +188,7 @@ describe('rendering a usage section', () => {
         array3: {
           type: 'array',
           positional: '--',
-          paramName: 'args',
+          paramName: '', // test empty parameter
         },
         array4: {
           type: 'array',
@@ -199,7 +199,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-a1 [<param>...]] -a2 [<param>...] [-a4[=true]] [--] [<args>...]\n',
+        '[-a1 [<param>...]] -a2 [<param>...] [-a4[=true]] [--] [...]\n',
       );
     });
 
@@ -220,7 +220,7 @@ describe('rendering a usage section', () => {
           type: 'function',
           positional: true,
           paramCount: 2,
-          paramName: 'args',
+          paramName: '', // test empty parameter
         },
         function4: {
           type: 'function',
@@ -232,7 +232,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-f1 ...] -f2 <param>... [<args>...] [-f4[=true]]\n',
+        '[-f1 ...] -f2 <param>... [...] [-f4[=true]]\n',
       );
     });
 

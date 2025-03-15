@@ -58,7 +58,7 @@ describe('parse', () => {
         version: {
           type: 'version',
           names: ['-v'],
-          version: new URL(import.meta.resolve('../../data/invalid.json')),
+          version: new URL(import.meta.resolve('../../data/invalid.jsonc')),
         },
       } as const satisfies Options;
       expect(parse(options, ['-v'])).rejects.toThrow(`JSON Parse error`);
