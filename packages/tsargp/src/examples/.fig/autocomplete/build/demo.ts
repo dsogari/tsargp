@@ -1,5 +1,5 @@
 import { createGenerator } from './generator.js';
-import options from '../demo.options.js';
+import options from '../../../demo.options.js';
 
 /**
  * The completion specification for the Demo command.

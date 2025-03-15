@@ -7,7 +7,7 @@ export * from './formatter.js';
 export * from './parser.js';
 export * from './validator.js';
 
-export { allOf, oneOf, notOf, valuesFor, numberInRange } from './options.js';
+export { allOf, oneOf, notOf, valuesFor } from './options.js';
 export {
   seq,
   style,

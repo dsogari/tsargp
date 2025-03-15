@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options } from '../../src/options';
-import { parse, parseInto, ParsingFlags } from '../../src/parser';
+import { type Options } from '../../src/library/options';
+import { parse, parseInto, ParsingFlags } from '../../src/library/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 

@@ -905,7 +905,7 @@ async function handleVersion(option: OpaqueOption): Promise<string> {
  */
 async function checkRequired(context: ParseContext) {
   const keys = getKeys(context[0].options);
-  // TODO: we may need to serialize the following calls to avoid data races in client code
+  // FIXME: we may need to serialize the following calls to avoid data races in client code
   await Promise.all(keys.map((key) => checkDefaultValue(context, key)));
   await Promise.all(keys.map((key) => checkRequiredOption(context, key)));
 }

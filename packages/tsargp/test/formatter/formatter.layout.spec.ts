@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import type { HelpSections, Options } from '../../src/options';
-import { config } from '../../src/config';
-import { HelpItem } from '../../src/enums';
-import { format } from '../../src/formatter';
+import type { HelpSections, Options } from '../../src/library/options';
+import { config } from '../../src/library/config';
+import { HelpItem } from '../../src/library/enums';
+import { format } from '../../src/library/formatter';
 
 describe('format', () => {
   it('not break columns in the help message when configured with negative values', () => {

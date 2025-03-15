@@ -8,15 +8,17 @@ import {
   tf,
   ext8,
   rgb,
-  numberInRange,
   config,
   allHelpItems,
   HelpItem,
   envHelpItems,
 } from 'tsargp';
+import { numberInRange, sectionFooter } from 'tsargp/utility';
 import helloOpts from './demo.hello.options.js';
 
-const footer = `Report bugs: ${style(fg.brightBlack)}https://github.com/dsogari/tsargp/issues${style(fg.default)}`;
+const packageJsonPath = import.meta.resolve && new URL(import.meta.resolve('../../package.json'));
+const footerText =
+  packageJsonPath && (await sectionFooter(packageJsonPath, `Report bugs: #0`, '/issues'));
 
 /**
  * The main option definitions.
@@ -66,7 +68,7 @@ export default {
       {
         type: 'text',
         content: {
-          text: footer,
+          text: footerText,
           breaks: 1,
           noSplit: true,
         },
@@ -99,7 +101,7 @@ export default {
       {
         type: 'text',
         content: {
-          text: footer,
+          text: footerText,
           breaks: 1,
           noSplit: true,
         },
@@ -114,7 +116,7 @@ export default {
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    version: import.meta.resolve && new URL(import.meta.resolve('../../package.json')),
+    version: packageJsonPath,
   },
   /**
    * A flag option that is deprecated for some reason.

@@ -7,7 +7,7 @@ import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, getSymbol, isArray, isFunction, isObject, isString } from './utils.js';
+import { getEntries, isArray, isFunction, isObject, isString } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -1228,26 +1228,6 @@ export function notOf(item: Requires): RequiresNot {
  */
 export function valuesFor<T extends Options>(_options: T): OptionValues<T> {
   return {} as OptionValues<T>;
-}
-
-/**
- * Create a parsing callback for numbers that should be within a range.
- * @param range The numeric range
- * @param phrase The custom error phrase
- * @returns The parsing callback
- */
-export function numberInRange(range: Range, phrase: string): ParsingCallback<string, number> {
-  const [min, max] = range;
-  return function (param, info) {
-    if (info.comp) {
-      return 0; // the result does not matter when completion is in effect
-    }
-    const num = Number(param);
-    if (min <= num && num <= max) {
-      return num; // handles NaN
-    }
-    throw ErrorMessage.createCustom(phrase, {}, getSymbol(info.name), param, range);
-  };
 }
 
 /**

@@ -1,7 +1,9 @@
 {
-  "extends": "../tsconfig.base.json",
+  "extends": "../tsconfig.base.jsonc",
   "compilerOptions": {
-    "outDir": "../dist/lib",
+    "types": ["bun", "@withfig/autocomplete-types"],
+    "outDir": "../dist",
     "composite": true
-  }
+  },
+  "include": ["**/*.ts", "examples/.fig/autocomplete/build/*.ts"]
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test';
-import { numberInRange, type OptionValues, type Options } from '../../src/options';
-import { parse } from '../../src/parser';
+import { type OptionValues, type Options } from '../../src/library/options';
+import { parse } from '../../src/library/parser';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -144,32 +144,6 @@ describe('parse', () => {
         comp: false,
       });
       expect(options.array.parse).toHaveBeenCalledTimes(2);
-    });
-
-    it('handle a single-valued option with a parsing callback that throws', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          parse: numberInRange([1, Infinity], '#0 #1 #2.'),
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-s', '123'])).resolves.toEqual({ single: 123 });
-      expect(parse(options, ['-s', '0'])).rejects.toThrow(`-s '0' [1, Infinity]`);
-      expect(parse(options, ['-s', 'a'])).rejects.toThrow(`-s 'a' [1, Infinity]`);
-    });
-
-    it('handle an array-valued option with a parsing callback that throws', () => {
-      const options = {
-        array: {
-          type: 'array',
-          names: ['-a'],
-          parse: numberInRange([1, Infinity], '#0 #1 #2.'),
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-a', '123'])).resolves.toEqual({ array: [123] });
-      expect(parse(options, ['-a', '0'])).rejects.toThrow(`-a '0' [1, Infinity]`);
-      expect(parse(options, ['-a', 'a'])).rejects.toThrow(`-a 'a' [1, Infinity]`);
     });
 
     it('handle an array-valued option with a parsing callback', () => {

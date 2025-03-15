@@ -398,7 +398,7 @@ function formatGroups(
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option, items);
     const paramLen = param.totalLen;
-    param.indent = paramLen; // TODO: save the length, since we will need it in `adjustEntries`
+    param.indent = paramLen; // HACK: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
     let namesLen = 0;
     names.forEach((str, i) => {
@@ -414,7 +414,7 @@ function formatGroups(
       prev?.popSty(); // pop the base text style of the last name
       const inc = i < names.length - 1 ? slotInc : 0; // include sep in slot width
       slotWidths[i] = max(slotWidths[i] ?? 0, nameLen + inc); // longest across all entries
-      str.indent = nameLen; // TODO: save the length, since we will need it in `adjustEntries`
+      str.indent = nameLen; // HACK: save the length, since we will need it in `adjustEntries`
       namesLen += nameLen;
     });
     namesWidth = max(namesWidth, namesLen); // longest across all entries

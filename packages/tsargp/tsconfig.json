@@ -1,10 +1,10 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.base.jsonc",
   "compilerOptions": {
     "outDir": "./dist/enums",
     "declaration": true,
     "removeComments": true,
     "preserveConstEnums": true
   },
-  "include": ["src/enums.ts"]
+  "include": ["src/library/enums.ts"]
 }
