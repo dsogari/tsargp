@@ -917,21 +917,30 @@ async function checkRequired(context: ParseContext) {
  * @returns A promise that must be awaited before continuing
  */
 async function checkDefaultValue(context: ParseContext, key: string) {
+  /** @ignore */
+  async function read(source: string | number | URL): Promise<boolean> {
+    const param = isString(source) ? getEnv(source) : await readFile(source);
+    if (param !== undefined) {
+      const info: OptionInfo = [key, option, `${source}`];
+      await parseParams(context, info, NaN, [param]);
+      addSupplied(context, info);
+      return true;
+    }
+    return false;
+  }
   const [registry, values, , supplied] = context;
   if (supplied.has(key)) {
     return;
   }
   const option = registry.options[key];
   const { type, stdin, sources, preferredName, required } = option;
-  const allSources = [...(stdin ? [0] : []), ...(sources ?? [])];
-  for (const source of allSources) {
-    const param = isString(source) ? getEnv(source) : await readFile(source);
-    if (param !== undefined) {
-      const info: OptionInfo = [key, option, `${source}`];
-      await parseParams(context, info, NaN, [param]);
-      addSupplied(context, info);
+  for (const source of sources ?? []) {
+    if (await read(source)) {
       return;
     }
+  }
+  if (stdin && (required || !process?.stdin?.isTTY) && (await read(0))) {
+    return;
   }
   const name = preferredName ?? '';
   if (required) {

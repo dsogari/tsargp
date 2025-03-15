@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, jest, spyOn } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, it, jest, spyOn } from 'bun:test';
 import type { Options } from '../../src/library';
 import { parse } from '../../src/library';
 import * as utils from '../../src/library/utils';
@@ -9,20 +9,25 @@ describe('parse', () => {
   describe('read data from standard input', () => {
     const readFileSpy = spyOn(utils, 'readFile');
 
-    afterEach(() => {
+    beforeAll(() => {
+      readFileSpy.mockImplementation(async () => 'data');
+    });
+
+    afterAll(() => {
       readFileSpy.mockRestore(); // restore original implementation
     });
 
-    it('handle a single-valued option', () => {
+    it('try to read if the option is required', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
           stdin: true,
+          required: true,
           parse: jest.fn((param) => param),
         },
       } as const satisfies Options;
-      readFileSpy.mockImplementation(async () => 'data');
+      process.stdin.isTTY = true;
       expect(parse(options, [])).resolves.toEqual({ single: 'data' });
       expect(options.single.parse).toHaveBeenCalledWith('data', {
         // should have been { single: undefined } at the time of call
@@ -31,6 +36,40 @@ describe('parse', () => {
         name: '0', // zero for standard input
         comp: false,
       });
+    });
+
+    it('try to read if the option is not required but the terminal is non-interactive', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      process.stdin.isTTY = false;
+      expect(parse(options, [])).resolves.toEqual({ single: 'data' });
+      expect(options.single.parse).toHaveBeenCalledWith('data', {
+        // should have been { single: undefined } at the time of call
+        values: { single: 'data' },
+        index: NaN,
+        name: '0', // zero for standard input
+        comp: false,
+      });
+    });
+
+    it('do not try to read if the option is not required and the terminal is interactive', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      process.stdin.isTTY = true;
+      expect(parse(options, [])).resolves.toEqual({ single: undefined });
+      expect(options.single.parse).not.toHaveBeenCalled();
     });
   });
 

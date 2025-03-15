@@ -242,7 +242,8 @@ const helpFunctions: HelpFunctions = {
     const { sources } = option;
     if (sources?.length) {
       const values = sources.map((name) => (isString(name) ? getSymbol(name) : name));
-      result.format(phrase, { open: '', close: '' }, values);
+      const sep = config.connectives.or;
+      result.format(phrase, { sep, open: '', close: '', mergePrev: false }, values);
     }
   },
   [HelpItem.requiredIf]: (option, phrase, options, result) => {

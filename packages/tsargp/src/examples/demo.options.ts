@@ -230,6 +230,7 @@ export default {
     group: 'String options:',
     default: ['one'],
     separator: ',',
+    stdin: true,
   },
   /**
    * A number array option with a default value.

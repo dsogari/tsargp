@@ -321,20 +321,6 @@ The callback should return the parsed value (or a promise thereof). If you need 
 
 Options that may read data from the environment share some attributes, as described below.
 
-#### Accept input
-
-The `stdin` attribute, if present, indicates that the option accepts data from the standard input, _if not_ supplied on the command line (otherwise, the input stream will remain untouched).
-
-The parser only reads _readily_ available data, without waiting for new input. This means that it can only extract data from redirected command outputs, not from interactive terminals. For the latter effect, you should use a [default value] callback in conjunction with third-party prompting libraries.
-
-> [!NOTE]
->
-> This attribute has precedence over [data sources].
-
-> [!TIP]
->
-> You can omit the [option names] or [hide] the option from the help message, if you want its value to be read _exclusively_ from the standard input.
-
 #### Data sources
 
 The `sources` attribute, if present, lists names of environment data sources from which the option value should be read, in case it is supplied _neither_ on the command line _nor_ through the [standard input]. Its elements can be either of:
@@ -344,11 +330,35 @@ The `sources` attribute, if present, lists names of environment data sources fro
 
 The reason why we did not use a dedicated `env` attribute for environment variables was a design choice: since the sources are tried in the specified order, you can mix the two types of values in order of priority.
 
-If data is found in a source, the affected option will be considered [supplied], which has implications for evaluating option [requirements].
+> [!NOTE]
+>
+> This attribute has precedence over [standard input].
 
 > [!NOTE]
 >
 > Variable names should _not_ be included in the list of [option names], although they are subject to the same restrictions.
+
+> [!WARNING]
+>
+> If data is found in a source, the affected option will be considered [supplied], which has implications for evaluating option [requirements].
+
+#### Standard input
+
+The `stdin` attribute, if present, indicates that the option may read data from the standard input. It only has effect if:
+
+- the option is not [supplied] and
+  - the option is [always required]; or
+  - the terminal is non-interactive (i.e., the data comes from a redirected output)
+
+Otherwise, the input stream will remain untouched.
+
+> [!TIP]
+>
+> You can omit the [option names] or [hide] the option from the help message, if you want its value to be read _exclusively_ from the standard input.
+
+> [!WARNING]
+>
+> In the case of interactive terminals, the parser will _block_ to wait for new input. If you need more sophisticated handling of interactive terminals, do yourself a favor and use a third-party prompting library in conjunction with a [default value callback].
 
 #### Break loop
 
@@ -735,13 +745,14 @@ Here is an example of how it might be used inside the callback:
 [requirement callback]: #requirement-callback
 [conditional requirements]: #conditional-requirements
 [default value]: #default-value
+[default value callback]: #default-value-callback
 [default values]: #default-value
 [parsing callback]: #parsing-callback
 
 {/* environment attributes */}
 
 [environment]: #environment-attributes
-[standard input]: #accept-input
+[standard input]: #standard-input
 [data source]: #data-sources
 [data sources]: #data-sources
 [break loop]: #break-loop

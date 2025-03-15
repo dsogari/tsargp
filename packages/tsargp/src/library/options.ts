@@ -404,7 +404,7 @@ export type WithArgumentInfo = {
    */
   index: number;
   /**
-   * The option name as specified on the command-line, or the environment data source.
+   * The option name as supplied on the command-line, or the environment data source.
    * It will be the preferred name if the sequence comes from positional arguments.
    * It will be the string '0' if the sequence comes from the standard input.
    */
@@ -535,9 +535,8 @@ export type WithOptionValue<T> = {
   /**
    * Te default value or a callback that returns the default value.
    *
-   * The default value is set at the end of the parsing loop if the option was specified neither on
-   * the command-line nor as an environment variable. You may use a callback to inspect parsed
-   * values and determine the default value based on those values.
+   * The default value is set at the end of the parsing loop if the option was not supplied. You may
+   * use a callback to inspect parsed values and determine the default value based on those values.
    */
   readonly default?: KnownValue | DefaultValueCallback;
   /**
@@ -551,16 +550,19 @@ export type WithOptionValue<T> = {
  */
 export type WithEnvironment = {
   /**
-   * True to read data from the standard input, if the option is not specified in the command-line.
-   * This has precedence over {@link WithEnvironment.sources}.
-   */
-  readonly stdin?: true;
-  /**
-   * The names of environment data sources to try reading from (in that order), if the option is
-   * specified neither on the command-line nor in the standard input. A string means an environment
-   * variable, while a URL means a local file.
+   * The names of data sources to try reading from (in that order), if the option was not supplied
+   * on the command line. A string means an environment variable, while a URL means a local file.
+   *
+   * This has precedence over {@link WithEnvironment.stdin}.
    */
   readonly sources?: ReadonlyArray<string | URL>;
+  /**
+   * True to read data from the standard input, if the option was not supplied.
+   *
+   * Warning: this may block the application if {@link WithOptionValue.required} is set and the
+   * terminal is interactive.
+   */
+  readonly stdin?: true;
   /**
    * True to break the parsing loop after parsing the option.
    */
@@ -703,7 +705,7 @@ export type WithArray = {
    */
   readonly unique?: true;
   /**
-   * Allows appending elements if specified multiple times.
+   * Allows appending elements if supplied multiple times.
    */
   readonly append?: true;
   /**
