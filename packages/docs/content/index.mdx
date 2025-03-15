@@ -27,7 +27,7 @@ title: Home
 
 [1mString options:[22m
 
-   [35m-sr[39m, [35m--strRegex[39m  [90m<my str>[39m      A string option. Can be clustered with [32m's'[39m. Values must match the
+   [35m-sr[39m, [35m--strRegex[39m  [90;4mmy str[24;39m        A string option. Can be clustered with [32m's'[39m. Values must match the
                                   regex [31m/^\d+$/[39m. Defaults to [32m'123456789'[39m.
   [35m-sc[39m, [35m--strChoice[39m  [90;32m'one'[90m[39m         A string option. Disallows inline parameters. Values must be one
                                   of {[32m'one'[39m, [32m'two'[39m}.
@@ -39,7 +39,7 @@ title: Home
 
 [1mNumber options:[22m
 
-   [35m-nr[39m, [35m--numRange[39m  [90m<my num>[39m      A number option. The minimum accepted value is [33m-2[39m. Can be
+   [35m-nr[39m, [35m--numRange[39m  [90;4mmy num[24;39m        A number option. The minimum accepted value is [33m-2[39m. Can be
                                   clustered with [32m'n'[39m. Defaults to [33m-1.23[39m.
   [35m-nc[39m, [35m--numChoice[39m  [90m=[33m1[90m[39m            A number option. Requires inline parameters. Values must be one of
                                   {[32m'1'[39m, [32m'2'[39m}.
@@ -54,9 +54,9 @@ title: Home
   demo.js [([35m-h[39m|[35m--help[39m)] [([35m-v[39m|[35m--version[39m)] [[35m--env[39m] [32m# get help[39m
   demo.js [35mhello[39m [90m...[39m [32m# execute the hello command[39m
   demo.js [([38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m)] [[([35m-b[39m|[35m--boolean[39m) [90m<param>[39m] ([35m-sc[39m|[35m--strChoice[39m) [90;32m'one'[90m[39m] [([35m-sr[39m|[35m--strRegex[39m)
-          [90m<my str>[39m] [([35m-nr[39m|[35m--numRange[39m) [90m<my num>[39m] [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m] [([35m-sa[39m|[35m--strArray[39m)
-          [90m[<param>...][39m] [([35m-na[39m|[35m--numArray[39m) [90m[<param>...][39m] [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m]
-          [([35m--strArrayLimit[39m|[35m--[39m)] [90m[[32m'one'[90m...][39m
+          [90;4mmy str[24;39m] [([35m-nr[39m|[35m--numRange[39m) [90;4mmy num[24;39m] [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m] [([35m-sa[39m|[35m--strArray[39m) [90m[<param>...][39m]
+          [([35m-na[39m|[35m--numArray[39m) [90m[<param>...][39m] [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m] [([35m--strArrayLimit[39m|[35m--[39m)]
+          [90m[[32m'one'[90m...][39m
 
 Report bugs: [90mhttps://github.com/dsogari/tsargp/issues[39m
 ```

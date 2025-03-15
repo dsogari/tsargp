@@ -170,6 +170,7 @@ export default {
     default: '123456789',
     paramName: 'my str',
     cluster: 's',
+    styles: { param: style(fg.brightBlack, tf.underlined) },
   },
   /**
    * A number option that has a range constraint.
@@ -187,6 +188,7 @@ export default {
     default: -1.23,
     paramName: 'my num',
     cluster: 'n',
+    styles: { param: style(fg.brightBlack, tf.underlined) },
   },
   /**
    * A string option that has a choices constraint and disallows inline parameters.

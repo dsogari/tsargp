@@ -1,6 +1,6 @@
 # tsargp docs
 
-Documentation for [tsargp](https://www.npmjs.com/package/tsargp).
+Documentation for [tsargp].
 
 ## Usage
 
@@ -14,3 +14,5 @@ bun install   # install dependencies
 bun run dev   # serve docs locally
 bun publish   # publish to npm registry
 ```
+
+[tsargp]: https://www.npmjs.com/package/tsargp

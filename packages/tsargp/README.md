@@ -101,7 +101,7 @@ The documentation also shows how to check for inconsistencies in option naming, 
 You can configure the user's terminal to use the main script as a source of completion words or suggestions. This is handled automatically by the library. You just need to register your application with the native completion engine:
 
 ```sh
-complete -o default -C <path_to_main_script> cli
+complete -o default -C <path_to_main_script> <cli_name>
 ```
 
 When users install through a package manager, the latter will probably create a [shim] for the script, so you should take that into account when writing documentation for your application.
