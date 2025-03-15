@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options } from '../src/library/options';
-import { parse } from '../src/library/parser';
-import { numberInRange, sectionFooter } from '../src/utility/index';
+import type { Options } from '../src/library';
+import { parse } from '../src/library';
+import { numberInRange, sectionFooter } from '../src/utility';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 

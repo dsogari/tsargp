@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, jest } from 'bun:test';
-import { cs, fg, bg, tf, ErrorItem, ul } from '../src/library/enums';
 import {
+  cs,
+  fg,
+  bg,
+  tf,
+  ul,
+  ErrorItem,
   AnsiString,
   AnsiMessage,
   WarnMessage,
@@ -10,7 +15,7 @@ import {
   rgb,
   seq,
   style,
-} from '../src/library/styles';
+} from '../src/library';
 
 const clr = style(tf.clear);
 const bold = style(tf.bold);

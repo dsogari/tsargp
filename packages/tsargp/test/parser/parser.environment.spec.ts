@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, jest, spyOn } from 'bun:test';
-import { type Options } from '../../src/library/options';
-import { parse } from '../../src/library/parser';
+import type { Options } from '../../src/library';
+import { parse } from '../../src/library';
 import * as utils from '../../src/library/utils';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles

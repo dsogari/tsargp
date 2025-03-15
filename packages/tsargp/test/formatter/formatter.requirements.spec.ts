@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { type Options, OptionRegistry, allOf, oneOf, notOf } from '../../src/library/options';
-import { format } from '../../src/library/formatter';
+import type { Options } from '../../src/library';
+import { format, OptionRegistry, allOf, oneOf, notOf } from '../../src/library';
 
 describe('format', () => {
   describe('a forward requirement is specified', () => {

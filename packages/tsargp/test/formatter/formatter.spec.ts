@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import type { HelpSection, HelpSections, Options } from '../../src/library/options';
-import { tf } from '../../src/library/enums';
-import { format } from '../../src/library/formatter';
-import { style } from '../../src/library/styles';
+import type { HelpSection, HelpSections, Options } from '../../src/library';
+import { format, tf, style } from '../../src/library';
 
 describe('format', () => {
   it('handle zero options', () => {
