@@ -937,8 +937,9 @@ async function checkDefaultValue(context: ParseContext, key: string) {
     }
   }
   if (stdin && (required || !process?.stdin?.isTTY)) {
-    const data = (await readFile(0)) ?? '\n'; // standard input always exists and has a trailing break
-    await parseData(data.slice(0, -1), '0');
+    // standard input always exists and may include a trailing line feed
+    const data = (await readFile(0))?.replace(/\r?\n$/, '') ?? '';
+    await parseData(data, '0');
     return;
   }
   const name = preferredName ?? '';
