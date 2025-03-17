@@ -807,6 +807,13 @@ describe('AnsiString', () => {
       ]);
     });
   });
+
+  describe('toString', () => {
+    it('separates words with spaces and does not emit line feeds or control sequences', () => {
+      const str = new AnsiString().break().pushSty(bold).word('type').word('script').popSty();
+      expect('' + str).toEqual(' type script');
+    });
+  });
 });
 
 describe('AnsiMessage', () => {
