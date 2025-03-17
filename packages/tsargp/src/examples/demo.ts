@@ -9,7 +9,7 @@ try {
     optionPrefix: '-',
   });
   if (warning) {
-    console.error(`${warning}`);
+    console.error('' + warning);
   }
   if (!values.hello) {
     console.log(values);
@@ -19,6 +19,6 @@ try {
     console.error('' + err);
     process.exitCode = 1;
   } else {
-    console.log('' + err); // help, version or completion words
+    console.log('' + err); // help, version or completion
   }
 }

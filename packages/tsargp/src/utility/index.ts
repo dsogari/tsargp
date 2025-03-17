@@ -1,5 +1,5 @@
-import { AnsiString, ErrorMessage, ParsingCallback, Range } from '../library';
-import { getSymbol, readFile } from '../library/utils';
+import { AnsiString, ErrorMessage, ParsingCallback, Range } from '../library/index.js';
+import { getSymbol, readFile } from '../library/utils.js';
 
 /**
  * Create a parsing callback for numbers that should be within a range.

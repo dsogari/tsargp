@@ -3,7 +3,7 @@ import type { Options, HelpSections, FormatterFlags } from '../../../src/library
 import { format, style, tf } from '../../../src/library';
 
 describe('rendering a usage section', () => {
-  const flags: FormatterFlags = { progName: 'prog' };
+  const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-' };
 
   it('skip a section with no heading and no content', () => {
     const sections: HelpSections = [{ type: 'usage' }];
@@ -171,16 +171,16 @@ describe('rendering a usage section', () => {
         },
         single5: {
           type: 'single',
-          sources: ['SINGLE'],
+          sources: ['SINGLE'], // environment-only
         },
         single6: {
           type: 'single',
-          stdin: true,
+          stdin: true, // environment-only
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections, undefined, { clusterPrefix: '-' }).wrap()).toEqual(
-        '[-s <param>] (-s2|-x) <param> [-s4=true] [[(-s3|)] <arg>]\n',
+      expect(format(options, sections, undefined, flags).wrap()).toEqual(
+        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [[(-s3|)] <arg>]\n',
       );
     });
 
@@ -210,11 +210,11 @@ describe('rendering a usage section', () => {
         },
         array5: {
           type: 'array',
-          sources: ['ARRAY'],
+          sources: ['ARRAY'], // environment-only
         },
         array6: {
           type: 'array',
-          stdin: true,
+          stdin: true, // environment-only
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
@@ -251,11 +251,11 @@ describe('rendering a usage section', () => {
         },
         function5: {
           type: 'function',
-          sources: ['ARRAY'],
+          sources: ['ARRAY'], // environment-only
         },
         function6: {
           type: 'function',
-          stdin: true,
+          stdin: true, // environment-only
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];

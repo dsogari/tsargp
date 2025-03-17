@@ -11,6 +11,6 @@ try {
     console.error('' + err);
     process.exitCode = 1;
   } else {
-    console.log('' + err); // help message or completion words
+    console.log('' + err); // help or completion
   }
 }

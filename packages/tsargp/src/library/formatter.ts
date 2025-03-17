@@ -735,10 +735,10 @@ function formatUsage(
       hasPositional = true;
       keys.push(key); // leave positional marker for last (ignore filter order in this case)
     } else if (
+      // skip options that can only be supplied through the environment
       !isUnnamedNonPositional(option) ||
       (option.cluster && flags.clusterPrefix !== undefined)
     ) {
-      // skip options that can only be supplied through the environment
       formatUsageOption(options, key, flags, result, visited, requiredKeys, requires, requiredBy);
     }
   }

@@ -1114,7 +1114,7 @@ export function getLastOptionName(option: OpaqueOption): string | undefined {
  * @returns True if the option has no name and is not positional
  */
 export function isUnnamedNonPositional(option: OpaqueOption): boolean {
-  return option.positional === undefined && getLastOptionName(option) === undefined;
+  return (option.positional ?? getLastOptionName(option)) === undefined;
 }
 
 /**

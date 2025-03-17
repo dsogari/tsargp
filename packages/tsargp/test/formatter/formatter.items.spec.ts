@@ -71,7 +71,7 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`  -f    Deprecated for reason.\n`);
   });
 
-  it('handle a flag option with cluster letters, but there is no cluster prefix', () => {
+  it('handle a flag option with cluster letters when there is no cluster prefix', () => {
     const options = {
       flag: {
         type: 'flag',
@@ -82,7 +82,7 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`  -f\n`);
   });
 
-  it('handle a flag option with cluster letters and there is a cluster prefix', () => {
+  it('handle a flag option with cluster letters when there is a cluster prefix', () => {
     const options = {
       flag: {
         type: 'flag',
