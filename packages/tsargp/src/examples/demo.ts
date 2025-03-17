@@ -16,9 +16,9 @@ try {
   }
 } catch (err) {
   if (err instanceof Error) {
-    console.error(`${err}`);
+    console.error('' + err);
     process.exitCode = 1;
   } else {
-    console.log(`${err}`); // help, version or completion words
+    console.log('' + err); // help, version or completion words
   }
 }

@@ -1100,13 +1100,41 @@ export function getOptionNames(option: OpaqueOption): Array<string> {
 }
 
 /**
+ * Gets the last name of an option, if one exists.
+ * @param option The option definition
+ * @returns The option name, if any
+ */
+export function getLastOptionName(option: OpaqueOption): string | undefined {
+  return option.names?.findLast(isString);
+}
+
+/**
+ * Checks whether an option has no name and is not positional.
+ * @param option The option definition
+ * @returns True if the option has no name and is not positional
+ */
+export function isUnnamedNonPositional(option: OpaqueOption): boolean {
+  return option.positional === undefined && getLastOptionName(option) === undefined;
+}
+
+/**
+ * Checks whether an option can only be supplied through the environment.
+ * Does not check whether the environment attributes are actually set.
+ * @param option The option definition
+ * @returns True if the option can only be supplied through the environment
+ */
+export function isEnvironmentOnly(option: OpaqueOption): boolean {
+  return !option.cluster && isUnnamedNonPositional(option);
+}
+
+/**
  * Gets a list of environment variables for an option.
  * @param option The option definition
  * @returns The variable names
  * @internal
  */
-export function getOptionEnvVars(option: OpaqueOption): Array<string> {
-  return option.sources?.filter(isString) ?? [];
+export function getOptionEnvVars(option: OpaqueOption): Array<string> | undefined {
+  return option.sources?.filter(isString);
 }
 
 /**

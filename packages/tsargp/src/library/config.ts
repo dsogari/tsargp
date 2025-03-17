@@ -78,6 +78,7 @@ export const config: MessageConfig = {
     [ErrorItem.variadicWithClusterLetter]:
       'Variadic option #0 may only appear as the last option in a cluster.',
     [ErrorItem.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
+    [ErrorItem.invalidOption]: 'Option #0 is not suppliable.',
   },
   helpPhrases: {
     [HelpItem.synopsis]: '#0',

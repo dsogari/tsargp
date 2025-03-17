@@ -20,6 +20,7 @@ import {
   getNestedOptions,
   isCommand,
   normalizeArray,
+  isEnvironmentOnly,
 } from './options.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import {
@@ -146,7 +147,7 @@ async function validateOptions(context: ValidationContext) {
     const prefixedKey = getSymbol(prefix + key);
     validateNames(names, getOptionNames(option), prefixedKey, key);
     validateNames(letters, option.cluster ?? '', prefixedKey, key);
-    validateNames(envVars, getOptionEnvVars(option), prefixedKey, key);
+    validateNames(envVars, getOptionEnvVars(option) ?? [], prefixedKey, key);
     await validateOption(context, prefixedKey, key, option);
     if (option.positional !== undefined) {
       if (positional) {
@@ -252,7 +253,7 @@ async function validateOption(
 ) {
   const [, flags, warning, visited, prefix] = context;
   validateConstraints(context, prefixedKey, option);
-  const { requires, requiredIf, type, options } = option;
+  const { requires, requiredIf, type, options, stdin, sources } = option;
   if (requires) {
     validateRequirements(context, key, requires);
   }
@@ -264,6 +265,9 @@ async function validateOption(
     const cmdOptions = await getNestedOptions(option);
     // create a new context, to avoid changing the behavior of functions up in the call stack
     await validateOptions([cmdOptions, flags, warning, visited, prefix + key + '.']);
+  }
+  if (isEnvironmentOnly(option) && !stdin && !sources?.length) {
+    throw ErrorMessage.create(ErrorItem.invalidOption, {}, prefixedKey);
   }
 }
 
@@ -329,11 +333,15 @@ function validateRequirement(
 /**
  * Checks the sanity of the option's constraints.
  * @param context The validation context
- * @param key The option key (plus the prefix, if any)
+ * @param prefixedKey The prefixed key
  * @param option The option definition
  * @throws On duplicate choice value, invalid parameter count or invalid inline constraint
  */
-function validateConstraints(context: ValidationContext, key: symbol, option: OpaqueOption) {
+function validateConstraints(
+  context: ValidationContext,
+  prefixedKey: symbol,
+  option: OpaqueOption,
+) {
   const [, , warning] = context;
   const { type, choices, paramCount, example, default: def } = option;
   if (choices) {
@@ -341,22 +349,22 @@ function validateConstraints(context: ValidationContext, key: symbol, option: Op
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
       if (dup) {
-        throw ErrorMessage.create(ErrorItem.duplicateParameterChoice, {}, key, dup);
+        throw ErrorMessage.create(ErrorItem.duplicateParameterChoice, {}, prefixedKey, dup);
       }
     }
   }
   if (isObject(paramCount) && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
-    throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, key, paramCount);
+    throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, prefixedKey, paramCount);
   }
   const [min, max] = getParamCount(option);
   if ((!max || max > 1) && !option.separator && !option.append && option.inline) {
-    throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, key);
+    throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, prefixedKey);
   }
   if (min < max && option.cluster) {
-    warning.add(ErrorItem.variadicWithClusterLetter, {}, key);
+    warning.add(ErrorItem.variadicWithClusterLetter, {}, prefixedKey);
   }
   if (type === 'array') {
-    normalizeArray(option, key, example); // ignored if undefined
-    normalizeArray(option, key, def); // ignored if undefined
+    normalizeArray(option, prefixedKey, example); // ignored if undefined
+    normalizeArray(option, prefixedKey, def); // ignored if undefined
   }
 }

@@ -18,7 +18,7 @@ import type { Args } from './utils.js';
 
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
-import { format } from './formatter.js';
+import { format, FormatterFlags } from './formatter.js';
 import {
   getParamCount,
   isMessage,
@@ -864,7 +864,7 @@ async function handleHelp(
   rest: Array<string>,
 ): Promise<AnsiMessage> {
   let registry = context[0];
-  let { progName } = context[6];
+  let progName = context[6].progName;
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
@@ -880,7 +880,8 @@ async function handleHelp(
       }
     }
   }
-  return format(registry.options, option.sections, option.useFilter && rest, progName);
+  const flags: FormatterFlags = { progName, clusterPrefix: context[6].clusterPrefix };
+  return format(registry.options, option.sections, option.useFilter && rest, flags);
 }
 
 /**

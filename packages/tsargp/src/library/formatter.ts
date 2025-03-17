@@ -25,6 +25,9 @@ import {
   visitRequirements,
   isCommand,
   checkInline,
+  getLastOptionName,
+  isEnvironmentOnly,
+  isUnnamedNonPositional,
 } from './options.js';
 import { formatFunctions, AnsiString, AnsiMessage } from './styles.js';
 import {
@@ -38,6 +41,23 @@ import {
   mergeValues,
   regex,
 } from './utils.js';
+
+//--------------------------------------------------------------------------------------------------
+// Public types
+//--------------------------------------------------------------------------------------------------
+/**
+ * The formatter flags.
+ */
+export type FormatterFlags = {
+  /**
+   * The program name.
+   */
+  readonly progName?: string;
+  /**
+   * The cluster argument prefix.
+   */
+  readonly clusterPrefix?: string;
+};
 
 //--------------------------------------------------------------------------------------------------
 // Types
@@ -135,6 +155,11 @@ const defaultLayout: HelpColumnsLayout = {
 const defaultSections: HelpSections = [{ type: 'groups' }];
 
 /**
+ * The formatting flags for arrays with no brackets.
+ */
+const openArrayFlags: FormattingFlags = { open: '', close: '', mergePrev: false };
+
+/**
  * The formatting functions for {@link HelpItem}.
  */
 const helpFunctions: HelpFunctions = {
@@ -167,7 +192,7 @@ const helpFunctions: HelpFunctions = {
                 ? [3, min] // at least %n
                 : [0, undefined]; // multiple
       const sep = config.connectives.and;
-      result.format(phrase, { alt, sep, open: '', close: '', mergePrev: false }, val);
+      result.format(phrase, { alt, sep, ...openArrayFlags }, val);
     }
   },
   [HelpItem.positional]: (option, phrase, _options, result) => {
@@ -237,8 +262,7 @@ const helpFunctions: HelpFunctions = {
   },
   [HelpItem.stdin]: (option, phrase, _options, result) => {
     if (option.stdin) {
-      const alt = option.positional === undefined && getLastName(option) === undefined ? 1 : 0;
-      result.format(phrase, { alt });
+      result.format(phrase, { alt: isEnvironmentOnly(option) ? 1 : 0 });
     }
   },
   [HelpItem.sources]: (option, phrase, _options, result) => {
@@ -246,7 +270,7 @@ const helpFunctions: HelpFunctions = {
     if (sources?.length) {
       const values = sources.map((name) => (isString(name) ? getSymbol(name) : name));
       const sep = config.connectives.or;
-      result.format(phrase, { sep, open: '', close: '', mergePrev: false }, values);
+      result.format(phrase, { sep, ...openArrayFlags }, values);
     }
   },
   [HelpItem.requiredIf]: (option, phrase, options, result) => {
@@ -258,7 +282,9 @@ const helpFunctions: HelpFunctions = {
   [HelpItem.cluster]: (option, phrase, _options, result) => {
     const { cluster } = option;
     if (cluster) {
-      result.format(phrase, {}, cluster);
+      const letters = [...cluster].map(getSymbol);
+      const sep = config.connectives.or;
+      result.format(phrase, { sep, ...openArrayFlags }, letters);
     }
   },
   [HelpItem.useCommand]: (option, phrase, _options, result) => {
@@ -290,19 +316,19 @@ const helpFunctions: HelpFunctions = {
  * @param options The option definitions (should be validated first)
  * @param sections The help sections
  * @param filter The option filter
- * @param progName The program name, if any
+ * @param flags The formatter flags, if any
  * @returns The formatted help message
  */
 export function format(
   options: OpaqueOptions,
   sections: HelpSections = defaultSections,
   filter: ReadonlyArray<string> = [],
-  progName?: string,
+  flags: FormatterFlags = {},
 ): AnsiMessage {
   const keys = filterOptions(options, filter);
   const help = new AnsiMessage();
   for (const section of sections) {
-    formatHelpSection(options, section, keys, progName, help);
+    formatHelpSection(options, section, keys, flags, help);
   }
   return help;
 }
@@ -378,6 +404,7 @@ function buildEntries(
  * @param options The option definitions
  * @param layout The help columns layout
  * @param keys The filtered option keys
+ * @param flags The formatter flags
  * @param items The help items
  * @param groupFilter The option group filter
  * @param exclude True if the filter should exclude
@@ -388,6 +415,7 @@ function formatGroups(
   options: OpaqueOptions,
   layout: HelpColumnsLayout,
   keys: ReadonlyArray<string>,
+  flags: FormatterFlags,
   items?: ReadonlyArray<HelpItem>,
   groupFilter?: ReadonlyArray<string>,
   exclude?: boolean,
@@ -400,7 +428,7 @@ function formatGroups(
       return undefined; // skip options without environment variable names, in this case
     }
     const param = formatParams(layout, option);
-    const descr = formatDescription(options, layout, option, items);
+    const descr = formatDescription(options, layout, option, flags, items);
     const paramLen = param.totalLen;
     param.indent = paramLen; // HACK: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
@@ -567,6 +595,7 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiStri
  * @param options The option definitions
  * @param layout The help columns layout
  * @param option The option definition
+ * @param flags The formatter flags
  * @param items The help items
  * @returns The ANSI string
  */
@@ -574,6 +603,7 @@ function formatDescription(
   options: OpaqueOptions,
   layout: HelpColumnsLayout,
   option: OpaqueOption,
+  flags: FormatterFlags,
   items: ReadonlyArray<HelpItem> = allHelpItems,
 ): AnsiString {
   const { hidden, breaks, align } = layout.descr;
@@ -583,7 +613,9 @@ function formatDescription(
     .pushSty(option.styles?.descr);
   if (!hidden) {
     for (const item of items) {
-      helpFunctions[item](option, config.helpPhrases[item], options, result);
+      if (item !== HelpItem.cluster || flags.clusterPrefix !== undefined) {
+        helpFunctions[item](option, config.helpPhrases[item], options, result);
+      }
     }
   }
   return result.maxLength ? result.popSty().popSty() : result.clear();
@@ -595,21 +627,21 @@ function formatDescription(
  * @param options The option definitions
  * @param section The help section
  * @param keys The filtered option keys
- * @param progName The program name, if any
+ * @param flags The formatter flags
  * @param result The resulting message
  */
 function formatHelpSection(
   options: OpaqueOptions,
   section: HelpSection,
   keys: ReadonlyArray<string>,
-  progName: string = '',
+  flags: FormatterFlags,
   result: AnsiMessage,
 ) {
   const { type, heading, content } = section;
   if (type === 'groups') {
     const { layout, filter, exclude, items, useEnv } = section;
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
-    const groups = formatGroups(options, mergedLayout, keys, items, filter, exclude, useEnv);
+    const groups = formatGroups(options, mergedLayout, keys, flags, items, filter, exclude, useEnv);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
@@ -631,7 +663,7 @@ function formatHelpSection(
       const prev: Array<AnsiString> = [];
       let indent = content?.indent ?? 0;
       let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
-      progName = content?.text ?? progName;
+      const progName = content?.text ?? flags.progName;
       if (progName) {
         const str = new AnsiString(indent)
           .break(breaks)
@@ -643,7 +675,7 @@ function formatHelpSection(
         breaks = 0; // avoid breaking between program name and usage
       }
       const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
-      formatUsage(keys, options, section, str);
+      formatUsage(keys, options, section, flags, str);
       if (str.maxLength) {
         result.push(...prev, str.popSty().break()); // include trailing line feed
       }
@@ -681,12 +713,14 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
  * @param allKeys The filtered option keys
  * @param options The option definitions
  * @param section The help section
+ * @param flags The formatter flags
  * @param result The resulting string
  */
 function formatUsage(
   allKeys: ReadonlyArray<string>,
   options: OpaqueOptions,
   section: HelpUsageSection,
+  flags: FormatterFlags,
   result: AnsiString,
 ) {
   const { filter, exclude, required, requires, comment } = section;
@@ -696,12 +730,17 @@ function formatUsage(
   const keys = exclude || !filter ? allKeys.slice() : filter.filter((key) => allKeys.includes(key));
   let hasPositional;
   for (const key of keys) {
-    if (!hasPositional && isString(options[key].positional)) {
+    const option = options[key];
+    if (!hasPositional && isString(option.positional)) {
       hasPositional = true;
-      keys.push(key);
-      continue; // leave positional marker for last (ignore filter order in this case)
+      keys.push(key); // leave positional marker for last (ignore filter order in this case)
+    } else if (
+      !isUnnamedNonPositional(option) ||
+      (option.cluster && flags.clusterPrefix !== undefined)
+    ) {
+      // skip options that can only be supplied through the environment
+      formatUsageOption(options, key, flags, result, visited, requiredKeys, requires, requiredBy);
     }
-    formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy);
   }
   if (!result.maxLength) {
     result.clear();
@@ -714,6 +753,7 @@ function formatUsage(
  * Formats an option to be included in the the usage text.
  * @param options The option definitions
  * @param key The option key
+ * @param flags The formatter flags
  * @param result The resulting string
  * @param visited The set of visited options
  * @param requiredKeys The list of options to consider always required
@@ -725,6 +765,7 @@ function formatUsage(
 function formatUsageOption(
   options: OpaqueOptions,
   key: string,
+  flags: FormatterFlags,
   result: AnsiString,
   visited: Set<string>,
   requiredKeys: Set<string>,
@@ -738,14 +779,22 @@ function formatUsageOption(
     // if the received key is my own key, then I'm the junction point in a circular dependency:
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
-    formatUsageNames(option, result);
+    formatUsageNames(option, flags, result);
     formatParam(option, result);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
-        if (formatUsageOption(options, key, result, visited, requiredKeys, requires, requiredBy)) {
-          required = true; // update my status, since I'm required by an always required option
-        }
+        // update my status, since I'm required by an always required option
+        required ||= formatUsageOption(
+          options,
+          key,
+          flags,
+          result,
+          visited,
+          requiredKeys,
+          requires,
+          requiredBy,
+        );
       });
       // if I'm not always required and I'm the last option in a dependency chain, ignore the
       // received key, so I can be considered optional
@@ -781,6 +830,7 @@ function formatUsageOption(
       return formatUsageOption(
         options,
         requiredKey,
+        flags,
         result,
         visited,
         requiredKeys,
@@ -796,40 +846,38 @@ function formatUsageOption(
 /**
  * Formats an option's names to be included in the usage text.
  * @param option The option definition
+ * @param flags The formatter flags
  * @param result The resulting string
  */
-function formatUsageNames(option: OpaqueOption, result: AnsiString) {
-  const names = getOptionNames(option);
-  if (names.length) {
+function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString) {
+  const { cluster, styles, positional } = option;
+  const { clusterPrefix } = flags;
+  const uniqueNames = new Set(getOptionNames(option));
+  if (clusterPrefix !== undefined) {
+    for (const letter of cluster ?? '') {
+      uniqueNames.add(clusterPrefix + letter);
+    }
+  }
+  if (uniqueNames.size) {
     const count = result.count;
-    const enclose = names.length > 1;
+    const enclose = uniqueNames.size > 1;
     const flags: FormattingFlags = {
       sep: config.connectives.optionAlt,
       open: enclose ? config.connectives.exprOpen : '',
       close: enclose ? config.connectives.exprClose : '',
       mergeNext: true, // keep names compact
     };
-    const { styles } = config;
-    const saved = styles.symbol;
+    const saved = config.styles.symbol;
     try {
-      styles.symbol = option.styles?.names ?? saved; // use configured style, if any
-      formatFunctions.a(names.map(getSymbol), result, flags);
+      config.styles.symbol = styles?.names ?? saved; // use configured style, if any
+      formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
     } finally {
-      styles.symbol = saved;
+      config.styles.symbol = saved;
     }
-    if (option.positional !== undefined) {
+    if (positional !== undefined) {
       result.openAt('[', count).close(']');
     }
   }
-}
-
-/**
- * Gets the last name of an option, if one exists.
- * @param option The option definition
- * @returns The option name, if any
- */
-function getLastName(option: OpaqueOption): string | undefined {
-  return option.names?.findLast(isString);
 }
 
 /**
@@ -839,7 +887,7 @@ function getLastName(option: OpaqueOption): string | undefined {
  */
 function formatParam(option: OpaqueOption, result: AnsiString) {
   const { type, example, separator, paramName } = option;
-  const inline = checkInline(option, getLastName(option) ?? '') === 'always';
+  const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && max;
   const ellipsis =
@@ -857,7 +905,7 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
-    formatFunctions.v(param, result, { sep: '', open: '', close: '' });
+    formatFunctions.v(param, result, { sep: '', ...openArrayFlags });
     result.close(ellipsis);
   } else {
     const param = !max ? '' : (paramName ?? '<param>');

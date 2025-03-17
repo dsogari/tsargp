@@ -32,6 +32,7 @@ describe('validate', () => {
       const options = {
         array: {
           type: 'array',
+          names: ['-a'],
           inline: false,
         },
       } as const satisfies Options;
@@ -99,6 +100,7 @@ describe('validate', () => {
       const options = {
         function: {
           type: 'function',
+          names: ['-f'],
           paramCount: -1,
         },
       } as const satisfies Options;
@@ -109,6 +111,7 @@ describe('validate', () => {
       const options = {
         function: {
           type: 'function',
+          names: ['-f'],
           paramCount: 0,
         },
       } as const satisfies Options;
@@ -119,6 +122,7 @@ describe('validate', () => {
       const options = {
         function: {
           type: 'function',
+          names: ['-f'],
           paramCount: 2,
         },
       } as const satisfies Options;
