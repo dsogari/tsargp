@@ -121,6 +121,10 @@ export const enum ErrorItem {
    * Error raised when a variadic option declares an invalid inline constraint.
    */
   invalidInlineConstraint,
+  /**
+   * Error raised for an option that is not suppliable.
+   */
+  invalidOption,
 }
 
 /**

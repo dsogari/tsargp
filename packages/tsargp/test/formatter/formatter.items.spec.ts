@@ -71,7 +71,7 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`  -f    Deprecated for reason.\n`);
   });
 
-  it('handle a flag option with cluster letters', () => {
+  it('handle a flag option with cluster letters when there is no cluster prefix', () => {
     const options = {
       flag: {
         type: 'flag',
@@ -79,7 +79,20 @@ describe('format', () => {
         cluster: 'fF',
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
+    expect(format(options).wrap()).toEqual(`  -f\n`);
+  });
+
+  it('handle a flag option with cluster letters when there is a cluster prefix', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        cluster: 'fF',
+      },
+    } as const satisfies Options;
+    expect(format(options, undefined, undefined, { clusterPrefix: '' }).wrap()).toEqual(
+      `  -f    Can be clustered with f or F.\n`,
+    );
   });
 
   it('handle a flag option that reads data from an environment variable', () => {

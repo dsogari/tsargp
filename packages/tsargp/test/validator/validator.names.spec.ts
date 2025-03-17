@@ -109,6 +109,7 @@ describe('validate', () => {
     const options = {
       command: {
         type: 'command',
+        names: ['-c'],
         options: {
           flag1: {
             type: 'flag',
@@ -139,6 +140,7 @@ describe('validate', () => {
     const options = {
       command: {
         type: 'command',
+        names: ['-c'],
         options: {
           flag1: {
             type: 'flag',

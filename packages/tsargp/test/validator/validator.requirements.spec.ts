@@ -10,6 +10,7 @@ describe('validate', () => {
       const options = {
         flag: {
           type: 'flag',
+          names: ['-f'],
           requires: () => false,
         },
       } as const satisfies Options;
@@ -76,10 +77,12 @@ describe('validate', () => {
       const options = {
         flag: {
           type: 'flag',
+          names: ['-f'],
           requires: 'command',
         },
         command: {
           type: 'command',
+          names: ['-c'],
         },
       } as const satisfies Options;
       expect(validate(options)).resolves.toEqual({});
@@ -121,10 +124,12 @@ describe('validate', () => {
       const options = {
         flag1: {
           type: 'flag',
+          names: ['-f1'],
           requires: { flag2: expect },
         },
         flag2: {
           type: 'flag',
+          names: ['-f2'],
         },
       } as const satisfies Options;
       expect(validate(options)).resolves.toEqual({});
@@ -136,6 +141,7 @@ describe('validate', () => {
       const options = {
         flag: {
           type: 'flag',
+          names: ['-f'],
           requiredIf: () => false,
         },
       } as const satisfies Options;
@@ -202,10 +208,12 @@ describe('validate', () => {
       const options = {
         flag: {
           type: 'flag',
+          names: ['-f'],
           requiredIf: 'command',
         },
         command: {
           type: 'command',
+          names: ['-c'],
         },
       } as const satisfies Options;
       expect(validate(options)).resolves.toEqual({});
@@ -247,10 +255,12 @@ describe('validate', () => {
       const options = {
         flag1: {
           type: 'flag',
+          names: ['-f1'],
           requiredIf: { flag2: expect },
         },
         flag2: {
           type: 'flag',
+          names: ['-f2'],
         },
       } as const satisfies Options;
       expect(validate(options)).resolves.toEqual({});

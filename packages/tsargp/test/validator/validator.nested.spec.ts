@@ -54,6 +54,7 @@ describe('validate', () => {
     const options = {
       cmd1: {
         type: 'command',
+        names: ['-c'],
         options: {
           cmd2: {
             type: 'command',
@@ -69,6 +70,7 @@ describe('validate', () => {
     const options = {
       command: {
         type: 'command',
+        names: ['-c'],
         options: () => Object.assign({}, options),
       },
     } as const satisfies Options;

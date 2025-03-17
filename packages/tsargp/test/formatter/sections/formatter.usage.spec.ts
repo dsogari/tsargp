@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options, HelpSections } from '../../../src/library';
+import type { Options, HelpSections, FormatterFlags } from '../../../src/library';
 import { format, style, tf } from '../../../src/library';
 
 describe('rendering a usage section', () => {
+  const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-' };
+
   it('skip a section with no heading and no content', () => {
     const sections: HelpSections = [{ type: 'usage' }];
     expect(format({}, sections).wrap()).toEqual('');
@@ -10,7 +12,7 @@ describe('rendering a usage section', () => {
 
   it('skip the program name and comment when there are no options', () => {
     const sections: HelpSections = [{ type: 'usage', comment: 'comment' }];
-    expect(format({}, sections, undefined, 'prog').wrap()).toEqual('');
+    expect(format({}, sections, undefined, flags).wrap()).toEqual('');
   });
 
   describe('rendering the section heading', () => {
@@ -98,22 +100,22 @@ describe('rendering a usage section', () => {
 
     it('avoid braking the program name, but include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections, undefined, 'prog').wrap()).toEqual('prog [-f]\n');
+      expect(format(options, sections, undefined, flags).wrap()).toEqual('prog [-f]\n');
     });
 
     it('break the program name, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage', content: { breaks: 1 } }];
-      expect(format(options, sections, undefined, 'prog').wrap()).toEqual('\nprog [-f]\n');
+      expect(format(options, sections, undefined, flags).wrap()).toEqual('\nprog [-f]\n');
     });
 
     it('indent the program name, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage', content: { indent: 2 } }];
-      expect(format(options, sections, undefined, 'prog').wrap()).toEqual('  prog [-f]\n');
+      expect(format(options, sections, undefined, flags).wrap()).toEqual('  prog [-f]\n');
     });
 
     it('indent the options, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options2, sections, undefined, 'prog').wrap(10, false, true)).toEqual(
+      expect(format(options2, sections, undefined, flags).wrap(10, false, true)).toEqual(
         'prog [-f]\n     [-f2]\n',
       );
     });
@@ -121,7 +123,7 @@ describe('rendering a usage section', () => {
     it('replace the program name by the content text', () => {
       const sections: HelpSections = [{ type: 'usage', content: { text: 'text' } }];
       expect(format(options, sections, undefined).wrap()).toEqual('text [-f]\n');
-      expect(format(options, sections, undefined, 'prog').wrap()).toEqual('text [-f]\n');
+      expect(format(options, sections, undefined, flags).wrap()).toEqual('text [-f]\n');
     });
   });
 
@@ -146,11 +148,13 @@ describe('rendering a usage section', () => {
       const options = {
         single1: {
           type: 'single',
-          names: ['-s1'],
+          names: ['-s'],
+          cluster: 's', // test cluster with the same letter as the name
         },
         single2: {
           type: 'single',
           names: ['-s2'],
+          cluster: 'x', // test cluster letter
           required: true,
         },
         single3: {
@@ -165,10 +169,18 @@ describe('rendering a usage section', () => {
           example: true,
           inline: 'always',
         },
+        single5: {
+          type: 'single',
+          sources: ['SINGLE'], // environment-only
+        },
+        single6: {
+          type: 'single',
+          stdin: true, // environment-only
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections).wrap()).toEqual(
-        '[-s1 <param>] -s2 <param> [-s4=true] [[(-s3|)] <arg>]\n',
+      expect(format(options, sections, undefined, flags).wrap()).toEqual(
+        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [[(-s3|)] <arg>]\n',
       );
     });
 
@@ -176,11 +188,13 @@ describe('rendering a usage section', () => {
       const options = {
         array1: {
           type: 'array',
-          names: ['-a1'],
+          names: ['-a'],
+          cluster: 'a', // no cluster prefix, so should not appear
         },
         array2: {
           type: 'array',
           names: ['-a2'],
+          cluster: 'x', // no cluster prefix, so should not appear
           required: true,
         },
         array3: {
@@ -194,10 +208,18 @@ describe('rendering a usage section', () => {
           example: true,
           inline: 'always',
         },
+        array5: {
+          type: 'array',
+          sources: ['ARRAY'], // environment-only
+        },
+        array6: {
+          type: 'array',
+          stdin: true, // environment-only
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-a1 [<param>...]] -a2 [<param>...] [-a4[=true]] [--] [...]\n',
+        '[-a [<param>...]] -a2 [<param>...] [-a4[=true]] [--] [...]\n',
       );
     });
 
@@ -226,6 +248,14 @@ describe('rendering a usage section', () => {
           example: true,
           inline: 'always',
           paramCount: [0, 1],
+        },
+        function5: {
+          type: 'function',
+          sources: ['ARRAY'], // environment-only
+        },
+        function6: {
+          type: 'function',
+          stdin: true, // environment-only
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
