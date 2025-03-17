@@ -156,7 +156,7 @@ describe('rendering a usage section', () => {
         single3: {
           type: 'single',
           names: ['-s3'],
-          positional: '--',
+          positional: '', // test empty marker
           paramName: '<arg>',
         },
         single4: {
@@ -168,7 +168,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-s1 <param>] -s2 <param> [-s4=true] [[(-s3|--)] <arg>]\n',
+        '[-s1 <param>] -s2 <param> [-s4=true] [[(-s3|)] <arg>]\n',
       );
     });
 

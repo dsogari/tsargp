@@ -144,6 +144,20 @@ describe('parse', () => {
       );
     });
 
+    it('handle an option with empty string as positional marker', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          positional: '',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['', '-s'])).resolves.toEqual({ single: '-s' });
+      expect(parse(options, ['0', '', '-s'])).resolves.toEqual({ single: '-s' });
+      expect(parse(options, ['', '1', '2'])).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
+    });
+
     it('handle a single-valued option', () => {
       const options = {
         single: {
