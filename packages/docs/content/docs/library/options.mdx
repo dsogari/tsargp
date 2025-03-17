@@ -241,7 +241,7 @@ You can specify requirements as an expression, in which case it is evaluated as 
 
 - `allOf{:ts}` -- an expression that is satisfied when _all_ requirements are satisfied
 - `oneOf{:ts}` -- an expression that is satisfied when _at least one_ requirement is satisfied
-- `notOf{:ts}` -- an expression that is satisfied when the requirement is _not_ satisfied.
+- `not{:ts}` -- an expression that is satisfied when the requirement is _not_ satisfied
 
 ##### Requirement callback
 
@@ -262,7 +262,7 @@ An example might help elucidate the distinction. Suppose we have these requireme
 ```ts
 allOf(
   'option1',
-  oneOf({ option2: null }, notOf({ option3: [2] })),
+  oneOf({ option2: null }, not({ option3: [2] })),
   (values) => values['option1'] === values['option3'],
 );
 ```

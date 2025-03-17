@@ -16,7 +16,9 @@ export {
   format,
   allOf,
   oneOf,
-  notOf,
+  /** @deprecated use `not` instead */
+  not as notOf,
+  not,
   valuesFor,
   seq,
   style,
