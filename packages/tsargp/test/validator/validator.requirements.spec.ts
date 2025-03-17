@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../src/library';
-import { validate, allOf, oneOf, notOf } from '../../src/library';
+import { validate, allOf, oneOf, not } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -16,11 +16,11 @@ describe('validate', () => {
       expect(validate(options)).resolves.toEqual({});
     });
 
-    it('throw an error on option required by itself with notOf', () => {
+    it('throw an error on option required by itself with not', () => {
       const options = {
         flag: {
           type: 'flag',
-          requires: notOf('flag'),
+          requires: not('flag'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag requires itself.`);
@@ -142,11 +142,11 @@ describe('validate', () => {
       expect(validate(options)).resolves.toEqual({});
     });
 
-    it('throw an error on option required by itself with notOf', () => {
+    it('throw an error on option required by itself with not', () => {
       const options = {
         flag: {
           type: 'flag',
-          requiredIf: notOf('flag'),
+          requiredIf: not('flag'),
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag requires itself.`);

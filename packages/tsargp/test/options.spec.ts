@@ -8,7 +8,7 @@ import {
   OptionRegistry,
   allOf,
   oneOf,
-  notOf,
+  not,
   valuesFor,
   visitRequirements,
 } from '../src/library';
@@ -170,7 +170,7 @@ describe('visitRequirements', () => {
   });
 
   it('handle a not expression', () => {
-    const expression = notOf('');
+    const expression = not('');
     visitRequirements(expression, ...mocks);
     expect(mocks[1]).toHaveBeenCalledWith(expression);
   });

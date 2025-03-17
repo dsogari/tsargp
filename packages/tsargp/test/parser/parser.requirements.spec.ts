@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test';
 import type { Options } from '../../src/library';
-import { parse, allOf, oneOf, notOf } from '../../src/library';
+import { parse, allOf, oneOf, not } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -107,7 +107,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requires: notOf({ flag2: null }),
+          requires: not({ flag2: null }),
         },
         flag2: {
           type: 'function',
@@ -124,7 +124,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requires: notOf('flag2'),
+          requires: not('flag2'),
         },
         flag2: {
           type: 'flag',
@@ -160,7 +160,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requires: notOf({ flag2: undefined }),
+          requires: not({ flag2: undefined }),
         },
         flag2: {
           type: 'flag',
@@ -186,12 +186,12 @@ describe('parse', () => {
       expect(parse(options, ['-f'])).rejects.toThrow(`Option -f requires.`);
     });
 
-    it('throw an error on requirement not satisfied with notOf', () => {
+    it('throw an error on requirement not satisfied with not', () => {
       const options = {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requires: notOf({ single: '1' }),
+          requires: not({ single: '1' }),
         },
         single: {
           type: 'single',
@@ -292,7 +292,7 @@ describe('parse', () => {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requires: notOf({
+          requires: not({
             single: { a: 1, b: [2] },
             array: ['a', 2, { b: 'c' }],
           }),
@@ -359,7 +359,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requires: notOf((values) => values['flag1'] === values['flag2']),
+          requires: not((values) => values['flag1'] === values['flag2']),
         },
       } as const satisfies Options;
       options.boolean.requires.item.toString = () => 'fcn';
@@ -414,7 +414,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requiredIf: notOf({ flag2: null }),
+          requiredIf: not({ flag2: null }),
         },
         flag2: {
           type: 'function',
@@ -434,7 +434,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requiredIf: notOf('flag2'),
+          requiredIf: not('flag2'),
         },
         flag2: {
           type: 'flag',
@@ -464,7 +464,7 @@ describe('parse', () => {
         flag1: {
           type: 'flag',
           names: ['-f1'],
-          requiredIf: notOf({ flag2: undefined }),
+          requiredIf: not({ flag2: undefined }),
         },
         flag2: {
           type: 'flag',
@@ -487,12 +487,12 @@ describe('parse', () => {
       expect(parse(options, [])).rejects.toThrow(`Option -f is required if.`);
     });
 
-    it('throw an error on requirement not satisfied with notOf', () => {
+    it('throw an error on requirement not satisfied with not', () => {
       const options = {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requiredIf: notOf({ single: '1' }),
+          requiredIf: not({ single: '1' }),
         },
         single: {
           type: 'single',
@@ -594,7 +594,7 @@ describe('parse', () => {
         flag: {
           type: 'flag',
           names: ['-f'],
-          requiredIf: notOf({
+          requiredIf: not({
             single: { a: 1, b: [2] },
             array: ['a', 2, { b: 'c' }],
           }),
@@ -667,7 +667,7 @@ describe('parse', () => {
           type: 'single',
           positional: true,
           preferredName: 'preferred',
-          requiredIf: notOf((values) => values['flag1'] === values['flag2']),
+          requiredIf: not((values) => values['flag1'] === values['flag2']),
         },
       } as const satisfies Options;
       options.boolean.requiredIf.item.toString = () => 'fcn';

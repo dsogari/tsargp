@@ -1218,7 +1218,7 @@ export function oneOf(...items: Array<Requires>): RequiresOne {
  * @param item The requirement item
  * @returns The requirement expression
  */
-export function notOf(item: Requires): RequiresNot {
+export function not(item: Requires): RequiresNot {
   return new RequiresNot(item);
 }
 

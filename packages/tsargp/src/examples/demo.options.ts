@@ -4,7 +4,7 @@ import {
   style,
   allOf,
   oneOf,
-  notOf,
+  not,
   tf,
   ext8,
   rgb,
@@ -157,7 +157,7 @@ export default {
     mapping: { yes: true, no: false },
     normalize: (param) => param.toLowerCase(),
     default: false,
-    requires: oneOf('strChoice', allOf({ strArray: ['a', 'b'] }, notOf({ numArray: [1, 2] }))),
+    requires: oneOf('strChoice', allOf({ strArray: ['a', 'b'] }, not({ numArray: [1, 2] }))),
   },
   /**
    * A string option that has a regex constraint.

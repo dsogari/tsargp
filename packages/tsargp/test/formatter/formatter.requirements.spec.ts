@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../src/library';
-import { format, OptionRegistry, allOf, oneOf, notOf } from '../../src/library';
+import { format, OptionRegistry, allOf, oneOf, not } from '../../src/library';
 
 describe('format', () => {
   describe('a forward requirement is specified', () => {
@@ -14,7 +14,7 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          requires: notOf('flag'),
+          requires: not('flag'),
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
@@ -36,7 +36,7 @@ describe('format', () => {
               {
                 array: null,
               },
-              notOf({
+              not({
                 single: { a: 1, b: [2] },
                 array: [1, 'a', { a: false }],
               }),
@@ -70,7 +70,7 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          requires: notOf(() => true),
+          requires: not(() => true),
         },
       } as const satisfies Options;
       options.flag.requires.toString = () => 'fcn';
@@ -93,7 +93,7 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          requiredIf: notOf('flag'),
+          requiredIf: not('flag'),
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
@@ -115,7 +115,7 @@ describe('format', () => {
               {
                 array: null,
               },
-              notOf({
+              not({
                 single: { a: 1, b: [2] },
                 array: [1, 'a', { a: false }],
               }),
@@ -149,7 +149,7 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          requiredIf: notOf(() => true),
+          requiredIf: not(() => true),
         },
       } as const satisfies Options;
       options.flag.requiredIf.toString = () => 'fcn';
