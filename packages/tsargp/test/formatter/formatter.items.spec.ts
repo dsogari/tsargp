@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../src/library';
-import { format } from '../../src/library';
+import { AnsiString, format } from '../../src/library';
 
 describe('format', () => {
   it('handle an option that is always required', () => {
@@ -27,12 +27,45 @@ describe('format', () => {
     );
   });
 
-  it('handle a flag option deprecated for a reason', () => {
+  it('handle a flag option with a string synopsis', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option.',
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(`  -f    A flag option.\n`);
+  });
+
+  it('handle a flag option with a AnsiString synopsis', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: new AnsiString().split('A flag option.'),
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(`  -f    A flag option.\n`);
+  });
+
+  it('handle a flag option with a string deprecation notice', () => {
     const options = {
       flag: {
         type: 'flag',
         names: ['-f'],
         deprecated: 'reason',
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(`  -f    Deprecated for reason.\n`);
+  });
+
+  it('handle a flag option with a AnsiString deprecation notice', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        deprecated: new AnsiString().split('reason'),
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(`  -f    Deprecated for reason.\n`);

@@ -399,12 +399,12 @@ type FormattingFunctions = Readonly<Record<FormatSpecifier, FormattingFunction>>
  */
 export class AnsiString {
   /**
-   * The list of strings without control sequences
+   * The list of strings without control sequences.
    */
   public readonly strings: Array<string> = [];
 
   /**
-   * The list of strings with control sequences
+   * The list of strings with control sequences.
    */
   public readonly styled: Array<string> = [];
 
@@ -770,6 +770,13 @@ export class AnsiString {
       };
     const alternative = flags.alt !== undefined ? selectAlternative(phrase, flags.alt) : phrase;
     return this.split(alternative, formatFn);
+  }
+
+  /**
+   * @returns The string without line feeds or control sequences.
+   */
+  toString(): string {
+    return this.strings.join(' ');
   }
 }
 

@@ -2,7 +2,7 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
-import type { AnsiMessage, Style } from './styles.js';
+import type { AnsiMessage, AnsiString, Style } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
@@ -481,11 +481,11 @@ export type WithBasic = {
   /**
    * The option synopsis. May contain inline styles.
    */
-  readonly synopsis?: string;
+  readonly synopsis?: string | AnsiString;
   /**
    * The option deprecation notice. May contain inline styles.
    */
-  readonly deprecated?: string;
+  readonly deprecated?: string | AnsiString;
   /**
    * The option group in the help message.
    * Use null to hide it from the help message.

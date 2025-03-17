@@ -141,7 +141,8 @@ const helpFunctions: HelpFunctions = {
   [HelpItem.synopsis]: (option, phrase, _options, result) => {
     const { synopsis } = option;
     if (synopsis) {
-      result.format(phrase, {}, new AnsiString().split(synopsis));
+      const str = isString(synopsis) ? new AnsiString().split(synopsis) : synopsis;
+      result.format(phrase, {}, str);
     }
   },
   [HelpItem.separator]: (option, phrase, _options, result) => {
@@ -224,7 +225,8 @@ const helpFunctions: HelpFunctions = {
   [HelpItem.deprecated]: (option, phrase, _options, result) => {
     const { deprecated } = option;
     if (deprecated) {
-      result.format(phrase, {}, new AnsiString().split(deprecated));
+      const str = isString(deprecated) ? new AnsiString().split(deprecated) : deprecated;
+      result.format(phrase, {}, str);
     }
   },
   [HelpItem.link]: (option, phrase, _options, result) => {
@@ -322,7 +324,7 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): A
     return (
       filter.length && // has at least one pattern
       !names?.find((name) => name && matches(name)) &&
-      !(synopsis && matches(synopsis)) &&
+      !(synopsis && matches('' + synopsis)) &&
       !sources?.find((name) => isString(name) && matches(name))
     );
   }

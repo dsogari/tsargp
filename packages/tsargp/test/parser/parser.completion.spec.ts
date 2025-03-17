@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Options, ParsingFlags } from '../../src/library';
-import { parse, JsonMessage, TextMessage } from '../../src/library';
+import { parse, JsonMessage, TextMessage, AnsiString } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -465,6 +465,33 @@ describe('parse', () => {
       delete process.env['COMP_JSON'];
     });
 
+    it('handle a single-valued option with a AnsiString synopsis', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          synopsis: new AnsiString().split('A single option.'),
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -s', { compIndex: 6 })).rejects.toThrow(
+        /^\[{"type":"single","name":"-s","synopsis":"A single option."}]$/,
+      );
+    });
+
+    it('handle a single-valued option with choices', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          choices: ['one', 'two'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -s ', { compIndex: 7 })).rejects.toThrow(
+        '[{"type":"parameter","name":"one","displayName":"-s"},' +
+          '{"type":"parameter","name":"two","displayName":"-s"}]',
+      );
+    });
+
     it('handle a single-valued option with completion words', () => {
       const options = {
         single: {
@@ -494,6 +521,34 @@ describe('parse', () => {
       );
       expect(parse(options, 'cmd -s ', { compIndex: 7 })).rejects.toThrow(
         /^\[{"type":"parameter","name":"abc","displayName":"-s"}]$/,
+      );
+    });
+
+    it('handle an array-valued option with a AnsiString synopsis', () => {
+      const options = {
+        single: {
+          type: 'array',
+          names: ['-a'],
+          synopsis: new AnsiString().split('An array option.'),
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -a', { compIndex: 6 })).rejects.toThrow(
+        /^\[{"type":"array","name":"-a","synopsis":"An array option."}]$/,
+      );
+    });
+
+    it('handle an array-valued option with choices', () => {
+      const options = {
+        single: {
+          type: 'array',
+          names: ['-a'],
+          choices: ['one', 'two'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -a ', { compIndex: 7 })).rejects.toThrow(
+        '[{"type":"parameter","name":"one","displayName":"-a"},' +
+          '{"type":"parameter","name":"two","displayName":"-a"},' +
+          '{"type":"array","name":"-a"}]',
       );
     });
 

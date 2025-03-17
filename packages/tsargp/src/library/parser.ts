@@ -499,7 +499,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         const option = options[optionKey!];
         if (comp && value === undefined) {
           const { type, synopsis } = option;
-          reportCompletion([{ type, name, synopsis }]);
+          reportCompletion([{ type, name, synopsis: synopsis && '' + synopsis }]);
         }
         const isMarker = name === option.positional;
         const newInfo: OptionInfo | undefined = isMarker ? positional : [optionKey!, option, name];
@@ -594,7 +594,7 @@ function completeName(registry: OptionRegistry, comp: string = ''): Array<Parser
   /** @ignore */
   function fromName(name: string): ParserSuggestion {
     const { type, synopsis } = options[names.get(name)!];
-    return { type, name, synopsis };
+    return { type, name, synopsis: synopsis && '' + synopsis };
   }
   const { options, names } = registry;
   return names
@@ -622,7 +622,12 @@ async function completeParameter(
 ): Promise<Array<ParserSuggestion>> {
   const [, option, name] = info;
   const { synopsis, choices, normalize } = option;
-  const base: ParserSuggestion = { type: 'parameter', name: '', displayName: name, synopsis };
+  const base: ParserSuggestion = {
+    type: 'parameter',
+    name: '',
+    displayName: name,
+    synopsis: synopsis && '' + synopsis,
+  };
   if (option.complete) {
     try {
       // avoid destructuring, because the callback might need to use `this`
