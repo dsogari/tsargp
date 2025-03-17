@@ -94,7 +94,7 @@ export const config: MessageConfig = {
     [HelpItem.default]: 'Defaults to #0.',
     [HelpItem.deprecated]: 'Deprecated for #0.',
     [HelpItem.link]: 'Refer to #0 for details.',
-    [HelpItem.stdin]: 'If not supplied, will be read from the standard input.',
+    [HelpItem.stdin]: '(If not supplied, will|Will) be read from the standard input.',
     [HelpItem.sources]: 'If not supplied on the command line, will be read from #0.',
     [HelpItem.requiredIf]: 'Required if #0.',
     [HelpItem.cluster]: 'Can be clustered with #0.',

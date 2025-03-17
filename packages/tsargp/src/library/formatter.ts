@@ -237,7 +237,8 @@ const helpFunctions: HelpFunctions = {
   },
   [HelpItem.stdin]: (option, phrase, _options, result) => {
     if (option.stdin) {
-      result.split(phrase);
+      const alt = option.positional === undefined && getLastName(option) === undefined ? 1 : 0;
+      result.format(phrase, { alt });
     }
   },
   [HelpItem.sources]: (option, phrase, _options, result) => {
@@ -752,7 +753,7 @@ function formatUsageOption(
         const [min, max] = getParamCount(option);
         // skip enclosing brackets for positional option with optional parameters, because the names
         // are also optional, so it would not make sense, e.g.: [[-a] [<param>...]]
-        if (!option.positional || min || !max) {
+        if (option.positional === undefined || min || !max) {
           result.openAt('[', count).close(']');
         }
       }
@@ -816,10 +817,19 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
     } finally {
       styles.symbol = saved;
     }
-    if (option.positional) {
+    if (option.positional !== undefined) {
       result.openAt('[', count).close(']');
     }
   }
+}
+
+/**
+ * Gets the last name of an option, if one exists.
+ * @param option The option definition
+ * @returns The option name, if any
+ */
+function getLastName(option: OpaqueOption): string | undefined {
+  return option.names?.findLast(isString);
 }
 
 /**
@@ -829,7 +839,7 @@ function formatUsageNames(option: OpaqueOption, result: AnsiString) {
  */
 function formatParam(option: OpaqueOption, result: AnsiString) {
   const { type, example, separator, paramName } = option;
-  const inline = checkInline(option, option.names?.findLast(isString) ?? '') === 'always';
+  const inline = checkInline(option, getLastName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && max;
   const ellipsis =

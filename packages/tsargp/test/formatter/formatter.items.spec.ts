@@ -82,20 +82,7 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`  -f    Can be clustered with 'fF'.\n`);
   });
 
-  it('handle a flag option that reads data from standard input', () => {
-    const options = {
-      flag: {
-        type: 'flag',
-        names: ['-f'],
-        stdin: true,
-      },
-    } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -f    If not supplied, will be read from the standard input.\n`,
-    );
-  });
-
-  it('handle a flag option with an environment variable', () => {
+  it('handle a flag option that reads data from an environment variable', () => {
     const options = {
       flag: {
         type: 'flag',
@@ -106,6 +93,30 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(
       `  -f    If not supplied on the command line, will be read from VAR or file://path/.\n`,
     );
+  });
+
+  it('handle a single-valued option that reads data from the standard input', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        stdin: true,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      `  -s  <param>  If not supplied, will be read from the standard input.\n`,
+    );
+  });
+
+  it('handle a unnamed single-valued option that reads data from the standard input', () => {
+    const options = {
+      single: {
+        type: 'single',
+        paramName: '',
+        stdin: true,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(`      Will be read from the standard input.\n`);
   });
 
   it('handle a single-valued option that accepts positional arguments', () => {
@@ -129,6 +140,19 @@ describe('format', () => {
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
       `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
+    );
+  });
+
+  it('handle a unnamed single-valued option that accepts positional arguments and reads data from the standard input', () => {
+    const options = {
+      single: {
+        type: 'single',
+        positional: true,
+        stdin: true,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      `    <param>  Accepts positional arguments. If not supplied, will be read from the standard input.\n`,
     );
   });
 
