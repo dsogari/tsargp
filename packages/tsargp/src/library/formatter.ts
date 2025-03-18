@@ -158,9 +158,14 @@ const defaultLayout: HelpColumnsLayout = {
 const defaultSections: HelpSections = [{ type: 'groups' }];
 
 /**
- * The formatting flags for arrays with no brackets.
+ * The formatting flags for arrays and objects with no brackets.
  */
-const openArrayFlags: FormattingFlags = { open: '', close: '', mergePrev: false };
+const openArrayFlags: FormattingFlags = { open: '', close: '' };
+
+/**
+ * The formatting flags for arrays and objects without merging the separator.
+ */
+const openArrayNoMergeFlags: FormattingFlags = { ...openArrayFlags, mergePrev: false };
 
 /**
  * The formatting functions for {@link HelpItem}.
@@ -195,7 +200,7 @@ const helpFunctions: HelpFunctions = {
                 ? [3, min] // at least %n
                 : [0, undefined]; // multiple
       const sep = config.connectives.and;
-      result.format(phrase, { alt, sep, ...openArrayFlags }, val);
+      result.format(phrase, { alt, sep, ...openArrayNoMergeFlags }, val);
     }
   },
   [HelpItem.positional]: (option, phrase, _options, result) => {
@@ -273,7 +278,7 @@ const helpFunctions: HelpFunctions = {
     if (sources?.length) {
       const values = sources.map((name) => (isString(name) ? getSymbol(name) : name));
       const sep = config.connectives.or;
-      result.format(phrase, { sep, ...openArrayFlags }, values);
+      result.format(phrase, { sep, ...openArrayNoMergeFlags }, values);
     }
   },
   [HelpItem.requiredIf]: (option, phrase, options, result) => {
@@ -287,7 +292,7 @@ const helpFunctions: HelpFunctions = {
     if (cluster) {
       const letters = [...cluster].map(getSymbol);
       const sep = config.connectives.or;
-      result.format(phrase, { sep, ...openArrayFlags }, letters);
+      result.format(phrase, { sep, ...openArrayNoMergeFlags }, letters);
     }
   },
   [HelpItem.useCommand]: (option, phrase, _options, result) => {
@@ -780,8 +785,8 @@ function formatUsageOption(
     // if the received key is my own key, then I'm the junction point in a circular dependency:
     // reset it so that remaining options in the chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
-    formatUsageNames(option, flags, result);
-    formatParam(option, result);
+    const namesOptional = formatUsageNames(option, flags, result);
+    const paramOptional = formatParam(option, result);
     if (!required) {
       // process requiring options in my dependency group (if they have not already been visited)
       list?.forEach((key) => {
@@ -800,10 +805,10 @@ function formatUsageOption(
       // if I'm not always required and I'm the last option in a dependency chain, ignore the
       // received key, so I can be considered optional
       if (!required && (isLast || !receivedKey)) {
-        const [min, max] = getParamCount(option);
-        // skip enclosing brackets for positional option with optional parameters, because the names
-        // are also optional, so it would not make sense, e.g.: [[-a] [<param>...]]
-        if (option.positional === undefined || min || !max) {
+        // skip enclosing brackets when both the names and the parameter are optional, or when one
+        // is optional and the other is not present, because it would not make sense
+        // E.g.: [[-a]] or [[<param>]] or [[-a] [<param>...]]
+        if (namesOptional === false || paramOptional === false) {
           result.openAt('[', count).close(']');
         }
       }
@@ -849,9 +854,14 @@ function formatUsageOption(
  * @param option The option definition
  * @param flags The formatter flags
  * @param result The resulting string
+ * @returns True if the names are optional; false if not; undefined if nothing rendered
  */
-function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString) {
-  const { cluster, styles, positional } = option;
+function formatUsageNames(
+  option: OpaqueOption,
+  flags: FormatterFlags,
+  result: AnsiString,
+): boolean | undefined {
+  const { cluster, styles: optStyles, positional } = option;
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
   if (clusterPrefix !== undefined) {
@@ -859,48 +869,53 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
       uniqueNames.add(clusterPrefix + letter);
     }
   }
-  if (uniqueNames.size) {
-    const count = result.count;
-    const enclose = uniqueNames.size > 1;
+  if (!uniqueNames.size) {
+    return; // nothing to be rendered
+  }
+  const count = result.count;
+  const { styles, connectives } = config;
+  const saved = styles.symbol;
+  try {
+    styles.symbol = optStyles?.names ?? saved; // use configured style, if any
     const flags: FormattingFlags = {
-      sep: config.connectives.optionAlt,
-      open: enclose ? config.connectives.exprOpen : '',
-      close: enclose ? config.connectives.exprClose : '',
+      sep: connectives.optionAlt,
+      ...openArrayFlags,
       mergeNext: true, // keep names compact
     };
-    const saved = config.styles.symbol;
-    try {
-      config.styles.symbol = styles?.names ?? saved; // use configured style, if any
-      formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
-    } finally {
-      config.styles.symbol = saved;
-    }
-    if (positional !== undefined) {
-      result.openAt('[', count).close(']');
-    }
+    formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
+  } finally {
+    styles.symbol = saved;
   }
+  const optional = positional !== undefined;
+  if (optional || uniqueNames.size > 1) {
+    const open = optional ? connectives.optionalOpen : connectives.exprOpen;
+    const close = optional ? connectives.optionalClose : connectives.exprClose;
+    result.openAt(open, count).close(close);
+  }
+  return optional;
 }
 
 /**
  * Formats an option's parameter to be included in the description or the usage text.
  * @param option The option definition
  * @param result The resulting string
+ * @returns True if the parameter is optional; false if not; undefined if nothing rendered
  */
-function formatParam(option: OpaqueOption, result: AnsiString) {
+function formatParam(option: OpaqueOption, result: AnsiString): boolean | undefined {
   const { example, separator, paramName } = option;
   if (example === undefined && paramName === undefined) {
     return; // nothing to be rendered
   }
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
-  const optional = !min && max;
+  const optional = !min && !!max;
   const ellipsis = !max || (max > 1 && !inline) ? '...' : '';
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
   result
     .pushSty(option.styles?.param ?? config.styles.value)
-    .open(optional ? '[' : '')
+    .open(optional ? config.connectives.optionalOpen : '')
     .open(inline ? '=' : '');
   if (example !== undefined) {
     let param = example;
@@ -908,14 +923,15 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
-    formatFunctions.v(param, result, { sep: '', ...openArrayFlags });
+    formatFunctions.v(param, result, { sep: '', ...openArrayNoMergeFlags });
     result.close(ellipsis);
   } else if (paramName) {
     result.split(paramName).close(ellipsis);
   } else {
     result.word(ellipsis);
   }
-  result.close(optional ? ']' : '').popSty();
+  result.close(optional ? config.connectives.optionalClose : '').popSty();
+  return optional;
 }
 
 /**

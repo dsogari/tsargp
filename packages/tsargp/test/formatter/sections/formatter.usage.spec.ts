@@ -179,10 +179,19 @@ describe('rendering a usage section', () => {
           type: 'single',
           stdin: true, // environment-only
         },
+        single7: {
+          type: 'single',
+          names: ['-s5'],
+          positional: true, // test with no template
+        },
+        single8: {
+          type: 'single',
+          positional: true, // test with no template and no name
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [[(-s3|)] <arg>]\n',
+        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [-s5] [[-s3|] <arg>]\n',
       );
     });
 
@@ -208,7 +217,7 @@ describe('rendering a usage section', () => {
         },
         array4: {
           type: 'array',
-          names: ['-a4'],
+          names: ['-a3'],
           example: true,
           inline: 'always',
         },
@@ -220,10 +229,19 @@ describe('rendering a usage section', () => {
           type: 'array',
           stdin: true, // environment-only
         },
+        array7: {
+          type: 'array',
+          names: ['-a4'],
+          positional: true, // test with no template
+        },
+        array8: {
+          type: 'array',
+          positional: true, // test with no template and no name
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-a [<param>...]] -a2 [<param>...] [-a4[=true]] [--] [...]\n',
+        '[-a [<param>...]] -a2 [<param>...] [-a3[=true]] [-a4] [--] [...]\n',
       );
     });
 
@@ -250,7 +268,7 @@ describe('rendering a usage section', () => {
         },
         function4: {
           type: 'function',
-          names: ['-f4'],
+          names: ['-f3'],
           example: true,
           inline: 'always',
           paramCount: [0, 1],
@@ -263,10 +281,19 @@ describe('rendering a usage section', () => {
           type: 'function',
           stdin: true, // environment-only
         },
+        function7: {
+          type: 'function',
+          names: ['-f4'],
+          positional: true, // test with no template
+        },
+        function8: {
+          type: 'function',
+          positional: true, // test with no template and no name
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-f1 ...] -f2 <param>... [...] [-f4[=true]]\n',
+        '[-f1 ...] -f2 <param>... [...] [-f3[=true]] [-f4]\n',
       );
     });
 
@@ -308,7 +335,7 @@ describe('rendering a usage section', () => {
       expect(format(options, sections3, flags).wrap()).toEqual('-f1\n');
       expect(format(options, sections4, flags).wrap()).toEqual('[-f2] [-f1]\n');
       expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[(-s|--)] <param>]\n');
+      expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
       expect(format(options, sections7, flags).wrap()).toEqual('');
     });
   });
