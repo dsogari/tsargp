@@ -12,6 +12,7 @@ const options = {
     type: 'array',
     default: ['world'],
     positional: true,
+    paramName: '',
     group: 'Arguments:',
     stdin: true,
   },

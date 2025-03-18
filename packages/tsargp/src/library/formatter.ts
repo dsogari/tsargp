@@ -27,6 +27,7 @@ import {
   getLastOptionName,
   isEnvironmentOnly,
   isUnnamedNonPositional,
+  hasTemplate,
 } from './options.js';
 import { formatFunctions, AnsiString, AnsiMessage } from './styles.js';
 import {
@@ -783,52 +784,60 @@ function formatUsageOption(
   function format(receivedKey?: string, isLast: boolean = false): boolean {
     const count = result.count;
     // if the received key is my own key, then I'm the junction point in a circular dependency:
-    // reset it so that remaining options in the chain can be considered optional
+    //    reset it so that remaining options in the dependency chain can be considered optional
     preOrderFn?.(key === receivedKey ? undefined : receivedKey);
-    const namesOptional = formatUsageNames(option, flags, result);
+    const useBrackets = !!list?.length || alwaysRequired || hasTemplate(option);
+    const namesOptional = formatUsageNames(option, flags, useBrackets, result);
     const paramOptional = formatParam(option, result);
-    if (!required) {
-      // process requiring options in my dependency group (if they have not already been visited)
+    if (!alwaysRequired) {
+      // process requiring options in my dependency chain (if they have not already been visited)
       list?.forEach((key) => {
-        // update my status, since I'm required by an always required option
-        required ||= formatUsageOption(
-          options,
-          key,
-          flags,
-          result,
-          visited,
-          requiredKeys,
-          requires,
-          requiredBy,
-        );
+        // update my status, since I may be required by an always required option
+        alwaysRequired ||=
+          key in options &&
+          formatUsageOption(
+            options,
+            key,
+            flags,
+            result,
+            visited,
+            requiredKeys,
+            requires,
+            requiredBy,
+          );
       });
-      // if I'm not always required and I'm the last option in a dependency chain, ignore the
-      // received key, so I can be considered optional
-      if (!required && (isLast || !receivedKey)) {
-        // skip enclosing brackets when both the names and the parameter are optional, or when one
-        // is optional and the other is not present, because it would not make sense
-        // E.g.: [[-a]] or [[<param>]] or [[-a] [<param>...]]
-        if (namesOptional === false || paramOptional === false) {
-          result.openAt('[', count).close(']');
-        }
-      }
     }
-    return required;
+    // if I'm not always required and
+    // if either I'm the last option in a dependency chain or I'm considered optional and
+    // if I'm not the only option in a dependency chain or
+    //    the names are present and are not optional, or
+    //    the parameter is present and is not optional
+    // then add enclosing brackets to the dependency chain
+    // otherwise skip brackets, because it would not make sense
+    // E.g.: [[-a]] or [[<param>]] or [[-a] [<param>...]]
+    if (
+      !alwaysRequired &&
+      (isLast || !receivedKey) &&
+      (list?.length || namesOptional === false || paramOptional === false)
+    ) {
+      result.openAt('[', count).close(']');
+    }
+    return alwaysRequired;
   }
-  let required = requiredKeys.has(key);
+  let alwaysRequired = requiredKeys.has(key);
   if (visited.has(key)) {
-    return required;
+    return alwaysRequired;
   }
   visited.add(key);
   const option = options[key];
-  if (!required && option.required) {
-    required = true;
+  if (!alwaysRequired && option.required) {
+    alwaysRequired = true;
     requiredKeys.add(key);
   }
   const list = requiredBy?.[key];
   const requiredKey = requires?.[key];
-  if (requiredKey) {
-    if (required) {
+  if (requiredKey && requiredKey in options) {
+    if (alwaysRequired) {
       requiredKeys.add(requiredKey); // transitivity of always required options
     }
     // this check is needed, so we can fallback to the normal format call in the negative case
@@ -853,12 +862,14 @@ function formatUsageOption(
  * Formats an option's names to be included in the usage text.
  * @param option The option definition
  * @param flags The formatter flags
+ * @param useBrackets True to use brackets when needed
  * @param result The resulting string
- * @returns True if the names are optional; false if not; undefined if nothing rendered
+ * @returns True if the names are enclosed in an optional group; false if not; undefined if nothing rendered
  */
 function formatUsageNames(
   option: OpaqueOption,
   flags: FormatterFlags,
+  useBrackets: boolean,
   result: AnsiString,
 ): boolean | undefined {
   const { cluster, styles: optStyles, positional } = option;
@@ -887,12 +898,12 @@ function formatUsageNames(
     styles.symbol = saved;
   }
   const optional = positional !== undefined;
-  if (optional || uniqueNames.size > 1) {
+  if (useBrackets && (optional || uniqueNames.size > 1)) {
     const open = optional ? connectives.optionalOpen : connectives.exprOpen;
     const close = optional ? connectives.optionalClose : connectives.exprClose;
     result.openAt(open, count).close(close);
   }
-  return optional;
+  return useBrackets && optional;
 }
 
 /**

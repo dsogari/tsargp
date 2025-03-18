@@ -1140,6 +1140,15 @@ export function isEnvironmentOnly(option: OpaqueOption): boolean {
 }
 
 /**
+ * Checks whether an option has a template attribute.
+ * @param option The option definition
+ * @returns True if the option has a template attribute
+ */
+export function hasTemplate(option: OpaqueOption): boolean {
+  return option.example !== undefined || option.paramName !== undefined;
+}
+
+/**
  * Gets a list of environment variables for an option.
  * @param option The option definition
  * @returns The variable names

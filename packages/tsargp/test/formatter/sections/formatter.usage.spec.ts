@@ -136,12 +136,16 @@ describe('rendering a usage section', () => {
         },
         flag2: {
           type: 'flag',
-          names: ['-f2', '--flag'],
+          names: ['-f2', '--flag2'],
           required: true,
+        },
+        flag3: {
+          type: 'flag',
+          names: ['-f3', '--flag3'],
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections).wrap()).toEqual('[-f1] (-f2|--flag)\n');
+      expect(format(options, sections).wrap()).toEqual('[-f1] (-f2|--flag2) [-f3|--flag3]\n');
     });
 
     it('render a single-valued option', () => {
@@ -181,7 +185,7 @@ describe('rendering a usage section', () => {
         },
         single7: {
           type: 'single',
-          names: ['-s5'],
+          names: ['-s7'],
           positional: true, // test with no template
         },
         single8: {
@@ -191,7 +195,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [-s5] [[-s3|] <arg>]\n',
+        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [-s7] [[-s3|] <arg>]\n',
       );
     });
 
@@ -341,7 +345,7 @@ describe('rendering a usage section', () => {
   });
 
   describe('when requirements are specified', () => {
-    it('group options according to an adjacency list', () => {
+    it('group flag options according to an adjacency list', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -398,7 +402,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case12).wrap()).toEqual('[[[-f3] -f1] -f2]\n');
     });
 
-    it('group options according to an adjacency list, with an always required option', () => {
+    it('group flag options according to an adjacency list, with an always required option', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -456,7 +460,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case12).wrap()).toEqual('-f3 -f1 -f2\n');
     });
 
-    it('group options according to an adjacency list, with an option filter', () => {
+    it('group flag options according to an adjacency list, with an option filter', () => {
       const options = {
         flag1: {
           type: 'flag',
@@ -512,6 +516,27 @@ describe('rendering a usage section', () => {
       expect(format(options, case10, flags).wrap()).toEqual('[-f1 -f2 -f3]\n');
       expect(format(options, case11, flags).wrap()).toEqual('[[-f2 [-f1]] -f3]\n');
       expect(format(options, case12, flags).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
+    });
+
+    it('group mutually dependent options according to an adjacency list', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f1', '-f2'],
+        },
+        array: {
+          type: 'array',
+          names: ['-a'],
+          positional: true,
+          paramName: '',
+        },
+      } as const satisfies Options;
+      const case0: HelpSections = [{ type: 'usage', requires: { flag: 'array', array: 'flag' } }];
+      const case1: HelpSections = [{ type: 'usage', filter: ['flag'] }];
+      const case2: HelpSections = [{ type: 'usage', filter: ['array'] }];
+      expect(format(options, case0).wrap()).toEqual('[(-f1|-f2) [-a] [...]]\n');
+      expect(format(options, case1).wrap()).toEqual('[-f1|-f2]\n');
+      expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
     });
   });
 });
