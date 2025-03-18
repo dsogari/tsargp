@@ -117,7 +117,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -s  <param>  If not supplied, will be read from the standard input.\n`,
+      `  -s    If not supplied, will be read from the standard input.\n`,
     );
   });
 
@@ -140,7 +140,7 @@ describe('format', () => {
         positional: true,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
+    expect(format(options).wrap()).toEqual(`  -s    Accepts positional arguments.\n`);
   });
 
   it('handle a single-valued option that accepts positional arguments after marker', () => {
@@ -152,7 +152,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
+      `  -s    Accepts positional arguments that may be preceded by --.\n`,
     );
   });
 
@@ -165,7 +165,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `    <param>  Accepts positional arguments. If not supplied, will be read from the standard input.\n`,
+      `      Accepts positional arguments. If not supplied, will be read from the standard input.\n`,
     );
   });
 
@@ -178,7 +178,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
+      `  -a  [...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
     );
   });
 
@@ -191,7 +191,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Can be supplied multiple times.\n`,
+      `  -a  [...]  Accepts multiple parameters. Can be supplied multiple times.\n`,
     );
   });
 

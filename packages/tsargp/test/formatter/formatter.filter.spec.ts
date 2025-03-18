@@ -39,7 +39,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'groups', items: [] }];
-      expect(format(options, sections, ['-f', 'sing']).wrap()).toEqual(`  -f\n  -s  <param>\n`);
+      expect(format(options, sections, ['-f', 'sing']).wrap()).toEqual(`  -f\n  -s\n`);
     });
   });
 });

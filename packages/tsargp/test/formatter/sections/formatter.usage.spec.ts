@@ -150,11 +150,13 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s'],
           cluster: 's', // test cluster with the same letter as the name
+          paramName: '<param>',
         },
         single2: {
           type: 'single',
           names: ['-s2'],
           cluster: 'x', // test cluster letter
+          paramName: '<param>',
           required: true,
         },
         single3: {
@@ -190,11 +192,13 @@ describe('rendering a usage section', () => {
           type: 'array',
           names: ['-a'],
           cluster: 'a', // no cluster prefix, so should not appear
+          paramName: '<param>',
         },
         array2: {
           type: 'array',
           names: ['-a2'],
           cluster: 'x', // no cluster prefix, so should not appear
+          paramName: '<param>',
           required: true,
         },
         array3: {
@@ -234,6 +238,7 @@ describe('rendering a usage section', () => {
           type: 'function',
           names: ['-f2'],
           required: true,
+          paramName: '<param>',
           paramCount: [1, 2],
         },
         function3: {
@@ -282,6 +287,7 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s'],
           positional: '--',
+          paramName: '<param>',
         },
       } as const satisfies Options;
       const sections0: HelpSections = [{ type: 'usage', filter: [] }]; // empty filter

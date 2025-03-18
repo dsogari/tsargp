@@ -193,7 +193,7 @@ describe('rendering a groups section', () => {
     expect(format(options, sections1, filter).wrap()).toEqual('  -f1\n');
     expect(format(options, sections2, filter).wrap()).toEqual('  -f2\n');
     expect(format(options, sections3, filter).wrap()).toEqual('  -f2\n  -f1\n');
-    expect(format(options, sections4, filter).wrap()).toEqual('  -s2  <param>\n');
+    expect(format(options, sections4, filter).wrap()).toEqual('  -s2\n');
   });
 
   it('use environment variable names instead of option names', () => {

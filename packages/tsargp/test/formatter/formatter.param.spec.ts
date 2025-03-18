@@ -10,6 +10,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s'],
           inline: 'always',
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s  =<param>  Requires inline parameters.\n`);
@@ -21,6 +22,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s', '--single'],
           inline: { '--single': 'always' },
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s, --single  =<param>\n`);
@@ -32,6 +34,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s', '--single'],
           inline: { '-s': 'always' },
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s, --single  <param>\n`);
@@ -43,6 +46,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a'],
           inline: 'always',
+          paramName: '<param>',
           // could have a delimiter or append=true
         },
       } as const satisfies Options;
@@ -55,6 +59,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a', '--array'],
           inline: { '--array': 'always' },
+          paramName: '<param>',
           // could have a delimiter or append=true
         },
       } as const satisfies Options;
@@ -69,6 +74,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a', '--array'],
           inline: { '-a': 'always' },
+          paramName: '<param>',
           // could have a delimiter or append=true
         },
       } as const satisfies Options;
@@ -84,6 +90,7 @@ describe('format', () => {
           names: ['-f'],
           inline: 'always',
           paramCount: [0, 1],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [=<param>]  Requires inline parameters.\n`);
@@ -97,6 +104,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s'],
           inline: false,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s  <param>  Disallows inline parameters.\n`);
@@ -108,6 +116,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a'],
           inline: false,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(
@@ -123,6 +132,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: 1,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  <param>\n`);
@@ -134,6 +144,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [0, 1],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [<param>]\n`);
@@ -145,6 +156,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: 2,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts 2 parameters.\n`);
@@ -156,6 +168,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [1, 2],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(
@@ -169,6 +182,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [1, Infinity],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts multiple parameters.\n`);
@@ -180,6 +194,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [2, Infinity],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts at least 2 parameters.\n`);
@@ -191,6 +206,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [0, 2],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts at most 2 parameters.\n`);
@@ -202,6 +218,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [0, Infinity],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
@@ -209,15 +226,15 @@ describe('format', () => {
   });
 
   describe('when specifying a parameter name', () => {
-    it('handle a single-valued option with a parameter name', () => {
+    it('handle an option with a parameter name with spaces', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
-          paramName: 'my_param',
+          paramName: 'my  param',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s  my_param\n`);
+      expect(format(options).wrap()).toEqual(`  -s  my param\n`);
     });
 
     it('handle a single-valued option with an empty parameter name', () => {
@@ -229,6 +246,17 @@ describe('format', () => {
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s\n`);
+    });
+
+    it('handle an array-valued option with an empty parameter name', () => {
+      const options = {
+        single: {
+          type: 'array',
+          names: ['-a'],
+          paramName: '',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -a  [...]  Accepts multiple parameters.\n`);
     });
   });
 

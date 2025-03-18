@@ -68,7 +68,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toMatch(
-        '  -a  [<param>...]  Accepts multiple parameters. Defaults to 1.\n',
+        '  -a  [...]  Accepts multiple parameters. Defaults to 1.\n',
       );
     });
 
@@ -82,10 +82,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toMatch(
-        '  -a  [<param>...]  ' +
-          'Accepts multiple parameters. ' +
-          'Duplicate values will be removed.' +
-          ' Defaults to [1, 1].\n',
+        '  -a  [...]  Accepts multiple parameters. Duplicate values will be removed. Defaults to [1, 1].\n',
       );
     });
   });

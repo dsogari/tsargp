@@ -63,20 +63,21 @@ For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}
 
 This column is rendered according to the following rules:
 
-- if the option is [niladic], do nothing
-- else, if it contains an [example value], render this value
-- otherwise
-  - if it contains a [parameter name], render this name
-  - else, render the word `'<param>'{:ts}`
-- and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
-- and, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
-- and, if it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`
+1. If the option is [niladic] and is not a [subcommand], stop here and render nothing.
+2. Else, evaluate the following rules and combine the result with that of step 3:
+   - if it contains an [example value], render this value
+   - else, if it contains a [parameter name], render this name
+   - else, render an empty string
+3. If it accepts multiple parameters, append an ellipsis `'...'{:ts}`.
+4. If the result from previous steps is empty, stop here and render nothing.
+5. Else, if it requires [inline parameters], prepend an equals sign `'='{:ts}`.
+6. If it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`.
 
-The result might be something like `=<param>` or `[<param>...]`.
+The result might be something like `=<param>`, `[<param>...]` or `[...]`.
 
-> [!TIP]
+> [!WARNING]
 >
-> You can use an empty [parameter name] to suppress what would be rendered in its place. Just beware of options that accept a single parameter, as its display is especially important in [usage sections].
+> Displaying the parameter of single-valued options is especially important in [usage sections].
 
 ### Description column
 
@@ -130,15 +131,15 @@ The [usage message] is a concise representation of the command-line structure. H
 {/* cSpell:disable */}
 
 ```ansi
-[0mdemo.js [[0m([38;2;160;100;64m-f[0m|[38;2;160;100;64m--no-flag[0m)[0m]
-        [[([35m-b[0m|[35m--boolean[0m) [90m<param>[0m] ([35m-sc[0m|[35m--strChoice[0m) [90;32m'one'[90m[0m]
-        [([35m-sr[0m|[35m--strRegex[0m) [90m<my str>[0m]
-        [([35m-nr[0m|[35m--numRange[0m) [90m<my num>[0m]
-        [([35m-nc[0m|[35m--numChoice[0m)[90m=[33m1[90m[0m]
-        [([35m-sa[0m|[35m--strArray[0m) [90m[<param>...][0m]
-        [([35m-na[0m|[35m--numArray[0m) [90m[<param>...][0m]
-        [[35m--numArrayUnique[0m [90m[[32m'1,2'[90m...][0m]
-        [([35m--strArrayLimit[0m|[35m--[0m)] [90m[[32m'one'[90m...][0m
+  demo.js [([38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m)]
+          [[([35m-b[39m|[35m--boolean[39m)] ([35m-sc[39m|[35m--strChoice[39m) [90;32m'one'[90m[39m]
+          [([35m-sr[39m|[35m--strRegex[39m|[35m-s[39m) [90;4mmy str[24;39m]
+          [([35m-nr[39m|[35m--numRange[39m|[35m-n[39m) [90;4mmy num[24;39m]
+          [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m]
+          [([35m-sa[39m|[35m--strArray[39m) [90m[...][39m]
+          [([35m-na[39m|[35m--numArray[39m) [90m[...][39m]
+          [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m]
+          [([35m--strArrayLimit[39m|[35m--[39m)] [90m[[32m'one'[90m...][39m
 ```
 
 {/* cSpell:enable */}

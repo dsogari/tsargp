@@ -51,9 +51,7 @@ describe('parse', () => {
           useFilter: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(
-        `  -f, --flag\n  -s, --single  <param>\n`,
-      );
+      expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(`  -f, --flag\n  -s, --single\n`);
     });
 
     it('throw the help message of a subcommand with nested options and program name', () => {
