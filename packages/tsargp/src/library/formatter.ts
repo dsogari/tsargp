@@ -56,6 +56,10 @@ export type FormatterFlags = {
    * The cluster argument prefix.
    */
   readonly clusterPrefix?: string;
+  /**
+   * The option filter.
+   */
+  readonly optionFilter?: ReadonlyArray<string>;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -314,17 +318,15 @@ const helpFunctions: HelpFunctions = {
  * Options are rendered in the same order as was declared in the option definitions.
  * @param options The option definitions (should be validated first)
  * @param sections The help sections
- * @param filter The option filter
  * @param flags The formatter flags, if any
  * @returns The formatted help message
  */
 export function format(
   options: OpaqueOptions,
   sections: HelpSections = defaultSections,
-  filter: ReadonlyArray<string> = [],
   flags: FormatterFlags = {},
 ): AnsiMessage {
-  const keys = filterOptions(options, filter);
+  const keys = filterOptions(options, flags.optionFilter);
   const help = new AnsiMessage();
   for (const section of sections) {
     formatHelpSection(options, section, keys, flags, help);
@@ -338,7 +340,7 @@ export function format(
  * @param filter The option filter
  * @returns The filtered option keys
  */
-function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): Array<string> {
+function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string> = []): Array<string> {
   /** @ignore */
   function matches(str: string): boolean {
     str = str.toLowerCase();

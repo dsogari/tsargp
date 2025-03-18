@@ -12,7 +12,7 @@ describe('rendering a usage section', () => {
 
   it('skip the program name and comment when there are no options', () => {
     const sections: HelpSections = [{ type: 'usage', comment: 'comment' }];
-    expect(format({}, sections, undefined, flags).wrap()).toEqual('');
+    expect(format({}, sections, flags).wrap()).toEqual('');
   });
 
   describe('rendering the section heading', () => {
@@ -100,22 +100,22 @@ describe('rendering a usage section', () => {
 
     it('avoid braking the program name, but include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections, undefined, flags).wrap()).toEqual('prog [-f]\n');
+      expect(format(options, sections, flags).wrap()).toEqual('prog [-f]\n');
     });
 
     it('break the program name, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage', content: { breaks: 1 } }];
-      expect(format(options, sections, undefined, flags).wrap()).toEqual('\nprog [-f]\n');
+      expect(format(options, sections, flags).wrap()).toEqual('\nprog [-f]\n');
     });
 
     it('indent the program name, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage', content: { indent: 2 } }];
-      expect(format(options, sections, undefined, flags).wrap()).toEqual('  prog [-f]\n');
+      expect(format(options, sections, flags).wrap()).toEqual('  prog [-f]\n');
     });
 
     it('indent the options, and include a trailing break', () => {
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options2, sections, undefined, flags).wrap(10, false, true)).toEqual(
+      expect(format(options2, sections, flags).wrap(10, false, true)).toEqual(
         'prog [-f]\n     [-f2]\n',
       );
     });
@@ -123,7 +123,7 @@ describe('rendering a usage section', () => {
     it('replace the program name by the content text', () => {
       const sections: HelpSections = [{ type: 'usage', content: { text: 'text' } }];
       expect(format(options, sections, undefined).wrap()).toEqual('text [-f]\n');
-      expect(format(options, sections, undefined, flags).wrap()).toEqual('text [-f]\n');
+      expect(format(options, sections, flags).wrap()).toEqual('text [-f]\n');
     });
   });
 
@@ -181,7 +181,7 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections, undefined, flags).wrap()).toEqual(
+      expect(format(options, sections, flags).wrap()).toEqual(
         'prog [-s <param>] (-s2|-x) <param> [-s4=true] [[(-s3|)] <arg>]\n',
       );
     });
@@ -301,15 +301,15 @@ describe('rendering a usage section', () => {
       const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
       const sections6: HelpSections = [{ type: 'usage', filter: ['single', 'flag1'] }];
       const sections7: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
-      const filter = ['-f1', '-f2', '-s'];
-      expect(format(options, sections0, filter).wrap()).toEqual('');
-      expect(format(options, sections1, filter).wrap()).toEqual('[-f1]\n');
-      expect(format(options, sections2, filter).wrap()).toEqual('[-f2]\n');
-      expect(format(options, sections3, filter).wrap()).toEqual('-f1\n');
-      expect(format(options, sections4, filter).wrap()).toEqual('[-f2] [-f1]\n');
-      expect(format(options, sections5, filter).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, sections6, filter).wrap()).toEqual('[-f1] [[(-s|--)] <param>]\n');
-      expect(format(options, sections7, filter).wrap()).toEqual('');
+      const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s'] };
+      expect(format(options, sections0, flags).wrap()).toEqual('');
+      expect(format(options, sections1, flags).wrap()).toEqual('[-f1]\n');
+      expect(format(options, sections2, flags).wrap()).toEqual('[-f2]\n');
+      expect(format(options, sections3, flags).wrap()).toEqual('-f1\n');
+      expect(format(options, sections4, flags).wrap()).toEqual('[-f2] [-f1]\n');
+      expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
+      expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[(-s|--)] <param>]\n');
+      expect(format(options, sections7, flags).wrap()).toEqual('');
     });
   });
 
@@ -471,20 +471,20 @@ describe('rendering a usage section', () => {
           requires: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
-      const filter = ['-f1', '-f2'];
-      expect(format(options, case0, filter).wrap()).toEqual('[-f1] [-f2]\n');
-      expect(format(options, case1, filter).wrap()).toEqual('[[-f1] -f2]\n');
-      expect(format(options, case2, filter).wrap()).toEqual('[-f1 [-f2]]\n');
-      expect(format(options, case3, filter).wrap()).toEqual('[-f1 -f2]\n');
-      expect(format(options, case4, filter).wrap()).toEqual('[[[-f1] -f2] -f3]\n');
-      expect(format(options, case5, filter).wrap()).toEqual('[-f1 [-f2 [-f3]]]\n');
-      expect(format(options, case6, filter).wrap()).toEqual('[[-f1] -f2 [-f3]]\n');
-      expect(format(options, case7, filter).wrap()).toEqual('[[-f1] -f3 [-f2]]\n');
-      expect(format(options, case8, filter).wrap()).toEqual('[[-f1 [-f3]] -f2]\n');
-      expect(format(options, case9, filter).wrap()).toEqual('[-f1] [-f2 -f3]\n');
-      expect(format(options, case10, filter).wrap()).toEqual('[-f1 -f2 -f3]\n');
-      expect(format(options, case11, filter).wrap()).toEqual('[[-f2 [-f1]] -f3]\n');
-      expect(format(options, case12, filter).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
+      const flags: FormatterFlags = { optionFilter: ['-f1', '-f2'] };
+      expect(format(options, case0, flags).wrap()).toEqual('[-f1] [-f2]\n');
+      expect(format(options, case1, flags).wrap()).toEqual('[[-f1] -f2]\n');
+      expect(format(options, case2, flags).wrap()).toEqual('[-f1 [-f2]]\n');
+      expect(format(options, case3, flags).wrap()).toEqual('[-f1 -f2]\n');
+      expect(format(options, case4, flags).wrap()).toEqual('[[[-f1] -f2] -f3]\n');
+      expect(format(options, case5, flags).wrap()).toEqual('[-f1 [-f2 [-f3]]]\n');
+      expect(format(options, case6, flags).wrap()).toEqual('[[-f1] -f2 [-f3]]\n');
+      expect(format(options, case7, flags).wrap()).toEqual('[[-f1] -f3 [-f2]]\n');
+      expect(format(options, case8, flags).wrap()).toEqual('[[-f1 [-f3]] -f2]\n');
+      expect(format(options, case9, flags).wrap()).toEqual('[-f1] [-f2 -f3]\n');
+      expect(format(options, case10, flags).wrap()).toEqual('[-f1 -f2 -f3]\n');
+      expect(format(options, case11, flags).wrap()).toEqual('[[-f2 [-f1]] -f3]\n');
+      expect(format(options, case12, flags).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
     });
   });
 });

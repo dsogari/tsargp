@@ -28,10 +28,25 @@ To generate a help message, you must call the `format` function. It accepts the 
 
 - `options` -- the option definitions (required)
 - `sections` -- a list of [help sections] to include in the message (optional, defaults to a single [groups section])
-- `filter` -- an [option filter] to select a subset of options (optional, defaults to none)
-- `progName` -- a [program name] to display in [usage sections] (optional, defaults to none)
+- `flags` -- an object containing the [formatter flags] (optional)
 
 It returns a [ANSI message] with the formatted sections.
+
+## Formatter flags
+
+The formatter procedure can be configured via a `FormatterFlags` object that has some optional properties, as described below.
+
+### Program name
+
+The `progName` property is the [program name] to display in [usage sections].
+
+### Cluster prefix
+
+The `clusterPrefix` property specifies the prefix for [cluster] arguments.
+
+### Option filter
+
+The `optionFilter` property specifies an [option filter] to select a subset of options.
 
 ## Help columns
 
@@ -74,7 +89,7 @@ The result might be something like `=<param>`, `[<param>...]` or `[...]`.
 
 > [!WARNING]
 >
-> Displaying the parameter of single-valued options is especially important in [usage sections].
+> Displaying the parameter is especially important in [usage sections].
 
 ### Description column
 
@@ -324,6 +339,7 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [name slots]: #name-slots
 [common properties]: #common-properties
 [text block]: #text-block
+[formatter flags]: #formatter-flags
 
 {/* options references */}
 
@@ -344,6 +360,7 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [parser]: parser
 [inline parameters]: parser#inline-parameters
 [program name]: parser#program-name
+[cluster]: parser#cluster-prefix
 
 {/* styles references */}
 

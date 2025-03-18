@@ -880,8 +880,12 @@ async function handleHelp(
       }
     }
   }
-  const flags: FormatterFlags = { progName, clusterPrefix: context[6].clusterPrefix };
-  return format(registry.options, option.sections, option.useFilter && rest, flags);
+  const flags: FormatterFlags = {
+    progName,
+    clusterPrefix: context[6].clusterPrefix,
+    optionFilter: option.useFilter && rest,
+  };
+  return format(registry.options, option.sections, flags);
 }
 
 /**

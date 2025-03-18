@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { HelpSections, Options } from '../../src/library';
+import type { FormatterFlags, HelpSections, Options } from '../../src/library';
 import { format } from '../../src/library';
 
 describe('format', () => {
@@ -20,7 +20,8 @@ describe('format', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'groups', layout: { descr: { absolute: true } } }];
-      expect(format(options, sections, ['flag']).wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
+      const flags: FormatterFlags = { optionFilter: ['flag'] };
+      expect(format(options, sections, flags).wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
     });
 
     it('filter an option with environment variable using multiple patterns', () => {
@@ -39,7 +40,8 @@ describe('format', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'groups', items: [] }];
-      expect(format(options, sections, ['-f', 'sing']).wrap()).toEqual(`  -f\n  -s\n`);
+      const flags: FormatterFlags = { optionFilter: ['-f', 'sing'] };
+      expect(format(options, sections, flags).wrap()).toEqual(`  -f\n  -s\n`);
     });
   });
 });

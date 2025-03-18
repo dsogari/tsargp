@@ -90,7 +90,7 @@ describe('format', () => {
         cluster: 'fF',
       },
     } as const satisfies Options;
-    expect(format(options, undefined, undefined, { clusterPrefix: '' }).wrap()).toEqual(
+    expect(format(options, undefined, { clusterPrefix: '' }).wrap()).toEqual(
       `  -f    Can be clustered with f or F.\n`,
     );
   });

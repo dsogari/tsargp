@@ -570,15 +570,15 @@ export type WithEnvironment = {
 };
 
 /**
- * Defines attributes for options that may have a template to display as option parameter(s).
+ * Defines attributes for options with a template to display in place of option parameter(s).
  */
 export type WithTemplate = {
   /**
-   * The option example value. Replaces the option type in the help message parameter column.
+   * The option example value. Replaces the parameter in the help message parameter column.
    */
   readonly example?: KnownValue;
   /**
-   * The option parameter name. Replaces the option type in the help message parameter column.
+   * The option parameter name. Replaces the parameter in the help message parameter column.
    * It should not contain inline styles or line feeds.
    */
   readonly paramName?: string;
