@@ -63,15 +63,12 @@ For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}
 
 This column is rendered according to the following rules:
 
-1. If the option is [niladic] and is not a [subcommand], stop here and render nothing.
-2. Else, evaluate the following rules and combine the result with that of step 3:
-   - if it contains an [example value], render this value
-   - else, if it contains a [parameter name], render this name
-   - else, render an empty string
-3. If it accepts multiple parameters, append an ellipsis `'...'{:ts}`.
-4. If the result from previous steps is empty, stop here and render nothing.
-5. Else, if it requires [inline parameters], prepend an equals sign `'='{:ts}`.
-6. If it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`.
+1. If the option contains an [example value], render this value.
+   - Else, if it contains a [parameter name], render this name.
+   - Else, stop here and render nothing.
+2. If it requires [inline parameters], prepend an equals sign `'='{:ts}`.
+3. If it accepts multiple parameters or has an unknown [parameter count], append an ellipsis `'...'{:ts}`.
+4. If it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`.
 
 The result might be something like `=<param>`, `[<param>...]` or `[...]`.
 
@@ -340,6 +337,7 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [parameter name]: options#parameter-name
 [niladic]: options#option-parameters
 [subcommand]: options#command-option
+[parameter count]: options#parameter-count
 
 {/* parser references */}
 

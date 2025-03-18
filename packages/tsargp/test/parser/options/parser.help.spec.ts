@@ -75,7 +75,7 @@ describe('parse', () => {
           },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', 'cm'])).rejects.toThrow('  cmd  ...\n');
+      expect(parse(options, ['-h', 'cm'])).rejects.toThrow('  cmd\n');
       expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow('[-h]\n');
       expect(parse(options, ['-h', 'cmd'], { progName: 'prog' })).rejects.toThrow(
         'prog cmd [-h]\n',
@@ -129,7 +129,7 @@ describe('parse', () => {
           options: async () => (await import('../../data/no-help')).default,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -c  ...\n');
+      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -c\n');
     });
 
     it('throw the help message of a subcommand with a dynamic module with a help option', () => {

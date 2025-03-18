@@ -10,15 +10,15 @@ A command-line interface can be composed of subcommands and options (also known 
 
 There are seven types of options, as summarized in the table below:
 
-| Type       | Parameters                                        | Attribute classes                                         |
-| ---------- | ------------------------------------------------- | --------------------------------------------------------- |
-| [help]     | niladic                                           | [basic], [message]                                        |
-| [version]  | niladic                                           | [basic], [message]                                        |
-| [command]  | niladic[^1]                                       | [basic], [value],                                         |
-| [flag]     | niladic                                           | [basic], [value], [environment]                           |
-| [single]   | positional, inline, monadic                       | [basic], [value], [environment], [parameter], [selection] |
-| [array]    | positional, inline, variadic, delimited, appended | [basic], [value], [environment], [parameter], [selection] |
-| [function] | positional, inline, configurable                  | [basic], [value], [environment], [parameter]              |
+| Type       | Parameters                                        | Attribute classes                                                     |
+| ---------- | ------------------------------------------------- | --------------------------------------------------------------------- |
+| [help]     | niladic                                           | [basic], [message]                                                    |
+| [version]  | niladic                                           | [basic], [message]                                                    |
+| [command]  | niladic[^1]                                       | [basic], [value], [template]                                          |
+| [flag]     | niladic                                           | [basic], [value], [environment]                                       |
+| [single]   | positional, inline, monadic                       | [basic], [value], [environment], [template], [parameter], [selection] |
+| [array]    | positional, inline, variadic, delimited, appended | [basic], [value], [environment], [template], [parameter], [selection] |
+| [function] | positional, inline, configurable                  | [basic], [value], [environment], [template], [parameter]              |
 
 ## Glossary
 
@@ -368,9 +368,9 @@ The `break` attribute indicates whether the parser should exit the parsing loop 
 >
 > When setting this attribute, the [requirements] of all options supplied up to the current argument will be verified. Hence, you should make it clear in the help message that any options required by the affected one must be supplied either _before_ it or through the [environment].
 
-### Parameter attributes
+### Template attributes
 
-All [non-niladic] options share a set of attributes, which are described below.
+All [non-niladic] options in addition to [subcommands] share a set of attributes, which are described below.
 
 #### Example value
 
@@ -387,6 +387,10 @@ The `paramName` attribute, if present, specifies a name to appear in the help me
 > [!NOTE]
 >
 > Mutually exclusive with [example value].
+
+### Parameter attributes
+
+All [non-niladic] options share a set of attributes, which are described below.
 
 #### Positional | marker
 
@@ -522,7 +526,7 @@ The option value will be either the result of the callback, if one is specified,
 >
 > When [word completion] is in effect, the callback will _not_ be called, since completion will have occurred before it has a chance to execute.
 
-In addition to the sets of [basic] and [value] attributes, this option has the attributes described below.
+This option has the following sets of attributes: [basic], [value], [template] and the attributes described below.
 
 #### Nested options
 
@@ -566,11 +570,7 @@ The **flag** option accepts no parameter, but has a value that will be either th
 >
 > If you need a boolean-valued option that accepts a single parameter, use the [single] option instead. To make the parameter optional, use the [function] option with a [parameter count] of `[0, 1]{:ts}`.
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
+This option has the following sets of attributes: [basic], [value] and [environment].
 
 > [!NOTE]
 >
@@ -586,13 +586,7 @@ The **single** option accepts a single parameter. Its value can be either the re
 
 The callback receives the option parameter as its first parameter, and should return the parsed value.
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
-- [parameter] attributes
-- [selection] attributes
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter] and [selection].
 
 ### Array-valued option
 
@@ -600,14 +594,7 @@ The **array** option accepts multiple (zero or more) parameters. Its value is an
 
 The callback receives a single option parameter as its first parameter, and should likewise return the parsed value of a single array element. The resulting array may be subject to value [constraints].
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
-- [parameter] attributes
-- [selection] attributes
-- the attributes described below
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter], [selection] and the attributes described below.
 
 #### Parameter separator
 
@@ -639,13 +626,7 @@ The **function** option exists for the sole purpose of being configured with an 
 
 The callback receives the list of option parameters as its first parameter, and should return the parsed value. As a special case, this list may contain _all_ the remaining command-line arguments (see [parameter count] below).
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
-- [parameter] attributes
-- the attributes described below
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter] and the attributes described below.
 
 #### Parameter count
 
@@ -719,6 +700,7 @@ Here is an example of how it might be used inside the callback:
 [message]: #message-attributes
 [value]: #value-attributes
 [environment]: #environment-attributes
+[template]: #template-attributes
 [parameter]: #parameter-attributes
 [selection]: #selection-attributes
 
@@ -757,10 +739,13 @@ Here is an example of how it might be used inside the callback:
 [data sources]: #data-sources
 [break loop]: #break-loop
 
-{/* parameter attributes */}
+{/* template attributes */}
 
 [example value]: #example-value
 [parameter name]: #parameter-name
+
+{/* parameter attributes */}
+
 [positional]: #positional--marker
 [inline constraint]: #inline-constraint
 [inlined]: #inline-constraint

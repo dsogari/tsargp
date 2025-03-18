@@ -126,6 +126,18 @@ describe('format', () => {
   });
 
   describe('when specifying a parameter count', () => {
+    it('handle a function option with unknown parameter count', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          paramCount: 0,
+          paramName: '<param>',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -f  <param>...\n`);
+    });
+
     it('handle a function option with a single parameter', () => {
       const options = {
         function: {
@@ -226,6 +238,17 @@ describe('format', () => {
   });
 
   describe('when specifying a parameter name', () => {
+    it('handle a command option with a parameter name', () => {
+      const options = {
+        command: {
+          type: 'command',
+          names: ['-c'],
+          paramName: '',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -c  ...\n`);
+    });
+
     it('handle an option with a parameter name with spaces', () => {
       const options = {
         single: {
@@ -243,9 +266,10 @@ describe('format', () => {
           type: 'single',
           names: ['-s'],
           paramName: '',
+          inline: 'always',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s\n`);
+      expect(format(options).wrap()).toEqual(`  -s  =  Requires inline parameters.\n`);
     });
 
     it('handle an array-valued option with an empty parameter name', () => {

@@ -233,6 +233,7 @@ describe('rendering a usage section', () => {
           type: 'function',
           names: ['-f1'],
           paramCount: 0,
+          paramName: '', // test empty parameter
         },
         function2: {
           type: 'function',

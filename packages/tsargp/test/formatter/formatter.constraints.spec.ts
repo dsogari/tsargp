@@ -34,7 +34,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [...]  Accepts multiple parameters. Element count is limited to 2.\n`,
+      `  -a    Accepts multiple parameters. Element count is limited to 2.\n`,
     );
   });
 
@@ -47,7 +47,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [...]  Accepts multiple parameters. Duplicate values will be removed.\n`,
+      `  -a    Accepts multiple parameters. Duplicate values will be removed.\n`,
     );
   });
 });

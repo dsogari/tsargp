@@ -23,7 +23,6 @@ import {
   getOptionNames,
   getOptionEnvVars,
   visitRequirements,
-  isCommand,
   checkInline,
   getLastOptionName,
   isEnvironmentOnly,
@@ -886,15 +885,14 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
  * @param result The resulting string
  */
 function formatParam(option: OpaqueOption, result: AnsiString) {
-  const { type, example, separator, paramName } = option;
+  const { example, separator, paramName } = option;
+  if (example === undefined && paramName === undefined) {
+    return; // nothing to be rendered
+  }
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && max;
-  const ellipsis =
-    isCommand(type) || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
-  if (!ellipsis && example === undefined && paramName === undefined) {
-    return; // do not display if nothing provided
-  }
+  const ellipsis = !max || (max > 1 && !inline) ? '...' : '';
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
@@ -910,7 +908,7 @@ function formatParam(option: OpaqueOption, result: AnsiString) {
     }
     formatFunctions.v(param, result, { sep: '', ...openArrayFlags });
     result.close(ellipsis);
-  } else if (max && paramName) {
+  } else if (paramName) {
     result.split(paramName).close(ellipsis);
   } else {
     result.word(ellipsis);

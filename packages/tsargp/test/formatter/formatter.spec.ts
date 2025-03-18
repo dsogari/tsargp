@@ -36,7 +36,7 @@ describe('format', () => {
         names: ['-c'],
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -c  ...\n`);
+    expect(format(options).wrap()).toEqual(`  -c\n`);
   });
 
   it('handle an option with no names or description', () => {

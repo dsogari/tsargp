@@ -570,9 +570,9 @@ export type WithEnvironment = {
 };
 
 /**
- * Defines attributes for options that may have parameters.
+ * Defines attributes for options that may have a template to display as option parameter(s).
  */
-export type WithParameter = {
+export type WithTemplate = {
   /**
    * The option example value. Replaces the option type in the help message parameter column.
    */
@@ -582,6 +582,12 @@ export type WithParameter = {
    * It should not contain inline styles or line feeds.
    */
   readonly paramName?: string;
+};
+
+/**
+ * Defines attributes for options that may have parameters.
+ */
+export type WithParameter = {
   /**
    * Whether the option accepts positional arguments.
    * There may be at most one option with this setting.
@@ -751,7 +757,9 @@ export type CommandOption = WithOptionType<'command'> &
   WithCommand &
   WithBasic &
   WithOptionValue<OpaqueOptionValues> &
-  (WithDefault | WithRequired);
+  WithTemplate &
+  (WithDefault | WithRequired) &
+  (WithExample | WithParamName);
 
 /**
  * An option that has a value, but is niladic.
@@ -771,6 +779,7 @@ export type SingleOption = WithOptionType<'single'> &
   WithBasic &
   WithOptionValue<string> &
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
@@ -785,6 +794,7 @@ export type ArrayOption = WithOptionType<'array'> &
   WithBasic &
   WithOptionValue<string> &
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
@@ -799,6 +809,7 @@ export type FunctionOption = WithOptionType<'function'> &
   WithBasic &
   WithOptionValue<Array<string>> &
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   (WithDefault | WithRequired) &
   (WithExample | WithParamName);
@@ -858,6 +869,7 @@ export type OpaqueOption = WithOptionType<OptionType> &
   WithMessage &
   WithOptionValue<any> & // eslint-disable-line @typescript-eslint/no-explicit-any
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   WithSelection &
   WithArray;
@@ -917,7 +929,7 @@ type WithDefault = {
  */
 type WithExample = {
   /**
-   * @deprecated mutually exclusive with {@link WithParameter.example}
+   * @deprecated mutually exclusive with {@link WithTemplate.example}
    */
   readonly paramName?: never;
 };
@@ -927,7 +939,7 @@ type WithExample = {
  */
 type WithParamName = {
   /**
-   * @deprecated mutually exclusive with {@link WithParameter.paramName}
+   * @deprecated mutually exclusive with {@link WithTemplate.paramName}
    */
   readonly example?: never;
 };
