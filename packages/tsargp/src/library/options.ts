@@ -221,7 +221,7 @@ export type WithSectionFilter = {
 /**
  * A record that maps option keys to required option keys.
  */
-export type UsageRequirements = Readonly<Record<string, string | ReadonlyArray<string>>>;
+export type OptionDependencies = Readonly<Record<string, string | ReadonlyArray<string>>>;
 
 /**
  * Defines additional attributes for the usage section.
@@ -233,8 +233,17 @@ export type WithSectionUsage = {
   readonly required?: ReadonlyArray<string>;
   /**
    * A record that maps option keys to required option keys.
+   * @deprecated use {@link WithSectionUsage.inclusive} instead.
    */
-  readonly requires?: UsageRequirements;
+  readonly requires?: Readonly<Record<string, string>>;
+  /**
+   * A record that specifies inclusive option dependencies.
+   */
+  readonly inclusive?: OptionDependencies;
+  /**
+   * Reserved for mutually exclusive option dependencies.
+   */
+  readonly exclusive?: never;
   /**
    * A commentary to append to the usage.
    */

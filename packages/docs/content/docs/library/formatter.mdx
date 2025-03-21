@@ -160,8 +160,9 @@ The `content.text` property of a **usage** section can be used to override the [
 
 - `filter` -- a list of options to include or exclude (defaults to including all options)
 - `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
-- `required` -- a list of options that should be considered _always_ required (defaults to none)
-- `requires` -- a record that maps options to required options (defaults to none)
+- `required` -- a list of options that should be considered always required (defaults to none)
+- `inclusive` -- a record that specifies [inclusive option dependencies] (defaults to none)
+- `exclusive` -- reserved for mutually [exclusive option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
 
 > [!TIP]
@@ -170,23 +171,32 @@ The `content.text` property of a **usage** section can be used to override the [
 
 > [!NOTE]
 >
-> In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which must come _last_ in the usage.
+> In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which comes _last_ in the usage.
 
-#### Option dependencies
+#### Inclusive option dependencies
 
-The `requires` property is equivalent to an adjacency list, except that each source can only reference a single target. Mutually dependent options are supported. The following table lists some examples that illustrate how this works. Suppose we have options A, B and C. Then:
+The `inclusive` property is equivalent to an adjacency list. Mutually dependent options and multi-targeting are supported. The following table lists some examples to illustrate this. Suppose we have options A, B and C. Then:
 
-| Dependencies                       | Usage         | If C is always required |
-| ---------------------------------- | ------------- | ----------------------- |
-| A requires B requires C            | `[[[A] B] C]` | `[[A] B] C`             |
-| A and B require each other         | `[A B] [C]`   | `[A B] C`               |
-| A requires B requires C requires A | `[A B C]`     | `A B C`                 |
-| A and C require B                  | `[[A] B [C]]` | `[A] B C`               |
-| A requires B; C requires A         | `[[A [C]] B]` | `A C B`                 |
+| Dependencies                       | Usage               | If C is always required |
+| ---------------------------------- | ------------------- | ----------------------- |
+| A requires B requires C            | `[C [B [A]]]`       | `C [B [A]]`             |
+| A and B require each other         | `[A B] [C]`         | `C [A B]`               |
+| A requires B requires C requires A | `[A B C]`           | `A B C`                 |
+| A and C require B                  | `[B [A] [C]]`       | `B C [A]`               |
+| C requires A requires B            | `[B [A [C]]]`       | `A B C`                 |
+| A requires B and C                 | `[B] [C] [B C [A]]` | `C [B [A]]`             |
+
+> [!WARNING]
+>
+> The order of options is unspecified when there are dependencies. However, a dependent option usually appears _after_ the one it depends on.
+
+#### Exclusive option dependencies
+
+The `exclusive` property is reserved for mutual exclusivity. This feature is _not_ supported at the time. For that purpose, you have to create different usages.
 
 > [!NOTE]
 >
-> Mutual exclusivity and multi-targeting are _not_ supported at this time. For that purpose, you have to create different usages. (The reason is that it is difficult to implement. We sincerely apologize.)
+> The reason is that there are many corner cases and it is tricky to implement. We sincerely apologize.
 
 ### Groups section
 
@@ -340,6 +350,8 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [common properties]: #common-properties
 [text block]: #text-block
 [formatter flags]: #formatter-flags
+[inclusive option dependencies]: #inclusive-option-dependencies
+[exclusive option dependencies]: #exclusive-option-dependencies
 
 {/* options references */}
 

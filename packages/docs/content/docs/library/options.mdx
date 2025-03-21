@@ -374,19 +374,23 @@ All [non-niladic] options and [subcommands] share a set of attributes, which are
 
 #### Example value
 
-The `example` attribute, if present, specifies a value to appear in the help message [parameter column].
+The `example` attribute, if present, specifies a value to display in place of option parameter(s) in a help message. It will appear in the [parameter column] and, when a [parameter name] is not present, in the [usage statement] as well.
 
 > [!NOTE]
 >
-> Mutually exclusive with [parameter name].
+> Mutually exclusive with [usage parameter name].
 
 #### Parameter name
 
-The `paramName` attribute, if present, specifies a name to appear in the help message [parameter column].
+The `paramName` attribute, if present, specifies a name to to display in place of option parameter(s) in a help message. It will appear in the [usage statement] and, when an [example value] is not present, in the [parameter column] as well.
+
+#### Usage parameter name
+
+The `usageParamName` attribute, if present, overrides the [parameter name] in a [usage statement]. It does not appear in the [parameter column].
 
 > [!NOTE]
 >
-> Mutually exclusive with [example value].
+> Mutually exclusive with [example value]. When the latter is present, use [parameter name] instead.
 
 ### Parameter attributes
 
@@ -743,6 +747,7 @@ Here is an example of how it might be used inside the callback:
 
 [example value]: #example-value
 [parameter name]: #parameter-name
+[usage parameter name]: #usage-parameter-name
 
 {/* parameter attributes */}
 
@@ -806,7 +811,7 @@ Here is an example of how it might be used inside the callback:
 [help columns]: formatter#help-columns
 [groups section]: formatter#groups-section
 [help sections]: formatter#help-sections
-[usage section]: formatter#usage-section
+[usage statement]: formatter#usage-section
 [groups section]: formatter#groups-section
 [parameter column]: formatter#parameter-column
 [option filter]: formatter#option-filter

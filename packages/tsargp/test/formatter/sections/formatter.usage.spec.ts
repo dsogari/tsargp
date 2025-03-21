@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections, FormatterFlags } from '../../../src/library';
-import { format, style, tf } from '../../../src/library';
+import { AnsiString, format, style, tf } from '../../../src/library';
 
 describe('rendering a usage section', () => {
   const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-' };
@@ -128,6 +128,18 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the options', () => {
+    it('render usage with comment and AnsiString parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          usageParamName: new AnsiString().split('my  param'),
+        },
+      } as const satisfies Options;
+      const sections: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];
+      expect(format(options, sections).wrap()).toEqual('[-s my param] this is a comment\n');
+    });
+
     it('render a flag option', () => {
       const options = {
         flag1: {
@@ -145,7 +157,7 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
-      expect(format(options, sections).wrap()).toEqual('[-f1] (-f2|--flag2) [-f3|--flag3]\n');
+      expect(format(options, sections).wrap()).toEqual('(-f2|--flag2) [-f1] [-f3|--flag3]\n');
     });
 
     it('render a single-valued option', () => {
@@ -202,7 +214,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog [-s <param>] (-s2|-x) <arg> [-s4=true] [-s7] [-x <arg>] [[-s3|] <arg>]\n',
+        'prog (-s2|-x) <arg> [-s <param>] [-s4=true] [-s7] [-x <arg>] [[-s3|] <arg>]\n',
       );
     });
 
@@ -259,7 +271,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-a [<param>...]] -a2 [<arg>...] [-a4[=true]] [-a7] [-a9 [<arg>...]] [--] [...]\n',
+        '-a2 [<arg>...] [-a [<param>...]] [-a4[=true]] [-a7] [-a9 [<arg>...]] [--] [...]\n',
       );
     });
 
@@ -318,7 +330,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-f1 ...] -f2 <arg>... [...] [-f3[=true]] [-f4] [-f9 [<arg>...]]\n',
+        '-f2 <arg>... [-f1 ...] [...] [-f3[=true]] [-f4] [-f9 [<arg>...]]\n',
       );
     });
 
@@ -408,6 +420,7 @@ describe('rendering a usage section', () => {
           requires: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
+      const case13: HelpSections = [{ type: 'usage', inclusive: { flag1: ['flag2', 'flag3'] } }];
       expect(format(options, case0).wrap()).toEqual('[-f1] [-f2] [-f3]\n');
       expect(format(options, case1).wrap()).toEqual('[-f2 [-f1]] [-f3]\n');
       expect(format(options, case2).wrap()).toEqual('[-f1 [-f2]] [-f3]\n');
@@ -421,6 +434,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case10).wrap()).toEqual('[-f1 -f2 -f3]\n');
       expect(format(options, case11).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
       expect(format(options, case12).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
+      expect(format(options, case13).wrap()).toEqual('[-f2] [-f3] [-f2 -f3 [-f1]]\n');
     });
 
     it('group flag options according to an adjacency list, with an always required option', () => {
@@ -466,19 +480,21 @@ describe('rendering a usage section', () => {
           requires: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
-      expect(format(options, case0).wrap()).toEqual('[-f1] [-f2] -f3\n');
-      expect(format(options, case1).wrap()).toEqual('[-f2 [-f1]] -f3\n');
-      expect(format(options, case2).wrap()).toEqual('[-f1 [-f2]] -f3\n');
-      expect(format(options, case3).wrap()).toEqual('[-f1 -f2] -f3\n');
+      const case13: HelpSections = [{ type: 'usage', inclusive: { flag1: ['flag2', 'flag3'] } }];
+      expect(format(options, case0).wrap()).toEqual('-f3 [-f1] [-f2]\n');
+      expect(format(options, case1).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
+      expect(format(options, case2).wrap()).toEqual('-f3 [-f1 [-f2]]\n');
+      expect(format(options, case3).wrap()).toEqual('-f3 [-f1 -f2]\n');
       expect(format(options, case4).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
-      expect(format(options, case5).wrap()).toEqual('-f1 -f2 -f3\n');
-      expect(format(options, case6).wrap()).toEqual('-f2 [-f1] -f3\n');
+      expect(format(options, case5).wrap()).toEqual('-f1 -f3 -f2\n');
+      expect(format(options, case6).wrap()).toEqual('-f2 -f3 [-f1]\n');
       expect(format(options, case7).wrap()).toEqual('-f3 [-f1] [-f2]\n');
-      expect(format(options, case8).wrap()).toEqual('-f2 -f1 -f3\n');
-      expect(format(options, case9).wrap()).toEqual('[-f1] -f2 -f3\n');
+      expect(format(options, case8).wrap()).toEqual('-f1 -f2 -f3\n');
+      expect(format(options, case9).wrap()).toEqual('-f3 -f2 [-f1]\n');
       expect(format(options, case10).wrap()).toEqual('-f1 -f2 -f3\n');
       expect(format(options, case11).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
-      expect(format(options, case12).wrap()).toEqual('-f2 -f1 -f3\n');
+      expect(format(options, case12).wrap()).toEqual('-f3 -f1 -f2\n');
+      expect(format(options, case13).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
     });
 
     it('group flag options according to an adjacency list, with an option filter', () => {
@@ -558,6 +574,31 @@ describe('rendering a usage section', () => {
       expect(format(options, case0).wrap()).toEqual('[(-f1|-f2) [-a] [...]]\n');
       expect(format(options, case1).wrap()).toEqual('[-f1|-f2]\n');
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
+    });
+
+    it('change order of always required options, except with positional marker', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+        },
+        single: {
+          type: 'single',
+          names: ['-s'],
+          positional: '--',
+          paramName: '<arg>',
+          required: true,
+        },
+        array: {
+          type: 'array',
+          names: ['-a'],
+          paramName: '<arg>',
+          required: true,
+        },
+      } as const satisfies Options;
+      const case0: HelpSections = [{ type: 'usage', inclusive: { flag: ['single', 'array'] } }];
+      const flags: FormatterFlags = { optionFilter: ['-f'] };
+      expect(format(options, case0, flags).wrap()).toEqual('-a [<arg>...] [-f] [-s|--] <arg>\n');
     });
   });
 });

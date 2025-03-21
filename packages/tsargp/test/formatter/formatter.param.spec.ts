@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../src/library';
-import { format } from '../../src/library';
+import { AnsiString, format } from '../../src/library';
 
 describe('format', () => {
   describe('when inline parameters are required', () => {
@@ -249,7 +249,7 @@ describe('format', () => {
       expect(format(options).wrap()).toEqual(`  -c  ...\n`);
     });
 
-    it('handle an option with a parameter name with spaces', () => {
+    it('handle an option with a string parameter name', () => {
       const options = {
         single: {
           type: 'single',
@@ -258,6 +258,28 @@ describe('format', () => {
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s  my param\n`);
+    });
+
+    it('handle an option with a AnsiString parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          paramName: new AnsiString().split('my  param'),
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -s  my param\n`);
+    });
+
+    it('handle an option with a usage parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          usageParamName: 'my  param',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -s\n`);
     });
 
     it('handle a single-valued option with an empty parameter name', () => {
