@@ -162,6 +162,7 @@ describe('rendering a usage section', () => {
           cluster: 'x', // test cluster letter
           paramName: '<param>',
           required: true,
+          usageParamName: '<arg>', // overrides paramName
         },
         single3: {
           type: 'single',
@@ -192,10 +193,16 @@ describe('rendering a usage section', () => {
           type: 'single',
           positional: true, // test with no template and no name
         },
+        single9: {
+          type: 'single',
+          cluster: 'x', // test with only a cluster letter
+          example: true,
+          paramName: '<arg>', // overrides example
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog [-s <param>] (-s2|-x) <param> [[-s3|] <arg>] [-s4=true] [-s7]\n',
+        'prog [-s <param>] (-s2|-x) <arg> [-s4=true] [-s7] [-x <arg>] [[-s3|] <arg>]\n',
       );
     });
 
@@ -212,6 +219,7 @@ describe('rendering a usage section', () => {
           names: ['-a2'],
           cluster: 'x', // no cluster prefix, so should not appear
           paramName: '<param>',
+          usageParamName: '<arg>', // overrides paramName
           required: true,
         },
         array3: {
@@ -242,10 +250,16 @@ describe('rendering a usage section', () => {
           type: 'array',
           positional: true, // test with no template and no name
         },
+        array9: {
+          type: 'array',
+          names: ['-a9'],
+          example: true,
+          paramName: '<arg>', // overrides example
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-a [<param>...]] -a2 [<param>...] [--] [...] [-a4[=true]] [-a7]\n',
+        '[-a [<param>...]] -a2 [<arg>...] [-a4[=true]] [-a7] [-a9 [<arg>...]] [--] [...]\n',
       );
     });
 
@@ -262,6 +276,7 @@ describe('rendering a usage section', () => {
           names: ['-f2'],
           required: true,
           paramName: '<param>',
+          usageParamName: '<arg>', // overrides paramName
           paramCount: [1, 2],
         },
         function3: {
@@ -294,10 +309,16 @@ describe('rendering a usage section', () => {
           type: 'function',
           positional: true, // test with no template and no name
         },
+        function9: {
+          type: 'function',
+          names: ['-f9'],
+          example: true,
+          paramName: '<arg>', // overrides example
+        },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-f1 ...] -f2 <param>... [...] [-f3[=true]] [-f4]\n',
+        '[-f1 ...] -f2 <arg>... [...] [-f3[=true]] [-f4] [-f9 [<arg>...]]\n',
       );
     });
 
@@ -339,7 +360,7 @@ describe('rendering a usage section', () => {
       expect(format(options, sections3, flags).wrap()).toEqual('-f1\n');
       expect(format(options, sections4, flags).wrap()).toEqual('[-f2] [-f1]\n');
       expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, sections6, flags).wrap()).toEqual('[[-s|--] <param>] [-f1]\n');
+      expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
       expect(format(options, sections7, flags).wrap()).toEqual('');
     });
   });

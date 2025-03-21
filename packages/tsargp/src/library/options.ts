@@ -390,9 +390,9 @@ export type NestedOptions = Promissory<Options> | (() => Promissory<Options>);
 export type InlineConstraint = false | 'always' | Readonly<Record<string, false | 'always'>>;
 
 /**
- * A known value used in default values and parameter examples.
+ * A non-callable value used in default values and parameter examples.
  */
-export type KnownValue = boolean | string | number | object;
+export type NonCallable = boolean | string | number | object;
 
 /**
  * Information about the current argument sequence in the parsing loop.
@@ -543,7 +543,7 @@ export type WithOptionValue<T> = {
    * The default value is set at the end of the parsing loop if the option was not supplied. You may
    * use a callback to inspect parsed values and determine the default value based on those values.
    */
-  readonly default?: KnownValue | DefaultValueCallback;
+  readonly default?: NonCallable | DefaultValueCallback;
   /**
    * A custom callback for parsing the option parameter(s).
    */
@@ -579,14 +579,21 @@ export type WithEnvironment = {
  */
 export type WithTemplate = {
   /**
-   * The option example value. Replaces the parameter in the help message parameter column.
+   * The example value to appear in the parameter column or in usage statements.
    */
-  readonly example?: KnownValue;
+  readonly example?: NonCallable;
   /**
-   * The option parameter name. Replaces the parameter in the help message parameter column.
-   * It should not contain inline styles or line feeds.
+   * The parameter name to appear in the parameter column or in usage statements.
+   * Overrides {@link WithTemplate.example} in usage statements.
+   * Should not contain inline styles or line feeds.
    */
   readonly paramName?: string | AnsiString;
+  /**
+   * The parameter name to appear in usage statements.
+   * Overrides {@link WithTemplate.paramName} in usage statements.
+   * Should not contain inline styles or line feeds.
+   */
+  readonly usageParamName?: string | AnsiString;
 };
 
 /**
@@ -764,7 +771,7 @@ export type CommandOption = WithOptionType<'command'> &
   WithOptionValue<OpaqueOptionValues> &
   WithTemplate &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName);
+  (WithExample | WithUsageParamName);
 
 /**
  * An option that has a value, but is niladic.
@@ -788,7 +795,7 @@ export type SingleOption = WithOptionType<'single'> &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName) &
+  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
@@ -803,7 +810,7 @@ export type ArrayOption = WithOptionType<'array'> &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName) &
+  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
@@ -817,7 +824,7 @@ export type FunctionOption = WithOptionType<'function'> &
   WithTemplate &
   WithParameter &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName);
+  (WithExample | WithUsageParamName);
 
 /**
  * The public option types.
@@ -934,17 +941,18 @@ type WithDefault = {
  */
 type WithExample = {
   /**
-   * @deprecated mutually exclusive with {@link WithTemplate.example}
+   * @deprecated mutually exclusive with {@link WithTemplate.example}.
+   * Use {@link WithTemplate.paramName} in this case.
    */
-  readonly paramName?: never;
+  readonly usageParamName?: never;
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a parameter name.
+ * Removes mutually exclusive attributes from an option with a usage parameter name.
  */
-type WithParamName = {
+type WithUsageParamName = {
   /**
-   * @deprecated mutually exclusive with {@link WithTemplate.paramName}
+   * @deprecated mutually exclusive with {@link WithTemplate.usageParamName}
    */
   readonly example?: never;
 };
@@ -1147,10 +1155,12 @@ export function isEnvironmentOnly(option: OpaqueOption): boolean {
 /**
  * Checks whether an option has a template attribute.
  * @param option The option definition
+ * @param isUsage Whether the parameter appears in a usage statement
  * @returns True if the option has a template attribute
  */
-export function hasTemplate(option: OpaqueOption): boolean {
-  return option.example !== undefined || option.paramName !== undefined;
+export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
+  const { example, paramName, usageParamName } = option;
+  return (example ?? paramName) !== undefined || (isUsage && usageParamName !== undefined);
 }
 
 /**

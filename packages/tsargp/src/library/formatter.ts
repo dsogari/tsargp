@@ -594,7 +594,7 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiStri
   const { hidden, breaks } = layout.param;
   const result = new AnsiString().break(breaks).pushSty(config.styles.base);
   if (!hidden) {
-    formatParam(option, result);
+    formatParam(option, false, result);
   }
   return result.maxLength ? result.popSty() : result.clear();
 }
@@ -747,7 +747,7 @@ function formatUsage(
   const filteredKeys =
     exclude || !filter
       ? includedSet.difference(filteredSet)
-      : filteredSet.intersection(includedSet); // preserve filter order
+      : filteredSet.difference(filteredSet.difference(includedSet)); // preserve filter order
   const requirements = normalizeRequirements(filteredKeys, options, requires);
   const [, byComp, adjacency] = stronglyConnected(requirements);
   const usage = usageForest(adjacency);
@@ -771,12 +771,24 @@ function normalizeRequirements(
   options: OpaqueOptions,
   requires: UsageRequirements = {},
 ): Record<string, Array<string>> {
-  const result: Record<string, Array<string>> = {};
-  for (const key of keys) {
+  /** @ignore */
+  function normalize(key: string) {
     const requiredKeys = requires[key] ?? [];
     const normalizedKeys = isString(requiredKeys) ? [requiredKeys] : requiredKeys;
     result[key] = normalizedKeys.filter((requiredKey) => requiredKey in options);
+  }
+  const result: Record<string, Array<string>> = {};
+  let positional: string | undefined;
+  for (const key of keys) {
+    if (isString(options[key].positional)) {
+      positional = key; // leave positional marker for last (ignore filter order in this case)
+      continue;
+    }
+    normalize(key);
     result[key].forEach((key) => keys.add(key)); // update with extra options
+  }
+  if (positional) {
+    normalize(positional);
   }
   return result;
 }
@@ -824,7 +836,7 @@ function formatUsageForest(
       const isAlone = usage.length === 1 && keys.length === 1;
       const isRequired = option.required || requiredKeys.has(key);
       const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
-      const requiredParam = formatParam(option, result);
+      const requiredParam = formatParam(option, true, result);
       alwaysRequired ||= isRequired;
       hasRequiredNamesOrParam ||= requiredNames || requiredParam;
     }
@@ -878,12 +890,12 @@ function formatUsageNames(
     styles.symbol = saved;
   }
   if (positional !== undefined) {
-    if (!isAlone || hasTemplate(option)) {
+    if (!isAlone || hasTemplate(option, true)) {
       result.openAt(connectives.optionalOpen, count).close(connectives.optionalClose);
       return false; // names are optional
     }
   } else if (uniqueNames.size > 1) {
-    if (!isAlone || hasTemplate(option) || isRequired) {
+    if (!isAlone || hasTemplate(option, true) || isRequired) {
       result.openAt(connectives.exprOpen, count).close(connectives.exprClose);
     }
   }
@@ -893,14 +905,16 @@ function formatUsageNames(
 /**
  * Formats an option's parameter to be included in the description or the usage text.
  * @param option The option definition
+ * @param isUsage Whether the parameter appears in a usage statement
  * @param result The resulting string
  * @returns True if a non-optional parameter was rendered
  */
-function formatParam(option: OpaqueOption, result: AnsiString): boolean {
-  const { example, separator, paramName } = option;
-  if (!hasTemplate(option)) {
+function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
+  if (!hasTemplate(option, isUsage)) {
     return false; // nothing to be rendered
   }
+  const { example, separator, paramName, usageParamName } = option;
+  const name = isUsage ? (usageParamName ?? paramName) : paramName;
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && !!max;
@@ -913,17 +927,17 @@ function formatParam(option: OpaqueOption, result: AnsiString): boolean {
     .pushSty(option.styles?.param ?? config.styles.value)
     .open(optional ? config.connectives.optionalOpen : '')
     .open(inline ? '=' : '');
-  if (example !== undefined) {
+  if (example !== undefined && (!isUsage || name === undefined)) {
     let param = example;
     if (separator && isArray(param)) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
     formatFunctions.v(param, result, { sep: '', ...openArrayNoMergeFlags });
-  } else if (isString(paramName)) {
-    result.split(paramName);
-  } else if (paramName) {
-    result.other(paramName);
+  } else if (isString(name)) {
+    result.split(name);
+  } else if (name) {
+    result.other(name);
   }
   if (result.count > count) {
     result.close(ellipsis);

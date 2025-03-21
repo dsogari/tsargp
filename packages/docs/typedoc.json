@@ -19,7 +19,7 @@
     "WithRequired",
     "WithDefault",
     "WithExample",
-    "WithParamName",
+    "WithUsageParamName",
     "WithChoices",
     "WithRegex"
   ]
