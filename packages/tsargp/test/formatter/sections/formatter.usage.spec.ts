@@ -140,6 +140,26 @@ describe('rendering a usage section', () => {
       expect(format(options, sections).wrap()).toEqual('[-s my param] this is a comment\n');
     });
 
+    it('render a positional option without template', () => {
+      const options = {
+        single1: {
+          type: 'single',
+          names: ['-s1'],
+          positional: true,
+        },
+        single2: {
+          type: 'single',
+          names: ['-s2'],
+          positional: true,
+          required: true,
+        },
+      } as const satisfies Options;
+      const case0: HelpSections = [{ type: 'usage', filter: ['single1'] }];
+      const case1: HelpSections = [{ type: 'usage', filter: ['single2'] }];
+      expect(format(options, case0).wrap()).toEqual('[-s1]\n');
+      expect(format(options, case1).wrap()).toEqual('-s2\n');
+    });
+
     it('render a flag option', () => {
       const options = {
         flag1: {
@@ -334,6 +354,63 @@ describe('rendering a usage section', () => {
       );
     });
 
+    it('render an option that reads data from the standard input', () => {
+      const options = {
+        single1: {
+          type: 'single',
+          paramName: '<arg1>',
+          stdin: true,
+        },
+        single2: {
+          type: 'single',
+          names: ['-s2'],
+          paramName: '<arg2>',
+          required: true,
+          stdin: true,
+        },
+        single3: {
+          type: 'single',
+          names: ['-s3', '--single'],
+          required: true,
+          stdin: true,
+        },
+        single4: {
+          type: 'single',
+          names: ['-s4'],
+          stdin: true,
+        },
+        single5: {
+          type: 'single',
+          required: true,
+          stdin: true,
+        },
+        single6: {
+          type: 'single',
+          stdin: true,
+        },
+        single7: {
+          type: 'single',
+          names: ['-s7'],
+          paramName: '<arg7>',
+          stdin: true,
+        },
+        array: {
+          type: 'array',
+          names: ['-a'],
+          paramName: '<arg>',
+          positional: true,
+          stdin: true,
+        },
+      } as const satisfies Options;
+      const case0: HelpSections = [{ type: 'usage', filter: ['array'], exclude: true }];
+      const case1: HelpSections = [{ type: 'usage', filter: ['array'] }];
+      const flags: FormatterFlags = { stdinName: '-' };
+      expect(format(options, case0, flags).wrap()).toEqual(
+        '(-s2 <arg2>|-) ((-s3|--single)|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
+      );
+      expect(format(options, case1, flags).wrap()).toEqual('([-a] [<arg>...]|-)\n');
+    });
+
     it('filter, include and exclude options', () => {
       const options = {
         flag1: {
@@ -377,7 +454,7 @@ describe('rendering a usage section', () => {
     });
   });
 
-  describe('when requirements are specified', () => {
+  describe('when inclusive dependencies are specified', () => {
     it('group flag options according to an adjacency list', () => {
       const options = {
         flag1: {
@@ -394,30 +471,44 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage' }];
-      const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
-      const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
-      const case3: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } }];
-      const case4: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } }];
-      const case5: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } }];
-      const case6: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } }];
-      const case7: HelpSections = [{ type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } }];
-      const case8: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } }];
-      const case9: HelpSections = [{ type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } }];
+      const case1: HelpSections = [{ type: 'usage', inclusive: { flag1: 'flag2' } }];
+      const case2: HelpSections = [{ type: 'usage', inclusive: { flag2: 'flag1' } }];
+      const case3: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag1' } },
+      ];
+      const case4: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag3' } },
+      ];
+      const case5: HelpSections = [
+        { type: 'usage', inclusive: { flag2: 'flag1', flag3: 'flag2' } },
+      ];
+      const case6: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag3: 'flag2' } },
+      ];
+      const case7: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag3', flag2: 'flag3' } },
+      ];
+      const case8: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag3: 'flag1' } },
+      ];
+      const case9: HelpSections = [
+        { type: 'usage', inclusive: { flag2: 'flag3', flag3: 'flag2' } },
+      ];
       const case10: HelpSections = [
-        { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
       ];
       const case11: HelpSections = [
         {
           type: 'usage',
           filter: ['flag3', 'flag2', 'flag1'],
-          requires: { flag1: 'flag2', flag2: 'flag3' },
+          inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
           filter: ['flag3', 'flag2', 'flag1'],
-          requires: { flag1: 'flag2', flag3: 'flag1' },
+          inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
       const case13: HelpSections = [{ type: 'usage', inclusive: { flag1: ['flag2', 'flag3'] } }];
@@ -454,30 +545,44 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage' }];
-      const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
-      const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
-      const case3: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } }];
-      const case4: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } }];
-      const case5: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } }];
-      const case6: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } }];
-      const case7: HelpSections = [{ type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } }];
-      const case8: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } }];
-      const case9: HelpSections = [{ type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } }];
+      const case1: HelpSections = [{ type: 'usage', inclusive: { flag1: 'flag2' } }];
+      const case2: HelpSections = [{ type: 'usage', inclusive: { flag2: 'flag1' } }];
+      const case3: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag1' } },
+      ];
+      const case4: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag3' } },
+      ];
+      const case5: HelpSections = [
+        { type: 'usage', inclusive: { flag2: 'flag1', flag3: 'flag2' } },
+      ];
+      const case6: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag3: 'flag2' } },
+      ];
+      const case7: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag3', flag2: 'flag3' } },
+      ];
+      const case8: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag3: 'flag1' } },
+      ];
+      const case9: HelpSections = [
+        { type: 'usage', inclusive: { flag2: 'flag3', flag3: 'flag2' } },
+      ];
       const case10: HelpSections = [
-        { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
       ];
       const case11: HelpSections = [
         {
           type: 'usage',
           filter: ['flag3', 'flag2', 'flag1'],
-          requires: { flag1: 'flag2', flag2: 'flag3' },
+          inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
           filter: ['flag3', 'flag2', 'flag1'],
-          requires: { flag1: 'flag2', flag3: 'flag1' },
+          inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
       const case13: HelpSections = [{ type: 'usage', inclusive: { flag1: ['flag2', 'flag3'] } }];
@@ -513,30 +618,44 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage' }];
-      const case1: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2' } }];
-      const case2: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1' } }];
-      const case3: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag2: 'flag1' } }];
-      const case4: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3' } }];
-      const case5: HelpSections = [{ type: 'usage', requires: { flag2: 'flag1', flag3: 'flag2' } }];
-      const case6: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag3: 'flag2' } }];
-      const case7: HelpSections = [{ type: 'usage', requires: { flag1: 'flag3', flag2: 'flag3' } }];
-      const case8: HelpSections = [{ type: 'usage', requires: { flag1: 'flag2', flag3: 'flag1' } }];
-      const case9: HelpSections = [{ type: 'usage', requires: { flag2: 'flag3', flag3: 'flag2' } }];
+      const case1: HelpSections = [{ type: 'usage', inclusive: { flag1: 'flag2' } }];
+      const case2: HelpSections = [{ type: 'usage', inclusive: { flag2: 'flag1' } }];
+      const case3: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag1' } },
+      ];
+      const case4: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag3' } },
+      ];
+      const case5: HelpSections = [
+        { type: 'usage', inclusive: { flag2: 'flag1', flag3: 'flag2' } },
+      ];
+      const case6: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag3: 'flag2' } },
+      ];
+      const case7: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag3', flag2: 'flag3' } },
+      ];
+      const case8: HelpSections = [
+        { type: 'usage', inclusive: { flag1: 'flag2', flag3: 'flag1' } },
+      ];
+      const case9: HelpSections = [
+        { type: 'usage', inclusive: { flag2: 'flag3', flag3: 'flag2' } },
+      ];
       const case10: HelpSections = [
-        { type: 'usage', requires: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
+        { type: 'usage', inclusive: { flag1: 'flag2', flag2: 'flag3', flag3: 'flag1' } },
       ];
       const case11: HelpSections = [
         {
           type: 'usage',
           filter: ['flag3', 'flag2', 'flag1'],
-          requires: { flag1: 'flag2', flag2: 'flag3' },
+          inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
           filter: ['flag3', 'flag2', 'flag1'],
-          requires: { flag1: 'flag2', flag3: 'flag1' },
+          inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2'] };
@@ -568,7 +687,7 @@ describe('rendering a usage section', () => {
           paramName: '',
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', requires: { flag: 'array', array: 'flag' } }];
+      const case0: HelpSections = [{ type: 'usage', inclusive: { flag: 'array', array: 'flag' } }];
       const case1: HelpSections = [{ type: 'usage', filter: ['flag'] }];
       const case2: HelpSections = [{ type: 'usage', filter: ['array'] }];
       expect(format(options, case0).wrap()).toEqual('[(-f1|-f2) [-a] [...]]\n');
@@ -576,7 +695,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
     });
 
-    it('change order of always required options, except with positional marker', () => {
+    it('change order of always required options and positional marker', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -587,18 +706,24 @@ describe('rendering a usage section', () => {
           names: ['-s'],
           positional: '--',
           paramName: '<arg>',
-          required: true,
         },
         array: {
           type: 'array',
           names: ['-a'],
           paramName: '<arg>',
-          required: true,
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', inclusive: { flag: ['single', 'array'] } }];
+      const case0: HelpSections = [{ type: 'usage', inclusive: { flag: 'single' } }];
+      const case1: HelpSections = [
+        { type: 'usage', inclusive: { flag: ['single', 'array'] }, required: ['single'] },
+      ];
+      const case2: HelpSections = [
+        { type: 'usage', inclusive: { flag: ['single', 'array'] }, required: ['single', 'array'] },
+      ];
       const flags: FormatterFlags = { optionFilter: ['-f'] };
-      expect(format(options, case0, flags).wrap()).toEqual('-a [<arg>...] [-f] [-s|--] <arg>\n');
+      expect(format(options, case0).wrap()).toEqual('[-a [<arg>...]] [[-f] [-s|--] <arg>]\n');
+      expect(format(options, case1, flags).wrap()).toEqual('[-a [<arg>...] [-f]] [-s|--] <arg>\n');
+      expect(format(options, case2, flags).wrap()).toEqual('[-f] -a [<arg>...] [-s|--] <arg>\n');
     });
   });
 });

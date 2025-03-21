@@ -48,6 +48,10 @@ The `clusterPrefix` property specifies the prefix for [cluster] arguments.
 
 The `optionFilter` property specifies an [option filter] to select a subset of options.
 
+### Standard input name
+
+The `stdinName` property is the name of the [standard input] to display in [usage sections].
+
 ## Help columns
 
 Every option definition produces a help entry in its respective group in the help message. Furthermore, the whole set of entries across all groups in a section is split into "columns" (not to be confused with terminal columns), each containing a different kind of information, as described below.
@@ -366,6 +370,7 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [niladic]: options#option-parameters
 [subcommand]: options#command-option
 [parameter count]: options#parameter-count
+[standard input]: options#standard-input
 
 {/* parser references */}
 

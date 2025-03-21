@@ -84,12 +84,12 @@ export type NamingMatch<T extends NamingRules> = Resolve<{
 /**
  * A map of record keys to a list of record keys.
  */
-export type RecordKeyMap = Record<string, ReadonlyArray<string>>;
+export type RecordKeyMap = Record<string, Array<string>>;
 
 /**
- * A forest structure representing a usage message.
+ * A forest structure representing a usage statement.
  */
-export type UsageForest = Array<string | UsageForest>;
+export type UsageStatement = Array<string | UsageStatement>;
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -438,11 +438,11 @@ export function makeUnique<T>(vals: ReadonlyArray<T>): Array<T> {
 }
 
 /**
- * Gets a usage forest from a DAG.
+ * Creates a usage statement from a DAG.
  * @param adj The adjacency list
- * @returns The usage forest
+ * @returns The usage statement
  */
-export function usageForest(adj: Readonly<RecordKeyMap>): UsageForest {
+export function createUsage(adj: Readonly<RecordKeyMap>): UsageStatement {
   /** @ignore */
   function dfs(u: string) {
     const sets = [new Set([u])];
@@ -465,8 +465,8 @@ export function usageForest(adj: Readonly<RecordKeyMap>): UsageForest {
       prevId = id;
     }
   }
-  const ans: UsageForest = [];
-  const map = new Map<string, UsageForest>([['', ans]]);
+  const ans: UsageStatement = [];
+  const map = new Map<string, UsageStatement>([['', ans]]);
   const memo = new Map<string, Array<Set<string>>>();
   for (const u in adj) {
     if (!memo.has(u)) {

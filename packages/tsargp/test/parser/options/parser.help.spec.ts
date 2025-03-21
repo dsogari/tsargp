@@ -54,7 +54,7 @@ describe('parse', () => {
       expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(`  -f, --flag\n  -s, --single\n`);
     });
 
-    it('throw the help message of a subcommand with nested options and program name', () => {
+    it('throw the help message of a subcommand with nested options', () => {
       const options = {
         help: {
           type: 'help',
@@ -72,13 +72,24 @@ describe('parse', () => {
               names: ['-h'],
               sections: [{ type: 'usage' }],
             },
+            single: {
+              type: 'single',
+              cluster: 's',
+              stdin: true,
+            },
           },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', 'cm'])).rejects.toThrow('  cmd\n');
-      expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow('[-h]\n');
+      expect(parse(options, ['-h', 'cm'])).rejects.toThrow(/^ {2}cmd\n$/);
+      expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow(/^\[-h\]\n$/);
       expect(parse(options, ['-h', 'cmd'], { progName: 'prog' })).rejects.toThrow(
-        'prog cmd [-h]\n',
+        /^prog cmd \[-h\]\n$/,
+      );
+      expect(parse(options, ['-h', 'cmd'], { progName: '', clusterPrefix: '-' })).rejects.toThrow(
+        /^\[-h\] \[-s\]\n$/,
+      );
+      expect(parse(options, ['-h', 'cmd'], { progName: '', stdinName: '-' })).rejects.toThrow(
+        /^\[-h\] \[-\]\n$/,
       );
     });
 

@@ -81,6 +81,11 @@ export type ParsingFlags = {
    * If set, then arguments that have this prefix will always be considered an option name.
    */
   readonly optionPrefix?: string;
+  /**
+   * The name of the standard input (e.g., '-') to display in the usage statements.
+   * If not present, the standard input will not appear in usage statements.
+   */
+  readonly stdinName?: string;
 };
 
 /**
@@ -816,12 +821,15 @@ async function handleCommand(
 ) {
   const [, values, , , comp, warning, flags] = context;
   const [key, option, name] = info;
-  const { clusterPrefix, optionPrefix } = option;
   const cmdOptions = await getNestedOptions(option);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const progName = flags.progName && flags.progName + ' ' + name;
-  const cmdFlags: ParsingFlags = { progName, clusterPrefix, optionPrefix };
+  const cmdFlags: ParsingFlags = {
+    progName: flags.progName && flags.progName + ' ' + name,
+    clusterPrefix: option.clusterPrefix,
+    optionPrefix: option.optionPrefix,
+    stdinName: flags.stdinName,
+  };
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
@@ -884,6 +892,7 @@ async function handleHelp(
     progName,
     clusterPrefix: context[6].clusterPrefix,
     optionFilter: option.useFilter && rest,
+    stdinName: context[6].stdinName,
   };
   return format(registry.options, option.sections, flags);
 }

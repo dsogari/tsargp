@@ -11,7 +11,7 @@ import {
   matchNamingRules,
   stronglyConnected,
   makeUnique,
-  usageForest,
+  createUsage,
 } from '../src/library/utils';
 
 describe('gestaltSimilarity', () => {
@@ -306,9 +306,9 @@ describe('makeUnique', () => {
   });
 });
 
-describe('stronglyConnected and usageForest', () => {
-  it('get a usage forest for mutually dependent options', () => {
-    const requires = {
+describe('stronglyConnected and createUsage', () => {
+  it('create a usage statement for mutually dependent options', () => {
+    const dependencies = {
       a: ['b', 'c'],
       b: ['a', 'c', 'd'], // test duplicate removal
       c: ['d', 'e'],
@@ -316,16 +316,16 @@ describe('stronglyConnected and usageForest', () => {
       x: ['y', 'c'],
       y: ['x', 'z'],
     };
-    const [byKey, byComp, compAdj] = stronglyConnected(requires);
+    const [byKey, byComp, compAdj] = stronglyConnected(dependencies);
     expect(byKey).toEqual({ a: 'a', b: 'a', c: 'c', d: 'c', e: 'e', x: 'x', y: 'x', z: 'z' });
     expect(byComp).toEqual({ a: ['a', 'b'], c: ['c', 'd'], e: ['e'], x: ['x', 'y'], z: ['z'] });
     expect(compAdj).toEqual({ a: ['c'], c: ['e'], e: [], x: ['c', 'z'], z: [] });
-    const usage = usageForest(compAdj);
+    const usage = createUsage(compAdj);
     expect(usage).toEqual([['e', ['c', ['a']], ['c', 'z', ['x']]], ['z']]);
   });
 
-  it('get a usage forest for transitively dependent options', () => {
-    const requires = {
+  it('create a usage statement for transitively dependent options', () => {
+    const dependencies = {
       a: ['d', 'e', 'k'],
       b: ['f', 'j'],
       c: ['g', 'k'],
@@ -334,7 +334,7 @@ describe('stronglyConnected and usageForest', () => {
       f: ['i', 'j'],
       g: ['k'],
     };
-    const [byKey, byComp, compAdj] = stronglyConnected(requires);
+    const [byKey, byComp, compAdj] = stronglyConnected(dependencies);
     expect(byKey).toEqual({
       a: 'a',
       b: 'b',
@@ -374,7 +374,7 @@ describe('stronglyConnected and usageForest', () => {
       j: [],
       k: [],
     });
-    const usage = usageForest(compAdj);
+    const usage = createUsage(compAdj);
     expect(usage).toEqual([
       ['k', ['g', ['c']], ['g', 'h', ['d']], ['g', 'h', 'i', 'j', ['d', 'e', ['a']]]],
       ['h'],
