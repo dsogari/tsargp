@@ -7,7 +7,7 @@ import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, isArray, isFunction, isObject, isString } from './utils.js';
+import { getEntries, isArray, isFunction, isObject, isString, makeUnique } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -219,17 +219,22 @@ export type WithSectionFilter = {
 };
 
 /**
+ * A record that maps option keys to required option keys.
+ */
+export type UsageRequirements = Readonly<Record<string, string | ReadonlyArray<string>>>;
+
+/**
  * Defines additional attributes for the usage section.
  */
 export type WithSectionUsage = {
   /**
-   * A list of option keys that should be considered required.
+   * A list of option keys that should be considered always required.
    */
   readonly required?: ReadonlyArray<string>;
   /**
    * A record that maps option keys to required option keys.
    */
-  readonly requires?: Readonly<Record<string, string>>;
+  readonly requires?: UsageRequirements;
   /**
    * A commentary to append to the usage.
    */
@@ -581,7 +586,7 @@ export type WithTemplate = {
    * The option parameter name. Replaces the parameter in the help message parameter column.
    * It should not contain inline styles or line feeds.
    */
-  readonly paramName?: string;
+  readonly paramName?: string | AnsiString;
 };
 
 /**
@@ -1318,7 +1323,7 @@ export function normalizeArray(option: OpaqueOption, name: symbol, value: unknow
     return [value]; // convert to a single-element tuple
   }
   const { unique, limit } = option;
-  const result = unique ? [...new Set(value)] : value.slice(); // the input may be read-only
+  const result = unique ? makeUnique(value) : value.slice(); // the input may be read-only
   if (limit && limit > 0 && limit < result.length) {
     throw ErrorMessage.create(ErrorItem.limitConstraintViolation, {}, name, result.length, limit);
   }

@@ -13,8 +13,10 @@ import type {
   RequirementCallback,
   RequiresEntry,
   HelpTextBlock,
+  UsageRequirements,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
+import type { RecordKeyMap, UsageForest } from './utils.js';
 
 import { config } from './config.js';
 import { HelpItem } from './enums.js';
@@ -36,7 +38,8 @@ import {
   getValues,
   max,
   getEntries,
-  getRequiredBy,
+  stronglyConnected,
+  usageForest,
   isString,
   mergeValues,
   regex,
@@ -717,38 +720,38 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
 /**
  * Formats a usage text to be included in a help section.
  * Options are rendered in the same order as was declared in the option definitions.
- * @param allKeys The filtered option keys
+ * @param keys The filtered option keys
  * @param options The option definitions
  * @param section The help section
  * @param flags The formatter flags
  * @param result The resulting string
  */
 function formatUsage(
-  allKeys: ReadonlyArray<string>,
+  keys: ReadonlyArray<string>,
   options: OpaqueOptions,
   section: HelpUsageSection,
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, exclude, required, requires, comment } = section;
-  const visited = new Set<string>(exclude ? filter : []);
-  const requiredKeys = new Set(required);
-  const requiredBy = requires && getRequiredBy(requires);
-  const keys = exclude || !filter ? allKeys.slice() : filter.filter((key) => allKeys.includes(key));
-  let hasPositional;
-  for (const key of keys) {
+  /** @ignore */
+  function hasUsage(key: string): boolean {
     const option = options[key];
-    if (!hasPositional && isString(option.positional)) {
-      hasPositional = true;
-      keys.push(key); // leave positional marker for last (ignore filter order in this case)
-    } else if (
-      // skip options that can only be supplied through the environment
-      !isUnnamedNonPositional(option) ||
-      (option.cluster && flags.clusterPrefix !== undefined)
-    ) {
-      formatUsageOption(options, key, flags, result, visited, requiredKeys, requires, requiredBy);
-    }
+    // skip options that can only be supplied through the environment
+    return !isUnnamedNonPositional(option) || (hasClusterPrefix && !!option.cluster);
   }
+  const hasClusterPrefix = flags.clusterPrefix !== undefined;
+  const { filter, exclude, required, requires, comment } = section;
+  const requiredSet = new Set(required);
+  const includedSet = new Set(keys.filter(hasUsage));
+  const filteredSet = new Set(filter);
+  const filteredKeys =
+    exclude || !filter
+      ? includedSet.difference(filteredSet)
+      : filteredSet.intersection(includedSet); // preserve filter order
+  const requirements = normalizeRequirements(filteredKeys, options, requires);
+  const [, byComp, adjacency] = stronglyConnected(requirements);
+  const usage = usageForest(adjacency);
+  formatUsageForest(options, flags, result, requiredSet, byComp, usage);
   if (!result.maxLength) {
     result.clear();
   } else if (comment) {
@@ -757,121 +760,98 @@ function formatUsage(
 }
 
 /**
- * Formats an option to be included in the the usage text.
+ * Normalizes the usage requirements.
+ * @param keys The filtered option keys
  * @param options The option definitions
- * @param key The option key
+ * @param requires The usage requirements
+ * @returns The normalized requirements
+ */
+function normalizeRequirements(
+  keys: Set<string>,
+  options: OpaqueOptions,
+  requires: UsageRequirements = {},
+): Record<string, Array<string>> {
+  const result: Record<string, Array<string>> = {};
+  for (const key of keys) {
+    const requiredKeys = requires[key] ?? [];
+    const normalizedKeys = isString(requiredKeys) ? [requiredKeys] : requiredKeys;
+    result[key] = normalizedKeys.filter((requiredKey) => requiredKey in options);
+    result[key].forEach((key) => keys.add(key)); // update with extra options
+  }
+  return result;
+}
+
+/**
+ * Formats a usage forest to be included in the the usage text.
+ * @param options The option definitions
  * @param flags The formatter flags
  * @param result The resulting string
- * @param visited The set of visited options
- * @param requiredKeys The list of options to consider always required
- * @param requires The map of option keys to required options
- * @param requiredBy The adjacency list
- * @param preOrderFn The formatting function to execute before rendering the option names
- * @returns True if the option is considered always required
+ * @param requiredKeys The set of options to consider always required
+ * @param keysByComponent The keys in each component
+ * @param usage The usage forest
+ * @param root True if the current usage is the root
+ * @returns True if options in the current group should be considered always required
  */
-function formatUsageOption(
+function formatUsageForest(
   options: OpaqueOptions,
-  key: string,
   flags: FormatterFlags,
   result: AnsiString,
-  visited: Set<string>,
   requiredKeys: Set<string>,
-  requires?: Readonly<Record<string, string>>,
-  requiredBy?: Readonly<Record<string, Array<string>>>,
-  preOrderFn?: (requiredKey?: string) => void,
+  keysByComponent: Readonly<RecordKeyMap>,
+  usage: UsageForest,
+  root = true,
 ): boolean {
-  /** @ignore */
-  function format(receivedKey?: string, isLast: boolean = false): boolean {
-    const count = result.count;
-    // if the received key is my own key, then I'm the junction point in a circular dependency:
-    //    reset it so that remaining options in the dependency chain can be considered optional
-    preOrderFn?.(key === receivedKey ? undefined : receivedKey);
-    const useBrackets = !!list?.length || alwaysRequired || hasTemplate(option);
-    const namesOptional = formatUsageNames(option, flags, useBrackets, result);
-    const paramOptional = formatParam(option, result);
-    if (!alwaysRequired) {
-      // process requiring options in my dependency chain (if they have not already been visited)
-      list?.forEach((key) => {
-        // update my status, since I may be required by an always required option
-        alwaysRequired ||=
-          key in options &&
-          formatUsageOption(
-            options,
-            key,
-            flags,
-            result,
-            visited,
-            requiredKeys,
-            requires,
-            requiredBy,
-          );
-      });
-    }
-    // if I'm not always required and
-    // if either I'm the last option in a dependency chain or I'm considered optional and
-    // if I'm not the only option in a dependency chain or
-    //    the names are present and are not optional, or
-    //    the parameter is present and is not optional
-    // then add enclosing brackets to the dependency chain
-    // otherwise skip brackets, because it would not make sense
-    // E.g.: [[-a]] or [[<param>]] or [[-a] [<param>...]]
-    if (
-      !alwaysRequired &&
-      (isLast || !receivedKey) &&
-      (list?.length || namesOptional === false || paramOptional === false)
-    ) {
-      result.openAt('[', count).close(']');
-    }
-    return alwaysRequired;
-  }
-  let alwaysRequired = requiredKeys.has(key);
-  if (visited.has(key)) {
-    return alwaysRequired;
-  }
-  visited.add(key);
-  const option = options[key];
-  if (!alwaysRequired && option.required) {
-    alwaysRequired = true;
-    requiredKeys.add(key);
-  }
-  const list = requiredBy?.[key];
-  const requiredKey = requires?.[key];
-  if (requiredKey && requiredKey in options) {
-    if (alwaysRequired) {
-      requiredKeys.add(requiredKey); // transitivity of always required options
-    }
-    // this check is needed, so we can fallback to the normal format call in the negative case
-    if (!visited.has(requiredKey)) {
-      return formatUsageOption(
+  let alwaysRequired = false;
+  let hasRequiredNamesOrParam = false;
+  const count = result.count;
+  for (const element of usage) {
+    if (isArray(element)) {
+      const isRequired = formatUsageForest(
         options,
-        requiredKey,
         flags,
         result,
-        visited,
         requiredKeys,
-        requires,
-        requiredBy,
-        format,
+        keysByComponent,
+        element,
+        false,
       );
+      alwaysRequired ||= isRequired;
+      continue;
+    }
+    const keys = keysByComponent[element];
+    for (const key of keys) {
+      const option = options[key];
+      const isAlone = usage.length === 1 && keys.length === 1;
+      const isRequired = option.required || requiredKeys.has(key);
+      const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
+      const requiredParam = formatParam(option, result);
+      alwaysRequired ||= isRequired;
+      hasRequiredNamesOrParam ||= requiredNames || requiredParam;
     }
   }
-  return format(requiredKey, true);
+  if (!root && !alwaysRequired && hasRequiredNamesOrParam) {
+    const { optionalOpen, optionalClose } = config.connectives;
+    result.openAt(optionalOpen, count).close(optionalClose);
+  }
+  return alwaysRequired;
 }
 
 /**
  * Formats an option's names to be included in the usage text.
  * @param option The option definition
  * @param flags The formatter flags
- * @param useBrackets True to use brackets when needed
+ * @param isAlone True if the option is alone in a dependency group
+ * @param isRequired True if the option is considered always required
  * @param result The resulting string
- * @returns True if the names are enclosed in an optional group; false if not; undefined if nothing rendered
+ * @returns True if a non-optional name was rendered
  */
 function formatUsageNames(
   option: OpaqueOption,
   flags: FormatterFlags,
-  useBrackets: boolean,
+  isAlone: boolean,
+  isRequired: boolean,
   result: AnsiString,
-): boolean | undefined {
+): boolean {
   const { cluster, styles: optStyles, positional } = option;
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
@@ -881,7 +861,7 @@ function formatUsageNames(
     }
   }
   if (!uniqueNames.size) {
-    return; // nothing to be rendered
+    return false; // nothing to be rendered
   }
   const count = result.count;
   const { styles, connectives } = config;
@@ -897,30 +877,35 @@ function formatUsageNames(
   } finally {
     styles.symbol = saved;
   }
-  const optional = positional !== undefined;
-  if (useBrackets && (optional || uniqueNames.size > 1)) {
-    const open = optional ? connectives.optionalOpen : connectives.exprOpen;
-    const close = optional ? connectives.optionalClose : connectives.exprClose;
-    result.openAt(open, count).close(close);
+  if (positional !== undefined) {
+    if (!isAlone || hasTemplate(option)) {
+      result.openAt(connectives.optionalOpen, count).close(connectives.optionalClose);
+      return false; // names are optional
+    }
+  } else if (uniqueNames.size > 1) {
+    if (!isAlone || hasTemplate(option) || isRequired) {
+      result.openAt(connectives.exprOpen, count).close(connectives.exprClose);
+    }
   }
-  return useBrackets && optional;
+  return true;
 }
 
 /**
  * Formats an option's parameter to be included in the description or the usage text.
  * @param option The option definition
  * @param result The resulting string
- * @returns True if the parameter is optional; false if not; undefined if nothing rendered
+ * @returns True if a non-optional parameter was rendered
  */
-function formatParam(option: OpaqueOption, result: AnsiString): boolean | undefined {
+function formatParam(option: OpaqueOption, result: AnsiString): boolean {
   const { example, separator, paramName } = option;
-  if (example === undefined && paramName === undefined) {
-    return; // nothing to be rendered
+  if (!hasTemplate(option)) {
+    return false; // nothing to be rendered
   }
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && !!max;
   const ellipsis = !max || (max > 1 && !inline) ? '...' : '';
+  const count = result.count;
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
@@ -935,14 +920,18 @@ function formatParam(option: OpaqueOption, result: AnsiString): boolean | undefi
       param = param.join(sep);
     }
     formatFunctions.v(param, result, { sep: '', ...openArrayNoMergeFlags });
-    result.close(ellipsis);
+  } else if (isString(paramName)) {
+    result.split(paramName);
   } else if (paramName) {
-    result.split(paramName).close(ellipsis);
+    result.other(paramName);
+  }
+  if (result.count > count) {
+    result.close(ellipsis);
   } else {
     result.word(ellipsis);
   }
   result.close(optional ? config.connectives.optionalClose : '').popSty();
-  return optional;
+  return !optional;
 }
 
 /**

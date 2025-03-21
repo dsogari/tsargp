@@ -195,7 +195,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog [-s <param>] (-s2|-x) <param> [-s4=true] [-s7] [[-s3|] <arg>]\n',
+        'prog [-s <param>] (-s2|-x) <param> [[-s3|] <arg>] [-s4=true] [-s7]\n',
       );
     });
 
@@ -221,7 +221,7 @@ describe('rendering a usage section', () => {
         },
         array4: {
           type: 'array',
-          names: ['-a3'],
+          names: ['-a4'],
           example: true,
           inline: 'always',
         },
@@ -235,7 +235,7 @@ describe('rendering a usage section', () => {
         },
         array7: {
           type: 'array',
-          names: ['-a4'],
+          names: ['-a7'],
           positional: true, // test with no template
         },
         array8: {
@@ -245,7 +245,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '[-a [<param>...]] -a2 [<param>...] [-a3[=true]] [-a4] [--] [...]\n',
+        '[-a [<param>...]] -a2 [<param>...] [--] [...] [-a4[=true]] [-a7]\n',
       );
     });
 
@@ -339,7 +339,7 @@ describe('rendering a usage section', () => {
       expect(format(options, sections3, flags).wrap()).toEqual('-f1\n');
       expect(format(options, sections4, flags).wrap()).toEqual('[-f2] [-f1]\n');
       expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
+      expect(format(options, sections6, flags).wrap()).toEqual('[[-s|--] <param>] [-f1]\n');
       expect(format(options, sections7, flags).wrap()).toEqual('');
     });
   });
@@ -388,18 +388,18 @@ describe('rendering a usage section', () => {
         },
       ];
       expect(format(options, case0).wrap()).toEqual('[-f1] [-f2] [-f3]\n');
-      expect(format(options, case1).wrap()).toEqual('[[-f1] -f2] [-f3]\n');
+      expect(format(options, case1).wrap()).toEqual('[-f2 [-f1]] [-f3]\n');
       expect(format(options, case2).wrap()).toEqual('[-f1 [-f2]] [-f3]\n');
       expect(format(options, case3).wrap()).toEqual('[-f1 -f2] [-f3]\n');
-      expect(format(options, case4).wrap()).toEqual('[[[-f1] -f2] -f3]\n');
+      expect(format(options, case4).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
       expect(format(options, case5).wrap()).toEqual('[-f1 [-f2 [-f3]]]\n');
-      expect(format(options, case6).wrap()).toEqual('[[-f1] -f2 [-f3]]\n');
-      expect(format(options, case7).wrap()).toEqual('[[-f1] -f3 [-f2]]\n');
-      expect(format(options, case8).wrap()).toEqual('[[-f1 [-f3]] -f2]\n');
+      expect(format(options, case6).wrap()).toEqual('[-f2 [-f1] [-f3]]\n');
+      expect(format(options, case7).wrap()).toEqual('[-f3 [-f1] [-f2]]\n');
+      expect(format(options, case8).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
       expect(format(options, case9).wrap()).toEqual('[-f1] [-f2 -f3]\n');
       expect(format(options, case10).wrap()).toEqual('[-f1 -f2 -f3]\n');
       expect(format(options, case11).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
-      expect(format(options, case12).wrap()).toEqual('[[[-f3] -f1] -f2]\n');
+      expect(format(options, case12).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
     });
 
     it('group flag options according to an adjacency list, with an always required option', () => {
@@ -446,18 +446,18 @@ describe('rendering a usage section', () => {
         },
       ];
       expect(format(options, case0).wrap()).toEqual('[-f1] [-f2] -f3\n');
-      expect(format(options, case1).wrap()).toEqual('[[-f1] -f2] -f3\n');
+      expect(format(options, case1).wrap()).toEqual('[-f2 [-f1]] -f3\n');
       expect(format(options, case2).wrap()).toEqual('[-f1 [-f2]] -f3\n');
       expect(format(options, case3).wrap()).toEqual('[-f1 -f2] -f3\n');
-      expect(format(options, case4).wrap()).toEqual('[[-f1] -f2] -f3\n');
+      expect(format(options, case4).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
       expect(format(options, case5).wrap()).toEqual('-f1 -f2 -f3\n');
-      expect(format(options, case6).wrap()).toEqual('[-f1] -f2 -f3\n');
-      expect(format(options, case7).wrap()).toEqual('[-f1] -f3 [-f2]\n');
-      expect(format(options, case8).wrap()).toEqual('-f1 -f3 -f2\n');
+      expect(format(options, case6).wrap()).toEqual('-f2 [-f1] -f3\n');
+      expect(format(options, case7).wrap()).toEqual('-f3 [-f1] [-f2]\n');
+      expect(format(options, case8).wrap()).toEqual('-f2 -f1 -f3\n');
       expect(format(options, case9).wrap()).toEqual('[-f1] -f2 -f3\n');
       expect(format(options, case10).wrap()).toEqual('-f1 -f2 -f3\n');
       expect(format(options, case11).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
-      expect(format(options, case12).wrap()).toEqual('-f3 -f1 -f2\n');
+      expect(format(options, case12).wrap()).toEqual('-f2 -f1 -f3\n');
     });
 
     it('group flag options according to an adjacency list, with an option filter', () => {
@@ -504,18 +504,18 @@ describe('rendering a usage section', () => {
       ];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2'] };
       expect(format(options, case0, flags).wrap()).toEqual('[-f1] [-f2]\n');
-      expect(format(options, case1, flags).wrap()).toEqual('[[-f1] -f2]\n');
+      expect(format(options, case1, flags).wrap()).toEqual('[-f2 [-f1]]\n');
       expect(format(options, case2, flags).wrap()).toEqual('[-f1 [-f2]]\n');
       expect(format(options, case3, flags).wrap()).toEqual('[-f1 -f2]\n');
-      expect(format(options, case4, flags).wrap()).toEqual('[[[-f1] -f2] -f3]\n');
-      expect(format(options, case5, flags).wrap()).toEqual('[-f1 [-f2 [-f3]]]\n');
-      expect(format(options, case6, flags).wrap()).toEqual('[[-f1] -f2 [-f3]]\n');
-      expect(format(options, case7, flags).wrap()).toEqual('[[-f1] -f3 [-f2]]\n');
-      expect(format(options, case8, flags).wrap()).toEqual('[[-f1 [-f3]] -f2]\n');
+      expect(format(options, case4, flags).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
+      expect(format(options, case5, flags).wrap()).toEqual('[-f1 [-f2]]\n');
+      expect(format(options, case6, flags).wrap()).toEqual('[-f2 [-f1]]\n');
+      expect(format(options, case7, flags).wrap()).toEqual('[-f3 [-f1] [-f2]]\n');
+      expect(format(options, case8, flags).wrap()).toEqual('[-f2 [-f1]]\n');
       expect(format(options, case9, flags).wrap()).toEqual('[-f1] [-f2 -f3]\n');
       expect(format(options, case10, flags).wrap()).toEqual('[-f1 -f2 -f3]\n');
-      expect(format(options, case11, flags).wrap()).toEqual('[[-f2 [-f1]] -f3]\n');
-      expect(format(options, case12, flags).wrap()).toEqual('[-f2 [-f1 [-f3]]]\n');
+      expect(format(options, case11, flags).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
+      expect(format(options, case12, flags).wrap()).toEqual('[-f2 [-f1]]\n');
     });
 
     it('group mutually dependent options according to an adjacency list', () => {
