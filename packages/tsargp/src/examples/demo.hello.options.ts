@@ -46,6 +46,7 @@ const options = {
     type: 'command',
     names: ['hello'],
     synopsis: 'A subcommand. Logs the arguments passed after it.',
+    paramName: '',
     options: (): Options => options,
     parse(param): number {
       const vals = param as OptionValues<typeof options>;
