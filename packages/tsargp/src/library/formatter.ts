@@ -761,22 +761,22 @@ function formatUsage(
   const requiredSet = new Set(required?.filter((key) => key in options));
   const includedSet = new Set(keys);
   const filteredSet = new Set(filter);
-  const filteredKeys =
+  const resultingSet =
     exclude || !filter
       ? includedSet.difference(filteredSet)
       : filteredSet.difference(filteredSet.difference(includedSet)); // preserve filter order
-  const deps = normalizeDependencies(filteredKeys, requiredSet, options, inclusive ?? requires);
+  const deps = normalizeDependencies(resultingSet, requiredSet, options, inclusive ?? requires);
   const [, components, adjacency] = stronglyConnected(deps);
-  const withMarker = new Set<string>(); // set of components that include a positional marker
+  const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {
     const index = keys.findIndex((key) => isString(options[key].positional));
     if (index >= 0) {
       keys.push(...keys.splice(index, 1)); // leave positional marker for last
-      withMarker.add(comp);
+      withMarkerSet.add(comp);
     }
   }
   const usage = createUsage(adjacency);
-  sortUsageStatement(withMarker, usage);
+  sortUsageStatement(withMarkerSet, usage);
   formatUsageStatement(requiredSet, options, flags, result, components, usage);
   if (!result.maxLength) {
     result.clear();
@@ -825,7 +825,7 @@ function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStateme
   for (let i = 0, length = usage.length; i < length; ) {
     const element = usage[i];
     if (isArray(element) ? sortUsageStatement(withMarker, element) : withMarker.has(element)) {
-      usage.push(...usage.splice(i, 1));
+      usage.push(...usage.splice(i, 1)); // leave positional marker for last
       containsMarker = true;
       length--;
     } else {
@@ -869,9 +869,9 @@ function formatUsageStatement(
         styles.symbol = option.styles?.names ?? saved; // use configured style, if any
         const isAlone = usage.length === 1 && keys.length === 1;
         const isRequired = option.required || requiredKeys.has(key);
-        const requiredPart = formatUsageOption(option, flags, isAlone, isRequired, result);
+        const hasRequiredPart = formatUsageOption(option, flags, isAlone, isRequired, result);
         alwaysRequired ||= isRequired;
-        renderBrackets ||= requiredPart;
+        renderBrackets ||= hasRequiredPart;
       } finally {
         styles.symbol = saved;
       }
@@ -906,32 +906,32 @@ function formatUsageOption(
   const hasStdin = option.stdin && stdinSymbol !== undefined;
   const isPositional = option.positional !== undefined;
   const nameCount = formatUsageNames(option, flags, result);
-  let requiredPart = !!nameCount;
+  let hasRequiredPart = !!nameCount;
   if (isPositional) {
     if (nameCount && (hasParam || !isAlone)) {
       result.openAt(optionalOpen, count).close(optionalClose);
-      requiredPart = false; // names are optional
+      hasRequiredPart = false; // names are optional
     }
   } else if (nameCount > 1 && (hasParam || (!hasStdin && (!isAlone || isRequired)))) {
     result.openAt(exprOpen, count).close(exprClose);
   }
   if (hasParam && formatParam(option, true, result)) {
-    requiredPart = true; // parameter is required
+    hasRequiredPart = true; // parameter is required
   }
   if (hasStdin) {
     let enclose = false;
     if (result.count > count) {
       result.close(config.connectives.optionAlt).merge = true;
-      enclose = !isAlone || !requiredPart || isRequired;
+      enclose = !isAlone || !hasRequiredPart || isRequired;
     } else {
-      requiredPart = true; // stdin is required
+      hasRequiredPart = true; // stdin is required
     }
     formatFunctions.m(getSymbol(stdinSymbol), result, {});
     if (enclose) {
       result.openAt(exprOpen, count).close(exprClose);
     }
   }
-  return requiredPart;
+  return hasRequiredPart;
 }
 
 /**
@@ -951,7 +951,7 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
   }
   if (uniqueNames.size) {
     const sep = config.connectives.optionAlt;
-    const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true };
+    const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true }; // keep names compact
     formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
   }
   return uniqueNames.size;
@@ -965,19 +965,22 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
  * @returns True if a non-optional part was rendered
  */
 function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
+  const { optionalOpen, optionalClose } = config.connectives;
   const { example, separator, paramName, usageParamName } = option;
   const name = isUsage ? (usageParamName ?? paramName) : paramName;
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && !!max;
   const ellipsis = !inline && (!max || !isFinite(max)) ? '...' : '';
+  const [openBracket, closeBracket] = optional ? [optionalOpen, optionalClose] : ['', ''];
+  const sty = option.styles?.param ?? config.styles.value;
   const count = result.count;
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
   result
-    .pushSty(option.styles?.param ?? config.styles.value)
-    .open(optional ? config.connectives.optionalOpen : '')
+    .pushSty(sty)
+    .open(openBracket)
     .open(inline ? '=' : '');
   if (example !== undefined && (!isUsage || name === undefined)) {
     let param = example;
@@ -996,7 +999,7 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
   } else {
     result.word(ellipsis);
   }
-  result.close(optional ? config.connectives.optionalClose : '').popSty();
+  result.close(closeBracket).popSty();
   return !optional;
 }
 

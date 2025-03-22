@@ -347,7 +347,7 @@ The reason why we did not use a dedicated `env` attribute for environment variab
 The `stdin` attribute, if present, indicates that the option may read data from the standard input. It only has effect if:
 
 - the option is not [supplied]; and
-- the option pertains to the command (or [subcommand]) being executed (i.e., not a parent one); and
+- the option pertains to the command or [subcommand] being executed (i.e., not a parent one); and
   - the option is [always required]; or
   - the terminal is non-interactive (i.e., the data comes from a redirected output)
 

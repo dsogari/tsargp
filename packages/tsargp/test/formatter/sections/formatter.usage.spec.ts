@@ -120,13 +120,13 @@ describe('rendering a usage section', () => {
       );
     });
 
-    it('replace the program name by a string content text', () => {
+    it('replace the program name with a string content text', () => {
       const sections: HelpSections = [{ type: 'usage', content: { text: 'prog  name' } }];
       expect(format(options, sections).wrap()).toEqual('prog name [-f]\n');
       expect(format(options, sections, flags).wrap()).toEqual('prog name [-f]\n');
     });
 
-    it('replace the program name by a AnsiString content text', () => {
+    it('replace the program name with a AnsiString content text', () => {
       const sections: HelpSections = [
         { type: 'usage', content: { text: new AnsiString().split('prog  name') } },
       ];
@@ -671,6 +671,7 @@ describe('rendering a usage section', () => {
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
+      const case13: HelpSections = [{ type: 'usage', inclusive: { flag1: ['flag2', 'flag3'] } }];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2'] };
       expect(format(options, case0, flags).wrap()).toEqual('[-f1] [-f2]\n');
       expect(format(options, case1, flags).wrap()).toEqual('[-f2 [-f1]]\n');
@@ -685,6 +686,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case10, flags).wrap()).toEqual('[-f1 -f2 -f3]\n');
       expect(format(options, case11, flags).wrap()).toEqual('[-f3 [-f2 [-f1]]]\n');
       expect(format(options, case12, flags).wrap()).toEqual('[-f2 [-f1]]\n');
+      expect(format(options, case13, flags).wrap()).toEqual('[-f2] [-f3] [-f2 -f3 [-f1]]\n');
     });
 
     it('group mutually dependent options according to an adjacency list', () => {

@@ -661,7 +661,7 @@ export class AnsiString {
 
   /**
    * Wraps the internal strings to fit in a terminal width.
-   * @param result The resulting strings to append to
+   * @param result The resulting list (can be undefined, to only compute the final column)
    * @param column The current terminal column
    * @param width The desired terminal width (or zero to avoid wrapping)
    * @param emitStyles True if styles should be emitted
@@ -669,7 +669,7 @@ export class AnsiString {
    * @returns The updated terminal column
    */
   wrap(
-    result: Array<string> = [],
+    result?: Array<string>,
     column: number = 0,
     width: number = 0,
     emitStyles: boolean = false,
@@ -681,16 +681,16 @@ export class AnsiString {
     }
     /** @ignore */
     function align() {
-      if (needToAlign && j < result.length && column < width) {
+      if (needToAlign && result && (j ?? NaN) < result.length && column < width) {
         const pad = move(column, width); // remaining columns until right boundary
-        result.splice(j, 0, pad); // insert padding at the indentation boundary
+        result.splice(j ?? NaN, 0, pad); // insert padding at the indentation boundary
         column = width;
       }
     }
     /** @ignore */
-    function push(str: string, col: number): number {
+    function push(str: string, col: number): number | undefined {
       column = col;
-      return result.push(str);
+      return result?.push(str);
     }
     if (!this.count) {
       return column;
@@ -710,7 +710,7 @@ export class AnsiString {
     }
 
     const indent = start ? move(0, start) : '';
-    let j = result.length; // save index for right-alignment
+    let j = result?.length; // save index for right-alignment
     for (let i = 0; i < this.count; i++) {
       let str = this.strings[i];
       const len = str.length;
@@ -733,7 +733,7 @@ export class AnsiString {
       } else {
         align();
         j = push('\n' + indent, start + len); // save index for right-alignment
-        result.push(str);
+        result?.push(str);
       }
     }
     align();
