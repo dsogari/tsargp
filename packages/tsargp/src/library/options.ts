@@ -487,8 +487,6 @@ export type WithBasic = {
    *
    * Names cannot contain the equals sign `=`, since it may be used as option-parameter separator.
    * `null`s can be specified in order to skip the respective "slot" in the help message names column.
-   *
-   * Should not contain inline styles or line feeds.
    */
   readonly names?: ReadonlyArray<string | null>;
   /**
@@ -602,13 +600,11 @@ export type WithTemplate = {
   /**
    * The parameter name to display in the parameter column or in usage statements.
    * Overrides {@link WithTemplate.example} in usage statements.
-   * Should not contain line feeds.
    */
   readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
    * Overrides {@link WithTemplate.paramName} in usage statements.
-   * Should not contain line feeds.
    */
   readonly usageParamName?: StyledString;
 };
@@ -689,8 +685,7 @@ export type WithHelp = {
 export type WithVersion = {
   /**
    * The version information (e.g., a semantic version).
-   * If a `string`, it will not be validated, but should not contain inline styles.
-   * If a `URL`, it should be used in conjunction with `import.meta.resolve`.
+   * `URL` values should be resolved with `import.meta.resolve`.
    */
   readonly version?: StyledString | URL;
 };

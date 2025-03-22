@@ -40,17 +40,9 @@ The formatter procedure can be configured via a `FormatterFlags` object that has
 
 The `progName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
 
-> [!NOTE]
->
-> Should not contain [inline styles] or line feeds.
-
 ### Cluster prefix
 
 The `clusterPrefix` property specifies the prefix for [cluster arguments]. If not present, [cluster letters] will not appear in usage statements.
-
-> [!NOTE]
->
-> Should not contain [inline styles] or line feeds.
 
 ### Option filter
 
@@ -59,10 +51,6 @@ The `optionFilter` property specifies an [option filter] to select a subset of o
 ### Standard input symbol
 
 The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage sections]. If not present, the standard input will not appear in usage statements.
-
-> [!NOTE]
->
-> Should not contain [inline styles] or line feeds.
 
 ## Help columns
 
@@ -176,7 +164,7 @@ The [usage statement] is a concise representation of the command-line structure.
 
 {/* cSpell:enable */}
 
-Option parameters are rendered similarly to the [parameter column], except that [parameter name] attributes are given priority over [example value]. Also, the `content.text` property can be used to override the [program name] (in this case, it should not contain line feeds).
+Option parameters are rendered similarly to the [parameter column], except that [parameter name] attributes are given priority over [example value]. Also, the `content.text` property can be used to override the [program name].
 
 In addition to the [common properties], a **usage** section has the following optional properties:
 

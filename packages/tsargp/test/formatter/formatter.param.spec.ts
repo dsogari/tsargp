@@ -253,7 +253,7 @@ describe('format', () => {
   });
 
   describe('when specifying a parameter name', () => {
-    it('handle a command option with a parameter name', () => {
+    it('handle a command option with an empty parameter name', () => {
       const options = {
         command: {
           type: 'command',
@@ -460,7 +460,7 @@ describe('format', () => {
       );
     });
 
-    it('handle a function option with a boolean array example value', () => {
+    it('handle a function option with a boolean array example and range parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -474,7 +474,7 @@ describe('format', () => {
       );
     });
 
-    it('handle a function option with a string array example value', () => {
+    it('handle a function option with a string array example and exact parameter count', () => {
       const options = {
         function: {
           type: 'function',
@@ -486,7 +486,7 @@ describe('format', () => {
       expect(format(options).wrap()).toEqual(`  -f  'one' 'two'  Accepts 2 parameters.\n`);
     });
 
-    it('handle a function option with a number array example value', () => {
+    it('handle a function option with a number array example and range parameter count', () => {
       const options = {
         function: {
           type: 'function',

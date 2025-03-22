@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../src/library';
-import { parse } from '../src/library';
+import { AnsiMessage, AnsiString, parse } from '../src/library';
 import { numberInRange, sectionFooter } from '../src/utility';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -64,37 +64,44 @@ describe('parse', () => {
     });
 
     describe('when a repository URL is found in the package.json file', () => {
-      it('return a text when the file contains a repository field with a URL string', () => {
+      it('return a text when the file contains a repository field with a URL string', async () => {
         const url = new URL(import.meta.resolve('./data/with-repository.json'));
-        expect(sectionFooter(url)).resolves.toEqual(
+        const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
+        expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
         );
       });
 
-      it('return a text with a suffix when the file contains a repository field', () => {
+      it('return a text with a suffix when the file contains a repository field', async () => {
         const url = new URL(import.meta.resolve('./data/with-repository.json'));
-        expect(sectionFooter(url, '#0', '/issues')).resolves.toEqual(
+        const msg = new AnsiMessage(
+          (await sectionFooter(url, '#0', '/issues')) ?? new AnsiString(),
+        );
+        expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp/issues' + '\x1b[39m',
         );
       });
 
-      it('return a text when the file contains a repository field with a url field', () => {
+      it('return a text when the file contains a repository field with a url field', async () => {
         const url = new URL(import.meta.resolve('./data/with-repository-url.json'));
-        expect(sectionFooter(url)).resolves.toEqual(
+        const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
+        expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
         );
       });
 
-      it('return a text when the file contains a repository field with a GitHub host', () => {
+      it('return a text when the file contains a repository field with a GitHub host', async () => {
         const url = new URL(import.meta.resolve('./data/with-repository-github.json'));
-        expect(sectionFooter(url)).resolves.toEqual(
+        const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
+        expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
         );
       });
 
-      it('return a text when the file contains a repository field with a default host', () => {
+      it('return a text when the file contains a repository field with a default host', async () => {
         const url = new URL(import.meta.resolve('./data/with-repository-default.json'));
-        expect(sectionFooter(url)).resolves.toEqual(
+        const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
+        expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
         );
       });

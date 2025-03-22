@@ -441,18 +441,6 @@ export class AnsiString {
   }
 
   /**
-   * @returns The combined length including spaces (but with no wrapping)
-   */
-  get length(): number {
-    let dec = 0;
-    const len = this.strings.reduce(
-      (acc, str) => acc + (str.length ? ((dec = 1), str.length + 1) : dec && ((dec = 0), -1)),
-      0,
-    );
-    return len - dec;
-  }
-
-  /**
    * Creates a ANSI string.
    * @param indent The starting column for this string (negative values are replaced by zero)
    * @param righty True if the string should be right-aligned to the terminal width
@@ -681,11 +669,11 @@ export class AnsiString {
    * @returns The updated terminal column
    */
   wrap(
-    result: Array<string>,
-    column: number,
-    width: number,
-    emitStyles: boolean,
-    emitSpaces: boolean,
+    result: Array<string> = [],
+    column: number = 0,
+    width: number = 0,
+    emitStyles: boolean = false,
+    emitSpaces: boolean = true,
   ): number {
     /** @ignore */
     function move(from: number, to: number): string {

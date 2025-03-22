@@ -55,13 +55,11 @@ export type FormatterFlags = {
   /**
    * The program name.
    * If not present or empty, usage statements will contain no program name.
-   * Should not contain inline styles or line feeds.
    */
   readonly progName?: string;
   /**
    * The cluster argument prefix.
    * If not present, cluster letters will not appear in usage statements.
-   * Should not contain inline styles or line feeds.
    */
   readonly clusterPrefix?: string;
   /**
@@ -72,7 +70,6 @@ export type FormatterFlags = {
   /**
    * The symbol for the standard input (e.g., '-') to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
-   * Should not contain inline styles or line feeds.
    */
   readonly stdinSymbol?: string;
 };
@@ -457,12 +454,12 @@ function formatGroups(
     }
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option, flags, items);
-    const paramLen = param.length;
+    const paramLen = param.wrap(); // get parameter length without indentation
     param.indent = paramLen; // HACK: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
     let namesLen = 0;
     names.forEach((str, i) => {
-      const nameLen = str.length;
+      const nameLen = str.wrap(); // get name length without indentation
       if (nameLen) {
         if (prev) {
           prev.close(optionSep).popSty(); // pop the base text style
@@ -696,7 +693,7 @@ function formatHelpSection(
         const str = new AnsiString(indent).break(breaks).pushSty(baseSty).pushSty(content?.style);
         appendStyledString(progName, str, content?.noSplit);
         prev.push(str.popSty().popSty());
-        indent = str.wrap([], 0, 0, false, true) + 1; // get last column
+        indent = str.wrap() + 1; // get last column with indentation
         breaks = 0; // avoid breaking between program name and usage
       }
       const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
