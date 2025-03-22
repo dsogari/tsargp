@@ -12,6 +12,7 @@ const multiOpts = {
     type: 'array',
     preferredName: 'numbers',
     synopsis: 'The numbers to operate on.',
+    paramName: '<num>',
     default: [],
     parse: Number,
     positional: true,

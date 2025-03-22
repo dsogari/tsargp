@@ -13,7 +13,7 @@ import type {
   RequirementCallback,
   ICompletionSuggestion,
 } from './options.js';
-import type { AnsiMessage, FormattingFlags } from './styles.js';
+import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
 
 import { config } from './config.js';
@@ -34,6 +34,7 @@ import {
   formatFunctions,
   WarnMessage,
   TextMessage,
+  AnsiMessage,
   AnsiString,
   ErrorMessage,
   JsonMessage,
@@ -81,6 +82,11 @@ export type ParsingFlags = {
    * If set, then arguments that have this prefix will always be considered an option name.
    */
   readonly optionPrefix?: string;
+  /**
+   * The symbol for the standard input (e.g., '-') to display in usage statements.
+   * If not present, the standard input will not appear in usage statements.
+   */
+  readonly stdinSymbol?: string;
 };
 
 /**
@@ -437,7 +443,7 @@ async function parseArgs(context: ParseContext) {
     }
     reportCompletion(suggestions);
   }
-  await checkRequired(context);
+  await checkRequired(context, false);
 }
 
 /**
@@ -710,7 +716,7 @@ async function parseParams(
 
   // if index is NaN, we are in the middle of requirements checking (data comes from environment)
   if (index >= 0 && breakLoop) {
-    await checkRequired(context);
+    await checkRequired(context, true);
   }
   if (type === 'flag') {
     values[key] = await parse1(null, true);
@@ -790,7 +796,7 @@ async function handleNiladic(
     case 'command':
       // skip requirements checking during completion
       if (!comp) {
-        await checkRequired(context);
+        await checkRequired(context, true);
       }
       await handleCommand(context, info, index, rest);
       return true;
@@ -816,12 +822,15 @@ async function handleCommand(
 ) {
   const [, values, , , comp, warning, flags] = context;
   const [key, option, name] = info;
-  const { clusterPrefix, optionPrefix } = option;
   const cmdOptions = await getNestedOptions(option);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
-  const progName = flags.progName && flags.progName + ' ' + name;
-  const cmdFlags: ParsingFlags = { progName, clusterPrefix, optionPrefix };
+  const cmdFlags: ParsingFlags = {
+    progName: flags.progName && flags.progName + ' ' + name,
+    clusterPrefix: option.clusterPrefix,
+    optionPrefix: option.optionPrefix,
+    stdinSymbol: flags.stdinSymbol,
+  };
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
@@ -880,25 +889,31 @@ async function handleHelp(
       }
     }
   }
-  const flags: FormatterFlags = { progName, clusterPrefix: context[6].clusterPrefix };
-  return format(registry.options, option.sections, option.useFilter && rest, flags);
+  const flags: FormatterFlags = {
+    progName,
+    clusterPrefix: context[6].clusterPrefix,
+    optionFilter: option.useFilter && rest,
+    stdinSymbol: context[6].stdinSymbol,
+  };
+  return format(registry.options, option.sections, flags);
 }
 
 /**
  * Resolves the version string of a version option.
  * @param option The version option
- * @returns The version string
+ * @returns The version message
  */
-async function handleVersion(option: OpaqueOption): Promise<string> {
-  const { version } = option;
-  if (!(version instanceof URL)) {
-    return version ?? '';
+async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
+  let { version } = option;
+  if (version instanceof URL) {
+    const data = await readFile(version);
+    if (data === undefined) {
+      throw ErrorMessage.create(ErrorItem.versionFileNotFound);
+    }
+    version = JSON.parse(data).version as string;
   }
-  const data = await readFile(version);
-  if (data !== undefined) {
-    return JSON.parse(data).version;
-  }
-  throw ErrorMessage.create(ErrorItem.versionFileNotFound);
+  const str = isString(version) ? new AnsiString().split(version) : version;
+  return new AnsiMessage(...(str ? [str] : []));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -908,11 +923,12 @@ async function handleVersion(option: OpaqueOption): Promise<string> {
  * Checks if required options were correctly supplied.
  * This should only be called when completion is not in effect.
  * @param context The parsing context
+ * @param isEarly Whether the parsing loop was broken early
  */
-async function checkRequired(context: ParseContext) {
+async function checkRequired(context: ParseContext, isEarly: boolean) {
   const keys = getKeys(context[0].options);
   // FIXME: we may need to serialize the following calls to avoid data races in client code
-  await Promise.all(keys.map((key) => checkDefaultValue(context, key)));
+  await Promise.all(keys.map((key) => checkDefaultValue(context, key, isEarly)));
   await Promise.all(keys.map((key) => checkRequiredOption(context, key)));
 }
 
@@ -920,9 +936,10 @@ async function checkRequired(context: ParseContext) {
  * Checks if there is an environment variable or default value for an option.
  * @param context The parsing context
  * @param key The option key
+ * @param isEarly Whether the parsing loop was broken early
  * @returns A promise that must be awaited before continuing
  */
-async function checkDefaultValue(context: ParseContext, key: string) {
+async function checkDefaultValue(context: ParseContext, key: string, isEarly: boolean) {
   /** @ignore */
   async function parseData(data: string, name: string) {
     const info: OptionInfo = [key, option, name];
@@ -942,7 +959,7 @@ async function checkDefaultValue(context: ParseContext, key: string) {
       return;
     }
   }
-  if (stdin && (required || !process?.stdin?.isTTY)) {
+  if (!isEarly && stdin && (required || !process?.stdin?.isTTY)) {
     // standard input always exists and may include a trailing line feed
     const data = (await readFile(0))?.replace(/\r?\n$/, '') ?? '';
     await parseData(data, '0');

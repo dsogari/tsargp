@@ -81,6 +81,16 @@ export type NamingMatch<T extends NamingRules> = Resolve<{
   };
 }>;
 
+/**
+ * A map of record keys to lists of record keys.
+ */
+export type RecordKeyMap = Record<string, Array<string>>;
+
+/**
+ * A forest structure representing a usage statement.
+ */
+export type UsageStatement = Array<string | UsageStatement>;
+
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
@@ -372,22 +382,90 @@ export function matchNamingRules<T extends NamingRules>(
 }
 
 /**
- * Gets an adjacency list from a set of requirements.
- * @param requires The map of option keys to required options
- * @returns The adjacency list
+ * Strongly-connected components (of directed graph).
+ * @param adj The adjacency list
+ * @returns [The component for each key, The keys in each component, The component adjacency list]
  */
-export function getRequiredBy(
-  requires: Readonly<Record<string, string>>,
-): Record<string, Array<string>> {
-  const result: Record<string, Array<string>> = {};
-  for (const [key, required] of getEntries(requires)) {
-    if (required in result) {
-      result[required].push(key);
-    } else {
-      result[required] = [key];
+export function stronglyConnected(
+  adj: Readonly<RecordKeyMap>,
+): [byKey: Record<string, string>, byComp: RecordKeyMap, compAdj: RecordKeyMap] {
+  /** @ignore */
+  function dfs(u: string) {
+    if (!low[u]) {
+      const tu = (low[u] = ++time);
+      const iu = vis.push(u) - 1;
+      for (const v of adj[u] ?? []) {
+        dfs(v);
+        low[u] = min(low[u], low[v]);
+      }
+      if (low[u] == tu) {
+        const keys = (byComp[u] = vis.splice(iu));
+        for (const v of keys) {
+          low[v] = Infinity;
+          byKey[v] = u; // id of component is its first element
+        }
+      }
     }
   }
-  return result;
+  let time = 0;
+  const low: Record<string, number> = {};
+  const vis: Array<string> = [];
+  const byKey: Record<string, string> = {};
+  const byComp: RecordKeyMap = {};
+  const compAdj: RecordKeyMap = {};
+  getKeys(adj).forEach(dfs);
+  for (const [comp, keys] of getEntries(byComp)) {
+    compAdj[comp] = makeUnique(
+      keys.flatMap((key) =>
+        (adj[key] ?? []).map((req) => byKey[req]).filter((comp2) => comp2 != comp),
+      ),
+    );
+  }
+  return [byKey, byComp, compAdj];
+}
+
+/**
+ * Remove duplicate values from an array without sorting.
+ * @param vals The values
+ * @returns The unique values
+ */
+export function makeUnique<T>(vals: ReadonlyArray<T>): Array<T> {
+  return [...new Set(vals)];
+}
+
+/**
+ * Creates a usage statement from a DAG.
+ * @param adj The adjacency list (must be a DAG)
+ * @returns The usage statement
+ */
+export function createUsage(adj: Readonly<RecordKeyMap>): UsageStatement {
+  /** @ignore */
+  function dfs(u: string) {
+    if (!memo.has(u)) {
+      const sets = [new Set([u])];
+      memo.set(u, sets);
+      for (const v of adj[u] ?? []) {
+        dfs(v);
+        memo.get(v)!.forEach((set, i) => (sets[i + 1] = (sets[i + 1] ?? new Set()).union(set)));
+      }
+      for (let i = sets.length - 1, union = new Set<string>(), prevId = ''; i >= 0; i--) {
+        const set = sets[i].difference(union); // remove those already seen in parents
+        const id = [...set].sort().join('\0');
+        if (!map.has(id)) {
+          const usage = [...set];
+          map.set(id, usage);
+          map.get(prevId)!.push(usage); // append to parent usage
+        }
+        union = union.union(set); // accumulate already seen
+        prevId = id;
+      }
+    }
+  }
+  const ans: UsageStatement = [];
+  const map = new Map<string, UsageStatement>([['', ans]]);
+  const memo = new Map<string, Array<Set<string>>>();
+  getKeys(adj).forEach(dfs);
+  return ans;
 }
 
 /**

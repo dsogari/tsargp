@@ -14,7 +14,7 @@ The result of argument parsing is a record containing one [option value] for eac
 
 The `parse` function returns a promise that resolves to a [frozen] object containing the option values. It accepts the following parameters:
 
-- `options` -- the option definitions (required)
+- `options` -- the option [definitions] (required)
 - `cmdLine` -- the command line or list of command-line arguments (optional)
 - `flags` -- an object containing the [parsing flags] (optional)
 
@@ -32,7 +32,7 @@ The `parseInto` function is more flexible, as it allows you to pass an existing 
 
 - `values` -- the option values to parse into (required)
 
-Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of definitions. You can use the `valuesFor` function to create an object for just this purpose.
+Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of [definitions]. You can use the `valuesFor` function to create an object for just this purpose.
 
 This function returns a promise that resolves to a `ParsingResult` object containing the following property:
 
@@ -73,11 +73,15 @@ Option names have precedence over the cluster prefix. For example, if the prefix
 
 > [!TIP]
 >
-> The cluster prefix can be the empty string, in which case it behaves similarly to GNU's `tar` command.
+> The prefix can be the empty string, in which case it behaves similarly to GNU's `tar` command.
 
 ### Option prefix
 
 The `optionPrefix` property specifies the prefix for [option names]. If set, then arguments starting with this prefix will be considered an option name, regardless of their position respective to other arguments in the command-line.
+
+### Standard input symbol
+
+The `stdinSymbol` property specifies a symbol for the [standard input] to display in help messages produced by [help] options. If not present, the standard input will not appear in usage statements.
 
 ## Parsing features
 
@@ -252,7 +256,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [option type]: options#option-type
 [option synopsis]: options#option-synopsis
 [option parameter]: options#option-parameters
-[standard input]: options#accept-input
+[standard input]: options#standard-input
 [non-niladic]: options#non-niladic-options
 [definitions]: options#option-definition
 [help]: options#help-option

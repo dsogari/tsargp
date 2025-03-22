@@ -90,7 +90,7 @@ describe('format', () => {
         cluster: 'fF',
       },
     } as const satisfies Options;
-    expect(format(options, undefined, undefined, { clusterPrefix: '' }).wrap()).toEqual(
+    expect(format(options, undefined, { clusterPrefix: '' }).wrap()).toEqual(
       `  -f    Can be clustered with f or F.\n`,
     );
   });
@@ -117,7 +117,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -s  <param>  If not supplied, will be read from the standard input.\n`,
+      `  -s    If not supplied, will be read from the standard input.\n`,
     );
   });
 
@@ -125,7 +125,6 @@ describe('format', () => {
     const options = {
       single: {
         type: 'single',
-        paramName: '',
         stdin: true,
       },
     } as const satisfies Options;
@@ -140,7 +139,7 @@ describe('format', () => {
         positional: true,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(`  -s  <param>  Accepts positional arguments.\n`);
+    expect(format(options).wrap()).toEqual(`  -s    Accepts positional arguments.\n`);
   });
 
   it('handle a single-valued option that accepts positional arguments after marker', () => {
@@ -152,11 +151,11 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -s  <param>  Accepts positional arguments that may be preceded by --.\n`,
+      `  -s    Accepts positional arguments that may be preceded by --.\n`,
     );
   });
 
-  it('handle a unnamed single-valued option that accepts positional arguments and reads data from the standard input', () => {
+  it('handle a unnamed positional option that reads data from the standard input', () => {
     const options = {
       single: {
         type: 'single',
@@ -165,7 +164,20 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `    <param>  Accepts positional arguments. If not supplied, will be read from the standard input.\n`,
+      `      Accepts positional arguments. If not supplied, will be read from the standard input.\n`,
+    );
+  });
+
+  it('handle a unnamed option with positional marker that reads data from the standard input', () => {
+    const options = {
+      single: {
+        type: 'single',
+        positional: '', // test empty marker; should look strange in the description
+        stdin: true,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      `      Accepts positional arguments that may be preceded by. If not supplied, will be read from the standard input.\n`,
     );
   });
 
@@ -178,7 +190,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Values can be delimited with ','.\n`,
+      `  -a    Accepts multiple parameters. Values can be delimited with ','.\n`,
     );
   });
 
@@ -191,7 +203,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `  -a  [<param>...]  Accepts multiple parameters. Can be supplied multiple times.\n`,
+      `  -a    Accepts multiple parameters. Can be supplied multiple times.\n`,
     );
   });
 

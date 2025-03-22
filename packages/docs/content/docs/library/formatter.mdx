@@ -26,12 +26,31 @@ This is better illustrated by the figure below:
 
 To generate a help message, you must call the `format` function. It accepts the following parameters:
 
-- `options` -- the option definitions (required)
+- `options` -- the option [definitions] (required)
 - `sections` -- a list of [help sections] to include in the message (optional, defaults to a single [groups section])
-- `filter` -- an [option filter] to select a subset of options (optional, defaults to none)
-- `progName` -- a [program name] to display in [usage sections] (optional, defaults to none)
+- `flags` -- an object containing the [formatter flags] (optional)
 
 It returns a [ANSI message] with the formatted sections.
+
+## Formatter flags
+
+The formatter procedure can be configured via a `FormatterFlags` object that has some optional properties, as described below.
+
+### Program name
+
+The `progName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
+
+### Cluster prefix
+
+The `clusterPrefix` property specifies the prefix for [cluster arguments]. If not present, [cluster letters] will not appear in usage statements.
+
+### Option filter
+
+The `optionFilter` property specifies an [option filter] to select a subset of options. If not present, all options will be included respecting the order of their [definitions].
+
+### Standard input symbol
+
+The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage sections]. If not present, the standard input will not appear in usage statements.
 
 ## Help columns
 
@@ -63,20 +82,22 @@ For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}
 
 This column is rendered according to the following rules:
 
-- if the option is [niladic], do nothing
-- else, if it contains an [example value], render this value
-- otherwise
-  - if it contains a [parameter name], render this name
-  - else, render the word `'<param>'{:ts}`
-- and, if it requires [inline parameters], prepend an equals sign `'='{:ts}`
-- and, if it accepts multiple parameters, append an ellipsis `'...'{:ts}`
-- and, if it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`
+1. If the option contains an [example value], render this value.
+   - Else, if it contains a [parameter name], render this name.
+   - Else, stop here and render nothing.
+2. If it requires [inline parameters], prepend an equals sign `'='{:ts}`.
+   - Else, if it accepts infinite or unknown number of parameters, append an ellipsis `'...'{:ts}`.
+3. If it can be supplied without parameters, enclose the result in square brackets `'[]'{:ts}`.
 
-The result might be something like `=<param>` or `[<param>...]`.
+The result might be something like `=<param>`, `[<param>...]` or `[...]`.
 
 > [!TIP]
 >
-> You can use an empty [parameter name] to suppress what would be rendered in its place. Just beware of options that accept a single parameter, as its display is especially important in [usage sections].
+> To display multiple parameters for a polyadic [function] option, you can use an array [example value] or a [parameter name] with multiple parameters (e.g., `<param1> [<param2>]`).
+
+> [!WARNING]
+>
+> Displaying the option parameter is especially important in [usage sections].
 
 ### Description column
 
@@ -102,7 +123,7 @@ All section types share a set of properties:
 
 A text block contains the following optional properties:
 
-- `text` -- the text (may contain inline styles, defaults to none)
+- `text` -- the plain or styled text (defaults to none)
 - `style` -- the fallback style (defaults to none)
 - `align` -- the text alignment (can be `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` -- the indentation level (defaults to `0{:ts}`)
@@ -125,30 +146,33 @@ A **text** section can be used to write various kinds of content, such as introd
 
 ### Usage section
 
-The [usage message] is a concise representation of the command-line structure. Here is an example:
+The [usage statement] is a concise representation of the command-line structure. Here is an example:
 
 {/* cSpell:disable */}
 
 ```ansi
-[0mdemo.js [[0m([38;2;160;100;64m-f[0m|[38;2;160;100;64m--no-flag[0m)[0m]
-        [[([35m-b[0m|[35m--boolean[0m) [90m<param>[0m] ([35m-sc[0m|[35m--strChoice[0m) [90;32m'one'[90m[0m]
-        [([35m-sr[0m|[35m--strRegex[0m) [90m<my str>[0m]
-        [([35m-nr[0m|[35m--numRange[0m) [90m<my num>[0m]
-        [([35m-nc[0m|[35m--numChoice[0m)[90m=[33m1[90m[0m]
-        [([35m-sa[0m|[35m--strArray[0m) [90m[<param>...][0m]
-        [([35m-na[0m|[35m--numArray[0m) [90m[<param>...][0m]
-        [[35m--numArrayUnique[0m [90m[[32m'1,2'[90m...][0m]
-        [([35m--strArrayLimit[0m|[35m--[0m)] [90m[[32m'one'[90m...][0m
+  demo.js [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m]
+          [([35m-sc[39m|[35m--strChoice[39m) [90;32m'one'[90m[39m [([35m-b[39m|[35m--boolean[39m) [90m<param>[39m]]
+          [([35m-sr[39m|[35m--strRegex[39m|[35m-s[39m) [90;4mmy str[24;39m]
+          [([35m-nr[39m|[35m--numRange[39m|[35m-n[39m) [90;4mmy num[24;39m]
+          [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m]
+          [([35m-sa[39m|[35m--strArray[39m) [90m[<param>...][39m|[35m-[39m]
+          [([35m-na[39m|[35m--numArray[39m) [90m[<param>...][39m]
+          [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m]
+          [[35m--strArrayLimit[39m|[35m--[39m] [90m[[32m'one'[90m...][39m
 ```
 
 {/* cSpell:enable */}
 
-The `content.text` property of a **usage** section can be used to override the [program name]. In addition to the [common properties], this type of section has the following optional properties:
+Option parameters are rendered similarly to the [parameter column], except that [parameter name] attributes are given priority over [example value]. Also, the `content.text` property can be used to override the [program name].
+
+In addition to the [common properties], a **usage** section has the following optional properties:
 
 - `filter` -- a list of options to include or exclude (defaults to including all options)
 - `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
-- `required` -- a list of options that should be considered _always_ required (defaults to none)
-- `requires` -- a record that maps options to required options (defaults to none)
+- `required` -- a list of options that should be considered always required (defaults to none)
+- `inclusive` -- a record that specifies [inclusive option dependencies] (defaults to none)
+- `exclusive` -- reserved for mutually [exclusive option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
 
 > [!TIP]
@@ -157,23 +181,32 @@ The `content.text` property of a **usage** section can be used to override the [
 
 > [!NOTE]
 >
-> In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which must come _last_ in the usage.
+> In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which comes _last_ in the usage.
 
-#### Option dependencies
+#### Inclusive option dependencies
 
-The `requires` property is equivalent to an adjacency list, except that each source can only reference a single target. Mutually dependent options are supported. The following table lists some examples that illustrate how this works. Suppose we have options A, B and C. Then:
+The `inclusive` property is equivalent to an adjacency list. Mutually dependent options and multi-targeting are supported. The following table lists some examples to illustrate this. Suppose we have options A, B and C. Then:
 
-| Dependencies                       | Usage         | If C is always required |
-| ---------------------------------- | ------------- | ----------------------- |
-| A requires B requires C            | `[[[A] B] C]` | `[[A] B] C`             |
-| A and B require each other         | `[A B] [C]`   | `[A B] C`               |
-| A requires B requires C requires A | `[A B C]`     | `A B C`                 |
-| A and C require B                  | `[[A] B [C]]` | `[A] B C`               |
-| A requires B; C requires A         | `[[A [C]] B]` | `A C B`                 |
+| Dependencies                       | Usage               | If C is always required |
+| ---------------------------------- | ------------------- | ----------------------- |
+| A requires B requires C            | `[C [B [A]]]`       | `C [B [A]]`             |
+| A and B require each other         | `[A B] [C]`         | `C [A B]`               |
+| A requires B requires C requires A | `[A B C]`           | `A B C`                 |
+| A and C require B                  | `[B [A] [C]]`       | `B C [A]`               |
+| C requires A requires B            | `[B [A [C]]]`       | `A B C`                 |
+| A requires B and C                 | `[B] [C] [B C [A]]` | `C [B [A]]`             |
+
+> [!WARNING]
+>
+> The order of options is unspecified when there are dependencies, although a dependent option will usually appear _after_ the one it depends on.
+
+#### Exclusive option dependencies
+
+The `exclusive` property is reserved for mutual exclusivity. This feature is _not_ supported at the time. For that purpose, you have to create different usages.
 
 > [!NOTE]
 >
-> Mutual exclusivity and multi-targeting are _not_ supported at this time. For that purpose, you have to create different usages. (The reason is that it is difficult to implement. We sincerely apologize.)
+> The reason is that there are many corner cases and it is tricky to implement. We sincerely apologize.
 
 ### Groups section
 
@@ -312,8 +345,6 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 
 {/* self references */}
 
-[^1]: _polyadic_ means that the option accepts more than one parameter, but the parameter count is not variable
-
 [groups section]: #groups-section
 [usage sections]: #usage-section
 [option filter]: #option-filter
@@ -326,6 +357,10 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [name slots]: #name-slots
 [common properties]: #common-properties
 [text block]: #text-block
+[formatter flags]: #formatter-flags
+[inclusive option dependencies]: #inclusive-option-dependencies
+[exclusive option dependencies]: #exclusive-option-dependencies
+[parameter column]: #parameter-column
 
 {/* options references */}
 
@@ -339,12 +374,16 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [parameter name]: options#parameter-name
 [niladic]: options#option-parameters
 [subcommand]: options#command-option
+[standard input]: options#standard-input
+[cluster letters]: options#cluster-letters
+[function]: options#function-option
 
 {/* parser references */}
 
 [parser]: parser
 [inline parameters]: parser#inline-parameters
 [program name]: parser#program-name
+[cluster arguments]: parser#cluster-prefix
 
 {/* styles references */}
 
@@ -359,4 +398,4 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 {/* external references */}
 
 [escape sequences]: https://en.wikipedia.org/wiki/ANSI_escape_code
-[usage message]: https://en.wikipedia.org/wiki/Usage_message
+[usage statement]: https://en.wikipedia.org/wiki/Usage_message

@@ -51,12 +51,10 @@ describe('parse', () => {
           useFilter: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(
-        `  -f, --flag\n  -s, --single  <param>\n`,
-      );
+      expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(`  -f, --flag\n  -s, --single\n`);
     });
 
-    it('throw the help message of a subcommand with nested options and program name', () => {
+    it('throw the help message of a subcommand with nested options', () => {
       const options = {
         help: {
           type: 'help',
@@ -74,13 +72,24 @@ describe('parse', () => {
               names: ['-h'],
               sections: [{ type: 'usage' }],
             },
+            single: {
+              type: 'single',
+              cluster: 's', // test clusterPrefix
+              stdin: true, // test stdinSymbol
+            },
           },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', 'cm'])).rejects.toThrow('  cmd  ...\n');
-      expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow('[-h]\n');
+      expect(parse(options, ['-h', 'cm'])).rejects.toThrow(/^ {2}cmd\n$/);
+      expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow(/^\[-h\]\n$/);
       expect(parse(options, ['-h', 'cmd'], { progName: 'prog' })).rejects.toThrow(
-        'prog cmd [-h]\n',
+        /^prog cmd \[-h\]\n$/,
+      );
+      expect(parse(options, ['-h', 'cmd'], { progName: '', clusterPrefix: '-' })).rejects.toThrow(
+        /^\[-h\] \[-s\]\n$/,
+      );
+      expect(parse(options, ['-h', 'cmd'], { progName: '', stdinSymbol: '-' })).rejects.toThrow(
+        /^\[-h\] \[-\]\n$/,
       );
     });
 
@@ -131,7 +140,7 @@ describe('parse', () => {
           options: async () => (await import('../../data/no-help')).default,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -c  ...\n');
+      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -c\n');
     });
 
     it('throw the help message of a subcommand with a dynamic module with a help option', () => {

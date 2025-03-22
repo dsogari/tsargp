@@ -17,6 +17,53 @@ describe('parse', () => {
       readFileSpy.mockRestore(); // restore original implementation
     });
 
+    it('avoid reading on parent command when using nested options', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+          parse: jest.fn((param) => param),
+        },
+        command: {
+          type: 'command',
+          names: ['-c'],
+        },
+      } as const satisfies Options;
+      process.stdin.isTTY = false;
+      expect(parse(options, ['-c'])).resolves.toEqual({ single: undefined, command: {} });
+      expect(options.single.parse).not.toHaveBeenCalled();
+    });
+
+    it('avoid reading twice when using nested options', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+          parse: jest.fn((param) => param),
+        },
+        command: {
+          type: 'command',
+          names: ['-c'],
+          options: () => options,
+        },
+      } as const satisfies Options;
+      process.stdin.isTTY = false;
+      expect(parse(options, ['-c'])).resolves.toEqual({
+        single: undefined,
+        command: { single: 'data\n', command: undefined },
+      });
+      expect(options.single.parse).toHaveBeenCalledWith('data\n', {
+        // should have been { single: undefined, command: undefined } at the time of call
+        values: { single: 'data\n', command: undefined },
+        index: NaN,
+        name: '0', // zero for standard input
+        comp: false,
+      });
+      expect(options.single.parse).toHaveBeenCalledTimes(1);
+    });
+
     it('try to read if the option is required', () => {
       const options = {
         single: {

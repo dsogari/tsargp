@@ -23,13 +23,13 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
  * @param packageJsonPath The path to the package.json file
  * @param phrase The custom phrase for the footer
  * @param suffix A suffix to append to the repository URL
- * @returns The footer text
+ * @returns The footer ANSI string, if a package.json file was found; otherwise undefined
  */
 export async function sectionFooter(
   packageJsonPath: URL,
   phrase: string = '#0',
   suffix: string = '',
-): Promise<string | undefined> {
+): Promise<AnsiString | undefined> {
   const data = await readFile(packageJsonPath);
   if (data !== undefined) {
     const { repository } = JSON.parse(data) as { repository?: string | { url?: string } };
@@ -41,10 +41,7 @@ export async function sectionFooter(
           const [host, repo] = url.split(':');
           url = `https://${repo ? host : 'github'}.com/${repo ?? host}`;
         }
-        const str = new AnsiString().format(phrase, {}, new URL(url + suffix));
-        const result: Array<string> = [];
-        str.wrap(result, 0, 0, true, true);
-        return result.join('');
+        return new AnsiString().format(phrase, {}, new URL(url + suffix));
       }
     }
   }

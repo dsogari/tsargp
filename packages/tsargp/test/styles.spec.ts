@@ -34,18 +34,6 @@ describe('AnsiString', () => {
     });
   });
 
-  describe('totalLen', () => {
-    it('with leading and trailing line feeds', () => {
-      const str = new AnsiString().break().word('type').word('script').break();
-      expect(str.totalLen).toEqual(11);
-    });
-
-    it('with line feeds in the middle', () => {
-      const str = new AnsiString().word('type').break().break().word('script');
-      expect(str.totalLen).toEqual(10);
-    });
-  });
-
   describe('break', () => {
     it('add line feeds', () => {
       const str = new AnsiString().break(2).break();

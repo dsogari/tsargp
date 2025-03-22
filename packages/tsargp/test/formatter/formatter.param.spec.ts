@@ -1,15 +1,29 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../src/library';
-import { format } from '../../src/library';
+import { AnsiString, format } from '../../src/library';
 
 describe('format', () => {
   describe('when inline parameters are required', () => {
+    it('handle a function option with unknown parameter count', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          inline: 'always',
+          paramCount: 0,
+          paramName: '<param>',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -f  =<param>  Requires inline parameters.\n`);
+    });
+
     it('handle a single-valued option with inline parameter required for all names', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
           inline: 'always',
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s  =<param>  Requires inline parameters.\n`);
@@ -21,6 +35,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s', '--single'],
           inline: { '--single': 'always' },
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s, --single  =<param>\n`);
@@ -32,6 +47,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s', '--single'],
           inline: { '-s': 'always' },
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s, --single  <param>\n`);
@@ -43,6 +59,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a'],
           inline: 'always',
+          paramName: '<param>',
           // could have a delimiter or append=true
         },
       } as const satisfies Options;
@@ -55,6 +72,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a', '--array'],
           inline: { '--array': 'always' },
+          paramName: '<param>',
           // could have a delimiter or append=true
         },
       } as const satisfies Options;
@@ -69,6 +87,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a', '--array'],
           inline: { '-a': 'always' },
+          paramName: '<param>',
           // could have a delimiter or append=true
         },
       } as const satisfies Options;
@@ -84,6 +103,7 @@ describe('format', () => {
           names: ['-f'],
           inline: 'always',
           paramCount: [0, 1],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [=<param>]  Requires inline parameters.\n`);
@@ -97,6 +117,7 @@ describe('format', () => {
           type: 'single',
           names: ['-s'],
           inline: false,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s  <param>  Disallows inline parameters.\n`);
@@ -108,6 +129,7 @@ describe('format', () => {
           type: 'array',
           names: ['-a'],
           inline: false,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(
@@ -117,12 +139,25 @@ describe('format', () => {
   });
 
   describe('when specifying a parameter count', () => {
+    it('handle a function option with unknown parameter count', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          paramCount: 0,
+          paramName: '<param>',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -f  <param>...\n`);
+    });
+
     it('handle a function option with a single parameter', () => {
       const options = {
         function: {
           type: 'function',
           names: ['-f'],
           paramCount: 1,
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  <param>\n`);
@@ -134,6 +169,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [0, 1],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [<param>]\n`);
@@ -145,9 +181,10 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: 2,
+          paramName: '<param1>  <param2>',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts 2 parameters.\n`);
+      expect(format(options).wrap()).toEqual(`  -f  <param1> <param2>  Accepts 2 parameters.\n`);
     });
 
     it('handle a function option with a range parameter count', () => {
@@ -156,10 +193,11 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [1, 2],
+          paramName: '<param1>  [<param2>]',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(
-        `  -f  <param>...  Accepts between 1 and 2 parameters.\n`,
+        `  -f  <param1> [<param2>]  Accepts between 1 and 2 parameters.\n`,
       );
     });
 
@@ -169,6 +207,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [1, Infinity],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts multiple parameters.\n`);
@@ -180,9 +219,12 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [2, Infinity],
+          paramName: '<param1>  <param2>',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -f  <param>...  Accepts at least 2 parameters.\n`);
+      expect(format(options).wrap()).toEqual(
+        `  -f  <param1> <param2>...  Accepts at least 2 parameters.\n`,
+      );
     });
 
     it('handle a function option with a maximum parameter count', () => {
@@ -191,6 +233,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [0, 2],
+          paramName: '<param>...', // include ellipsis because max is finite
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts at most 2 parameters.\n`);
@@ -202,6 +245,7 @@ describe('format', () => {
           type: 'function',
           names: ['-f'],
           paramCount: [0, Infinity],
+          paramName: '<param>',
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -f  [<param>...]  Accepts multiple parameters.\n`);
@@ -209,15 +253,48 @@ describe('format', () => {
   });
 
   describe('when specifying a parameter name', () => {
-    it('handle a single-valued option with a parameter name', () => {
+    it('handle a command option with an empty parameter name', () => {
+      const options = {
+        command: {
+          type: 'command',
+          names: ['-c'],
+          paramName: '',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -c  ...\n`);
+    });
+
+    it('handle an option with a string parameter name', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
-          paramName: 'my_param',
+          paramName: 'my  param',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s  my_param\n`);
+      expect(format(options).wrap()).toEqual(`  -s  my param\n`);
+    });
+
+    it('handle an option with a AnsiString parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          paramName: new AnsiString().split('my  param'),
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -s  my param\n`);
+    });
+
+    it('handle an option with a usage parameter name', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          usageParamName: 'my  param', // should not appear in the parameter column
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -s\n`);
     });
 
     it('handle a single-valued option with an empty parameter name', () => {
@@ -225,10 +302,22 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
+          paramName: '', // should look strange in the parameter column
+          inline: 'always',
+        },
+      } as const satisfies Options;
+      expect(format(options).wrap()).toEqual(`  -s  =  Requires inline parameters.\n`);
+    });
+
+    it('handle an array-valued option with an empty parameter name', () => {
+      const options = {
+        single: {
+          type: 'array',
+          names: ['-a'],
           paramName: '',
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -s\n`);
+      expect(format(options).wrap()).toEqual(`  -a  [...]  Accepts multiple parameters.\n`);
     });
   });
 
@@ -371,33 +460,33 @@ describe('format', () => {
       );
     });
 
-    it('handle a function option with a parameter count and a boolean array example value', () => {
+    it('handle a function option with a boolean array example and range parameter count', () => {
       const options = {
         function: {
           type: 'function',
           names: ['-f'],
           example: [true, false],
-          paramCount: [1, Infinity],
+          paramCount: [1, 2],
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(`  -f  true false...  Accepts multiple parameters.\n`);
+      expect(format(options).wrap()).toEqual(
+        `  -f  true false  Accepts between 1 and 2 parameters.\n`,
+      );
     });
 
-    it('handle a function option with a string array example value', () => {
+    it('handle a function option with a string array example and exact parameter count', () => {
       const options = {
         function: {
           type: 'function',
           names: ['-f'],
           example: ['one', 'two'],
-          paramCount: [1, Infinity],
+          paramCount: 2,
         },
       } as const satisfies Options;
-      expect(format(options).wrap()).toEqual(
-        `  -f  'one' 'two'...  Accepts multiple parameters.\n`,
-      );
+      expect(format(options).wrap()).toEqual(`  -f  'one' 'two'  Accepts 2 parameters.\n`);
     });
 
-    it('handle a function option with a number array example value', () => {
+    it('handle a function option with a number array example and range parameter count', () => {
       const options = {
         function: {
           type: 'function',

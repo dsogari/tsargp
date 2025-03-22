@@ -18,9 +18,7 @@ describe('format', () => {
         },
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
-      expect(format(options).wrap()).toEqual(
-        `  -f           Requires -s.\n  -s  <param>  Requires no -f.\n`,
-      );
+      expect(format(options).wrap()).toEqual(`  -f    Requires -s.\n  -s    Requires no -f.\n`);
     });
 
     it('handle a requirement with specific values using expressions', () => {
@@ -77,7 +75,7 @@ describe('format', () => {
       options.single.requires.item.toString = () => 'fcn';
       new OptionRegistry(options); // sets preferredName
       expect(format(options).wrap()).toEqual(
-        `  -f           Requires <fcn>.\n  -s  <param>  Requires not <fcn>.\n`,
+        `  -f    Requires <fcn>.\n  -s    Requires not <fcn>.\n`,
       );
     });
   });
@@ -98,7 +96,7 @@ describe('format', () => {
       } as const satisfies Options;
       new OptionRegistry(options); // sets preferredName
       expect(format(options).wrap()).toEqual(
-        `  -f           Required if -s.\n  -s  <param>  Required if no -f.\n`,
+        `  -f    Required if -s.\n  -s    Required if no -f.\n`,
       );
     });
 
@@ -156,7 +154,7 @@ describe('format', () => {
       options.single.requiredIf.item.toString = () => 'fcn';
       new OptionRegistry(options); // sets preferredName
       expect(format(options).wrap()).toEqual(
-        `  -f           Required if <fcn>.\n  -s  <param>  Required if not <fcn>.\n`,
+        `  -f    Required if <fcn>.\n  -s    Required if not <fcn>.\n`,
       );
     });
   });

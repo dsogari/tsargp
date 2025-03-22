@@ -13,8 +13,11 @@ import type {
   RequirementCallback,
   RequiresEntry,
   HelpTextBlock,
+  OptionDependencies,
+  StyledString,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
+import type { RecordKeyMap, UsageStatement } from './utils.js';
 
 import { config } from './config.js';
 import { HelpItem } from './enums.js';
@@ -23,11 +26,10 @@ import {
   getOptionNames,
   getOptionEnvVars,
   visitRequirements,
-  isCommand,
   checkInline,
   getLastOptionName,
   isEnvironmentOnly,
-  isUnnamedNonPositional,
+  hasTemplate,
 } from './options.js';
 import { formatFunctions, AnsiString, AnsiMessage } from './styles.js';
 import {
@@ -36,7 +38,8 @@ import {
   getValues,
   max,
   getEntries,
-  getRequiredBy,
+  stronglyConnected,
+  createUsage,
   isString,
   mergeValues,
   regex,
@@ -51,12 +54,24 @@ import {
 export type FormatterFlags = {
   /**
    * The program name.
+   * If not present or empty, usage statements will contain no program name.
    */
   readonly progName?: string;
   /**
    * The cluster argument prefix.
+   * If not present, cluster letters will not appear in usage statements.
    */
   readonly clusterPrefix?: string;
+  /**
+   * The option filter.
+   * If not present, all options will be included respecting the order of their definitions.
+   */
+  readonly optionFilter?: ReadonlyArray<string>;
+  /**
+   * The symbol for the standard input (e.g., '-') to display in usage statements.
+   * If not present, the standard input will not appear in usage statements.
+   */
+  readonly stdinSymbol?: string;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -155,9 +170,14 @@ const defaultLayout: HelpColumnsLayout = {
 const defaultSections: HelpSections = [{ type: 'groups' }];
 
 /**
- * The formatting flags for arrays with no brackets.
+ * The formatting flags for arrays and objects with no brackets.
  */
-const openArrayFlags: FormattingFlags = { open: '', close: '', mergePrev: false };
+const openArrayFlags: FormattingFlags = { open: '', close: '' };
+
+/**
+ * The formatting flags for arrays and objects without merging the separator.
+ */
+const openArrayNoMergeFlags: FormattingFlags = { ...openArrayFlags, mergePrev: false };
 
 /**
  * The formatting functions for {@link HelpItem}.
@@ -192,13 +212,13 @@ const helpFunctions: HelpFunctions = {
                 ? [3, min] // at least %n
                 : [0, undefined]; // multiple
       const sep = config.connectives.and;
-      result.format(phrase, { alt, sep, ...openArrayFlags }, val);
+      result.format(phrase, { alt, sep, ...openArrayNoMergeFlags }, val);
     }
   },
   [HelpItem.positional]: (option, phrase, _options, result) => {
     const { positional } = option;
-    if (positional) {
-      const [alt, name] = positional === true ? [0] : [1, getSymbol(positional)];
+    const [alt, name] = isString(positional) ? [1, getSymbol(positional)] : positional ? [0] : [-1];
+    if (alt >= 0) {
       result.format(phrase, { alt }, name);
     }
   },
@@ -270,7 +290,7 @@ const helpFunctions: HelpFunctions = {
     if (sources?.length) {
       const values = sources.map((name) => (isString(name) ? getSymbol(name) : name));
       const sep = config.connectives.or;
-      result.format(phrase, { sep, ...openArrayFlags }, values);
+      result.format(phrase, { sep, ...openArrayNoMergeFlags }, values);
     }
   },
   [HelpItem.requiredIf]: (option, phrase, options, result) => {
@@ -284,7 +304,7 @@ const helpFunctions: HelpFunctions = {
     if (cluster) {
       const letters = [...cluster].map(getSymbol);
       const sep = config.connectives.or;
-      result.format(phrase, { sep, ...openArrayFlags }, letters);
+      result.format(phrase, { sep, ...openArrayNoMergeFlags }, letters);
     }
   },
   [HelpItem.useCommand]: (option, phrase, _options, result) => {
@@ -312,20 +332,18 @@ const helpFunctions: HelpFunctions = {
 //--------------------------------------------------------------------------------------------------
 /**
  * Formats a help message with sections.
- * Options are rendered in the same order as was declared in the option definitions.
+ * Options are rendered in the order specified in the definitions or in the section filter.
  * @param options The option definitions (should be validated first)
  * @param sections The help sections
- * @param filter The option filter
  * @param flags The formatter flags, if any
  * @returns The formatted help message
  */
 export function format(
   options: OpaqueOptions,
   sections: HelpSections = defaultSections,
-  filter: ReadonlyArray<string> = [],
   flags: FormatterFlags = {},
 ): AnsiMessage {
-  const keys = filterOptions(options, filter);
+  const keys = filterOptions(options, flags.optionFilter);
   const help = new AnsiMessage();
   for (const section of sections) {
     formatHelpSection(options, section, keys, flags, help);
@@ -334,12 +352,12 @@ export function format(
 }
 
 /**
- * Filter the options.
+ * Filter the options, preserving the order specified in the definitions.
  * @param options The option definitions
  * @param filter The option filter
  * @returns The filtered option keys
  */
-function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string>): Array<string> {
+function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string> = []): Array<string> {
   /** @ignore */
   function matches(str: string): boolean {
     str = str.toLowerCase();
@@ -390,9 +408,16 @@ function buildEntries(
     const option = options[key];
     const name = option.group ?? '';
     if (name in groups) {
-      const entry = buildFn(option);
-      if (entry) {
-        groups[name].push(entry);
+      const { styles } = config;
+      const saved = styles.symbol;
+      try {
+        styles.symbol = option.styles?.names ?? saved; // use configured style, if any
+        const entry = buildFn(option);
+        if (entry) {
+          groups[name].push(entry);
+        }
+      } finally {
+        styles.symbol = saved;
       }
     }
   }
@@ -429,12 +454,12 @@ function formatGroups(
     }
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option, flags, items);
-    const paramLen = param.totalLen;
+    const paramLen = param.wrap(); // get parameter length without indentation
     param.indent = paramLen; // HACK: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
     let namesLen = 0;
     names.forEach((str, i) => {
-      const nameLen = str.totalLen;
+      const nameLen = str.wrap(); // get name length without indentation
       if (nameLen) {
         if (prev) {
           prev.close(optionSep).popSty(); // pop the base text style
@@ -583,8 +608,8 @@ function formatNames(
 function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
   const result = new AnsiString().break(breaks).pushSty(config.styles.base);
-  if (!hidden) {
-    formatParam(option, result);
+  if (!hidden && hasTemplate(option, false)) {
+    formatParam(option, false, result);
   }
   return result.maxLength ? result.popSty() : result.clear();
 }
@@ -623,7 +648,7 @@ function formatDescription(
 
 /**
  * Formats a help section to be included in the full help message.
- * Options are rendered in the same order as was declared in the option definitions.
+ * Options are rendered in the order specified in the definitions or in the section filter.
  * @param options The option definitions
  * @param section The help section
  * @param keys The filtered option keys
@@ -665,13 +690,10 @@ function formatHelpSection(
       let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
       const progName = content?.text ?? flags.progName;
       if (progName) {
-        const str = new AnsiString(indent)
-          .break(breaks)
-          .pushSty(baseSty)
-          .word(progName.replace(regex.sgr, ''), content?.style)
-          .popSty();
-        prev.push(str);
-        indent = max(0, indent ?? 0) + progName.length + 1;
+        const str = new AnsiString(indent).break(breaks).pushSty(baseSty).pushSty(content?.style);
+        appendStyledString(progName, str, content?.noSplit);
+        prev.push(str.popSty().popSty());
+        indent = str.wrap() + 1; // get last column with indentation
         breaks = 0; // avoid breaking between program name and usage
       }
       const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
@@ -682,6 +704,22 @@ function formatHelpSection(
     } else if (content) {
       formatTextBlock(content, result, 1); // include trailing line feed
     }
+  }
+}
+
+/**
+ * Appends a string that may contain inline styles to a ANSI string.
+ * @param str The string to be appended
+ * @param result The resulting string
+ * @param noSplit Whether to disable text splitting
+ */
+function appendStyledString(str: StyledString, result: AnsiString, noSplit: boolean = false) {
+  if (!isString(str)) {
+    result.other(str);
+  } else if (noSplit) {
+    result.add(str.replace(regex.sgr, ''), str);
+  } else {
+    result.split(str);
   }
 }
 
@@ -697,51 +735,49 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
   const str = new AnsiString(indent, align === 'right').break(breaksBefore);
   if (text) {
     str.pushSty(config.styles.base).pushSty(style);
-    if (noSplit) {
-      str.add(text.replace(regex.sgr, ''), text);
-    } else {
-      str.split(text);
-    }
+    appendStyledString(text, str, noSplit);
     str.popSty().popSty().break(breaksAfter);
   }
   result.push(str);
 }
 
 /**
- * Formats a usage text to be included in a help section.
- * Options are rendered in the same order as was declared in the option definitions.
- * @param allKeys The filtered option keys
+ * Formats a usage statement to be included in a usage section.
+ * Options are rendered in the order specified in the definitions or in the section filter.
+ * @param keys The filtered option keys
  * @param options The option definitions
  * @param section The help section
  * @param flags The formatter flags
  * @param result The resulting string
  */
 function formatUsage(
-  allKeys: ReadonlyArray<string>,
+  keys: ReadonlyArray<string>,
   options: OpaqueOptions,
   section: HelpUsageSection,
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, exclude, required, requires, comment } = section;
-  const visited = new Set<string>(exclude ? filter : []);
-  const requiredKeys = new Set(required);
-  const requiredBy = requires && getRequiredBy(requires);
-  const keys = exclude || !filter ? allKeys.slice() : filter.filter((key) => allKeys.includes(key));
-  let hasPositional;
-  for (const key of keys) {
-    const option = options[key];
-    if (!hasPositional && isString(option.positional)) {
-      hasPositional = true;
-      keys.push(key); // leave positional marker for last (ignore filter order in this case)
-    } else if (
-      // skip options that can only be supplied through the environment
-      !isUnnamedNonPositional(option) ||
-      (option.cluster && flags.clusterPrefix !== undefined)
-    ) {
-      formatUsageOption(options, key, flags, result, visited, requiredKeys, requires, requiredBy);
+  const { filter, exclude, required, requires, inclusive, comment } = section;
+  const requiredSet = new Set(required?.filter((key) => key in options));
+  const includedSet = new Set(keys);
+  const filteredSet = new Set(filter);
+  const resultingSet =
+    exclude || !filter
+      ? includedSet.difference(filteredSet)
+      : filteredSet.difference(filteredSet.difference(includedSet)); // preserve filter order
+  const deps = normalizeDependencies(resultingSet, requiredSet, options, inclusive ?? requires);
+  const [, components, adjacency] = stronglyConnected(deps);
+  const withMarkerSet = new Set<string>(); // set of components that include a positional marker
+  for (const [comp, keys] of getEntries(components)) {
+    const index = keys.findIndex((key) => isString(options[key].positional));
+    if (index >= 0) {
+      keys.push(...keys.splice(index, 1)); // leave positional marker for last
+      withMarkerSet.add(comp);
     }
   }
+  const usage = createUsage(adjacency);
+  sortUsageStatement(withMarkerSet, usage);
+  formatUsageStatement(requiredSet, options, flags, result, components, usage);
   if (!result.maxLength) {
     result.clear();
   } else if (comment) {
@@ -750,168 +786,221 @@ function formatUsage(
 }
 
 /**
- * Formats an option to be included in the the usage text.
+ * Normalizes the option dependencies for a usage statement.
+ * @param keys The filtered option keys (may be updated)
+ * @param requiredKeys The set of options to consider always required (may be updated)
  * @param options The option definitions
- * @param key The option key
- * @param flags The formatter flags
- * @param result The resulting string
- * @param visited The set of visited options
- * @param requiredKeys The list of options to consider always required
- * @param requires The map of option keys to required options
- * @param requiredBy The adjacency list
- * @param preOrderFn The formatting function to execute before rendering the option names
- * @returns True if the option is considered always required
+ * @param dependencies The option dependencies
+ * @returns The normalized dependencies
  */
-function formatUsageOption(
-  options: OpaqueOptions,
-  key: string,
-  flags: FormatterFlags,
-  result: AnsiString,
-  visited: Set<string>,
+function normalizeDependencies(
+  keys: Set<string>,
   requiredKeys: Set<string>,
-  requires?: Readonly<Record<string, string>>,
-  requiredBy?: Readonly<Record<string, Array<string>>>,
-  preOrderFn?: (requiredKey?: string) => void,
-): boolean {
-  /** @ignore */
-  function format(receivedKey?: string, isLast: boolean = false): boolean {
-    const count = result.count;
-    // if the received key is my own key, then I'm the junction point in a circular dependency:
-    // reset it so that remaining options in the chain can be considered optional
-    preOrderFn?.(key === receivedKey ? undefined : receivedKey);
-    formatUsageNames(option, flags, result);
-    formatParam(option, result);
-    if (!required) {
-      // process requiring options in my dependency group (if they have not already been visited)
-      list?.forEach((key) => {
-        // update my status, since I'm required by an always required option
-        required ||= formatUsageOption(
-          options,
-          key,
-          flags,
-          result,
-          visited,
-          requiredKeys,
-          requires,
-          requiredBy,
-        );
-      });
-      // if I'm not always required and I'm the last option in a dependency chain, ignore the
-      // received key, so I can be considered optional
-      if (!required && (isLast || !receivedKey)) {
-        const [min, max] = getParamCount(option);
-        // skip enclosing brackets for positional option with optional parameters, because the names
-        // are also optional, so it would not make sense, e.g.: [[-a] [<param>...]]
-        if (option.positional === undefined || min || !max) {
-          result.openAt('[', count).close(']');
-        }
-      }
+  options: OpaqueOptions,
+  dependencies: OptionDependencies = {},
+): RecordKeyMap {
+  const result: RecordKeyMap = {};
+  for (const key of keys) {
+    if (options[key].required) {
+      requiredKeys.add(key);
     }
-    return required;
+    const deps = dependencies[key] ?? [];
+    result[key] = (isString(deps) ? [deps] : deps).filter((dep) => dep in options);
+    result[key].forEach((key) => keys.add(key)); // update with extra options
   }
-  let required = requiredKeys.has(key);
-  if (visited.has(key)) {
-    return required;
+  for (const key of keys) {
+    result[key].push(...requiredKeys); // options depended upon by all other options
   }
-  visited.add(key);
-  const option = options[key];
-  if (!required && option.required) {
-    required = true;
-    requiredKeys.add(key);
-  }
-  const list = requiredBy?.[key];
-  const requiredKey = requires?.[key];
-  if (requiredKey) {
-    if (required) {
-      requiredKeys.add(requiredKey); // transitivity of always required options
-    }
-    // this check is needed, so we can fallback to the normal format call in the negative case
-    if (!visited.has(requiredKey)) {
-      return formatUsageOption(
-        options,
-        requiredKey,
-        flags,
-        result,
-        visited,
-        requiredKeys,
-        requires,
-        requiredBy,
-        format,
-      );
-    }
-  }
-  return format(requiredKey, true);
+  return result;
 }
 
 /**
- * Formats an option's names to be included in the usage text.
+ * Sorts a usage statement to leave the positional marker for last.
+ * @param withMarker The set of components that include a positional marker
+ * @param usage The usage statement
+ * @returns True if the usage includes a positional marker
+ */
+function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStatement): boolean {
+  let containsMarker = false;
+  for (let i = 0, length = usage.length; i < length; ) {
+    const element = usage[i];
+    if (isArray(element) ? sortUsageStatement(withMarker, element) : withMarker.has(element)) {
+      usage.push(...usage.splice(i, 1)); // leave positional marker for last
+      containsMarker = true;
+      length--;
+    } else {
+      i++;
+    }
+  }
+  return containsMarker;
+}
+
+/**
+ * Formats a usage statement to be included in the the usage section.
+ * @param requiredKeys The set of options to consider always required
+ * @param options The option definitions
+ * @param flags The formatter flags
+ * @param result The resulting string
+ * @param components The option components
+ * @param usage The usage statement
+ */
+function formatUsageStatement(
+  requiredKeys: ReadonlySet<string>,
+  options: OpaqueOptions,
+  flags: FormatterFlags,
+  result: AnsiString,
+  components: Readonly<RecordKeyMap>,
+  usage: Readonly<UsageStatement>,
+) {
+  let alwaysRequired = false;
+  let renderBrackets = false;
+  const count = result.count;
+  for (const element of usage) {
+    if (isArray(element)) {
+      formatUsageStatement(requiredKeys, options, flags, result, components, element);
+      continue;
+    }
+    const keys = components[element];
+    for (const key of keys) {
+      const option = options[key];
+      const { styles } = config;
+      const saved = styles.symbol;
+      try {
+        styles.symbol = option.styles?.names ?? saved; // use configured style, if any
+        const isAlone = usage.length === 1 && keys.length === 1;
+        const isRequired = option.required || requiredKeys.has(key);
+        const hasRequiredPart = formatUsageOption(option, flags, isAlone, isRequired, result);
+        alwaysRequired ||= isRequired;
+        renderBrackets ||= hasRequiredPart;
+      } finally {
+        styles.symbol = saved;
+      }
+    }
+  }
+  if (!alwaysRequired && renderBrackets) {
+    const { optionalOpen, optionalClose } = config.connectives;
+    result.openAt(optionalOpen, count).close(optionalClose);
+  }
+}
+
+/**
+ * Formats an option to be included in the usage statement.
+ * @param option The option definition
+ * @param flags The formatter flags
+ * @param isAlone True if the option is alone in a dependency group
+ * @param isRequired True if the option is considered always required
+ * @param result The resulting string
+ * @returns True if a non-optional part was rendered
+ */
+function formatUsageOption(
+  option: OpaqueOption,
+  flags: FormatterFlags,
+  isAlone: boolean,
+  isRequired: boolean,
+  result: AnsiString,
+): boolean {
+  const { exprOpen, exprClose, optionalOpen, optionalClose } = config.connectives;
+  const { stdinSymbol } = flags;
+  const count = result.count;
+  const hasParam = hasTemplate(option, true);
+  const hasStdin = option.stdin && stdinSymbol !== undefined;
+  const isPositional = option.positional !== undefined;
+  const nameCount = formatUsageNames(option, flags, result);
+  let hasRequiredPart = !!nameCount;
+  if (isPositional) {
+    if (nameCount && (hasParam || !isAlone)) {
+      result.openAt(optionalOpen, count).close(optionalClose);
+      hasRequiredPart = false; // names are optional
+    }
+  } else if (nameCount > 1 && (hasParam || (!hasStdin && (!isAlone || isRequired)))) {
+    result.openAt(exprOpen, count).close(exprClose);
+  }
+  if (hasParam && formatParam(option, true, result)) {
+    hasRequiredPart = true; // parameter is required
+  }
+  if (hasStdin) {
+    let enclose = false;
+    if (result.count > count) {
+      result.close(config.connectives.optionAlt).merge = true;
+      enclose = !isAlone || !hasRequiredPart || isRequired;
+    } else {
+      hasRequiredPart = true; // stdin is required
+    }
+    formatFunctions.m(getSymbol(stdinSymbol), result, {});
+    if (enclose) {
+      result.openAt(exprOpen, count).close(exprClose);
+    }
+  }
+  return hasRequiredPart;
+}
+
+/**
+ * Formats an option's names to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
  * @param result The resulting string
+ * @returns The number of names rendered
  */
-function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString) {
-  const { cluster, styles, positional } = option;
+function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString): number {
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
   if (clusterPrefix !== undefined) {
-    for (const letter of cluster ?? '') {
+    for (const letter of option.cluster ?? '') {
       uniqueNames.add(clusterPrefix + letter);
     }
   }
   if (uniqueNames.size) {
-    const count = result.count;
-    const enclose = uniqueNames.size > 1;
-    const flags: FormattingFlags = {
-      sep: config.connectives.optionAlt,
-      open: enclose ? config.connectives.exprOpen : '',
-      close: enclose ? config.connectives.exprClose : '',
-      mergeNext: true, // keep names compact
-    };
-    const saved = config.styles.symbol;
-    try {
-      config.styles.symbol = styles?.names ?? saved; // use configured style, if any
-      formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
-    } finally {
-      config.styles.symbol = saved;
-    }
-    if (positional !== undefined) {
-      result.openAt('[', count).close(']');
-    }
+    const sep = config.connectives.optionAlt;
+    const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true }; // keep names compact
+    formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
   }
+  return uniqueNames.size;
 }
 
 /**
- * Formats an option's parameter to be included in the description or the usage text.
+ * Formats an option's parameter to be included in the description or the usage statement.
  * @param option The option definition
+ * @param isUsage Whether the parameter appears in a usage statement
  * @param result The resulting string
+ * @returns True if a non-optional part was rendered
  */
-function formatParam(option: OpaqueOption, result: AnsiString) {
-  const { type, example, separator, paramName } = option;
+function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
+  const { optionalOpen, optionalClose } = config.connectives;
+  const { example, separator, paramName, usageParamName } = option;
+  const name = isUsage ? (usageParamName ?? paramName) : paramName;
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
-  const optional = !min && max;
-  const ellipsis =
-    isCommand(type) || (!max && type === 'function') || (max > 1 && !inline) ? '...' : '';
+  const optional = !min && !!max;
+  const ellipsis = !inline && (!max || !isFinite(max)) ? '...' : '';
+  const [openBracket, closeBracket] = optional ? [optionalOpen, optionalClose] : ['', ''];
+  const sty = option.styles?.param ?? config.styles.value;
+  const count = result.count;
   if (inline) {
     result.merge = true; // to merge with names column, if required
   }
   result
-    .pushSty(option.styles?.param ?? config.styles.value)
-    .open(optional ? '[' : '')
+    .pushSty(sty)
+    .open(openBracket)
     .open(inline ? '=' : '');
-  if (example !== undefined) {
+  if (example !== undefined && (!isUsage || name === undefined)) {
     let param = example;
     if (separator && isArray(param)) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
-    formatFunctions.v(param, result, { sep: '', ...openArrayFlags });
+    formatFunctions.v(param, result, { sep: '', ...openArrayNoMergeFlags });
+  } else if (isString(name)) {
+    result.split(name);
+  } else if (name) {
+    result.other(name);
+  }
+  if (result.count > count) {
     result.close(ellipsis);
   } else {
-    const param = !max ? '' : (paramName ?? '<param>');
-    result.word(param + ellipsis);
+    result.word(ellipsis);
   }
-  result.close(optional ? ']' : '').popSty();
+  result.close(closeBracket).popSty();
+  return !optional;
 }
 
 /**

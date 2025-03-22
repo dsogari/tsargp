@@ -10,15 +10,15 @@ A command-line interface can be composed of subcommands and options (also known 
 
 There are seven types of options, as summarized in the table below:
 
-| Type       | Parameters                                        | Attribute classes                                         |
-| ---------- | ------------------------------------------------- | --------------------------------------------------------- |
-| [help]     | niladic                                           | [basic], [message]                                        |
-| [version]  | niladic                                           | [basic], [message]                                        |
-| [command]  | niladic[^1]                                       | [basic], [value],                                         |
-| [flag]     | niladic                                           | [basic], [value], [environment]                           |
-| [single]   | positional, inline, monadic                       | [basic], [value], [environment], [parameter], [selection] |
-| [array]    | positional, inline, variadic, delimited, appended | [basic], [value], [environment], [parameter], [selection] |
-| [function] | positional, inline, configurable                  | [basic], [value], [environment], [parameter]              |
+| Type       | Parameters                                        | Attribute classes                                                     |
+| ---------- | ------------------------------------------------- | --------------------------------------------------------------------- |
+| [help]     | niladic                                           | [basic], [message]                                                    |
+| [version]  | niladic                                           | [basic], [message]                                                    |
+| [command]  | niladic[^1]                                       | [basic], [value], [template]                                          |
+| [flag]     | niladic                                           | [basic], [value], [environment]                                       |
+| [single]   | positional, inline, monadic                       | [basic], [value], [environment], [template], [parameter], [selection] |
+| [array]    | positional, inline, variadic, delimited, appended | [basic], [value], [environment], [template], [parameter], [selection] |
+| [function] | positional, inline, configurable                  | [basic], [value], [environment], [template], [parameter]              |
 
 ## Glossary
 
@@ -97,13 +97,13 @@ All options share a set of attributes in addition to their type. They are descri
 
 The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
 
-- A name must _not_ contain the equals sign `'='{:ts}`, since the latter is reserved for use as option-parameter separator.
-- A name can contain any other Unicode character (including whitespace) or it can be the empty string.
+- A name must _not_ contain the equals sign `'='{:ts}`, since the latter is used as option-parameter separator.
+- A name should not contain [inline styles], but may contain any other Unicode character (including whitespace) or even be the empty string.
 - A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 > [!TIP]
 >
-> This attribute can be safely omitted if the option may be supplied through either [positional] arguments or the [environment].
+> Names can be omitted if the option may be supplied through [positional] arguments or the [environment].
 
 #### Preferred name
 
@@ -346,7 +346,8 @@ The reason why we did not use a dedicated `env` attribute for environment variab
 
 The `stdin` attribute, if present, indicates that the option may read data from the standard input. It only has effect if:
 
-- the option is not [supplied] and
+- the option is not [supplied]; and
+- the option pertains to the command or [subcommand] being executed (i.e., not a parent one); and
   - the option is [always required]; or
   - the terminal is non-interactive (i.e., the data comes from a redirected output)
 
@@ -368,25 +369,37 @@ The `break` attribute indicates whether the parser should exit the parsing loop 
 >
 > When setting this attribute, the [requirements] of all options supplied up to the current argument will be verified. Hence, you should make it clear in the help message that any options required by the affected one must be supplied either _before_ it or through the [environment].
 
-### Parameter attributes
+### Template attributes
 
-All [non-niladic] options share a set of attributes, which are described below.
+All [non-niladic] options and [subcommands] share a set of attributes, which are described below.
 
 #### Example value
 
-The `example` attribute, if present, specifies a value to appear in the help message [parameter column].
+The `example` attribute, if present, specifies a value to display in place of option parameter(s) in help messages. It will appear in the [parameter column] and, when a [parameter name] is not present, in the [usage statement] as well.
 
 > [!NOTE]
 >
-> Mutually exclusive with [parameter name].
+> Mutually exclusive with [usage parameter name].
 
 #### Parameter name
 
-The `paramName` attribute, if present, specifies a name to appear in the help message [parameter column].
+The `paramName` attribute, if present, specifies a name to to display in place of option parameter(s) in help messages. It will appear in the [usage statement] and, when an [example value] is not present, in the [parameter column] as well.
 
 > [!NOTE]
 >
-> Mutually exclusive with [example value].
+> Overrides [example value] in usage statements.
+
+#### Usage parameter name
+
+The `usageParamName` attribute, if present, specifies a name to to display in place of option parameter(s), but only in a [usage statement]. It does not appear in the [parameter column].
+
+> [!NOTE]
+>
+> Overrides [parameter name] in usage statements. Mutually exclusive with [example value].
+
+### Parameter attributes
+
+All [non-niladic] options share a set of attributes, which are described below.
 
 #### Positional | marker
 
@@ -507,7 +520,7 @@ The **version** option throws a version message. In addition to the sets of [bas
 
 The `version` attribute specifies the version information. Its value can be either of:
 
-- `string{:ts}` -- unstructured text data (e.g., a semantic version); or
+- `StyledString{:ts}` -- unstructured text data (e.g., a semantic version); or
 - `URL{:ts}` -- the path of a local JSON file whence a `version` field will be extracted
 
 In the latter case, the path should generally be `import.meta.resolve('./package.json'){:ts}`.
@@ -522,7 +535,7 @@ The option value will be either the result of the callback, if one is specified,
 >
 > When [word completion] is in effect, the callback will _not_ be called, since completion will have occurred before it has a chance to execute.
 
-In addition to the sets of [basic] and [value] attributes, this option has the attributes described below.
+This option has the following sets of attributes: [basic], [value], [template] and the ones described below.
 
 #### Nested options
 
@@ -566,11 +579,7 @@ The **flag** option accepts no parameter, but has a value that will be either th
 >
 > If you need a boolean-valued option that accepts a single parameter, use the [single] option instead. To make the parameter optional, use the [function] option with a [parameter count] of `[0, 1]{:ts}`.
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
+This option has the following sets of attributes: [basic], [value] and [environment].
 
 > [!NOTE]
 >
@@ -586,13 +595,7 @@ The **single** option accepts a single parameter. Its value can be either the re
 
 The callback receives the option parameter as its first parameter, and should return the parsed value.
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
-- [parameter] attributes
-- [selection] attributes
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter] and [selection].
 
 ### Array-valued option
 
@@ -600,14 +603,7 @@ The **array** option accepts multiple (zero or more) parameters. Its value is an
 
 The callback receives a single option parameter as its first parameter, and should likewise return the parsed value of a single array element. The resulting array may be subject to value [constraints].
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
-- [parameter] attributes
-- [selection] attributes
-- the attributes described below
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter], [selection] and the ones described below.
 
 #### Parameter separator
 
@@ -639,13 +635,7 @@ The **function** option exists for the sole purpose of being configured with an 
 
 The callback receives the list of option parameters as its first parameter, and should return the parsed value. As a special case, this list may contain _all_ the remaining command-line arguments (see [parameter count] below).
 
-This option has the following sets of attributes:
-
-- [basic] attributes
-- [value] attributes
-- [environment] attributes
-- [parameter] attributes
-- the attributes described below
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter] and the ones described below.
 
 #### Parameter count
 
@@ -719,6 +709,7 @@ Here is an example of how it might be used inside the callback:
 [message]: #message-attributes
 [value]: #value-attributes
 [environment]: #environment-attributes
+[template]: #template-attributes
 [parameter]: #parameter-attributes
 [selection]: #selection-attributes
 
@@ -757,10 +748,14 @@ Here is an example of how it might be used inside the callback:
 [data sources]: #data-sources
 [break loop]: #break-loop
 
-{/* parameter attributes */}
+{/* template attributes */}
 
 [example value]: #example-value
 [parameter name]: #parameter-name
+[usage parameter name]: #usage-parameter-name
+
+{/* parameter attributes */}
+
 [positional]: #positional--marker
 [inline constraint]: #inline-constraint
 [inlined]: #inline-constraint
@@ -821,7 +816,7 @@ Here is an example of how it might be used inside the callback:
 [help columns]: formatter#help-columns
 [groups section]: formatter#groups-section
 [help sections]: formatter#help-sections
-[usage section]: formatter#usage-section
+[usage statement]: formatter#usage-section
 [groups section]: formatter#groups-section
 [parameter column]: formatter#parameter-column
 [option filter]: formatter#option-filter
@@ -836,6 +831,7 @@ Here is an example of how it might be used inside the callback:
 [error message]: styles#error-message
 [error phrases]: styles#error-phrases
 [completion message]: styles#text-message
+[inline styles]: styles#inline-styles
 
 {/* validator references */}
 

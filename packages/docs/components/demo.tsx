@@ -27,6 +27,7 @@ class DemoCommand extends Command {
         compIndex,
         clusterPrefix: '-',
         optionPrefix: '-',
+        stdinSymbol: '-',
       };
       const { warning } = await parseInto(options, values, line, flags);
       if (warning) {
