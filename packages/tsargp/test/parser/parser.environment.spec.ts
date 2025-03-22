@@ -17,6 +17,24 @@ describe('parse', () => {
       readFileSpy.mockRestore(); // restore original implementation
     });
 
+    it('avoid reading on parent command when using nested options', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+          parse: jest.fn((param) => param),
+        },
+        command: {
+          type: 'command',
+          names: ['-c'],
+        },
+      } as const satisfies Options;
+      process.stdin.isTTY = false;
+      expect(parse(options, ['-c'])).resolves.toEqual({ single: undefined, command: {} });
+      expect(options.single.parse).not.toHaveBeenCalled();
+    });
+
     it('avoid reading twice when using nested options', () => {
       const options = {
         single: {
