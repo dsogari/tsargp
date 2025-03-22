@@ -28,7 +28,6 @@ import {
   checkInline,
   getLastOptionName,
   isEnvironmentOnly,
-  isUnnamedNonPositional,
   hasTemplate,
 } from './options.js';
 import { formatFunctions, AnsiString, AnsiMessage } from './styles.js';
@@ -65,7 +64,7 @@ export type FormatterFlags = {
    */
   readonly optionFilter?: ReadonlyArray<string>;
   /**
-   * The name of the standard input (e.g., '-') to display in the usage statements.
+   * The designator for the standard input (e.g., '-') to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
    */
   readonly stdinDesignator?: string;
@@ -214,8 +213,8 @@ const helpFunctions: HelpFunctions = {
   },
   [HelpItem.positional]: (option, phrase, _options, result) => {
     const { positional } = option;
-    if (positional) {
-      const [alt, name] = positional === true ? [0] : [1, getSymbol(positional)];
+    const [alt, name] = isString(positional) ? [1, getSymbol(positional)] : positional ? [0] : [-1];
+    if (alt >= 0) {
       result.format(phrase, { alt }, name);
     }
   },
@@ -745,19 +744,9 @@ function formatUsage(
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  /** @ignore */
-  function hasUsage(key: string): boolean {
-    // skip options that can only be supplied through the environment
-    const option = options[key];
-    return (
-      !isUnnamedNonPositional(option) ||
-      (flags.clusterPrefix !== undefined && !!option.cluster) ||
-      (flags.stdinDesignator !== undefined && !!option.stdin)
-    );
-  }
   const { filter, exclude, required, requires, inclusive, comment } = section;
   const requiredSet = new Set(required?.filter((key) => key in options));
-  const includedSet = new Set(keys.filter(hasUsage));
+  const includedSet = new Set(keys);
   const filteredSet = new Set(filter);
   const filteredKeys =
     exclude || !filter
@@ -765,7 +754,14 @@ function formatUsage(
       : filteredSet.difference(filteredSet.difference(includedSet)); // preserve filter order
   const deps = normalizeDependencies(filteredKeys, requiredSet, options, inclusive ?? requires);
   const [, components, adjacency] = stronglyConnected(deps);
-  const withMarker = sortComponents(options, components);
+  const withMarker = new Set<string>(); // set of components that include a positional marker
+  for (const [comp, keys] of getEntries(components)) {
+    const index = keys.findIndex((key) => isString(options[key].positional));
+    if (index >= 0) {
+      keys.push(...keys.splice(index, 1)); // leave positional marker for last
+      withMarker.add(comp);
+    }
+  }
   const usage = createUsage(adjacency);
   sortUsageStatement(withMarker, usage);
   formatUsageStatement(requiredSet, options, flags, result, components, usage);
@@ -806,28 +802,10 @@ function normalizeDependencies(
 }
 
 /**
- * Sorts the option components to leave the positional marker for last.
- * @param options The option definitions
- * @param components The option components
- * @returns The set of components that include an option with a positional marker
- */
-function sortComponents(options: OpaqueOptions, components: RecordKeyMap): Set<string> {
-  const result = new Set<string>();
-  for (const [comp, keys] of getEntries(components)) {
-    const index = keys.findIndex((key) => isString(options[key].positional));
-    if (index >= 0) {
-      keys.push(...keys.splice(index, 1));
-      result.add(comp);
-    }
-  }
-  return result;
-}
-
-/**
  * Sorts a usage statement to leave the positional marker for last.
- * @param withMarker The set of components that include an option with a positional marker
+ * @param withMarker The set of components that include a positional marker
  * @param usage The usage statement
- * @returns True if the usage includes an option with a positional marker
+ * @returns True if the usage includes a positional marker
  */
 function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStatement): boolean {
   let containsMarker = false;
@@ -837,9 +815,9 @@ function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStateme
       usage.push(...usage.splice(i, 1));
       containsMarker = true;
       length--;
-      continue;
+    } else {
+      i++;
     }
-    i++;
   }
   return containsMarker;
 }
@@ -861,21 +839,6 @@ function formatUsageStatement(
   components: Readonly<RecordKeyMap>,
   usage: Readonly<UsageStatement>,
 ) {
-  /** @ignore */
-  function formatUsageOption(keys: Array<string>, option: OpaqueOption, key: string) {
-    const count = result.count;
-    const isAlone = usage.length === 1 && keys.length === 1;
-    const isRequired = option.required || requiredKeys.has(key);
-    const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
-    const requiredParam = formatParam(option, true, result);
-    const alternatedStdin = formatUsageStdin(option, flags, result.count > count, result);
-    alwaysRequired ||= isRequired;
-    renderBrackets ||= requiredNames || requiredParam || alternatedStdin === false;
-    if (alternatedStdin && (!isAlone || !renderBrackets)) {
-      const { exprOpen, exprClose } = config.connectives;
-      result.openAt(exprOpen, count).close(exprClose);
-    }
-  }
   let alwaysRequired = false;
   let renderBrackets = false;
   const count = result.count;
@@ -891,7 +854,11 @@ function formatUsageStatement(
       const saved = styles.symbol;
       try {
         styles.symbol = option.styles?.names ?? saved; // use configured style, if any
-        formatUsageOption(keys, option, key);
+        const isAlone = usage.length === 1 && keys.length === 1;
+        const isRequired = option.required || requiredKeys.has(key);
+        const requiredPart = formatUsageOption(option, flags, isAlone, isRequired, result);
+        alwaysRequired ||= isRequired;
+        renderBrackets ||= requiredPart;
       } finally {
         styles.symbol = saved;
       }
@@ -904,26 +871,41 @@ function formatUsageStatement(
 }
 
 /**
- * Formats the standard input designator to be included in the usage statement.
+ * Formats an option to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
- * @param useAlt Whether an alternation connective should be rendered
+ * @param isAlone True if the option is alone in a dependency group
+ * @param isRequired True if the option is considered always required
  * @param result The resulting string
- * @returns True if the name was rendered with alternation; undefined if nothing was rendered
+ * @returns True if a non-optional part was rendered
  */
-function formatUsageStdin(
+function formatUsageOption(
   option: OpaqueOption,
   flags: FormatterFlags,
-  useAlt: boolean,
+  isAlone: boolean,
+  isRequired: boolean,
   result: AnsiString,
-): boolean | undefined {
-  if (option.stdin && flags.stdinDesignator !== undefined) {
-    if (useAlt) {
+): boolean {
+  const { stdinDesignator } = flags;
+  const count = result.count;
+  const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
+  const requiredParam = formatParam(option, true, result);
+  let requiredPart = requiredNames || requiredParam;
+  if (option.stdin && stdinDesignator !== undefined) {
+    let enclose = false;
+    if (result.count > count) {
       result.close(config.connectives.optionAlt).merge = true;
+      enclose = !isAlone || !requiredPart;
+    } else {
+      requiredPart = true;
     }
-    result.split(flags.stdinDesignator);
-    return useAlt;
+    result.split(stdinDesignator);
+    if (enclose) {
+      const { exprOpen, exprClose } = config.connectives;
+      result.openAt(exprOpen, count).close(exprClose);
+    }
   }
+  return requiredPart;
 }
 
 /**
@@ -933,7 +915,7 @@ function formatUsageStdin(
  * @param isAlone True if the option is alone in a dependency group
  * @param isRequired True if the option is considered always required
  * @param result The resulting string
- * @returns True if a non-optional name was rendered
+ * @returns True if a non-optional part was rendered
  */
 function formatUsageNames(
   option: OpaqueOption,
@@ -974,7 +956,7 @@ function formatUsageNames(
  * @param option The option definition
  * @param isUsage Whether the parameter appears in a usage statement
  * @param result The resulting string
- * @returns True if a non-optional parameter was rendered
+ * @returns True if a non-optional part was rendered
  */
 function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
   if (!hasTemplate(option, isUsage)) {

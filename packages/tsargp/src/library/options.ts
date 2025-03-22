@@ -1143,28 +1143,19 @@ export function getLastOptionName(option: OpaqueOption): string | undefined {
 }
 
 /**
- * Checks whether an option has no name and is not positional.
- * @param option The option definition
- * @returns True if the option has no name and is not positional
- */
-export function isUnnamedNonPositional(option: OpaqueOption): boolean {
-  return (option.positional ?? getLastOptionName(option)) === undefined;
-}
-
-/**
  * Checks whether an option can only be supplied through the environment.
  * Does not check whether the environment attributes are actually set.
  * @param option The option definition
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !option.cluster && isUnnamedNonPositional(option);
+  return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;
 }
 
 /**
  * Checks whether an option has a template attribute.
  * @param option The option definition
- * @param isUsage Whether the parameter appears in a usage statement
+ * @param isUsage Whether the template appears in a usage statement
  * @returns True if the option has a template attribute
  */
 export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {

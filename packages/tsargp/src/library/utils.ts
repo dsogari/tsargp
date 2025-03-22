@@ -82,7 +82,7 @@ export type NamingMatch<T extends NamingRules> = Resolve<{
 }>;
 
 /**
- * A map of record keys to a list of record keys.
+ * A map of record keys to lists of record keys.
  */
 export type RecordKeyMap = Record<string, Array<string>>;
 

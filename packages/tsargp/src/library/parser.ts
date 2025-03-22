@@ -82,7 +82,7 @@ export type ParsingFlags = {
    */
   readonly optionPrefix?: string;
   /**
-   * The name of the standard input (e.g., '-') to display in the usage statements.
+   * The designator for the standard input (e.g., '-') to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
    */
   readonly stdinDesignator?: string;

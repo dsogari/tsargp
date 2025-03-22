@@ -169,6 +169,19 @@ describe('format', () => {
     );
   });
 
+  it('handle a unnamed single-valued option with positional marker and reads data from the standard input', () => {
+    const options = {
+      single: {
+        type: 'single',
+        positional: '', // test empty marker
+        stdin: true,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      `      Accepts positional arguments that may be preceded by. If not supplied, will be read from the standard input.\n`,
+    );
+  });
+
   it('handle an array-valued option whose parameters can be delimited', () => {
     const options = {
       array: {
