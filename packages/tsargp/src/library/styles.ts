@@ -443,7 +443,7 @@ export class AnsiString {
   /**
    * @returns The combined length including spaces (but with no wrapping)
    */
-  get totalLen(): number {
+  get length(): number {
     let dec = 0;
     const len = this.strings.reduce(
       (acc, str) => acc + (str.length ? ((dec = 1), str.length + 1) : dec && ((dec = 0), -1)),

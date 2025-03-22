@@ -44,6 +44,8 @@ export const config: MessageConfig = {
     valueClose: '>',
     exprOpen: '(',
     exprClose: ')',
+    optionalOpen: '[',
+    optionalClose: ']',
   },
   errorPhrases: {
     [ErrorItem.unknownOption]: 'Unknown option #0.(| Similar names are: #1.)',
@@ -232,6 +234,14 @@ export type ConnectiveWords = {
    * The bracket character used to close an expression.
    */
   exprClose: string;
+  /**
+   * The bracket character used to open an optional group.
+   */
+  optionalOpen: string;
+  /**
+   * The bracket character used to close an optional group.
+   */
+  optionalClose: string;
 };
 
 /**

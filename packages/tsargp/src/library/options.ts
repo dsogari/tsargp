@@ -7,7 +7,7 @@ import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage } from './styles.js';
-import { getEntries, isArray, isFunction, isObject, isString } from './utils.js';
+import { getEntries, isArray, isFunction, isObject, isString, makeUnique } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -153,13 +153,18 @@ export type HelpColumnsLayout = {
 };
 
 /**
+ * A string that may contain inline styles.
+ */
+export type StyledString = string | AnsiString;
+
+/**
  * Defines attributes for a help text block.
  */
 export type HelpTextBlock = {
   /**
-   * The text. May contain inline styles. (Defaults to none)
+   * The text. (Defaults to none)
    */
-  readonly text?: string;
+  readonly text?: StyledString;
   /**
    * The fallback style. (Defaults to none)
    */
@@ -219,17 +224,31 @@ export type WithSectionFilter = {
 };
 
 /**
+ * A record that maps option keys to depended option keys.
+ */
+export type OptionDependencies = Readonly<Record<string, string | ReadonlyArray<string>>>;
+
+/**
  * Defines additional attributes for the usage section.
  */
 export type WithSectionUsage = {
   /**
-   * A list of option keys that should be considered required.
+   * A list of option keys that should be considered always required.
    */
   readonly required?: ReadonlyArray<string>;
   /**
    * A record that maps option keys to required option keys.
+   * @deprecated use {@link WithSectionUsage.inclusive} instead.
    */
   readonly requires?: Readonly<Record<string, string>>;
+  /**
+   * A record that specifies inclusive option dependencies.
+   */
+  readonly inclusive?: OptionDependencies;
+  /**
+   * Reserved for mutually exclusive option dependencies.
+   */
+  readonly exclusive?: never;
   /**
    * A commentary to append to the usage.
    */
@@ -385,9 +404,9 @@ export type NestedOptions = Promissory<Options> | (() => Promissory<Options>);
 export type InlineConstraint = false | 'always' | Readonly<Record<string, false | 'always'>>;
 
 /**
- * A known value used in default values and parameter examples.
+ * A non-callable value used in default values and parameter examples.
  */
-export type KnownValue = boolean | string | number | object;
+export type NonCallable = boolean | string | number | object;
 
 /**
  * Information about the current argument sequence in the parsing loop.
@@ -468,6 +487,8 @@ export type WithBasic = {
    *
    * Names cannot contain the equals sign `=`, since it may be used as option-parameter separator.
    * `null`s can be specified in order to skip the respective "slot" in the help message names column.
+   *
+   * Should not contain inline styles or line feeds.
    */
   readonly names?: ReadonlyArray<string | null>;
   /**
@@ -479,13 +500,13 @@ export type WithBasic = {
    */
   preferredName?: string;
   /**
-   * The option synopsis. May contain inline styles.
+   * The option synopsis.
    */
-  readonly synopsis?: string | AnsiString;
+  readonly synopsis?: StyledString;
   /**
-   * The option deprecation notice. May contain inline styles.
+   * The option deprecation notice.
    */
-  readonly deprecated?: string | AnsiString;
+  readonly deprecated?: StyledString;
   /**
    * The option group in the help message.
    * Use null to hide it from the help message.
@@ -538,7 +559,7 @@ export type WithOptionValue<T> = {
    * The default value is set at the end of the parsing loop if the option was not supplied. You may
    * use a callback to inspect parsed values and determine the default value based on those values.
    */
-  readonly default?: KnownValue | DefaultValueCallback;
+  readonly default?: NonCallable | DefaultValueCallback;
   /**
    * A custom callback for parsing the option parameter(s).
    */
@@ -570,18 +591,32 @@ export type WithEnvironment = {
 };
 
 /**
+ * Defines attributes for options that may have a template to be displayed in place of option
+ * parameter(s) in help messages.
+ */
+export type WithTemplate = {
+  /**
+   * The example value to display in the parameter column or in usage statements.
+   */
+  readonly example?: NonCallable;
+  /**
+   * The parameter name to display in the parameter column or in usage statements.
+   * Overrides {@link WithTemplate.example} in usage statements.
+   * Should not contain line feeds.
+   */
+  readonly paramName?: StyledString;
+  /**
+   * The parameter name to display in usage statements.
+   * Overrides {@link WithTemplate.paramName} in usage statements.
+   * Should not contain line feeds.
+   */
+  readonly usageParamName?: StyledString;
+};
+
+/**
  * Defines attributes for options that may have parameters.
  */
 export type WithParameter = {
-  /**
-   * The option example value. Replaces the option type in the help message parameter column.
-   */
-  readonly example?: KnownValue;
-  /**
-   * The option parameter name. Replaces the option type in the help message parameter column.
-   * It should not contain inline styles or line feeds.
-   */
-  readonly paramName?: string;
   /**
    * Whether the option accepts positional arguments.
    * There may be at most one option with this setting.
@@ -657,7 +692,7 @@ export type WithVersion = {
    * If a `string`, it will not be validated, but should not contain inline styles.
    * If a `URL`, it should be used in conjunction with `import.meta.resolve`.
    */
-  readonly version?: string | URL;
+  readonly version?: StyledString | URL;
 };
 
 /**
@@ -751,7 +786,9 @@ export type CommandOption = WithOptionType<'command'> &
   WithCommand &
   WithBasic &
   WithOptionValue<OpaqueOptionValues> &
-  (WithDefault | WithRequired);
+  WithTemplate &
+  (WithDefault | WithRequired) &
+  (WithExample | WithUsageParamName);
 
 /**
  * An option that has a value, but is niladic.
@@ -771,10 +808,11 @@ export type SingleOption = WithOptionType<'single'> &
   WithBasic &
   WithOptionValue<string> &
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName) &
+  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
@@ -785,10 +823,11 @@ export type ArrayOption = WithOptionType<'array'> &
   WithBasic &
   WithOptionValue<string> &
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName) &
+  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
@@ -799,9 +838,10 @@ export type FunctionOption = WithOptionType<'function'> &
   WithBasic &
   WithOptionValue<Array<string>> &
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   (WithDefault | WithRequired) &
-  (WithExample | WithParamName);
+  (WithExample | WithUsageParamName);
 
 /**
  * The public option types.
@@ -858,6 +898,7 @@ export type OpaqueOption = WithOptionType<OptionType> &
   WithMessage &
   WithOptionValue<any> & // eslint-disable-line @typescript-eslint/no-explicit-any
   WithEnvironment &
+  WithTemplate &
   WithParameter &
   WithSelection &
   WithArray;
@@ -917,17 +958,18 @@ type WithDefault = {
  */
 type WithExample = {
   /**
-   * @deprecated mutually exclusive with {@link WithParameter.example}
+   * @deprecated mutually exclusive with {@link WithTemplate.example}.
+   * Use {@link WithTemplate.paramName} in this case.
    */
-  readonly paramName?: never;
+  readonly usageParamName?: never;
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a parameter name.
+ * Removes mutually exclusive attributes from an option with a usage parameter name.
  */
-type WithParamName = {
+type WithUsageParamName = {
   /**
-   * @deprecated mutually exclusive with {@link WithParameter.paramName}
+   * @deprecated mutually exclusive with {@link WithTemplate.usageParamName}
    */
   readonly example?: never;
 };
@@ -1030,9 +1072,10 @@ type ValueDataType<T extends Option> =
 /**
  * The data type of an option that throws a message.
  * @template T The option definition type
- * @template M The message data type
  */
-type MessageDataType<T extends Option, M> = T extends { saveMessage: true } ? M | undefined : never;
+type MessageDataType<T extends Option> = T extends { saveMessage: true }
+  ? AnsiMessage | undefined
+  : never;
 
 /**
  * The data type of an option key.
@@ -1050,11 +1093,9 @@ type OptionKeyType<T extends Option, K> = T extends WithOptionType<MessageOption
  * @template T The option definition type
  */
 type OptionDataType<T extends Option> =
-  T extends WithOptionType<'help'>
-    ? MessageDataType<T, AnsiMessage>
-    : T extends WithOptionType<'version'>
-      ? MessageDataType<T, string>
-      : ValueDataType<T> | DefaultDataType<T>;
+  T extends WithOptionType<'help' | 'version'>
+    ? MessageDataType<T>
+    : ValueDataType<T> | DefaultDataType<T>;
 
 //--------------------------------------------------------------------------------------------------
 // Functions
@@ -1109,12 +1150,14 @@ export function getLastOptionName(option: OpaqueOption): string | undefined {
 }
 
 /**
- * Checks whether an option has no name and is not positional.
+ * Checks whether an option has a template attribute.
  * @param option The option definition
- * @returns True if the option has no name and is not positional
+ * @param isUsage Whether the template appears in a usage statement
+ * @returns True if the option has a template attribute
  */
-export function isUnnamedNonPositional(option: OpaqueOption): boolean {
-  return (option.positional ?? getLastOptionName(option)) === undefined;
+export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
+  const { example, paramName, usageParamName } = option;
+  return (example ?? paramName) !== undefined || (isUsage && usageParamName !== undefined);
 }
 
 /**
@@ -1124,7 +1167,7 @@ export function isUnnamedNonPositional(option: OpaqueOption): boolean {
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !option.cluster && isUnnamedNonPositional(option);
+  return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;
 }
 
 /**
@@ -1297,7 +1340,7 @@ export function normalizeArray(option: OpaqueOption, name: symbol, value: unknow
     return [value]; // convert to a single-element tuple
   }
   const { unique, limit } = option;
-  const result = unique ? [...new Set(value)] : value.slice(); // the input may be read-only
+  const result = unique ? makeUnique(value) : value.slice(); // the input may be read-only
   if (limit && limit > 0 && limit < result.length) {
     throw ErrorMessage.create(ErrorItem.limitConstraintViolation, {}, name, result.length, limit);
   }

@@ -215,7 +215,7 @@ For convenience, all message classes have a `toString` method and a `message` pr
 
 ### ANSI message
 
-The `AnsiMessage` class wraps a list of ANSI strings and is the type used for [help messages]. It provides a `wrap` method to get a plain string, accepting the following optional parameters:
+The `AnsiMessage` class wraps a list of ANSI strings and is the type used for [help messages] and [version info]. It provides a `wrap` method to get a plain string, accepting the following optional parameters:
 
 - `width` -- the desired terminal width (`0{:ts}` means no wrapping)
 - `emitStyles` -- whether styles should be emitted
@@ -420,6 +420,7 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [default value]: options#default-value
 [deprecation notice]: options#deprecation-notice
 [media hyperlink]: options#media-hyperlink
+[version info]: options#version-info
 
 {/* parser references */}
 

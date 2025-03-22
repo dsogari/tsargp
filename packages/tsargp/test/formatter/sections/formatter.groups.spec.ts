@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options, HelpSections } from '../../../src/library';
+import type { Options, FormatterFlags, HelpSections } from '../../../src/library';
 import { format, HelpItem, tf, style } from '../../../src/library';
 
 describe('rendering a groups section', () => {
@@ -188,12 +188,12 @@ describe('rendering a groups section', () => {
     const sections2: HelpSections = [{ type: 'groups', filter: ['group1', ''], exclude: true }];
     const sections3: HelpSections = [{ type: 'groups', filter: ['group2', 'group1'] }];
     const sections4: HelpSections = [{ type: 'groups', filter: [''] }]; // default group
-    const filter = ['-f1', '-f2', '-s2'];
-    expect(format(options, sections0, filter).wrap()).toEqual('');
-    expect(format(options, sections1, filter).wrap()).toEqual('  -f1\n');
-    expect(format(options, sections2, filter).wrap()).toEqual('  -f2\n');
-    expect(format(options, sections3, filter).wrap()).toEqual('  -f2\n  -f1\n');
-    expect(format(options, sections4, filter).wrap()).toEqual('  -s2  <param>\n');
+    const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s2'] };
+    expect(format(options, sections0, flags).wrap()).toEqual('');
+    expect(format(options, sections1, flags).wrap()).toEqual('  -f1\n');
+    expect(format(options, sections2, flags).wrap()).toEqual('  -f2\n');
+    expect(format(options, sections3, flags).wrap()).toEqual('  -f2\n  -f1\n');
+    expect(format(options, sections4, flags).wrap()).toEqual('  -s2\n');
   });
 
   it('use environment variable names instead of option names', () => {

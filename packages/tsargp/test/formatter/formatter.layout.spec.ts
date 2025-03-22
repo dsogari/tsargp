@@ -9,6 +9,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -35,6 +36,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -58,6 +60,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -79,6 +82,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -100,6 +104,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -117,6 +122,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -134,6 +140,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -328,6 +335,7 @@ describe('format', () => {
       single1: {
         type: 'single',
         names: ['-s1', '--single'],
+        paramName: '<param>',
       },
       single2: {
         type: 'single',
@@ -337,11 +345,13 @@ describe('format', () => {
         type: 'single',
         names: [null, '-s3'],
         inline: 'always',
+        paramName: '<param>',
       },
       array: {
         type: 'array',
         names: ['--array'],
         inline: 'always',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -361,6 +371,7 @@ describe('format', () => {
       single1: {
         type: 'single',
         names: ['-s1', '--single'],
+        paramName: '<param>',
       },
       single2: {
         type: 'single',
@@ -370,11 +381,13 @@ describe('format', () => {
         type: 'single',
         names: [null, '-s3'],
         inline: 'always',
+        paramName: '<param>',
       },
       array: {
         type: 'array',
         names: ['--array'],
         inline: 'always',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -397,6 +410,7 @@ describe('format', () => {
       single1: {
         type: 'single',
         names: ['-s1', '--single'],
+        paramName: '<param>',
       },
       single2: {
         type: 'single',
@@ -406,11 +420,13 @@ describe('format', () => {
         type: 'single',
         names: [null, '-s3'],
         inline: 'always',
+        paramName: '<param>',
       },
       array: {
         type: 'array',
         names: ['--array'],
         inline: 'always',
+        paramName: '<param>',
       },
     } as const satisfies Options;
     const sections: HelpSections = [
@@ -437,6 +453,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
       flag: {
         type: 'flag',
@@ -447,9 +464,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          descr: { align: 'merge' },
-        },
+        layout: { descr: { align: 'merge' } },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -463,6 +478,7 @@ describe('format', () => {
         type: 'single',
         names: ['-s', null],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
       flag: {
         type: 'flag',
@@ -488,10 +504,12 @@ describe('format', () => {
         type: 'single',
         names: ['-s'],
         synopsis: 'A string option',
+        paramName: '<param>',
       },
       single2: {
         type: 'single',
         synopsis: 'A string option',
+        paramName: '<param>',
       },
       flag: {
         type: 'flag',

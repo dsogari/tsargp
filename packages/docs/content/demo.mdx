@@ -16,7 +16,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 ### Basic commands
 
-- `clear` -- clear the screen
+- `clear` -- clear the screen and environment variables
 - `tsargp -h` -- print the help message
 - `tsargp ...` -- play with option values
 - `tsargp` -- view the default values
@@ -117,7 +117,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mInvalid parameter to [35m-sr[0m[39m: [32m'A'[0m[39m. Value must match the regex [31m/^\d+$/[0m[39m.
+Invalid parameter to [35m-sr[39m: [32m'A'[39m. Value must match the regex [31m/^\d+$/[39m.
 ```
 
 {/* cSpell:enable */}
@@ -128,7 +128,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mInvalid parameter to [35m-sc[0m[39m: [32m'A'[0m[39m. Value must be one of: [32m'one'[0m[39m, [32m'two'[0m[39m.
+Invalid parameter to [35m-sc[39m: [32m'A'[39m. Value must be one of: [32m'one'[39m, [32m'two'[39m.
 ```
 
 {/* cSpell:enable */}
@@ -139,7 +139,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mInvalid parameter to [35m-nr[0m[39m: [32m'-3'[0m[39m. Value must be within the range [[33m-2[0m[39m, [33mInfinity[0m[39m].
+Invalid parameter to [35m-nr[39m: [32m'-3'[39m. Value must be within the range [[33m-2[39m, [33mInfinity[39m].
 ```
 
 {/* cSpell:enable */}
@@ -150,7 +150,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mInvalid parameter to [35m-nc[0m[39m: [32m'0'[0m[39m. Value must be one of: [32m'1'[0m[39m, [32m'2'[0m[39m.
+Invalid parameter to [35m-nc[39m: [32m'0'[39m. Value must be one of: [32m'1'[39m, [32m'2'[39m.
 ```
 
 {/* cSpell:enable */}
@@ -182,7 +182,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mOption [35m--strArrayLimit[0m[39m has too many values: [33m4[0m[39m. Should have at most [33m3[0m[39m.[0m[0m
+Option [35m--strArrayLimit[39m has too many values: [33m4[39m. Should have at most [33m3[39m.
 ```
 
 {/* cSpell:enable */}
@@ -301,7 +301,7 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mOption [35m-sc[0m[39m does not accept inline parameters.
+Option [35m-sc[39m does not accept inline parameters.
 ```
 
 {/* cSpell:enable */}
@@ -312,7 +312,7 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mOption [35m-nc[0m[39m requires an inline parameter.
+Option [35m-nc[39m requires an inline parameter.
 ```
 
 {/* cSpell:enable */}
@@ -330,12 +330,11 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0;1mArgument parser for TypeScript.[0m
+[1mArgument parser for TypeScript.[22m
 
-  [0;38;2;160;100;64m-f[0m, [0;38;2;160;100;64m--no-flag[0m    [3;9mA flag option.[3;9m Deprecated for some reason.[3;9m
+  [38;2;160;100;64m-f[39m, [38;2;160;100;64m--no-flag[39m    [3;9mA flag option. Deprecated for some reason.[23;29m
 
-[0;1mUsage:[0m
-  [0mdemo.js [[0m([35m-f[0m|[35m--no-flag[0m)[0m]
+[1mUsage:[22m demo.js [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m]
 
 [90m...[0m
 ```
@@ -348,13 +347,14 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0;1mUsage:[0m
+[1mUsage:[22m
 
-  [0mdemo.js hello [0m[90m[<param>...][0m [([35m-h[0m|[35m--help[0m)[0m] [[35mhello[0m [90m...[0m]
+  demo.js hello ([90m[...][39m|[35m-[39m) [[35m-h[39m|[35m--help[39m] [[35mhello[39m [90m...[39m]
 
-[0;1mArguments:[0m
+[1mArguments:[22m
 
-  [90m[<param>...]  [0mAccepts multiple parameters.[0m Reads data from standard input.[0m Defaults to [[32m'world'[0m].[0m
+  [90m[...][39m       Accepts multiple parameters. If not supplied, will be read from the standard input.
+              Defaults to [[32m'world'[39m].
 
 [90m...[0m
 ```
@@ -367,14 +367,14 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0;1mUsage:[0m
+[1mUsage:[22m
 
-  [0mdemo.js hello [[0m([35m-h[0m|[35m--help[0m)[0m]
+  demo.js hello [[35m-h[39m|[35m--help[39m]
 
-[0;1mOptions:[0m
+[1mOptions:[22m
 
-  [0;35m-h[0m, [0;35m--help[0m  [0mThe help option for the hello command. Prints this help message.[0m Uses the remaining
-              arguments as option filter.[0m
+  [35m-h[39m, [35m--help[39m  The help option for the hello command. Prints this help message. Uses the remaining
+              arguments as option filter.
 ```
 
 {/* cSpell:enable */}
@@ -391,7 +391,7 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mOption [35m-b[0m[39m requires [39m([35m-sc[0m[39m or [35m-sa[0m[39m == [[32m'a'[0m[39m, [32m'b'[0m[39m]).
+Option [35m-b[39m requires ([35m-sc[39m or [35m-sa[39m == [[32m'a'[39m, [32m'b'[39m]).
 ```
 
 {/* cSpell:enable */}
@@ -418,16 +418,16 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check if the `-f` option can be specified without a parameter (also, see the warning produced)
 2. check if the `-f` option can be negated with `--no-flag` (also, see the warning produced)
-3. check if the `-f` option can be specified through an environment variable (e.g., `FLAG=` or `NO_FLAG=`; same result as above; use `clear` to reset variables)
-4. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
+3. check if the `-f` option can be specified through an environment variable (e.g., `FLAG= ...`)
+4. check if the `-f` option can be negated with an environment variable (e.g., `NO_FLAG= ...`)
+5. check if similar option names are suggested for an unknown option (e.g., `-sr -s`)
 
 <details>
   <summary>Expected output (1)</summary>
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mOption [35m-f[0m[39m is deprecated and may be removed in future releases.
-[0m
+Option [35m-f[39m is deprecated and may be removed in future releases.
 {
   [0mflag[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
   [90m...[0m
@@ -442,10 +442,24 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mOption [35m--no-flag[0m[39m is deprecated and may be removed in future releases.
-[0m
+Option [35m--no-flag[39m is deprecated and may be removed in future releases.
 {
   [0mflag[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+Option [35mFLAG[39m is deprecated and may be removed in future releases.
+{
+  [0mflag[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
   [90m...[0m
 }
 ```
@@ -458,7 +472,22 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-[0m[31m[39mUnknown option [35m-s[0m[39m. Similar names are: [35m-sr[0m[39m, [35m-sc[0m[39m, [35m-sa[0m[39m.
+Option [35mNO_FLAG[39m is deprecated and may be removed in future releases.
+{
+  [0mflag[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (5)</summary>
+{/* cSpell:disable */}
+
+```ansi
+Unknown option [35m-s[39m. Similar names are: [35m-sr[39m, [35m-sc[39m, [35m-sa[39m.
 ```
 
 {/* cSpell:enable */}

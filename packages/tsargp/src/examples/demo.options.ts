@@ -153,6 +153,7 @@ export default {
     1. and a list
     
     `,
+    paramName: '<param>',
     choices: ['yes', 'no'],
     mapping: { yes: true, no: false },
     normalize: (param) => param.toLowerCase(),
@@ -228,6 +229,7 @@ export default {
     sources: ['STR_ARRAY'],
     synopsis: 'A string array option.',
     group: 'String options:',
+    paramName: '<param>',
     default: ['one'],
     separator: ',',
     stdin: true,
@@ -241,6 +243,7 @@ export default {
     sources: ['NUM_ARRAY'],
     synopsis: 'A number array option.',
     group: 'Number options:',
+    paramName: '<param>',
     parse: Number,
     default: [1, 2],
   },
