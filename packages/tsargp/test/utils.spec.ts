@@ -301,7 +301,7 @@ describe('selectAlternative', () => {
 });
 
 describe('makeUnique', () => {
-  it('remove duplicates without sorting', () => {
+  it('remove duplicates while preserving order', () => {
     expect(makeUnique([2, 3, 2, 1, 3, 1])).toEqual([2, 3, 1]);
   });
 });
@@ -326,7 +326,7 @@ describe('stronglyConnected and createUsage', () => {
 
   it('create a usage statement for transitively dependent options', () => {
     const dependencies = {
-      a: ['d', 'e', 'k'],
+      a: ['d', 'e', 'k'], // test direct dependency together with transitive
       b: ['f', 'j'],
       c: ['g', 'k'],
       d: ['g', 'h'],
@@ -334,33 +334,10 @@ describe('stronglyConnected and createUsage', () => {
       f: ['i', 'j'],
       g: ['k'],
     };
+    const keys = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];
     const [byKey, byComp, compAdj] = stronglyConnected(dependencies);
-    expect(byKey).toEqual({
-      a: 'a',
-      b: 'b',
-      c: 'c',
-      d: 'd',
-      e: 'e',
-      f: 'f',
-      g: 'g',
-      h: 'h',
-      i: 'i',
-      j: 'j',
-      k: 'k',
-    });
-    expect(byComp).toEqual({
-      a: ['a'],
-      b: ['b'],
-      c: ['c'],
-      d: ['d'],
-      e: ['e'],
-      f: ['f'],
-      g: ['g'],
-      h: ['h'],
-      i: ['i'],
-      j: ['j'],
-      k: ['k'],
-    });
+    expect(byKey).toEqual(Object.assign({}, ...keys.map((key) => ({ [key]: key }))));
+    expect(byComp).toEqual(Object.assign({}, ...keys.map((key) => ({ [key]: [key] }))));
     expect(compAdj).toEqual({
       a: ['d', 'e', 'k'],
       b: ['f', 'j'],

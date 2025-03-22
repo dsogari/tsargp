@@ -34,15 +34,15 @@ describe('AnsiString', () => {
     });
   });
 
-  describe('totalLen', () => {
+  describe('length', () => {
     it('with leading and trailing line feeds', () => {
       const str = new AnsiString().break().word('type').word('script').break();
-      expect(str.totalLen).toEqual(11);
+      expect(str.length).toEqual(11);
     });
 
     it('with line feeds in the middle', () => {
       const str = new AnsiString().word('type').break().break().word('script');
-      expect(str.totalLen).toEqual(10);
+      expect(str.length).toEqual(10);
     });
   });
 

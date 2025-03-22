@@ -14,6 +14,7 @@ import type {
   RequiresEntry,
   HelpTextBlock,
   OptionDependencies,
+  StyledString,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
 import type { RecordKeyMap, UsageStatement } from './utils.js';
@@ -54,11 +55,13 @@ export type FormatterFlags = {
   /**
    * The program name.
    * If not present or empty, usage statements will contain no program name.
+   * Should not contain inline styles or line feeds.
    */
   readonly progName?: string;
   /**
    * The cluster argument prefix.
    * If not present, cluster letters will not appear in usage statements.
+   * Should not contain inline styles or line feeds.
    */
   readonly clusterPrefix?: string;
   /**
@@ -454,12 +457,12 @@ function formatGroups(
     }
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option, flags, items);
-    const paramLen = param.totalLen;
+    const paramLen = param.length;
     param.indent = paramLen; // HACK: save the length, since we will need it in `adjustEntries`
     let prev: AnsiString | undefined;
     let namesLen = 0;
     names.forEach((str, i) => {
-      const nameLen = str.totalLen;
+      const nameLen = str.length;
       if (nameLen) {
         if (prev) {
           prev.close(optionSep).popSty(); // pop the base text style
@@ -690,13 +693,10 @@ function formatHelpSection(
       let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
       const progName = content?.text ?? flags.progName;
       if (progName) {
-        const str = new AnsiString(indent)
-          .break(breaks)
-          .pushSty(baseSty)
-          .word(progName.replace(regex.sgr, ''), content?.style)
-          .popSty();
-        prev.push(str);
-        indent = max(0, indent ?? 0) + progName.length + 1;
+        const str = new AnsiString(indent).break(breaks).pushSty(baseSty).pushSty(content?.style);
+        appendStyledString(progName, str, content?.noSplit);
+        prev.push(str.popSty().popSty());
+        indent = str.wrap([], 0, 0, false, true) + 1; // get last column
         breaks = 0; // avoid breaking between program name and usage
       }
       const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
@@ -707,6 +707,22 @@ function formatHelpSection(
     } else if (content) {
       formatTextBlock(content, result, 1); // include trailing line feed
     }
+  }
+}
+
+/**
+ * Appends a string that may contain inline styles to a ANSI string.
+ * @param str The string to be appended
+ * @param result The resulting string
+ * @param noSplit Whether to disable text splitting
+ */
+function appendStyledString(str: StyledString, result: AnsiString, noSplit: boolean = false) {
+  if (!isString(str)) {
+    result.other(str);
+  } else if (noSplit) {
+    result.add(str.replace(regex.sgr, ''), str);
+  } else {
+    result.split(str);
   }
 }
 
@@ -722,11 +738,7 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
   const str = new AnsiString(indent, align === 'right').break(breaksBefore);
   if (text) {
     str.pushSty(config.styles.base).pushSty(style);
-    if (noSplit) {
-      str.add(text.replace(regex.sgr, ''), text);
-    } else {
-      str.split(text);
-    }
+    appendStyledString(text, str, noSplit);
     str.popSty().popSty().break(breaksAfter);
   }
   result.push(str);

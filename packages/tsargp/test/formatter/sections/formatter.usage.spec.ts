@@ -3,7 +3,7 @@ import type { Options, HelpSections, FormatterFlags } from '../../../src/library
 import { AnsiString, format, style, tf } from '../../../src/library';
 
 describe('rendering a usage section', () => {
-  const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-' };
+  const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-', stdinSymbol: '-' };
 
   it('skip a section with no heading and no content', () => {
     const sections: HelpSections = [{ type: 'usage' }];
@@ -120,10 +120,18 @@ describe('rendering a usage section', () => {
       );
     });
 
-    it('replace the program name by the content text', () => {
-      const sections: HelpSections = [{ type: 'usage', content: { text: 'text' } }];
-      expect(format(options, sections, undefined).wrap()).toEqual('text [-f]\n');
-      expect(format(options, sections, flags).wrap()).toEqual('text [-f]\n');
+    it('replace the program name by a string content text', () => {
+      const sections: HelpSections = [{ type: 'usage', content: { text: 'prog  name' } }];
+      expect(format(options, sections).wrap()).toEqual('prog name [-f]\n');
+      expect(format(options, sections, flags).wrap()).toEqual('prog name [-f]\n');
+    });
+
+    it('replace the program name by a AnsiString content text', () => {
+      const sections: HelpSections = [
+        { type: 'usage', content: { text: new AnsiString().split('prog  name') } },
+      ];
+      expect(format(options, sections).wrap()).toEqual('prog name [-f]\n');
+      expect(format(options, sections, flags).wrap()).toEqual('prog name [-f]\n');
     });
   });
 
@@ -142,36 +150,36 @@ describe('rendering a usage section', () => {
 
     it('render a positional option without template', () => {
       const options = {
-        single1: {
+        optional: {
           type: 'single',
           names: ['-s1'],
           positional: true,
         },
-        single2: {
+        alwaysRequired: {
           type: 'single',
           names: ['-s2'],
           positional: true,
           required: true,
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', filter: ['single1'] }];
-      const case1: HelpSections = [{ type: 'usage', filter: ['single2'] }];
+      const case0: HelpSections = [{ type: 'usage', filter: ['optional'] }];
+      const case1: HelpSections = [{ type: 'usage', filter: ['alwaysRequired'] }];
       expect(format(options, case0).wrap()).toEqual('[-s1]\n');
       expect(format(options, case1).wrap()).toEqual('-s2\n');
     });
 
     it('render a flag option', () => {
       const options = {
-        flag1: {
+        singleName: {
           type: 'flag',
           names: ['-f1'],
         },
-        flag2: {
+        alwaysRequired: {
           type: 'flag',
           names: ['-f2', '--flag2'],
-          required: true,
+          required: true, // should appear first
         },
-        flag3: {
+        multipleNames: {
           type: 'flag',
           names: ['-f3', '--flag3'],
         },
@@ -182,170 +190,169 @@ describe('rendering a usage section', () => {
 
     it('render a single-valued option', () => {
       const options = {
-        single1: {
+        clusterSameAsName: {
           type: 'single',
           names: ['-s'],
-          cluster: 's', // test cluster with the same letter as the name
+          cluster: 's', // merge with option name
           paramName: '<param>',
         },
-        single2: {
+        alwaysRequiredAndOverrideParamName: {
           type: 'single',
           names: ['-s2'],
           cluster: 'x', // test cluster letter
+          required: true, // should appear first
           paramName: '<param>',
-          required: true,
-          usageParamName: '<arg>', // overrides paramName
+          usageParamName: '<arg>',
         },
-        single3: {
+        emptyMarker: {
           type: 'single',
           names: ['-s3'],
-          positional: '', // test empty marker
+          positional: '', // should appear last
           paramName: '<arg>',
         },
-        single4: {
+        requiredInline: {
           type: 'single',
           names: ['-s4'],
           example: true,
           inline: 'always',
         },
-        single5: {
+        environmentOnly: {
           type: 'single',
-          sources: ['SINGLE'], // environment-only
+          sources: ['SINGLE'], // should not appear
         },
-        single6: {
+        standardInput: {
           type: 'single',
-          stdin: true, // environment-only
+          stdin: true,
         },
-        single7: {
+        positionalWithoutTemplate: {
           type: 'single',
           names: ['-s7'],
-          positional: true, // test with no template
+          positional: true,
         },
-        single8: {
+        unnamedPositionalWithoutTemplate: {
           type: 'single',
-          positional: true, // test with no template and no name
+          positional: true, // should not appear
         },
-        single9: {
+        overrideExample: {
           type: 'single',
-          cluster: 'x', // test with only a cluster letter
+          cluster: 'x', // cluster letter only
           example: true,
-          paramName: '<arg>', // overrides example
+          paramName: '<arg>',
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog (-s2|-x) <arg> [-s <param>] [-s4=true] [-s7] [-x <arg>] [[-s3|] <arg>]\n',
+        'prog (-s2|-x) <arg> [-s <param>] [-s4=true] [-] [-s7] [-x <arg>] [[-s3|] <arg>]\n',
       );
     });
 
     it('render an array-valued option', () => {
       const options = {
-        array1: {
+        noClusterPrefix: {
           type: 'array',
-          names: ['-a'],
-          cluster: 'a', // no cluster prefix, so should not appear
+          names: ['-a1'],
+          cluster: 'a',
           paramName: '<param>',
         },
-        array2: {
+        alwaysRequiredAndOverrideParamName: {
           type: 'array',
           names: ['-a2'],
-          cluster: 'x', // no cluster prefix, so should not appear
+          required: true, // should appear first
           paramName: '<param>',
-          usageParamName: '<arg>', // overrides paramName
-          required: true,
+          usageParamName: '<arg>',
         },
-        array3: {
+        markerWithEmptyParamName: {
           type: 'array',
-          positional: '--',
-          paramName: '', // test empty parameter
+          positional: '--', // should appear last
+          paramName: '',
         },
-        array4: {
+        requiredInline: {
           type: 'array',
           names: ['-a4'],
           example: true,
           inline: 'always',
         },
-        array5: {
+        environmentOnly: {
           type: 'array',
-          sources: ['ARRAY'], // environment-only
+          sources: ['ARRAY'], // should not appear
         },
-        array6: {
+        noStdinSymbol: {
           type: 'array',
-          stdin: true, // environment-only
+          stdin: true, // should not appear
         },
-        array7: {
+        positionalWithoutTemplate: {
           type: 'array',
           names: ['-a7'],
-          positional: true, // test with no template
+          positional: true,
         },
-        array8: {
+        unnamedPositionalWithoutTemplate: {
           type: 'array',
-          positional: true, // test with no template and no name
+          positional: true, // should not appear
         },
-        array9: {
+        overrideExample: {
           type: 'array',
           names: ['-a9'],
           example: true,
-          paramName: '<arg>', // overrides example
+          paramName: '<arg>',
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '-a2 [<arg>...] [-a [<param>...]] [-a4[=true]] [-a7] [-a9 [<arg>...]] [--] [...]\n',
+        '-a2 [<arg>...] [-a1 [<param>...]] [-a4[=true]] [-a7] [-a9 [<arg>...]] [--] [...]\n',
       );
     });
 
     it('render a function option', () => {
       const options = {
-        function1: {
+        unknownParamCountWithEmptyParamName: {
           type: 'function',
           names: ['-f1'],
           paramCount: 0,
-          paramName: '', // test empty parameter
+          paramName: '',
         },
-        function2: {
+        alwaysRequiredWithRangeParamCountAndOverrideParamName: {
           type: 'function',
           names: ['-f2'],
-          required: true,
+          required: true, // should appear first
           paramName: '<param>',
-          usageParamName: '<arg>', // overrides paramName
+          usageParamName: '<arg>',
           paramCount: [1, 2],
         },
-        function3: {
+        exactParamCountWithEmptyParamName: {
           type: 'function',
           positional: true,
           paramCount: 2,
-          paramName: '', // test empty parameter
+          paramName: '',
         },
-        function4: {
+        rangeParamCountAndRequiredInline: {
           type: 'function',
           names: ['-f3'],
           example: true,
           inline: 'always',
           paramCount: [0, 1],
         },
-        function5: {
+        environmentOnly: {
           type: 'function',
-          sources: ['ARRAY'], // environment-only
+          sources: ['ARRAY'], // should not appear
         },
-        function6: {
+        noStdinSymbol: {
           type: 'function',
-          stdin: true, // environment-only
+          stdin: true, // should not appear
         },
-        function7: {
+        positionalWithoutTemplate: {
           type: 'function',
           names: ['-f4'],
-          positional: true, // test with no template
+          positional: true,
         },
-        function8: {
+        unnamedPositionalWithoutTemplate: {
           type: 'function',
-          positional: true, // test with no template and no name
+          positional: true, // should not appear
         },
-        function9: {
+        overrideExample: {
           type: 'function',
           names: ['-f9'],
           example: true,
-          paramName: '<arg>', // overrides example
+          paramName: '<arg>',
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
@@ -356,39 +363,39 @@ describe('rendering a usage section', () => {
 
     it('render an option that reads data from the standard input', () => {
       const options = {
-        single1: {
+        optionalUnnamedWithTemplate: {
           type: 'single',
           paramName: '<arg1>',
           stdin: true,
         },
-        single2: {
+        requiredWithTemplate: {
           type: 'single',
           names: ['-s2'],
           paramName: '<arg2>',
           required: true,
           stdin: true,
         },
-        single3: {
+        requiredWithoutTemplate: {
           type: 'single',
           names: ['-s3', '--single'],
           required: true,
           stdin: true,
         },
-        single4: {
+        optionalWithoutTemplate: {
           type: 'single',
           names: ['-s4'],
           stdin: true,
         },
-        single5: {
+        requiredUnnamedWithoutTemplate: {
           type: 'single',
           required: true,
           stdin: true,
         },
-        single6: {
+        optionalUnnamedWithoutTemplate: {
           type: 'single',
           stdin: true,
         },
-        single7: {
+        optionalWithTemplate: {
           type: 'single',
           names: ['-s7'],
           paramName: '<arg7>',

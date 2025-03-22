@@ -153,13 +153,18 @@ export type HelpColumnsLayout = {
 };
 
 /**
+ * A string that may contain inline styles.
+ */
+export type StyledString = string | AnsiString;
+
+/**
  * Defines attributes for a help text block.
  */
 export type HelpTextBlock = {
   /**
-   * The text. May contain inline styles. (Defaults to none)
+   * The text. (Defaults to none)
    */
-  readonly text?: string;
+  readonly text?: StyledString;
   /**
    * The fallback style. (Defaults to none)
    */
@@ -493,13 +498,13 @@ export type WithBasic = {
    */
   preferredName?: string;
   /**
-   * The option synopsis. May contain inline styles.
+   * The option synopsis.
    */
-  readonly synopsis?: string | AnsiString;
+  readonly synopsis?: StyledString;
   /**
-   * The option deprecation notice. May contain inline styles.
+   * The option deprecation notice.
    */
-  readonly deprecated?: string | AnsiString;
+  readonly deprecated?: StyledString;
   /**
    * The option group in the help message.
    * Use null to hide it from the help message.
@@ -596,12 +601,12 @@ export type WithTemplate = {
    * The parameter name to display in the parameter column or in usage statements.
    * Overrides {@link WithTemplate.example} in usage statements.
    */
-  readonly paramName?: string | AnsiString;
+  readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
    * Overrides {@link WithTemplate.paramName} in usage statements.
    */
-  readonly usageParamName?: string | AnsiString;
+  readonly usageParamName?: StyledString;
 };
 
 /**
