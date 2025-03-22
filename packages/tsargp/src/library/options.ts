@@ -1139,6 +1139,7 @@ export function getOptionNames(option: OpaqueOption): Array<string> {
  * Gets the last name of an option, if one exists.
  * @param option The option definition
  * @returns The option name, if any
+ * @internal
  */
 export function getLastOptionName(option: OpaqueOption): string | undefined {
   return option.names?.findLast(isString);
@@ -1149,6 +1150,7 @@ export function getLastOptionName(option: OpaqueOption): string | undefined {
  * @param option The option definition
  * @param isUsage Whether the template appears in a usage statement
  * @returns True if the option has a template attribute
+ * @internal
  */
 export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
   const { example, paramName, usageParamName } = option;
@@ -1160,6 +1162,7 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
  * Does not check whether the environment attributes are actually set.
  * @param option The option definition
  * @returns True if the option can only be supplied through the environment
+ * @internal
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
   return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;

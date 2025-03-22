@@ -6,10 +6,9 @@ export const callbacks = {}; // will hold the editor callbacks
 
 {/* prettier-ignore-start */}
 
-export const initialDoc = `const {
-  AnsiMessage, ErrorMessage, TextMessage, ErrorItem, HelpItem, tf, fg, bg, ul,
-  config, parse, parseInto, allOf, oneOf, not, style, ext8, rgb,
-} = tsargp;
+export const initialDoc = `// extract anything else you might need from tsargp
+const { config, allOf, oneOf, not, style, ext8, rgb } = tsargp;
+const { ErrorItem, HelpItem, tf, fg, bg, ul } = enums;
 
 return {
   // Define your options here. Only plain JavaScript is allowed.
@@ -22,7 +21,7 @@ return {
 
 {/* prettier-ignore-end */}
 
-<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[178]} />
+<Code callbacks={callbacks} initialDoc={initialDoc} initialSel={[183]} />
 
 > [!TIP]
 >

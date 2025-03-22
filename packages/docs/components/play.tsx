@@ -4,38 +4,10 @@
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import {
-  type Options,
-  parse,
-  parseInto,
-  validate,
-  AnsiMessage,
-  ErrorMessage,
-  TextMessage,
-} from 'tsargp';
-import { config, style, allOf, oneOf, not, ext8, rgb } from 'tsargp';
+import { type Options } from 'tsargp';
+import * as tsargp from 'tsargp';
 import * as enums from 'tsargp/enums';
 import { type Props, Command } from './classes/command';
-
-//--------------------------------------------------------------------------------------------------
-// Constants
-//--------------------------------------------------------------------------------------------------
-const tsargp = {
-  AnsiMessage,
-  ErrorMessage,
-  TextMessage,
-  config,
-  ...enums,
-  parse,
-  parseInto,
-  validate,
-  allOf,
-  oneOf,
-  not,
-  style,
-  ext8,
-  rgb,
-};
 
 //--------------------------------------------------------------------------------------------------
 // Types
@@ -67,8 +39,8 @@ class PlayCommand extends Command<PlayProps> {
 
   private async init() {
     const source = this.props.callbacks.getSource();
-    const options = Function('tsargp', `'use strict';${source}`)(tsargp);
-    const { warning } = await validate(options);
+    const options = Function('tsargp', 'enums', `'use strict';${source}`)(tsargp, enums);
+    const { warning } = await tsargp.validate(options);
     if (warning) {
       this.println(warning.wrap(this.state.width));
     }
@@ -84,18 +56,18 @@ class PlayCommand extends Command<PlayProps> {
       } else if (this.options) {
         const values = {};
         const flags = { progName: 'play', compIndex };
-        const { warning } = await parseInto(this.options, values, line, flags);
+        const { warning } = await tsargp.parseInto(this.options, values, line, flags);
         if (warning) {
           this.println(warning.wrap(this.state.width));
         }
         this.println(JSON.stringify(values, null, 2));
       } else {
-        this.println(`Please call ${style(1)}init${style(0)} first.`);
+        this.println(`Please call ${tsargp.style(1)}init${tsargp.style(0)} first.`);
       }
     } catch (err) {
-      if (err instanceof ErrorMessage) {
+      if (err instanceof tsargp.ErrorMessage) {
         throw err.msg.wrap(this.state.width);
-      } else if (err instanceof AnsiMessage) {
+      } else if (err instanceof tsargp.AnsiMessage) {
         throw err.wrap(this.state.width);
       }
       throw err;
