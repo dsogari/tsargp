@@ -196,10 +196,10 @@ describe('rendering a usage section', () => {
           cluster: 's', // merge with option name
           paramName: '<param>',
         },
-        alwaysRequiredAndOverrideParamName: {
+        alwaysRequiredWithClusterAndOverrideParamName: {
           type: 'single',
           names: ['-s2'],
-          cluster: 'x', // test cluster letter
+          cluster: 'x',
           required: true, // should appear first
           paramName: '<param>',
           usageParamName: '<arg>',
@@ -233,9 +233,9 @@ describe('rendering a usage section', () => {
           type: 'single',
           positional: true, // should not appear
         },
-        overrideExample: {
+        clusterOnlyAndOverrideExample: {
           type: 'single',
-          cluster: 'x', // cluster letter only
+          cluster: 'x',
           example: true,
           paramName: '<arg>',
         },
@@ -318,7 +318,7 @@ describe('rendering a usage section', () => {
           usageParamName: '<arg1> [<arg2>]',
           paramCount: [1, 2],
         },
-        exactParamCountWithEmptyParamName: {
+        unnamedPositionalWithExactParamCount: {
           type: 'function',
           positional: true,
           paramCount: 2,
@@ -411,11 +411,17 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage', filter: ['array'], exclude: true }];
       const case1: HelpSections = [{ type: 'usage', filter: ['array'] }];
+      const case2: HelpSections = [{ type: 'usage', filter: ['requiredWithoutTemplate'] }];
+      const case3: HelpSections = [
+        { type: 'usage', filter: ['array'], inclusive: { array: 'optionalUnnamedWithTemplate' } },
+      ];
       const flags: FormatterFlags = { stdinSymbol: '-' };
       expect(format(options, case0, flags).wrap()).toEqual(
-        '(-s2 <arg2>|-) ((-s3|--single)|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
+        '(-s2 <arg2>|-) (-s3|--single|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
       );
       expect(format(options, case1, flags).wrap()).toEqual('([-a] [<arg>...]|-)\n');
+      expect(format(options, case2, flags).wrap()).toEqual('(-s3|--single|-)\n');
+      expect(format(options, case3, flags).wrap()).toEqual('[(<arg1>|-) ([-a] [<arg>...]|-)]\n');
     });
 
     it('filter, include and exclude options', () => {

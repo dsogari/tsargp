@@ -608,7 +608,7 @@ function formatNames(
 function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiString {
   const { hidden, breaks } = layout.param;
   const result = new AnsiString().break(breaks).pushSty(config.styles.base);
-  if (!hidden) {
+  if (!hidden && hasTemplate(option, false)) {
     formatParam(option, false, result);
   }
   return result.maxLength ? result.popSty() : result.clear();
@@ -899,22 +899,35 @@ function formatUsageOption(
   isRequired: boolean,
   result: AnsiString,
 ): boolean {
+  const { exprOpen, exprClose, optionalOpen, optionalClose } = config.connectives;
   const { stdinSymbol } = flags;
   const count = result.count;
-  const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
-  const requiredParam = formatParam(option, true, result);
-  let requiredPart = requiredNames || requiredParam;
-  if (option.stdin && stdinSymbol !== undefined) {
+  const hasParam = hasTemplate(option, true);
+  const hasStdin = option.stdin && stdinSymbol !== undefined;
+  const isPositional = option.positional !== undefined;
+  const nameCount = formatUsageNames(option, flags, result);
+  let requiredPart = !!nameCount;
+  if (isPositional) {
+    if (nameCount && (hasParam || !isAlone)) {
+      result.openAt(optionalOpen, count).close(optionalClose);
+      requiredPart = false; // names are optional
+    }
+  } else if (nameCount > 1 && (hasParam || (!hasStdin && (!isAlone || isRequired)))) {
+    result.openAt(exprOpen, count).close(exprClose);
+  }
+  if (hasParam && formatParam(option, true, result)) {
+    requiredPart = true; // parameter is required
+  }
+  if (hasStdin) {
     let enclose = false;
     if (result.count > count) {
       result.close(config.connectives.optionAlt).merge = true;
-      enclose = !isAlone || !requiredPart;
+      enclose = !isAlone || !requiredPart || isRequired;
     } else {
-      requiredPart = true;
+      requiredPart = true; // stdin is required
     }
     formatFunctions.m(getSymbol(stdinSymbol), result, {});
     if (enclose) {
-      const { exprOpen, exprClose } = config.connectives;
       result.openAt(exprOpen, count).close(exprClose);
     }
   }
@@ -925,43 +938,23 @@ function formatUsageOption(
  * Formats an option's names to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
- * @param isAlone True if the option is alone in a dependency group
- * @param isRequired True if the option is considered always required
  * @param result The resulting string
- * @returns True if a non-optional part was rendered
+ * @returns The number of names rendered
  */
-function formatUsageNames(
-  option: OpaqueOption,
-  flags: FormatterFlags,
-  isAlone: boolean,
-  isRequired: boolean,
-  result: AnsiString,
-): boolean {
-  const { cluster, positional } = option;
+function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString): number {
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
   if (clusterPrefix !== undefined) {
-    for (const letter of cluster ?? '') {
+    for (const letter of option.cluster ?? '') {
       uniqueNames.add(clusterPrefix + letter);
     }
   }
   if (uniqueNames.size) {
-    const { exprOpen, exprClose, optionAlt, optionalOpen, optionalClose } = config.connectives;
-    const count = result.count;
-    const flags: FormattingFlags = { sep: optionAlt, ...openArrayFlags, mergeNext: true };
+    const sep = config.connectives.optionAlt;
+    const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true };
     formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
-    const useBrackets = !isAlone || hasTemplate(option, true);
-    if (positional !== undefined) {
-      if (useBrackets) {
-        result.openAt(optionalOpen, count).close(optionalClose);
-        return false; // names are optional
-      }
-    } else if (uniqueNames.size > 1 && (useBrackets || isRequired)) {
-      result.openAt(exprOpen, count).close(exprClose);
-    }
-    return true;
   }
-  return false;
+  return uniqueNames.size;
 }
 
 /**
@@ -972,9 +965,6 @@ function formatUsageNames(
  * @returns True if a non-optional part was rendered
  */
 function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
-  if (!hasTemplate(option, isUsage)) {
-    return false; // nothing to be rendered
-  }
   const { example, separator, paramName, usageParamName } = option;
   const name = isUsage ? (usageParamName ?? paramName) : paramName;
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
