@@ -64,10 +64,10 @@ export type FormatterFlags = {
    */
   readonly optionFilter?: ReadonlyArray<string>;
   /**
-   * The designator for the standard input (e.g., '-') to display in usage statements.
+   * The symbol for the standard input (e.g., '-') to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
    */
-  readonly stdinDesignator?: string;
+  readonly stdinSymbol?: string;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -886,12 +886,12 @@ function formatUsageOption(
   isRequired: boolean,
   result: AnsiString,
 ): boolean {
-  const { stdinDesignator } = flags;
+  const { stdinSymbol } = flags;
   const count = result.count;
   const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
   const requiredParam = formatParam(option, true, result);
   let requiredPart = requiredNames || requiredParam;
-  if (option.stdin && stdinDesignator !== undefined) {
+  if (option.stdin && stdinSymbol !== undefined) {
     let enclose = false;
     if (result.count > count) {
       result.close(config.connectives.optionAlt).merge = true;
@@ -899,7 +899,7 @@ function formatUsageOption(
     } else {
       requiredPart = true;
     }
-    result.split(stdinDesignator);
+    formatFunctions.m(getSymbol(stdinSymbol), result, {});
     if (enclose) {
       const { exprOpen, exprClose } = config.connectives;
       result.openAt(exprOpen, count).close(exprClose);

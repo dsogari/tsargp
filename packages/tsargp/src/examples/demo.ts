@@ -7,7 +7,7 @@ try {
   const { warning } = await parseInto(options, values, undefined, {
     clusterPrefix: '-',
     optionPrefix: '-',
-    stdinDesignator: '-',
+    stdinSymbol: '-',
   });
   if (warning) {
     console.error('' + warning);

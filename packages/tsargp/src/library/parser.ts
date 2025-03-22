@@ -82,10 +82,10 @@ export type ParsingFlags = {
    */
   readonly optionPrefix?: string;
   /**
-   * The designator for the standard input (e.g., '-') to display in usage statements.
+   * The symbol for the standard input (e.g., '-') to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
    */
-  readonly stdinDesignator?: string;
+  readonly stdinSymbol?: string;
 };
 
 /**
@@ -828,7 +828,7 @@ async function handleCommand(
     progName: flags.progName && flags.progName + ' ' + name,
     clusterPrefix: option.clusterPrefix,
     optionPrefix: option.optionPrefix,
-    stdinDesignator: flags.stdinDesignator,
+    stdinSymbol: flags.stdinSymbol,
   };
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
@@ -892,7 +892,7 @@ async function handleHelp(
     progName,
     clusterPrefix: context[6].clusterPrefix,
     optionFilter: option.useFilter && rest,
-    stdinDesignator: context[6].stdinDesignator,
+    stdinSymbol: context[6].stdinSymbol,
   };
   return format(registry.options, option.sections, flags);
 }
