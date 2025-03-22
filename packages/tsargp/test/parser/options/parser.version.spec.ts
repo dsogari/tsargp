@@ -16,7 +16,20 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, [])).resolves.toEqual({ version: undefined });
-      expect(parse(options, ['-v'])).resolves.toEqual({ version: '0.1.0' });
+      expect(parse(options, ['-v'])).resolves.toEqual({
+        version: expect.objectContaining({ message: '0.1.0' }),
+      });
+    });
+
+    it('throw a version message without version info', () => {
+      const options = {
+        version: {
+          type: 'version',
+          names: ['-v'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.not.toHaveProperty('version');
+      expect(parse(options, ['-v'])).rejects.toThrow(/^$/);
     });
 
     it('throw a version message with fixed version', () => {
@@ -50,7 +63,7 @@ describe('parse', () => {
           version: new URL(import.meta.resolve('../../data/empty.json')),
         },
       } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(/^undefined$/);
+      expect(parse(options, ['-v'])).rejects.toThrow(/^$/);
     });
 
     it('throw an error when a version file is not valid JSON', () => {

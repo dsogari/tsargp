@@ -97,13 +97,14 @@ All options share a set of attributes in addition to their type. They are descri
 
 The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
 
-- A name must _not_ contain the equals sign `'='{:ts}`, since the latter is reserved for use as option-parameter separator.
-- A name can contain any other Unicode character (including whitespace) or it can be the empty string.
+- A name must _not_ contain the equals sign `'='{:ts}`, since the latter is used as option-parameter separator.
+- A name can be the empty string. (Although this may look strange in help messages.)
 - A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
+- Names can be omitted if the option may be supplied through [positional] arguments or the [environment].
 
-> [!TIP]
+> [!NOTE]
 >
-> This attribute can be safely omitted if the option may be supplied through either [positional] arguments or the [environment].
+> Should not contain [inline styles] or line feeds. Any other Unicode character is allowed.
 
 #### Preferred name
 
@@ -387,7 +388,7 @@ The `paramName` attribute, if present, specifies a name to to display in place o
 
 > [!NOTE]
 >
-> Overrides [example value] in usage statements.
+> Overrides [example value] in usage statements. Should not contain line feeds.
 
 #### Usage parameter name
 
@@ -395,7 +396,7 @@ The `usageParamName` attribute, if present, specifies a name to to display in pl
 
 > [!NOTE]
 >
-> Overrides [parameter name] in usage statements. Mutually exclusive with [example value].
+> Overrides [parameter name] in usage statements. Mutually exclusive with [example value]. Should not contain line feeds.
 
 ### Parameter attributes
 
@@ -520,7 +521,7 @@ The **version** option throws a version message. In addition to the sets of [bas
 
 The `version` attribute specifies the version information. Its value can be either of:
 
-- `string{:ts}` -- unstructured text data (e.g., a semantic version); or
+- `StyledString{:ts}` -- unstructured text data (e.g., a semantic version); or
 - `URL{:ts}` -- the path of a local JSON file whence a `version` field will be extracted
 
 In the latter case, the path should generally be `import.meta.resolve('./package.json'){:ts}`.
@@ -831,6 +832,7 @@ Here is an example of how it might be used inside the callback:
 [error message]: styles#error-message
 [error phrases]: styles#error-phrases
 [completion message]: styles#text-message
+[inline styles]: styles#inline-styles
 
 {/* validator references */}
 

@@ -13,7 +13,7 @@ import type {
   RequirementCallback,
   ICompletionSuggestion,
 } from './options.js';
-import type { AnsiMessage, FormattingFlags } from './styles.js';
+import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
 
 import { config } from './config.js';
@@ -34,6 +34,7 @@ import {
   formatFunctions,
   WarnMessage,
   TextMessage,
+  AnsiMessage,
   AnsiString,
   ErrorMessage,
   JsonMessage,
@@ -901,18 +902,19 @@ async function handleHelp(
 /**
  * Resolves the version string of a version option.
  * @param option The version option
- * @returns The version string
+ * @returns The version message
  */
-async function handleVersion(option: OpaqueOption): Promise<string> {
-  const { version } = option;
-  if (!(version instanceof URL)) {
-    return version ?? '';
+async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
+  let { version } = option;
+  if (version instanceof URL) {
+    const data = await readFile(version);
+    if (data === undefined) {
+      throw ErrorMessage.create(ErrorItem.versionFileNotFound);
+    }
+    version = JSON.parse(data).version as string;
   }
-  const data = await readFile(version);
-  if (data !== undefined) {
-    return JSON.parse(data).version;
-  }
-  throw ErrorMessage.create(ErrorItem.versionFileNotFound);
+  const str = isString(version) ? new AnsiString().split(version) : version;
+  return new AnsiMessage(...(str ? [str] : []));
 }
 
 //--------------------------------------------------------------------------------------------------

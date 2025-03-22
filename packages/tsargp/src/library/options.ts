@@ -487,6 +487,8 @@ export type WithBasic = {
    *
    * Names cannot contain the equals sign `=`, since it may be used as option-parameter separator.
    * `null`s can be specified in order to skip the respective "slot" in the help message names column.
+   *
+   * Should not contain inline styles or line feeds.
    */
   readonly names?: ReadonlyArray<string | null>;
   /**
@@ -600,11 +602,13 @@ export type WithTemplate = {
   /**
    * The parameter name to display in the parameter column or in usage statements.
    * Overrides {@link WithTemplate.example} in usage statements.
+   * Should not contain line feeds.
    */
   readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
    * Overrides {@link WithTemplate.paramName} in usage statements.
+   * Should not contain line feeds.
    */
   readonly usageParamName?: StyledString;
 };
@@ -688,7 +692,7 @@ export type WithVersion = {
    * If a `string`, it will not be validated, but should not contain inline styles.
    * If a `URL`, it should be used in conjunction with `import.meta.resolve`.
    */
-  readonly version?: string | URL;
+  readonly version?: StyledString | URL;
 };
 
 /**
@@ -1068,9 +1072,10 @@ type ValueDataType<T extends Option> =
 /**
  * The data type of an option that throws a message.
  * @template T The option definition type
- * @template M The message data type
  */
-type MessageDataType<T extends Option, M> = T extends { saveMessage: true } ? M | undefined : never;
+type MessageDataType<T extends Option> = T extends { saveMessage: true }
+  ? AnsiMessage | undefined
+  : never;
 
 /**
  * The data type of an option key.
@@ -1088,11 +1093,9 @@ type OptionKeyType<T extends Option, K> = T extends WithOptionType<MessageOption
  * @template T The option definition type
  */
 type OptionDataType<T extends Option> =
-  T extends WithOptionType<'help'>
-    ? MessageDataType<T, AnsiMessage>
-    : T extends WithOptionType<'version'>
-      ? MessageDataType<T, string>
-      : ValueDataType<T> | DefaultDataType<T>;
+  T extends WithOptionType<'help' | 'version'>
+    ? MessageDataType<T>
+    : ValueDataType<T> | DefaultDataType<T>;
 
 //--------------------------------------------------------------------------------------------------
 // Functions
