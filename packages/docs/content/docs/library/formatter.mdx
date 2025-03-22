@@ -52,6 +52,10 @@ The `optionFilter` property specifies an [option filter] to select a subset of o
 
 The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage sections]. If not present, the standard input will not appear in usage statements.
 
+> [!NOTE]
+>
+> Should not contain [inline styles] or line feeds.
+
 ## Help columns
 
 Every option definition produces a help entry in its respective group in the help message. Furthermore, the whole set of entries across all groups in a section is split into "columns" (not to be confused with terminal columns), each containing a different kind of information, as described below.
@@ -119,7 +123,7 @@ All section types share a set of properties:
 
 A text block contains the following optional properties:
 
-- `text` -- the text (may contain inline styles, defaults to none)
+- `text` -- the text (may contain [inline styles], defaults to none)
 - `style` -- the fallback style (defaults to none)
 - `align` -- the text alignment (can be `'left'{:ts}` or `'right'{:ts}`, defaults to `'left'{:ts}`)
 - `indent` -- the indentation level (defaults to `0{:ts}`)

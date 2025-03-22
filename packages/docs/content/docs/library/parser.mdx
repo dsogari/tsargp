@@ -81,7 +81,11 @@ The `optionPrefix` property specifies the prefix for [option names]. If set, the
 
 ### Standard input symbol
 
-The `stdinSymbol` property specifies a symbol for the [standard input] to display in help messages produced by [help] options.
+The `stdinSymbol` property specifies a symbol for the [standard input] to display in help messages produced by [help] options. If not present, the standard input will not appear in usage statements.
+
+> [!NOTE]
+>
+> Should not contain [inline styles] or line feeds.
 
 ## Parsing features
 
@@ -292,6 +296,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [ANSI strings]: styles#ansi-string
 [text message]: styles#text-message
 [JSON message]: styles#json-message
+[inline styles]: styles#inline-styles
 
 {/* formatter references */}
 

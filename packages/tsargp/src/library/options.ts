@@ -219,7 +219,7 @@ export type WithSectionFilter = {
 };
 
 /**
- * A record that maps option keys to required option keys.
+ * A record that maps option keys to depended option keys.
  */
 export type OptionDependencies = Readonly<Record<string, string | ReadonlyArray<string>>>;
 
@@ -584,21 +584,22 @@ export type WithEnvironment = {
 };
 
 /**
- * Defines attributes for options with a template to display in place of option parameter(s).
+ * Defines attributes for options that may have a template to be displayed in place of option
+ * parameter(s) in help messages.
  */
 export type WithTemplate = {
   /**
-   * The example value to appear in the parameter column or in usage statements.
+   * The example value to display in the parameter column or in usage statements.
    */
   readonly example?: NonCallable;
   /**
-   * The parameter name to appear in the parameter column or in usage statements.
+   * The parameter name to display in the parameter column or in usage statements.
    * Overrides {@link WithTemplate.example} in usage statements.
    * Should not contain inline styles or line feeds.
    */
   readonly paramName?: string | AnsiString;
   /**
-   * The parameter name to appear in usage statements.
+   * The parameter name to display in usage statements.
    * Overrides {@link WithTemplate.paramName} in usage statements.
    * Should not contain inline styles or line feeds.
    */
@@ -1143,16 +1144,6 @@ export function getLastOptionName(option: OpaqueOption): string | undefined {
 }
 
 /**
- * Checks whether an option can only be supplied through the environment.
- * Does not check whether the environment attributes are actually set.
- * @param option The option definition
- * @returns True if the option can only be supplied through the environment
- */
-export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;
-}
-
-/**
  * Checks whether an option has a template attribute.
  * @param option The option definition
  * @param isUsage Whether the template appears in a usage statement
@@ -1161,6 +1152,16 @@ export function isEnvironmentOnly(option: OpaqueOption): boolean {
 export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
   const { example, paramName, usageParamName } = option;
   return (example ?? paramName) !== undefined || (isUsage && usageParamName !== undefined);
+}
+
+/**
+ * Checks whether an option can only be supplied through the environment.
+ * Does not check whether the environment attributes are actually set.
+ * @param option The option definition
+ * @returns True if the option can only be supplied through the environment
+ */
+export function isEnvironmentOnly(option: OpaqueOption): boolean {
+  return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;
 }
 
 /**

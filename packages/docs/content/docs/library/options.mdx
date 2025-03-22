@@ -385,13 +385,17 @@ The `example` attribute, if present, specifies a value to display in place of op
 
 The `paramName` attribute, if present, specifies a name to to display in place of option parameter(s) in a help message. It will appear in the [usage statement] and, when an [example value] is not present, in the [parameter column] as well.
 
+> [!NOTE]
+>
+> Overrides [example value] in usage statements.
+
 #### Usage parameter name
 
 The `usageParamName` attribute, if present, overrides the [parameter name] in a [usage statement]. It does not appear in the [parameter column].
 
 > [!NOTE]
 >
-> Mutually exclusive with [example value]. When the latter is present, use [parameter name] instead.
+> Overrides [parameter name] in usage statements. Mutually exclusive with [example value].
 
 ### Parameter attributes
 

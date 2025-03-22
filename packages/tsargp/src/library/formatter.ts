@@ -66,6 +66,7 @@ export type FormatterFlags = {
   /**
    * The symbol for the standard input (e.g., '-') to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
+   * Should not contain inline styles or line feeds.
    */
   readonly stdinSymbol?: string;
 };
