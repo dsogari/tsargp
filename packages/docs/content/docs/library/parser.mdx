@@ -14,7 +14,7 @@ The result of argument parsing is a record containing one [option value] for eac
 
 The `parse` function returns a promise that resolves to a [frozen] object containing the option values. It accepts the following parameters:
 
-- `options` -- the option definitions (required)
+- `options` -- the option [definitions] (required)
 - `cmdLine` -- the command line or list of command-line arguments (optional)
 - `flags` -- an object containing the [parsing flags] (optional)
 
@@ -32,7 +32,7 @@ The `parseInto` function is more flexible, as it allows you to pass an existing 
 
 - `values` -- the option values to parse into (required)
 
-Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of definitions. You can use the `valuesFor` function to create an object for just this purpose.
+Existing values are preserved until they get overridden by the parsing procedure. When using TypeScript, this object will be type-checked against the expected type of option values for a given set of [definitions]. You can use the `valuesFor` function to create an object for just this purpose.
 
 This function returns a promise that resolves to a `ParsingResult` object containing the following property:
 

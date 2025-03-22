@@ -595,13 +595,11 @@ export type WithTemplate = {
   /**
    * The parameter name to display in the parameter column or in usage statements.
    * Overrides {@link WithTemplate.example} in usage statements.
-   * Should not contain inline styles or line feeds.
    */
   readonly paramName?: string | AnsiString;
   /**
    * The parameter name to display in usage statements.
    * Overrides {@link WithTemplate.paramName} in usage statements.
-   * Should not contain inline styles or line feeds.
    */
   readonly usageParamName?: string | AnsiString;
 };

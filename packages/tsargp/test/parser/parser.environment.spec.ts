@@ -55,7 +55,7 @@ describe('parse', () => {
         command: { single: 'data\n', command: undefined },
       });
       expect(options.single.parse).toHaveBeenCalledWith('data\n', {
-        // should have been { single: undefined } at the time of call
+        // should have been { single: undefined, command: undefined } at the time of call
         values: { single: 'data\n', command: undefined },
         index: NaN,
         name: '0', // zero for standard input

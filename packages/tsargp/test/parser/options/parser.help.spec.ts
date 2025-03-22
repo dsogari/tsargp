@@ -74,8 +74,8 @@ describe('parse', () => {
             },
             single: {
               type: 'single',
-              cluster: 's',
-              stdin: true,
+              cluster: 's', // test clusterPrefix
+              stdin: true, // test stdinSymbol
             },
           },
         },

@@ -375,7 +375,7 @@ All [non-niladic] options and [subcommands] share a set of attributes, which are
 
 #### Example value
 
-The `example` attribute, if present, specifies a value to display in place of option parameter(s) in a help message. It will appear in the [parameter column] and, when a [parameter name] is not present, in the [usage statement] as well.
+The `example` attribute, if present, specifies a value to display in place of option parameter(s) in help messages. It will appear in the [parameter column] and, when a [parameter name] is not present, in the [usage statement] as well.
 
 > [!NOTE]
 >
@@ -383,7 +383,7 @@ The `example` attribute, if present, specifies a value to display in place of op
 
 #### Parameter name
 
-The `paramName` attribute, if present, specifies a name to to display in place of option parameter(s) in a help message. It will appear in the [usage statement] and, when an [example value] is not present, in the [parameter column] as well.
+The `paramName` attribute, if present, specifies a name to to display in place of option parameter(s) in help messages. It will appear in the [usage statement] and, when an [example value] is not present, in the [parameter column] as well.
 
 > [!NOTE]
 >
@@ -391,7 +391,7 @@ The `paramName` attribute, if present, specifies a name to to display in place o
 
 #### Usage parameter name
 
-The `usageParamName` attribute, if present, overrides the [parameter name] in a [usage statement]. It does not appear in the [parameter column].
+The `usageParamName` attribute, if present, specifies a name to to display in place of option parameter(s), but only in a [usage statement]. It does not appear in the [parameter column].
 
 > [!NOTE]
 >
@@ -535,7 +535,7 @@ The option value will be either the result of the callback, if one is specified,
 >
 > When [word completion] is in effect, the callback will _not_ be called, since completion will have occurred before it has a chance to execute.
 
-This option has the following sets of attributes: [basic], [value], [template] and the attributes described below.
+This option has the following sets of attributes: [basic], [value], [template] and the ones described below.
 
 #### Nested options
 
@@ -603,7 +603,7 @@ The **array** option accepts multiple (zero or more) parameters. Its value is an
 
 The callback receives a single option parameter as its first parameter, and should likewise return the parsed value of a single array element. The resulting array may be subject to value [constraints].
 
-This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter], [selection] and the attributes described below.
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter], [selection] and the ones described below.
 
 #### Parameter separator
 
@@ -635,7 +635,7 @@ The **function** option exists for the sole purpose of being configured with an 
 
 The callback receives the list of option parameters as its first parameter, and should return the parsed value. As a special case, this list may contain _all_ the remaining command-line arguments (see [parameter count] below).
 
-This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter] and the attributes described below.
+This option has the following sets of attributes: [basic], [value], [environment], [template], [parameter] and the ones described below.
 
 #### Parameter count
 

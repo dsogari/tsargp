@@ -125,7 +125,6 @@ describe('format', () => {
     const options = {
       single: {
         type: 'single',
-        paramName: '',
         stdin: true,
       },
     } as const satisfies Options;
@@ -156,7 +155,7 @@ describe('format', () => {
     );
   });
 
-  it('handle a unnamed single-valued option that accepts positional arguments and reads data from the standard input', () => {
+  it('handle a unnamed positional option that reads data from the standard input', () => {
     const options = {
       single: {
         type: 'single',
@@ -169,11 +168,11 @@ describe('format', () => {
     );
   });
 
-  it('handle a unnamed single-valued option with positional marker and reads data from the standard input', () => {
+  it('handle a unnamed option with positional marker that reads data from the standard input', () => {
     const options = {
       single: {
         type: 'single',
-        positional: '', // test empty marker
+        positional: '', // test empty marker; should look strange in the description
         stdin: true,
       },
     } as const satisfies Options;

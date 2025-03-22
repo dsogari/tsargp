@@ -53,14 +53,17 @@ import {
 export type FormatterFlags = {
   /**
    * The program name.
+   * If not present or empty, usage statements will contain no program name.
    */
   readonly progName?: string;
   /**
    * The cluster argument prefix.
+   * If not present, cluster letters will not appear in usage statements.
    */
   readonly clusterPrefix?: string;
   /**
    * The option filter.
+   * If not present, all options will be included respecting the order of their definitions.
    */
   readonly optionFilter?: ReadonlyArray<string>;
   /**

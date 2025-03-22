@@ -26,7 +26,7 @@ This is better illustrated by the figure below:
 
 To generate a help message, you must call the `format` function. It accepts the following parameters:
 
-- `options` -- the option definitions (required)
+- `options` -- the option [definitions] (required)
 - `sections` -- a list of [help sections] to include in the message (optional, defaults to a single [groups section])
 - `flags` -- an object containing the [formatter flags] (optional)
 
@@ -38,15 +38,15 @@ The formatter procedure can be configured via a `FormatterFlags` object that has
 
 ### Program name
 
-The `progName` property is the [program name] to display in [usage sections].
+The `progName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
 
 ### Cluster prefix
 
-The `clusterPrefix` property specifies the prefix for [cluster] arguments.
+The `clusterPrefix` property specifies the prefix for [cluster arguments]. If not present, [cluster letters] will not appear in usage statements.
 
 ### Option filter
 
-The `optionFilter` property specifies an [option filter] to select a subset of options.
+The `optionFilter` property specifies an [option filter] to select a subset of options. If not present, all options will be included respecting the order of their [definitions].
 
 ### Standard input symbol
 
@@ -97,7 +97,7 @@ The result might be something like `=<param>`, `[<param>...]` or `[...]`.
 
 > [!WARNING]
 >
-> Displaying the parameter is especially important in [usage sections].
+> Displaying the option parameter is especially important in [usage sections].
 
 ### Description column
 
@@ -146,7 +146,7 @@ A **text** section can be used to write various kinds of content, such as introd
 
 ### Usage section
 
-The [usage message] (or usage statement) is a concise representation of the command-line structure. Here is an example:
+The [usage statement] is a concise representation of the command-line structure. Here is an example:
 
 {/* cSpell:disable */}
 
@@ -164,7 +164,9 @@ The [usage message] (or usage statement) is a concise representation of the comm
 
 {/* cSpell:enable */}
 
-The `content.text` property of a **usage** section can be used to override the [program name]. In addition to the [common properties], this type of section has the following optional properties:
+Option parameters are rendered similarly to the [parameter column], except that [parameter name] attributes are given priority over [example value]. Also, the `content.text` property can be used to override the [program name].
+
+In addition to the [common properties], a **usage** section has the following optional properties:
 
 - `filter` -- a list of options to include or exclude (defaults to including all options)
 - `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
@@ -196,7 +198,7 @@ The `inclusive` property is equivalent to an adjacency list. Mutually dependent 
 
 > [!WARNING]
 >
-> The order of options is unspecified when there are dependencies. However, a dependent option usually appears _after_ the one it depends on.
+> The order of options is unspecified when there are dependencies, although a dependent option will usually appear _after_ the one it depends on.
 
 #### Exclusive option dependencies
 
@@ -360,6 +362,7 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [formatter flags]: #formatter-flags
 [inclusive option dependencies]: #inclusive-option-dependencies
 [exclusive option dependencies]: #exclusive-option-dependencies
+[parameter column]: #parameter-column
 
 {/* options references */}
 
@@ -375,13 +378,14 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 [subcommand]: options#command-option
 [parameter count]: options#parameter-count
 [standard input]: options#standard-input
+[cluster letters]: options#cluster-letters
 
 {/* parser references */}
 
 [parser]: parser
 [inline parameters]: parser#inline-parameters
 [program name]: parser#program-name
-[cluster]: parser#cluster-prefix
+[cluster arguments]: parser#cluster-prefix
 
 {/* styles references */}
 
@@ -396,4 +400,4 @@ The `filter` parameter of the `format` function lists patterns that will be sear
 {/* external references */}
 
 [escape sequences]: https://en.wikipedia.org/wiki/ANSI_escape_code
-[usage message]: https://en.wikipedia.org/wiki/Usage_message
+[usage statement]: https://en.wikipedia.org/wiki/Usage_message

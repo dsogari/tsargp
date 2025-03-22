@@ -276,7 +276,7 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          usageParamName: 'my  param',
+          usageParamName: 'my  param', // should not appear in the parameter column
         },
       } as const satisfies Options;
       expect(format(options).wrap()).toEqual(`  -s\n`);
@@ -287,7 +287,7 @@ describe('format', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          paramName: '',
+          paramName: '', // should look strange in the parameter column
           inline: 'always',
         },
       } as const satisfies Options;
