@@ -88,7 +88,7 @@ describe('parse', () => {
       expect(parse(options, ['-h', 'cmd'], { progName: '', clusterPrefix: '-' })).rejects.toThrow(
         /^\[-h\] \[-s\]\n$/,
       );
-      expect(parse(options, ['-h', 'cmd'], { progName: '', stdinName: '-' })).rejects.toThrow(
+      expect(parse(options, ['-h', 'cmd'], { progName: '', stdinDesignator: '-' })).rejects.toThrow(
         /^\[-h\] \[-\]\n$/,
       );
     });

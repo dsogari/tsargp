@@ -404,7 +404,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage', filter: ['array'], exclude: true }];
       const case1: HelpSections = [{ type: 'usage', filter: ['array'] }];
-      const flags: FormatterFlags = { stdinName: '-' };
+      const flags: FormatterFlags = { stdinDesignator: '-' };
       expect(format(options, case0, flags).wrap()).toEqual(
         '(-s2 <arg2>|-) ((-s3|--single)|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
       );

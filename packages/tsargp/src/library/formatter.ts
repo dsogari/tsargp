@@ -68,7 +68,7 @@ export type FormatterFlags = {
    * The name of the standard input (e.g., '-') to display in the usage statements.
    * If not present, the standard input will not appear in usage statements.
    */
-  readonly stdinName?: string;
+  readonly stdinDesignator?: string;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -405,9 +405,16 @@ function buildEntries(
     const option = options[key];
     const name = option.group ?? '';
     if (name in groups) {
-      const entry = buildFn(option);
-      if (entry) {
-        groups[name].push(entry);
+      const { styles } = config;
+      const saved = styles.symbol;
+      try {
+        styles.symbol = option.styles?.names ?? saved; // use configured style, if any
+        const entry = buildFn(option);
+        if (entry) {
+          groups[name].push(entry);
+        }
+      } finally {
+        styles.symbol = saved;
       }
     }
   }
@@ -745,7 +752,7 @@ function formatUsage(
     return (
       !isUnnamedNonPositional(option) ||
       (flags.clusterPrefix !== undefined && !!option.cluster) ||
-      (flags.stdinName !== undefined && !!option.stdin)
+      (flags.stdinDesignator !== undefined && !!option.stdin)
     );
   }
   const { filter, exclude, required, requires, inclusive, comment } = section;
@@ -854,6 +861,21 @@ function formatUsageStatement(
   components: Readonly<RecordKeyMap>,
   usage: Readonly<UsageStatement>,
 ) {
+  /** @ignore */
+  function formatUsageOption(keys: Array<string>, option: OpaqueOption, key: string) {
+    const count = result.count;
+    const isAlone = usage.length === 1 && keys.length === 1;
+    const isRequired = option.required || requiredKeys.has(key);
+    const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
+    const requiredParam = formatParam(option, true, result);
+    const alternatedStdin = formatUsageStdin(option, flags, result.count > count, result);
+    alwaysRequired ||= isRequired;
+    renderBrackets ||= requiredNames || requiredParam || alternatedStdin === false;
+    if (alternatedStdin && (!isAlone || !renderBrackets)) {
+      const { exprOpen, exprClose } = config.connectives;
+      result.openAt(exprOpen, count).close(exprClose);
+    }
+  }
   let alwaysRequired = false;
   let renderBrackets = false;
   const count = result.count;
@@ -865,17 +887,13 @@ function formatUsageStatement(
     const keys = components[element];
     for (const key of keys) {
       const option = options[key];
-      const count = result.count;
-      const isAlone = usage.length === 1 && keys.length === 1;
-      const isRequired = option.required || requiredKeys.has(key);
-      const requiredNames = formatUsageNames(option, flags, isAlone, isRequired, result);
-      const requiredParam = formatParam(option, true, result);
-      const alternatedStdin = formatUsageStdin(option, flags, result.count > count, result);
-      alwaysRequired ||= isRequired;
-      renderBrackets ||= requiredNames || requiredParam || alternatedStdin === false;
-      if (alternatedStdin && (!isAlone || !renderBrackets)) {
-        const { exprOpen, exprClose } = config.connectives;
-        result.openAt(exprOpen, count).close(exprClose);
+      const { styles } = config;
+      const saved = styles.symbol;
+      try {
+        styles.symbol = option.styles?.names ?? saved; // use configured style, if any
+        formatUsageOption(keys, option, key);
+      } finally {
+        styles.symbol = saved;
       }
     }
   }
@@ -886,7 +904,7 @@ function formatUsageStatement(
 }
 
 /**
- * Formats the standard input name to be included in the usage statement.
+ * Formats the standard input designator to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
  * @param useAlt Whether an alternation connective should be rendered
@@ -899,11 +917,11 @@ function formatUsageStdin(
   useAlt: boolean,
   result: AnsiString,
 ): boolean | undefined {
-  if (option.stdin && flags.stdinName !== undefined) {
+  if (option.stdin && flags.stdinDesignator !== undefined) {
     if (useAlt) {
       result.close(config.connectives.optionAlt).merge = true;
     }
-    result.split(flags.stdinName);
+    result.split(flags.stdinDesignator);
     return useAlt;
   }
 }
@@ -924,7 +942,7 @@ function formatUsageNames(
   isRequired: boolean,
   result: AnsiString,
 ): boolean {
-  const { cluster, styles: optStyles, positional } = option;
+  const { cluster, positional } = option;
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
   if (clusterPrefix !== undefined) {
@@ -932,33 +950,23 @@ function formatUsageNames(
       uniqueNames.add(clusterPrefix + letter);
     }
   }
-  if (!uniqueNames.size) {
-    return false; // nothing to be rendered
-  }
-  const count = result.count;
-  const { styles, connectives } = config;
-  const saved = styles.symbol;
-  try {
-    styles.symbol = optStyles?.names ?? saved; // use configured style, if any
-    const flags: FormattingFlags = {
-      sep: connectives.optionAlt,
-      ...openArrayFlags,
-      mergeNext: true, // keep names compact
-    };
+  if (uniqueNames.size) {
+    const { exprOpen, exprClose, optionAlt, optionalOpen, optionalClose } = config.connectives;
+    const count = result.count;
+    const flags: FormattingFlags = { sep: optionAlt, ...openArrayFlags, mergeNext: true };
     formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
-  } finally {
-    styles.symbol = saved;
-  }
-  const useBrackets = !isAlone || hasTemplate(option, true);
-  if (positional !== undefined) {
-    if (useBrackets) {
-      result.openAt(connectives.optionalOpen, count).close(connectives.optionalClose);
-      return false; // names are optional
+    const useBrackets = !isAlone || hasTemplate(option, true);
+    if (positional !== undefined) {
+      if (useBrackets) {
+        result.openAt(optionalOpen, count).close(optionalClose);
+        return false; // names are optional
+      }
+    } else if (uniqueNames.size > 1 && (useBrackets || isRequired)) {
+      result.openAt(exprOpen, count).close(exprClose);
     }
-  } else if (uniqueNames.size > 1 && (useBrackets || isRequired)) {
-    result.openAt(connectives.exprOpen, count).close(connectives.exprClose);
+    return true;
   }
-  return true;
+  return false;
 }
 
 /**
