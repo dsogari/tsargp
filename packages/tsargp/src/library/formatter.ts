@@ -983,7 +983,7 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && !!max;
-  const ellipsis = !max || (max > 1 && !inline) ? '...' : '';
+  const ellipsis = !inline && (!max || !isFinite(max)) ? '...' : '';
   const count = result.count;
   if (inline) {
     result.merge = true; // to merge with names column, if required

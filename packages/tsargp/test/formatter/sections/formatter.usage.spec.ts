@@ -315,14 +315,14 @@ describe('rendering a usage section', () => {
           names: ['-f2'],
           required: true, // should appear first
           paramName: '<param>',
-          usageParamName: '<arg>',
+          usageParamName: '<arg1> [<arg2>]',
           paramCount: [1, 2],
         },
         exactParamCountWithEmptyParamName: {
           type: 'function',
           positional: true,
           paramCount: 2,
-          paramName: '',
+          paramName: '<arg1> <arg2>',
         },
         rangeParamCountAndRequiredInline: {
           type: 'function',
@@ -357,7 +357,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '-f2 <arg>... [-f1 ...] [...] [-f3[=true]] [-f4] [-f9 [<arg>...]]\n',
+        '-f2 <arg1> [<arg2>] [-f1 ...] [<arg1> <arg2>] [-f3[=true]] [-f4] [-f9 [<arg>...]]\n',
       );
     });
 
