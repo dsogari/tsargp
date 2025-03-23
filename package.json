@@ -13,22 +13,32 @@
     "@eslint/json": "^0.11.0",
     "@eslint/markdown": "^6.3.0",
     "cspell": "^8.17.5",
-    "eslint": "^9.22.0",
-    "eslint-config-next": "^15.2.2",
-    "eslint-plugin-jsdoc": "^50.6.6",
+    "eslint": "^9.23.0",
+    "eslint-config-next": "^15.2.3",
+    "eslint-plugin-jsdoc": "^50.6.8",
     "eslint-plugin-mdx": "^3.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
     "publint": "^0.3.9",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.26.1"
+    "typescript-eslint": "^8.27.0"
   },
   "scripts": {
     "prepare": "husky"
   },
   "prettier": {
     "printWidth": 100,
-    "singleQuote": true
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": [
+          "*.jsonc"
+        ],
+        "options": {
+          "trailingComma": "none"
+        }
+      }
+    ]
   }
 }
