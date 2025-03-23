@@ -407,7 +407,7 @@ export type InlineConstraint = false | 'always' | Readonly<Record<string, false 
 /**
  * A non-callable value used in default values and parameter examples.
  */
-export type NonCallable = boolean | string | number | object;
+export type NonCallable = boolean | string | number | object | null;
 
 /**
  * Information about the current argument sequence in the parsing loop.

@@ -6,6 +6,17 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
   describe('a default value is specified', () => {
+    it('handle an option with null default', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          default: null,
+        },
+      } as const satisfies Options;
+      expect(parse(options, [])).resolves.toEqual({ flag: null });
+    });
+
     it('set default values before calling the parsing callback of an option that breaks the parsing loop', () => {
       const options = {
         flag1: {
