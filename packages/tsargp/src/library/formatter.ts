@@ -388,22 +388,25 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string> = [
  * @param options The option definitions
  * @param keys The filtered option keys
  * @param buildFn The building function
- * @param filter The option group filter
- * @param exclude True if the filter should exclude
+ * @param include The group inclusion filter
+ * @param exclude The group exclusion filter
  * @returns The option groups
  */
 function buildEntries(
   options: OpaqueOptions,
   keys: ReadonlyArray<string>,
   buildFn: (option: OpaqueOption) => HelpEntry | undefined,
-  filter?: ReadonlyArray<string>,
-  exclude?: boolean,
+  include?: ReadonlyArray<string>,
+  exclude?: ReadonlyArray<string>,
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
-  const allNames = new Set(keys.map((key) => options[key].group ?? ''));
-  const visited = new Set<string>(exclude ? filter : []);
-  const include = exclude || !filter ? allNames : filter.filter((name) => allNames.has(name));
-  include.forEach((name) => (visited.has(name) ? void 0 : (groups[name] = [])));
+  const selectedSet = new Set(keys.map((key) => options[key].group ?? ''));
+  const includedSet = new Set<string>(include);
+  const excludedSet = new Set<string>(exclude);
+  const filteredSet = (
+    include ? includedSet.difference(includedSet.difference(selectedSet)) : selectedSet
+  ).difference(excludedSet);
+  filteredSet.forEach((name) => (groups[name] = [])); // preserve filter order
   for (const key of keys) {
     const option = options[key];
     const name = option.group ?? '';
@@ -431,8 +434,8 @@ function buildEntries(
  * @param keys The filtered option keys
  * @param flags The formatter flags
  * @param items The help items
- * @param groupFilter The option group filter
- * @param exclude True if the filter should exclude
+ * @param include The group inclusion filter
+ * @param exclude The group exclusion filter
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The option groups
  */
@@ -442,8 +445,8 @@ function formatGroups(
   keys: ReadonlyArray<string>,
   flags: FormatterFlags,
   items?: ReadonlyArray<HelpItem>,
-  groupFilter?: ReadonlyArray<string>,
-  exclude?: boolean,
+  include?: ReadonlyArray<string>,
+  exclude?: ReadonlyArray<string>,
   useEnv?: boolean,
 ): EntriesByGroup {
   /** @ignore */
@@ -488,7 +491,7 @@ function formatGroups(
   let namesWidth = 0; // for non-slotted alignment
   let paramWidth = 0; // for non-slotted alignment
   let mergedWidth = 0; // names + param
-  const groups = buildEntries(options, keys, build, groupFilter, exclude);
+  const groups = buildEntries(options, keys, build, include, exclude);
   adjustEntries(layout, groups, slotWidths, namesWidth, paramWidth, mergedWidth);
   return groups;
 }
@@ -665,8 +668,9 @@ function formatHelpSection(
   const { type, heading, content } = section;
   if (type === 'groups') {
     const { layout, filter, exclude, items, useEnv } = section;
+    const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
     const mergedLayout = mergeValues(defaultLayout, layout ?? {});
-    const groups = formatGroups(options, mergedLayout, keys, flags, items, filter, exclude, useEnv);
+    const groups = formatGroups(options, mergedLayout, keys, flags, items, incl, excl, useEnv);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
@@ -758,14 +762,15 @@ function formatUsage(
   result: AnsiString,
 ) {
   const { filter, exclude, required, requires, inclusive, comment } = section;
+  const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
   const requiredSet = new Set(required?.filter((key) => key in options));
-  const includedSet = new Set(keys);
-  const filteredSet = new Set(filter);
-  const resultingSet =
-    exclude || !filter
-      ? includedSet.difference(filteredSet)
-      : filteredSet.difference(filteredSet.difference(includedSet)); // preserve filter order
-  const deps = normalizeDependencies(resultingSet, requiredSet, options, inclusive ?? requires);
+  const selectedSet = new Set(keys);
+  const includedSet = new Set(incl);
+  const excludedSet = new Set(excl);
+  const filteredSet = (
+    incl ? includedSet.difference(includedSet.difference(selectedSet)) : selectedSet
+  ).difference(excludedSet); // preserve filter order
+  const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive ?? requires);
   const [, components, adjacency] = stronglyConnected(deps);
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {

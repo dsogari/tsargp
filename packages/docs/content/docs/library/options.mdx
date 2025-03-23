@@ -46,18 +46,28 @@ Each type of option expects a different number of parameters on the command line
 
 ### Option value
 
-The option value (also called _parsed_ value) appears in the [resulting object]. Its data type depends on the option type. You can check the effective data type of the values for a set of option [definitions] by inspecting [IntelliSense] hints. For example, try hovering any identifier in the following script:
+The option value (also called _parsed_ value) appears in the [resulting object]. Its data type depends on the option type. You can check the effective data type of the values for a set of option [definitions] by inspecting [IntelliSense] hints. For example, consider the following script:
 
 ```ts twoslash
-import { parse, valuesFor, type OptionValues } from 'tsargp';
-import { demo } from 'tsargp/examples';
+import type { Options, OptionValues } from 'tsargp';
+import { parse, valuesFor } from 'tsargp';
 // ---cut---
-const values1 = await parse(demo); // values for the Demo options
-const values2 = valuesFor(demo);
-type MyValues = OptionValues<typeof demo>;
+const options = {
+  help: { type: 'help' },
+  flag: { type: 'flag' },
+  single: { type: 'single', choices: ['one', 'two'] },
+  array: { type: 'array', choices: ['one', 'two'], mapping: { one: 1 }, required: true },
+  function: { type: 'function', parse: Number, default: null },
+  command: { type: 'command', options: { version: { type: 'version' } } },
+} as const satisfies Options;
+// @annotate: Hover over the assigned values
+
+const values1 = await parse(options);
+const values2 = valuesFor(options);
+type MyValues = OptionValues<typeof options>;
 ```
 
-Notice that the properties in the resulting object are `readonly{:ts}`. This is intentional: we believe that the parsed values should _not_ be modified, because they reflect the command line. Generally, you can do any necessary transformation inside the [parsing callback] and return arbitrary values, such as `class{:ts}` instances, which should be enough for most purposes.
+Notice that the properties in the resulting object are `readonly{:ts}`. This is intentional: the parsed values should never be modified, because they reflect the command line. Generally, you can do any necessary transformation inside the [parsing callback] and return arbitrary values, such as `class{:ts}` instances, which should be enough for most purposes.
 
 A few additional remarks:
 

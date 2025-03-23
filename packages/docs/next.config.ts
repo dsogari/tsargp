@@ -27,6 +27,10 @@ const baseConfig: NextConfig = {
       },
     );
     fileLoaderRule.exclude = allowedSvgRegex;
+    config.resolve = {
+      ...config.resolve,
+      fallback: { fs: false }, // don't use Node.js modules in the browser
+    };
     return config;
   },
   eslint: {

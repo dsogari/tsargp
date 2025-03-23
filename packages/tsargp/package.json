@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -41,9 +41,6 @@
   "bin": {
     "tsargp": "dist/examples/demo.js"
   },
-  "browser": {
-    "fs": false
-  },
   "description": "Argument parser for TypeScript",
   "files": [
     "dist/**/*.{js,ts,map}",
@@ -63,5 +60,6 @@
     "build": "tsc -b && tsc -b src && bun build dist/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "type": "module",
+  "main": "./dist/index.min.js",
   "types": "./dist/index.d.ts"
 }

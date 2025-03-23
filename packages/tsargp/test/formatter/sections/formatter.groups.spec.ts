@@ -188,12 +188,22 @@ describe('rendering a groups section', () => {
     const sections2: HelpSections = [{ type: 'groups', filter: ['group1', ''], exclude: true }];
     const sections3: HelpSections = [{ type: 'groups', filter: ['group2', 'group1'] }];
     const sections4: HelpSections = [{ type: 'groups', filter: [''] }]; // default group
+    const sections5: HelpSections = [{ type: 'groups', exclude: ['group1', ''] }];
+    const sections6: HelpSections = [{ type: 'groups', filter: [], exclude: ['group1', ''] }];
+    const sections7: HelpSections = [{ type: 'groups', filter: ['group1', ''], exclude: [''] }];
+    const sections8: HelpSections = [{ type: 'groups', exclude: [] }];
+    const sections9: HelpSections = [{ type: 'groups', filter: ['group3'], heading: {} }];
     const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s2'] };
     expect(format(options, sections0, flags).wrap()).toEqual('');
     expect(format(options, sections1, flags).wrap()).toEqual('  -f1\n');
     expect(format(options, sections2, flags).wrap()).toEqual('  -f2\n');
     expect(format(options, sections3, flags).wrap()).toEqual('  -f2\n  -f1\n');
     expect(format(options, sections4, flags).wrap()).toEqual('  -s2\n');
+    expect(format(options, sections5, flags).wrap()).toEqual('  -f2\n');
+    expect(format(options, sections6, flags).wrap()).toEqual('');
+    expect(format(options, sections7, flags).wrap()).toEqual('  -f1\n');
+    expect(format(options, sections8, flags).wrap()).toEqual('  -f1\n  -f2\n  -s2\n');
+    expect(format(options, sections9, flags).wrap()).toEqual('');
   });
 
   it('use environment variable names instead of option names', () => {

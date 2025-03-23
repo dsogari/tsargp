@@ -108,10 +108,10 @@ describe('parse', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          mapping: { one: 'two' },
+          mapping: { one: 1 },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-s', 'one'])).resolves.toEqual({ single: 'two' });
+      expect(parse(options, ['-s', 'one'])).resolves.toEqual({ single: 1 });
       expect(parse(options, ['-s', 'One'])).resolves.toEqual({ single: 'One' });
     });
 
@@ -120,10 +120,10 @@ describe('parse', () => {
         array: {
           type: 'array',
           names: ['-a'],
-          mapping: { one: 'two' },
+          mapping: { one: true },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-a', 'one', 'One'])).resolves.toEqual({ array: ['two', 'One'] });
+      expect(parse(options, ['-a', 'one', 'One'])).resolves.toEqual({ array: [true, 'One'] });
     });
   });
 

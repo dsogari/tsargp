@@ -214,13 +214,14 @@ export type WithSection<T extends HelpSectionType> = {
  */
 export type WithSectionFilter = {
   /**
-   * A list of option keys or group names to include or exclude.
+   * A list of option keys or group names to include or exclude. Matches exactly.
    */
   readonly filter?: ReadonlyArray<string>;
   /**
-   * True if the filter should exclude.
+   * True if the filter should exclude, or what to exclude.
+   * Has precedence over {@link WithSectionFilter.filter}.
    */
-  readonly exclude?: true;
+  readonly exclude?: true | ReadonlyArray<string>;
 };
 
 /**
@@ -406,7 +407,7 @@ export type InlineConstraint = false | 'always' | Readonly<Record<string, false 
 /**
  * A non-callable value used in default values and parameter examples.
  */
-export type NonCallable = boolean | string | number | object;
+export type NonCallable = boolean | string | number | object | null;
 
 /**
  * Information about the current argument sequence in the parsing loop.

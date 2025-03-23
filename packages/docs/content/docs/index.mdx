@@ -10,6 +10,8 @@ import { FileTree, Steps, Tabs } from 'nextra/components';
 
 ## Features
 
+In a nutshell, below are the most interesting features offered.
+
 | Usability-wise       | Functionality-wise     | Presentation-wise       |
 | -------------------- | ---------------------- | ----------------------- |
 | Zero-dependency      | Word completion        | Help message formatting |
@@ -37,16 +39,43 @@ Few libraries that we know of support this[^1]. Most others have either an imper
 <details>
   <summary>Data type **accuracy**</summary>
   
-By relying on [TypeScript], it guarantees that the values resulting from argument parsing reflect the attributes specified in the option definitions. In particular, an option value will be a union literal if you declare a parameter mapping in its definition. Even JSDoc comments are preserved in [IntelliSense]!
+By relying on [TypeScript], it guarantees that the values resulting from argument parsing reflect the attributes specified in the option definitions. Even [JSDoc] comments are preserved in [IntelliSense]!
 
 </details>
 
 <details>
   <summary>Built-in **completion**</summary>
   
-The parser can emit a list of words or even fully featured suggestion objects for the purpose of [tab-completion], which is performed by the native completion engine (if one is available). The only configuration required is to register the final executable in the end-user's terminal.
+The parser can emit a list of words or even fully featured suggestion objects for the purpose of [tab-completion], which is then performed by the native completion engine, if one is available.
 
 </details>
+
+## Comparison
+
+See the differences in API style compared to other libraries.
+
+<Tabs items={['Imperative', 'Fluent', 'Declarative', 'Generated']}>
+  <Tabs.Tab>
+
+Usually works this way: you define an object to hold the definitive values for the options, and associate each key in this object with the respective option annotations and/or parsing function, through a series of API calls. You then make another API call to parse the command-line arguments.
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+Very similar to the imperative one, except that the API calls can be chained. In some cases, the resulting object may be returned, but keys are converted from option names in an opinionated fashion. Other times, options are discovered during parsing, instead of being explicitly declared.
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+Here, the opposite is true: you first define an object containing the option annotations and/or parsing functions, then make a single API call to parse the command-line arguments and obtain the definitive option values.
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+In this case, the code for parsing command-line arguments is generated from a specification file (or files). One advantage of this approach is that the generated code has no dependencies except those required by the application. The downside is that there is an additional step in the build or test process.
+
+  </Tabs.Tab>
+</Tabs>
 
 ## Installation
 
@@ -262,3 +291,4 @@ When users install through a package manager, the latter will probably create a 
 [TypeScript]: https://www.typescriptlang.org/
 [tab-completion]: https://en.wikipedia.org/wiki/Command-line_completion
 [shim]: https://en.wikipedia.org/wiki/Shim_(computing)
+[JSDoc]: https://jsdoc.app/

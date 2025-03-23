@@ -1,4 +1,7 @@
-.husky
+.husky/
+.next/
+dist/
+public/
 .gitignore
 .prettierignore
 *.lock

@@ -169,7 +169,7 @@ Option parameters are rendered similarly to the [parameter column], except that 
 In addition to the [common properties], a **usage** section has the following optional properties:
 
 - `filter` -- a list of options to include or exclude (defaults to including all options)
-- `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
+- `exclude` -- whether the filter should exclude, or what to exclude (defaults to `false{:ts}`)
 - `required` -- a list of options that should be considered always required (defaults to none)
 - `inclusive` -- a record that specifies [inclusive option dependencies] (defaults to none)
 - `exclusive` -- reserved for mutually [exclusive option dependencies] (not yet implemented)
@@ -181,7 +181,7 @@ In addition to the [common properties], a **usage** section has the following op
 
 > [!NOTE]
 >
-> In the case of an inclusion filter, options are listed in the order specified in the filter. The exception is an option with a [positional marker], which comes _last_ in the usage.
+> The `filter` and `exclude` properties match exactly. Options are listed in order of inclusion. The exception is an option with a [positional marker], which comes _last_ in the usage.
 
 #### Inclusive option dependencies
 
@@ -215,7 +215,7 @@ A **groups** section is a collection of option groups and their help entries. Th
 In addition to the [common properties], this type of section has the following optional properties:
 
 - `filter` -- a list of group names to include or exclude (defaults to including all groups)
-- `exclude` -- whether the filter should exclude (defaults to `false{:ts}`)
+- `exclude` -- whether the filter should exclude, or what to exclude (defaults to `false{:ts}`)
 - `layout` -- an object with [column layout] settings for the section (see below)
 - `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
 - `useEnv` -- whether option names should be replaced with [environment variable] names (defaults to `false{:ts}`)
@@ -226,7 +226,7 @@ In addition to the [common properties], this type of section has the following o
 
 > [!NOTE]
 >
-> In the case of an inclusion filter, groups are listed in the order specified in the filter.
+> The `filter` and `exclude` properties match exactly. Groups are listed in order of inclusion.
 
 #### Column layout
 
