@@ -214,7 +214,7 @@ export type WithSection<T extends HelpSectionType> = {
  */
 export type WithSectionFilter = {
   /**
-   * A list of option keys or group names to include or exclude.
+   * A list of option keys or group names to include or exclude. Matches exactly.
    */
   readonly filter?: ReadonlyArray<string>;
   /**

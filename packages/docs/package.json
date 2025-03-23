@@ -32,7 +32,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tsargp": "workspace:*",
-    "typedoc": "^0.27.9",
+    "typedoc": "^0.28.1",
     "xterm-readline": "^1.1.2"
   },
   "scripts": {
