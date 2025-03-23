@@ -218,9 +218,10 @@ export type WithSectionFilter = {
    */
   readonly filter?: ReadonlyArray<string>;
   /**
-   * True if the filter should exclude.
+   * True if the filter should exclude, or what to exclude.
+   * Has precedence over {@link WithSectionFilter.filter}.
    */
-  readonly exclude?: true;
+  readonly exclude?: true | ReadonlyArray<string>;
 };
 
 /**

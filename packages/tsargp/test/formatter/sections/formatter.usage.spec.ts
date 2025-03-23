@@ -415,6 +415,7 @@ describe('rendering a usage section', () => {
       const case3: HelpSections = [
         { type: 'usage', filter: ['array'], inclusive: { array: 'optionalUnnamedWithTemplate' } },
       ];
+      const case4: HelpSections = [{ type: 'usage', exclude: ['array'] }];
       const flags: FormatterFlags = { stdinSymbol: '-' };
       expect(format(options, case0, flags).wrap()).toEqual(
         '(-s2 <arg2>|-) (-s3|--single|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
@@ -422,6 +423,9 @@ describe('rendering a usage section', () => {
       expect(format(options, case1, flags).wrap()).toEqual('([-a] [<arg>...]|-)\n');
       expect(format(options, case2, flags).wrap()).toEqual('(-s3|--single|-)\n');
       expect(format(options, case3, flags).wrap()).toEqual('[(<arg1>|-) ([-a] [<arg>...]|-)]\n');
+      expect(format(options, case4, flags).wrap()).toEqual(
+        '(-s2 <arg2>|-) (-s3|--single|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
+      );
     });
 
     it('filter, include and exclude options', () => {
@@ -455,6 +459,7 @@ describe('rendering a usage section', () => {
       const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
       const sections6: HelpSections = [{ type: 'usage', filter: ['single', 'flag1'] }];
       const sections7: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
+      const sections8: HelpSections = [{ type: 'usage', exclude: ['flag1', 'single'] }];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s'] };
       expect(format(options, sections0, flags).wrap()).toEqual('');
       expect(format(options, sections1, flags).wrap()).toEqual('[-f1]\n');
@@ -464,6 +469,7 @@ describe('rendering a usage section', () => {
       expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
       expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
       expect(format(options, sections7, flags).wrap()).toEqual('');
+      expect(format(options, sections8, flags).wrap()).toEqual('[-f2]\n');
     });
   });
 
