@@ -5,4 +5,14 @@ export * from './options.js';
 export * from './parser.js';
 export * from './styles.js';
 export * from './validator.js';
-export { allOf, not, oneOf, valuesFor, getVersion, numberInRange, sectionFooter } from './utils.js';
+export {
+  allOf,
+  getVersion,
+  /** @deprecated use `not` instead */
+  not as notOf,
+  not,
+  numberInRange,
+  oneOf,
+  sectionFooter,
+  valuesFor,
+} from './utils.js';

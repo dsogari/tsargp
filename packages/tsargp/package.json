@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.11.2",
+  "version": "1.12.0",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -19,7 +19,7 @@
   "exports": {
     ".": {
       "types": "./dist/library/index.d.ts",
-      "default": "./dist/index.min.js"
+      "default": "./dist/library/index.js"
     },
     "./enums": {
       "types": "./dist/enums/enums.d.ts",
@@ -58,9 +58,9 @@
   "license": "MIT",
   "scripts": {
     "prepare": "bun run build",
-    "build": "tsc -b && tsc -b src && bun build dist/library/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "build": "tsc -b && tsc -b src && bun build dist/library/index.js --outfile /dev/null --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "type": "module",
-  "main": "./dist/index.min.js",
+  "main": "./dist/library/index.js",
   "types": "./dist/library/index.d.ts"
 }
