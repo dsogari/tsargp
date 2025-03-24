@@ -22,7 +22,7 @@
     },
     "packages/docs": {
       "name": "@tsargp/docs",
-      "version": "1.9.0",
+      "version": "1.10.1",
       "devDependencies": {
         "@codemirror/lang-javascript": "^6.2.3",
         "@next/third-parties": "^15.2.3",
@@ -46,12 +46,12 @@
     },
     "packages/tsargp": {
       "name": "tsargp",
-      "version": "1.9.0",
+      "version": "1.10.1",
       "bin": {
         "tsargp": "dist/examples/demo.js",
       },
       "devDependencies": {
-        "@tsconfig/bun": "^1.0.7",
+        "@tsconfig/bun": "1.0.7",
         "@types/bun": "^1.2.5",
         "@withfig/autocomplete-types": "^1.31.0",
         "typescript": "^5.8.2",

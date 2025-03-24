@@ -688,11 +688,6 @@ export type WithVersion = {
    * The version information (e.g., a semantic version).
    */
   readonly version?: StyledString;
-  /**
-   * The ID of a module exporting a `version` field.
-   * Usually, it will be the resolved URL of a `package.json` file.
-   */
-  readonly versionModule?: string;
 };
 
 /**
@@ -777,11 +772,7 @@ export type HelpOption = WithOptionType<'help'> & WithBasic & WithHelp & WithMes
 /**
  * An option that throws a version message.
  */
-export type VersionOption = WithOptionType<'version'> &
-  WithVersion &
-  WithBasic &
-  WithMessage &
-  (WithVersionInfo | WithVersionModule);
+export type VersionOption = WithOptionType<'version'> & WithVersion & WithBasic & WithMessage;
 
 /**
  * An option that executes a command.
@@ -996,26 +987,6 @@ type WithRegex = {
    * @deprecated mutually exclusive with {@link WithSelection.regex}
    */
   readonly choices?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with the `version` attribute.
- */
-type WithVersionInfo = {
-  /**
-   * @deprecated mutually exclusive with {@link WithVersion.version}
-   */
-  readonly versionModule?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with the `versionModule` attribute.
- */
-type WithVersionModule = {
-  /**
-   * @deprecated mutually exclusive with {@link WithVersion.versionModule}
-   */
-  readonly version?: never;
 };
 
 /**

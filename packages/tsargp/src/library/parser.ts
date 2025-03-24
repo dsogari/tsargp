@@ -904,15 +904,11 @@ async function handleHelp(
  * @returns The version message
  */
 async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
-  const { version, versionModule } = option;
-  let str = version;
-  if (versionModule) {
-    str = (await import(versionModule)).version as string | undefined;
+  let { version } = option;
+  if (isString(version)) {
+    version = new AnsiString().split(version);
   }
-  if (isString(str)) {
-    str = new AnsiString().split(str);
-  }
-  return new AnsiMessage(...(str ? [str] : []));
+  return new AnsiMessage(...(version ? [version] : []));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1068,14 +1064,14 @@ function checkRequiresEntry(
     if (present !== invert) {
       error.word(connectives.no);
     }
-    formatFunctions.m(Symbol.for(name), error, {});
+    formatFunctions.m(Symbol.for(name), error);
     return false;
   }
   if (areEqual(actual, expected) !== negate) {
     return true;
   }
   const connective = negate !== invert ? connectives.notEquals : connectives.equals;
-  formatFunctions.m(Symbol.for(name), error, {});
+  formatFunctions.m(Symbol.for(name), error);
   error.word(connective);
   formatFunctions.v(expected, error, {});
   return false;

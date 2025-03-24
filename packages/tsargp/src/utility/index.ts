@@ -1,5 +1,5 @@
 import { AnsiString, ErrorMessage, ParsingCallback, Range } from '../library/index.js';
-import { getSymbol } from '../library/utils.js';
+import { getSymbol, jsonImportOptions } from '../library/utils.js';
 
 /**
  * Create a parsing callback for numbers that should be within a range.
@@ -19,6 +19,16 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 }
 
 /**
+ * Gets a version field from a JSON module.
+ * @param jsonModule The ID of the JSON module
+ * @returns The version, if the module was found; otherwise undefined
+ */
+export async function getVersion(jsonModule: string): Promise<string | undefined> {
+  const json = await import(jsonModule, jsonImportOptions);
+  return json?.version as string | undefined;
+}
+
+/**
  * Create a footer text to be used in help sections.
  * @param packageJsonModule The module ID of the package.json file
  * @param phrase The custom phrase for the footer
@@ -30,7 +40,7 @@ export async function sectionFooter(
   phrase: string = '#0',
   suffix: string = '',
 ): Promise<AnsiString | undefined> {
-  const packageJson = await import(packageJsonModule);
+  const packageJson = await import(packageJsonModule, jsonImportOptions);
   if (packageJson) {
     const { repository } = packageJson as { repository?: string | { url?: string } };
     if (repository) {

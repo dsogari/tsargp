@@ -21,8 +21,6 @@
     "WithExample",
     "WithUsageParamName",
     "WithChoices",
-    "WithRegex",
-    "WithVersionInfo",
-    "WithVersionModule"
+    "WithRegex"
   ]
 }

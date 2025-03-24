@@ -43,6 +43,8 @@ import {
   isString,
   mergeValues,
   regex,
+  setDifference,
+  setIntersection,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -401,11 +403,10 @@ function buildEntries(
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
   const selectedSet = new Set(keys.map((key) => options[key].group ?? ''));
-  const includedSet = new Set<string>(include);
-  const excludedSet = new Set<string>(exclude);
-  const filteredSet = (
-    include ? includedSet.difference(includedSet.difference(selectedSet)) : selectedSet
-  ).difference(excludedSet);
+  const filteredSet = setDifference(
+    include ? setIntersection(new Set(include), selectedSet) : selectedSet,
+    new Set(exclude),
+  );
   filteredSet.forEach((name) => (groups[name] = [])); // preserve filter order
   for (const key of keys) {
     const option = options[key];
@@ -765,11 +766,10 @@ function formatUsage(
   const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
   const requiredSet = new Set(required?.filter((key) => key in options));
   const selectedSet = new Set(keys);
-  const includedSet = new Set(incl);
-  const excludedSet = new Set(excl);
-  const filteredSet = (
-    incl ? includedSet.difference(includedSet.difference(selectedSet)) : selectedSet
-  ).difference(excludedSet); // preserve filter order
+  const filteredSet = setDifference(
+    incl ? setIntersection(new Set(incl), selectedSet) : selectedSet,
+    new Set(excl),
+  ); // preserve filter order
   const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive ?? requires);
   const [, components, adjacency] = stronglyConnected(deps);
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
@@ -931,7 +931,7 @@ function formatUsageOption(
     } else {
       hasRequiredPart = true; // stdin is required
     }
-    formatFunctions.m(getSymbol(stdinSymbol), result, {});
+    formatFunctions.m(getSymbol(stdinSymbol), result);
     if (enclose) {
       result.openAt(exprOpen, count).close(exprClose);
     }
@@ -1059,7 +1059,7 @@ function formatRequiredKey(
     result.word(config.connectives.no);
   }
   const name = options[requiredKey].preferredName ?? '';
-  formatFunctions.m(getSymbol(name), result, {});
+  formatFunctions.m(getSymbol(name), result);
 }
 
 /**
@@ -1110,7 +1110,7 @@ function formatRequiredValue(
     result.word(connectives.no);
   }
   const name = option.preferredName ?? '';
-  formatFunctions.m(getSymbol(name), result, {});
+  formatFunctions.m(getSymbol(name), result);
   if (!requireAbsent && !requirePresent) {
     const connective = negate ? connectives.notEquals : connectives.equals;
     result.word(connective);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../src/library';
 import { AnsiMessage, AnsiString, parse } from '../src/library';
-import { numberInRange, sectionFooter } from '../src/utility';
+import { getVersion, numberInRange, sectionFooter } from '../src/utility';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -45,18 +45,48 @@ describe('parse', () => {
     });
   });
 
+  describe('getVersion', () => {
+    it('return the version from a Node.js package (only works in Bun)', () => {
+      const url = '@tsconfig/bun/package.json';
+      expect(getVersion(url)).resolves.toEqual('1.0.7');
+    });
+
+    it('throw an error when the module is a JavaScript module', () => {
+      const url = import.meta.resolve('./data/with-version');
+      expect(getVersion(url)).rejects.toThrow(/^JSON Parse error/);
+    });
+
+    it('return the version from a valid JSON module', () => {
+      const url = import.meta.resolve('./data/with-version.json');
+      expect(getVersion(url)).resolves.toEqual('0.0.0');
+    });
+
+    it('return undefined when the module does not contain a version field', () => {
+      const url = import.meta.resolve('./data/empty.json');
+      expect(getVersion(url)).resolves.toBeUndefined();
+    });
+
+    it('throw an error when the module is not valid JSON', () => {
+      const url = import.meta.resolve('./data/invalid.jsonc');
+      expect(getVersion(url)).rejects.toThrow(/^JSON Parse error/);
+    });
+
+    it('throw an error when the module cannot be found', () => {
+      const url = import.meta.resolve('./data/absent.json');
+      expect(getVersion(url)).rejects.toThrow(/^Cannot find module/);
+    });
+  });
+
   describe('sectionFooter', () => {
     describe('when a repository URL cannot be found in the package.json file', () => {
       it('throw an error when the file cannot be found', () => {
         const url = import.meta.resolve('./data/absent.json');
-        expect(sectionFooter(url)).rejects.toThrow(
-          `Cannot find module ${url.replace('file://', "'")}`,
-        );
+        expect(sectionFooter(url)).rejects.toThrow(/^Cannot find module/);
       });
 
-      it('return undefined when the file is not valid JSON', () => {
+      it('throw an error when the file is not valid JSON', () => {
         const url = import.meta.resolve('./data/invalid.jsonc');
-        expect(sectionFooter(url)).resolves.toBeUndefined();
+        expect(sectionFooter(url)).rejects.toThrow(/^JSON Parse error/);
       });
 
       it('return undefined when the file does not contain a repository field', () => {

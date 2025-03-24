@@ -12,6 +12,9 @@ import {
   stronglyConnected,
   makeUnique,
   createUsage,
+  setUnion,
+  setDifference,
+  setIntersection,
 } from '../src/library/utils';
 
 describe('gestaltSimilarity', () => {
@@ -303,6 +306,27 @@ describe('selectAlternative', () => {
 describe('makeUnique', () => {
   it('remove duplicates while preserving order', () => {
     expect(makeUnique([2, 3, 2, 1, 3, 1])).toEqual([2, 3, 1]);
+  });
+});
+
+describe('setUnion', () => {
+  it('add elements while preserving order', () => {
+    const set = setUnion(new Set([2, 3, 2]), new Set([1, 3, 1]));
+    expect([...set]).toEqual([2, 3, 1]);
+  });
+});
+
+describe('setDifference', () => {
+  it('remove elements while preserving order', () => {
+    const set = setDifference(new Set([2, 3, 2]), new Set([1, 3, 1]));
+    expect([...set]).toEqual([2]);
+  });
+});
+
+describe('setIntersection', () => {
+  it('keep elements while preserving order', () => {
+    const set = setIntersection(new Set([2, 3, 2]), new Set([1, 3, 1]));
+    expect([...set]).toEqual([3]);
   });
 });
 

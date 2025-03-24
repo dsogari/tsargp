@@ -486,7 +486,7 @@ The **help** option uses the [formatter] to generate a help message. Internally,
 >
 > When [word completion] is in effect, this option will be _skipped_.
 
-In addition to the sets of [basic] and [message] attributes, this option has the attributes described below.
+This option has the following sets of attributes: [basic], [message] and the ones described below.
 
 #### Help sections
 
@@ -522,27 +522,21 @@ And would throw the help message of the `cmd` subcommand, filtered by option `-f
 
 ### Version option
 
-The **version** option throws a version message. In addition to the sets of [basic] and [message] attributes, it has a single attribute described below.
+The **version** option throws a version message. The application is responsible for catching this message and printing it in a terminal.
 
 > [!NOTE]
 >
 > When [word completion] is in effect, this option will be _skipped_.
 
+This option has the following sets of attributes: [basic], [message] and the one described below.
+
 #### Version info
 
 The `version` attribute, if present, specifies the version information. Its value is supposed to be a semantic version, but can be any kind of unstructured text data and is not interpreted or validated.
 
-> [!NOTE]
+> [!TIP]
 >
-> Mutually exclusive with [version module].
-
-#### Version module
-
-The `versionModule` attribute, if present, specifies the ID of a module exporting a `version` field. Usually, this will be the resolved URL of a `package.json` file, e.g., `import.meta.resolve('./package.json'){:ts}`.
-
-> [!NOTE]
->
-> Mutually exclusive with [version info].
+> You can get the `version` field from a JSON module through the `getVersion` function, which can be imported from `'tsargp/utility'{:ts}`.
 
 ### Command option
 

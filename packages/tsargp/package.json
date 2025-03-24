@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -11,7 +11,7 @@
     "directory": "packages/tsargp"
   },
   "devDependencies": {
-    "@tsconfig/bun": "^1.0.7",
+    "@tsconfig/bun": "1.0.7",
     "@types/bun": "^1.2.5",
     "@withfig/autocomplete-types": "^1.31.0",
     "typescript": "^5.8.2"
@@ -36,7 +36,8 @@
     "./utility": {
       "types": "./dist/utility/index.d.ts",
       "default": "./dist/utility/index.js"
-    }
+    },
+    "./package": "./package.json"
   },
   "bin": {
     "tsargp": "dist/examples/demo.js"

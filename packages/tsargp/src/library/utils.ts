@@ -148,6 +148,19 @@ export const regex = {
   colon: /[^:]+:[^:]+/,
 } as const satisfies Record<string, RegExp>;
 
+/**
+ * The import attributes for JSON modules.
+ */
+const jsonImportAttributes: ImportAttributes = { type: 'json' };
+
+/**
+ * The import options for JSON modules.
+ */
+export const jsonImportOptions: ImportCallOptions = {
+  with: jsonImportAttributes,
+  assert: jsonImportAttributes,
+};
+
 //--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
@@ -425,15 +438,6 @@ export function stronglyConnected(
 }
 
 /**
- * Remove duplicate values from an array without sorting.
- * @param vals The values
- * @returns The unique values
- */
-export function makeUnique<T>(vals: ReadonlyArray<T>): Array<T> {
-  return [...new Set(vals)];
-}
-
-/**
  * Creates a usage statement from a DAG.
  * @param adj The adjacency list (must be a DAG)
  * @returns The usage statement
@@ -446,17 +450,17 @@ export function createUsage(adj: Readonly<RecordKeyMap>): UsageStatement {
       memo.set(u, sets);
       for (const v of adj[u] ?? []) {
         dfs(v);
-        memo.get(v)!.forEach((set, i) => (sets[i + 1] = (sets[i + 1] ?? new Set()).union(set)));
+        memo.get(v)!.forEach((set, i) => (sets[i + 1] = setUnion(sets[i + 1] ?? new Set(), set)));
       }
       for (let i = sets.length - 1, union = new Set<string>(), prevId = ''; i >= 0; i--) {
-        const set = sets[i].difference(union); // remove those already seen in parents
+        const set = setDifference(sets[i], union); // remove those already seen in parents
         const id = [...set].sort().join('\0');
         if (!map.has(id)) {
           const usage = [...set];
           map.set(id, usage);
           map.get(prevId)!.push(usage); // append to parent usage
         }
-        union = union.union(set); // accumulate already seen
+        union = setUnion(union, set); // accumulate already seen
         prevId = id;
       }
     }
@@ -686,4 +690,45 @@ export function getCmdLine(): string | Array<string> {
  */
 export function getCompIndex(): number | undefined {
   return Number(getEnv('COMP_POINT') ?? getEnv('CURSOR')) || getEnv('BUFFER')?.length;
+}
+
+/**
+ * Remove duplicate values from an array without sorting.
+ * @param vals The values
+ * @returns The unique values
+ */
+export function makeUnique<T>(vals: ReadonlyArray<T>): Array<T> {
+  return [...new Set(vals)];
+}
+
+/**
+ * Add elements to a set from another set.
+ * @param lhs The left-hand side of the operation (may be updated)
+ * @param rhs The right-hand side of the operation
+ * @returns The set union
+ */
+export function setUnion<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
+  rhs.forEach((element) => lhs.add(element));
+  return lhs;
+}
+
+/**
+ * Removes elements from a set that also appear in another set.
+ * @param lhs The left-hand side of the operation (may be updated)
+ * @param rhs The right-hand side of the operation
+ * @returns The set difference
+ */
+export function setDifference<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
+  rhs.forEach((element) => lhs.delete(element));
+  return lhs;
+}
+
+/**
+ * Removes elements from a set that do not appear in another set.
+ * @param lhs The left-hand side of the operation (may be updated)
+ * @param rhs The right-hand side of the operation
+ * @returns The set intersection
+ */
+export function setIntersection<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
+  return setDifference(new Set(lhs), setDifference(lhs, rhs));
 }
