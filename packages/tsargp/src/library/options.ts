@@ -1013,7 +1013,7 @@ type WithVersionInfo = {
  */
 type WithVersionModule = {
   /**
-   * @deprecated mutually exclusive with {@link WithSelection.versionModule}
+   * @deprecated mutually exclusive with {@link WithVersion.versionModule}
    */
   readonly version?: never;
 };
