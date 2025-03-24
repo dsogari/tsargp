@@ -85,7 +85,9 @@ describe('parse', () => {
           version: new URL(import.meta.resolve('../../data/absent.json')),
         },
       } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow('Could not find a version JSON file.');
+      expect(parse(options, ['-v'])).rejects.toThrow(
+        `Could not locate a version JSON file at ${options.version.version}.`,
+      );
     });
   });
 });

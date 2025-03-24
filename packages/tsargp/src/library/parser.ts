@@ -908,7 +908,7 @@ async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
   if (version instanceof URL) {
     const data = await readFile(version);
     if (data === undefined) {
-      throw ErrorMessage.create(ErrorItem.versionFileNotFound);
+      throw ErrorMessage.create(ErrorItem.versionFileNotFound, {}, version);
     }
     version = JSON.parse(data).version as string;
   }

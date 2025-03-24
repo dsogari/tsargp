@@ -165,6 +165,8 @@ Both the [help] and [version] options share the attribute described below.
 
 By default, the option will _throw_ the generated message, as a convenient way for the application to print it in the terminal. However, this behavior can be changed with the `saveMessage` attribute. If present, it indicates that the message should be saved as the option value instead of being thrown.
 
+The reason why the library does not itself print the message is to allow client code to choose the output medium. For example, in browser environments, one may want to display the message in a dialog or an embedded terminal instead of printing in the browser console.
+
 ### Value attributes
 
 All options that may have a value share a set of attributes, which are described below.
@@ -619,17 +621,13 @@ This option has the following sets of attributes: [basic], [value], [environment
 
 The `separator` attribute, if present, specifies a delimiter by which to split the option parameters. It can be either a string or a regular expression.
 
-> [!NOTE]
+> [!TIP]
 >
 > When _not_ using this attribute, we recommend setting the [inline constraint] to `false{:ts}`.
 
 #### Remove duplicates
 
-The `unique` attribute, if present, indicates that duplicate elements will be removed from the option value. This normalization is applied _before_ checking the [element count limit].
-
-> [!NOTE]
->
-> Due to the nature of JavaScript's [Set], the order of elements is preserved (i.e., it reflects the order in which the arguments were parsed).
+The `unique` attribute, if present, indicates that duplicate elements will be removed from the option value. This normalization is applied _before_ checking the [element count limit]. The remaining elements are left in the order in which they were parsed.
 
 #### Append values
 

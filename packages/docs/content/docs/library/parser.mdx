@@ -47,9 +47,9 @@ The parsing procedure can be configured via a `ParsingFlags` object that has som
 The `progName` property is a custom name for the main command, and may be used in two places:
 
 - in the [process title]; and
-- in the [usage section] of help messages
+- in [usage statements]
 
-It defaults to the _basename_ of the executing script, but can be suppressed by setting it to an empty string.
+It defaults to the _basename_ of the executing script, and can be suppressed by setting it to an empty string.
 
 > [!NOTE]
 >
@@ -81,7 +81,7 @@ The `optionPrefix` property specifies the prefix for [option names]. If set, the
 
 ### Standard input symbol
 
-The `stdinSymbol` property specifies a symbol for the [standard input] to display in help messages produced by [help] options. If not present, the standard input will not appear in usage statements.
+The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage statements] produced by [help] options. If not present, the standard input will not appear in usage statements.
 
 ## Parsing features
 
@@ -104,11 +104,11 @@ Besides, the asynchronous version has the benefit of allowing us to perform some
 
 ### Argument sequence
 
-An argument sequence is the occurrence of an option in the command line with possible parameters. To determine the start end end of a sequence, the parser looks for [option names] or [positional] arguments once it finishes parsing the previous option, or if the latter is [variadic].
+An argument sequence is the occurrence of an option in the command line with possible parameters. To determine the start and end of a sequence, the parser looks for [option names] or [positional] arguments once it finishes parsing the previous option, or if the latter is [variadic].
 
 For example, if the option initiating a sequence is [array-valued], the parser starts looking for a new option as soon as it advances to the next argument, since that may be either an [option parameter] or the start of a new sequence.
 
-The same is true for function options with a _variable_ [parameter count]. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option specification (even if it is a new occurrence of the same option).
+The same is true for variadic [function] options. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option specification (even if it is a new occurrence of the same option).
 
 #### Argument information
 
@@ -140,7 +140,7 @@ The parser does not use the completion facilities, because it relies on the raw 
 
 When these variables are available, the parser enters into _completion_ mode: it truncates the command line at the cursor position and performs completion of the last argument.
 
-The result of completion is a [text message], which should be printed in the terminal so that the completion builtins can perform the final completion step.
+The result of completion is either a [text message] or a [JSON message], which should be printed in the terminal so that the completion builtins can perform the final completion step.
 
 > [!NOTE]
 >
@@ -154,7 +154,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If _comp_ is a known option name, that name is returned; else
    - If there is no [positional] option, the available [option names] are filtered by the prefix _comp_ and returned; else
    - _comp_ is treated as a parameter of the positional option; go to step 2
-2. Else, _comp_ is the parameter of a [non-niladic] option. Then, either of the following is executed and its result is combined with that of step 3:
+2. Else, _comp_ is the parameter of a [non-niladic] option. Then, either of the following is executed and its result combined with that of step 3:
    - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
@@ -162,7 +162,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
-If all of the above results in an empty list, the default completion (usually file completion, if enabled) will be attempted by the completion builtins.
+If all of the above results in an empty list, the default completion (usually file completion, if enabled) will be attempted by the completion engine.
 
 #### Altered parsing behavior
 
@@ -187,7 +187,7 @@ Depending on the value of the `COMP_JSON` environment variable, the parser may e
 - `synopsis` -- the [option synopsis], if any
 - `displayName` -- the [supplied] option name, in case the suggestion pertains to an [option parameter]
 
-From the client code perspective, suggestions are the result of a [completion callback]. Each of which can be a plain `string{:ts}` or an object extending `ICompletionSuggestion`. It will be injected with the above properties by the parser and overridden by client properties. We recommend extending the `Suggestion` type from [autocomplete-types].
+From the client code perspective, suggestions are the result of a [completion callback]. Each of which can be a plain `string{:ts}` or an object extending `ICompletionSuggestion`. It will be injected with the above properties by the parser, but overridden by client properties. We recommend extending the `Suggestion` type from [autocomplete-types].
 
 ### Requirements checking
 
@@ -206,7 +206,7 @@ When the parser expects an option name and the current argument is not a valid o
 
 ### Inline parameters
 
-An [option parameter] may be passed on the command line using the syntax `<name>=<param>`. The parameter can also be delimited by a [separator], in the case of [array] options.
+An [option parameter] may be passed on the command line using the syntax `<name>=<param>`. The parameter can also be a series of values delimited with a [separator], in the case of [array] options.
 
 > [!NOTE]
 >
@@ -235,7 +235,7 @@ The process title would be updated in the following way:
 >
 > The title will remain in changed state after the parsing procedure returns.
 
-Other [option names] are not used, not only because they would pollute the output of process management utilities (such as Linux's `ps`), but also because the process title reflects the current value of [program name], which appears in the [usage section] of help messages.
+Other [option names] are not used, not only because they would pollute the output of process management utilities (such as Linux's `ps`), but also because the process title reflects the current value of [program name], which appears in [usage statements].
 
 {/* self references */}
 
@@ -284,6 +284,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [data source]: options#data-sources
 [separator]: options#parameter-separator
 [array]: options#array-valued-option
+[function]: options#function-option
 
 {/* styles references */}
 
@@ -295,7 +296,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 
 {/* formatter references */}
 
-[usage section]: formatter#usage-section
+[usage statements]: formatter#usage-section
 
 {/* external references */}
 

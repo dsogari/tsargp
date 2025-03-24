@@ -50,6 +50,7 @@ The following restrictions will raise an error for any option definition that fa
 - **Invalid required option** -- An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
 - **Invalid required value** -- An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is _nullish_ (i.e., `null{:ts}` or `undefined{:ts}`).
 - **Duplicate positional option** -- Since positional arguments have no name, they must pertain to exactly one option. Hence, there cannot be _two_ options with the [positional] attribute in the same definition level.
+- **Option not suppliable** -- An option must be able to be [supplied], i.e., it must either have an [option name] or [cluster letter], accept [positional] arguments or have an [environment] attribute.
 
 > [!NOTE]
 >
@@ -88,6 +89,7 @@ The following restrictions will produce a warning that is returned by the valida
 [option name]: options#option-names
 [option names]: options#option-names
 [environment variable]: options#data-sources
+[environment]: options#environment-attributes
 [positional marker]: options#positional--marker
 [parameter choices]: options#parameter-choices
 [regular expression]: options#regular-expression
@@ -103,6 +105,7 @@ The following restrictions will produce a warning that is returned by the valida
 [inline constraint]: options#disable--require-inline
 [requirement callbacks]: options#requirement-callback
 [requirement expressions]: options#requirement-expression
+[supplied]: options#option-supply
 
 {/* styles references */}
 

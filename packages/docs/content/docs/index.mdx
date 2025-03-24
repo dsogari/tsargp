@@ -10,7 +10,7 @@ import { FileTree, Steps, Tabs } from 'nextra/components';
 
 ## Features
 
-In a nutshell, below are the most interesting features offered.
+In a nutshell, here are the most interesting features offered:
 
 | Usability-wise       | Functionality-wise     | Presentation-wise       |
 | -------------------- | ---------------------- | ----------------------- |
@@ -209,7 +209,7 @@ The documentation also shows how to _return_ (not throw) the help or version mes
 
 ### Validate options in test script
 
-Do not forget to sanity-check the options during development. Below is an example:
+Do not forget to sanity-check the option definitions during development. Below is an example:
 
 ```ts copy filename="cli.options.spec.ts" {2}
 import { validate } from 'tsargp';
@@ -271,13 +271,13 @@ You can configure the user's terminal to use the main script as a source of comp
   </Tabs.Tab>
 </Tabs>
 
-When users install through a package manager, the latter will probably create a [shim] for the script, so you should take that into account when writing documentation for your application.
+When users install through a package manager, the latter will probably create a [shim] for the script, so you should take that into account when documenting your application.
 
 </Steps>
 
 {/* external references */}
 
-[^1]: At the time or writing, it's worth mentioning [meow], [yargs], [oclif] and [command-line-usage].
+[^1]: At the time of writing, it's worth mentioning [meow], [yargs], [oclif] and [command-line-usage].
 
 [SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [meow]: https://www.npmjs.com/package/meow

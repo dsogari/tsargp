@@ -59,7 +59,7 @@ describe('validate', () => {
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({
       warning: expect.objectContaining({
-        message: `Variadic option function may only appear as the last option in a cluster.\n`,
+        message: `Variadic option function may only appear at the end of a cluster.\n`,
       }),
     });
   });
@@ -73,7 +73,7 @@ describe('validate', () => {
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({
       warning: expect.objectContaining({
-        message: `Variadic option array may only appear as the last option in a cluster.\n`,
+        message: `Variadic option array may only appear at the end of a cluster.\n`,
       }),
     });
   });
