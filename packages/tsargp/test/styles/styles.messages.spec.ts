@@ -6,6 +6,7 @@ import {
   WarnMessage,
   ErrorMessage,
   TextMessage,
+  JsonMessage,
 } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -86,6 +87,13 @@ describe('ErrorMessage', () => {
       const msg = ErrorMessage.createCustom('#0 #1 #2', {}, 0, 'abc', false);
       expect(msg.message).toEqual(`0 'abc' false\n`);
     });
+  });
+});
+
+describe('JsonMessage', () => {
+  it('produce a string message with serialized JSON', () => {
+    const msg = new JsonMessage({ a: 'b', c: 1, d: [true, null] });
+    expect(msg.message).toEqual(`[{"a":"b","c":1,"d":[true,null]}]`);
   });
 });
 
