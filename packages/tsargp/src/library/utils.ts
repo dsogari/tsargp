@@ -148,19 +148,6 @@ export const regex = {
   colon: /[^:]+:[^:]+/,
 } as const satisfies Record<string, RegExp>;
 
-/**
- * The import attributes for JSON modules.
- */
-const jsonImportAttributes: ImportAttributes = { type: 'json' };
-
-/**
- * The import options for JSON modules.
- */
-export const jsonImportOptions: ImportCallOptions = {
-  with: jsonImportAttributes,
-  assert: jsonImportAttributes,
-};
-
 //--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
