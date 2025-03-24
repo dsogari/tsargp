@@ -47,25 +47,27 @@ describe('parse', () => {
 
   describe('sectionFooter', () => {
     describe('when a repository URL cannot be found in the package.json file', () => {
-      it('return undefined when the file cannot be found', () => {
-        const url = new URL(import.meta.resolve('./data/absent.json'));
+      it('throw an error when the file cannot be found', () => {
+        const url = import.meta.resolve('./data/absent.json');
+        expect(sectionFooter(url)).rejects.toThrow(
+          `Cannot find module ${url.replace('file://', "'")}`,
+        );
+      });
+
+      it('return undefined when the file is not valid JSON', () => {
+        const url = import.meta.resolve('./data/invalid.jsonc');
         expect(sectionFooter(url)).resolves.toBeUndefined();
       });
 
-      it('throw an error when the file is not valid JSON', () => {
-        const url = new URL(import.meta.resolve('./data/invalid.jsonc'));
-        expect(sectionFooter(url)).rejects.toThrow('JSON Parse error');
-      });
-
       it('return undefined when the file does not contain a repository field', () => {
-        const url = new URL(import.meta.resolve('./data/empty.json'));
+        const url = import.meta.resolve('./data/empty.json');
         expect(sectionFooter(url)).resolves.toBeUndefined();
       });
     });
 
     describe('when a repository URL is found in the package.json file', () => {
       it('return a text when the file contains a repository field with a URL string', async () => {
-        const url = new URL(import.meta.resolve('./data/with-repository.json'));
+        const url = import.meta.resolve('./data/with-repository.json');
         const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
         expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
@@ -73,7 +75,7 @@ describe('parse', () => {
       });
 
       it('return a text with a suffix when the file contains a repository field', async () => {
-        const url = new URL(import.meta.resolve('./data/with-repository.json'));
+        const url = import.meta.resolve('./data/with-repository.json');
         const msg = new AnsiMessage(
           (await sectionFooter(url, '#0', '/issues')) ?? new AnsiString(),
         );
@@ -83,7 +85,7 @@ describe('parse', () => {
       });
 
       it('return a text when the file contains a repository field with a url field', async () => {
-        const url = new URL(import.meta.resolve('./data/with-repository-url.json'));
+        const url = import.meta.resolve('./data/with-repository-url.json');
         const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
         expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
@@ -91,7 +93,7 @@ describe('parse', () => {
       });
 
       it('return a text when the file contains a repository field with a GitHub host', async () => {
-        const url = new URL(import.meta.resolve('./data/with-repository-github.json'));
+        const url = import.meta.resolve('./data/with-repository-github.json');
         const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
         expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
@@ -99,7 +101,7 @@ describe('parse', () => {
       });
 
       it('return a text when the file contains a repository field with a default host', async () => {
-        const url = new URL(import.meta.resolve('./data/with-repository-default.json'));
+        const url = import.meta.resolve('./data/with-repository-default.json');
         const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
         expect(msg.wrap(0, true, true)).toEqual(
           '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',

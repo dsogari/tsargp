@@ -686,9 +686,13 @@ export type WithHelp = {
 export type WithVersion = {
   /**
    * The version information (e.g., a semantic version).
-   * `URL` values should be resolved with `import.meta.resolve`.
    */
-  readonly version?: StyledString | URL;
+  readonly version?: StyledString;
+  /**
+   * The ID of a module exporting a `version` field.
+   * Usually, it will be the resolved URL of a `package.json` file.
+   */
+  readonly versionModule?: string;
 };
 
 /**
@@ -771,9 +775,13 @@ export type WithFunction = {
 export type HelpOption = WithOptionType<'help'> & WithBasic & WithHelp & WithMessage;
 
 /**
- * An option that throws a version information.
+ * An option that throws a version message.
  */
-export type VersionOption = WithOptionType<'version'> & WithVersion & WithBasic & WithMessage;
+export type VersionOption = WithOptionType<'version'> &
+  WithVersion &
+  WithBasic &
+  WithMessage &
+  (WithVersionInfo | WithVersionModule);
 
 /**
  * An option that executes a command.
@@ -925,7 +933,7 @@ export type RequiresEntry = readonly [key: string, value: unknown];
 export type OptionInfo = [key: string, option: OpaqueOption, name: string];
 
 /**
- * Removes mutually exclusive attributes from an option that is always `required`.
+ * Removes mutually exclusive attributes from an option with the `required` attribute.
  */
 type WithRequired = {
   /**
@@ -939,7 +947,7 @@ type WithRequired = {
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a `default` value.
+ * Removes mutually exclusive attributes from an option with the `default` attribute.
  */
 type WithDefault = {
   /**
@@ -950,7 +958,7 @@ type WithDefault = {
 };
 
 /**
- * Removes mutually exclusive attributes from an option with an `example` value.
+ * Removes mutually exclusive attributes from an option with the `example` attribute.
  */
 type WithExample = {
   /**
@@ -961,7 +969,7 @@ type WithExample = {
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a usage parameter name.
+ * Removes mutually exclusive attributes from an option with the `usageParamName` attribute.
  */
 type WithUsageParamName = {
   /**
@@ -971,7 +979,7 @@ type WithUsageParamName = {
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a `choices` constraint.
+ * Removes mutually exclusive attributes from an option with the `choices` attribute.
  */
 type WithChoices = {
   /**
@@ -981,13 +989,33 @@ type WithChoices = {
 };
 
 /**
- * Removes mutually exclusive attributes from an option with a `regex` constraint.
+ * Removes mutually exclusive attributes from an option with the `regex` attribute.
  */
 type WithRegex = {
   /**
    * @deprecated mutually exclusive with {@link WithSelection.regex}
    */
   readonly choices?: never;
+};
+
+/**
+ * Removes mutually exclusive attributes from an option with the `version` attribute.
+ */
+type WithVersionInfo = {
+  /**
+   * @deprecated mutually exclusive with {@link WithVersion.version}
+   */
+  readonly versionModule?: never;
+};
+
+/**
+ * Removes mutually exclusive attributes from an option with the `versionModule` attribute.
+ */
+type WithVersionModule = {
+  /**
+   * @deprecated mutually exclusive with {@link WithSelection.versionModule}
+   */
+  readonly version?: never;
 };
 
 /**
