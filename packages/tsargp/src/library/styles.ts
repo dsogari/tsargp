@@ -113,7 +113,7 @@ const typeMapping: Readonly<Record<string, FormatSpecifier>> = {
  * The formatting function for each data type.
  * @internal
  */
-export const formatFunctions: FormattingFunctions = {
+export const formatFunctions = {
   /**
    * The formatting function for boolean values.
    * @param value The boolean value
@@ -262,7 +262,7 @@ export const formatFunctions: FormattingFunctions = {
         .popSty();
     }
   },
-};
+} as const satisfies FormattingFunctions;
 
 /**
  * The empty style. Converts to an empty string.

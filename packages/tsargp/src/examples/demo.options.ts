@@ -13,12 +13,16 @@ import {
   HelpItem,
   envHelpItems,
 } from 'tsargp';
-import { numberInRange, sectionFooter } from 'tsargp/utility';
+import { getVersion, numberInRange, sectionFooter } from 'tsargp/utility';
 import helloOpts from './demo.hello.options.js';
 
-const packageJsonPath = import.meta.resolve?.('../../package.json');
-const footerText =
-  packageJsonPath && (await sectionFooter(packageJsonPath, `Report bugs: #0`, '/issues'));
+const isBrowser = typeof self === 'object' && !self.Bun; // Bun defines self with a Bun property
+const [packageVersion, footerText] = isBrowser
+  ? []
+  : [
+      await getVersion('tsargp/package'),
+      await sectionFooter('tsargp/package', `Report bugs: #0`, '/issues'),
+    ];
 
 /**
  * The main option definitions.
@@ -116,7 +120,7 @@ export default {
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    versionModule: packageJsonPath,
+    version: packageVersion,
   },
   /**
    * A flag option that is deprecated for some reason.

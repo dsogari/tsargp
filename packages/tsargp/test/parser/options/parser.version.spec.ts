@@ -43,51 +43,5 @@ describe('parse', () => {
       expect(parse(options, [])).resolves.not.toHaveProperty('version');
       expect(parse(options, ['-v'])).rejects.toThrow(/^0.1.0$/);
     });
-
-    it('throw a version message from a version module', () => {
-      const options = {
-        version: {
-          type: 'version',
-          names: ['-v'],
-          versionModule: import.meta.resolve('../../data/with-version.json'),
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(/^0.0.0$/);
-    });
-
-    it('throw an empty message when a version module does not contain a version field', () => {
-      const options = {
-        version: {
-          type: 'version',
-          names: ['-v'],
-          versionModule: import.meta.resolve('../../data/empty.json'),
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(/^$/);
-    });
-
-    it('throw an empty message when a version module is not valid JSON', () => {
-      const options = {
-        version: {
-          type: 'version',
-          names: ['-v'],
-          versionModule: import.meta.resolve('../../data/invalid.jsonc'),
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(/^$/);
-    });
-
-    it('throw an error when a version module cannot be found', () => {
-      const options = {
-        version: {
-          type: 'version',
-          names: ['-v'],
-          versionModule: import.meta.resolve('../../data/absent.json'),
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['-v'])).rejects.toThrow(
-        `Cannot find module ${options.version.versionModule.replace('file://', "'")}`,
-      );
-    });
   });
 });
