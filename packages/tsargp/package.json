@@ -29,10 +29,6 @@
       "types": "./dist/examples/index.d.ts",
       "default": "./dist/examples/index.js"
     },
-    "./library": {
-      "types": "./dist/library/index.d.ts",
-      "default": "./dist/library/index.js"
-    },
     "./utility": {
       "types": "./dist/library/utils.d.ts",
       "default": "./dist/library/utils.js"
