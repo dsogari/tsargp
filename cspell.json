@@ -28,9 +28,10 @@
   "ignoreRegExpList": ["gh-username", "ga-measurement-id"],
   "ignorePaths": [
     "*.{js,ts,jsx,tsx,lock,json,jsonc,svg,git,prettierignore}",
-    "**/.next/",
-    "**/dist/",
-    "**/public/"
+    ".husky/",
+    ".next/",
+    "dist/",
+    "public/"
   ],
   "useGitignore": true,
   "enableGlobDot": true,
