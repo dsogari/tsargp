@@ -33,10 +33,6 @@ export const enum ErrorItem {
    */
   missingParameter,
   /**
-   * Error raised when the parser fails to find a version file when parsing the version option.
-   */
-  versionFileNotFound,
-  /**
    * Error raised when an option is supplied with an inline parameter, despite it being disallowed.
    */
   disallowedInlineParameter,

@@ -530,12 +530,19 @@ The **version** option throws a version message. In addition to the sets of [bas
 
 #### Version info
 
-The `version` attribute specifies the version information. Its value can be either of:
+The `version` attribute, if present, specifies the version information. Its value is supposed to be a semantic version, but can be any kind of unstructured text data and is not interpreted or validated.
 
-- `StyledString{:ts}` -- unstructured text data (e.g., a semantic version); or
-- `URL{:ts}` -- the path of a local JSON file whence a `version` field will be extracted
+> [!NOTE]
+>
+> Mutually exclusive with [version module].
 
-In the latter case, the path should generally be `import.meta.resolve('./package.json'){:ts}`.
+#### Version module
+
+The `versionModule` attribute, if present, specifies the ID of a module exporting a `version` field. Usually, this will be the resolved URL of a `package.json` file, e.g., `import.meta.resolve('./package.json'){:ts}`.
+
+> [!NOTE]
+>
+> Mutually exclusive with [version info].
 
 ### Command option
 
@@ -783,6 +790,7 @@ Here is an example of how it might be used inside the callback:
 {/* version attributes */}
 
 [version info]: #version-info
+[version module]: #version-module
 
 {/* command attributes */}
 

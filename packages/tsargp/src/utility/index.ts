@@ -1,5 +1,5 @@
 import { AnsiString, ErrorMessage, ParsingCallback, Range } from '../library/index.js';
-import { getSymbol, readFile } from '../library/utils.js';
+import { getSymbol } from '../library/utils.js';
 
 /**
  * Create a parsing callback for numbers that should be within a range.
@@ -20,19 +20,19 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 
 /**
  * Create a footer text to be used in help sections.
- * @param packageJsonPath The path to the package.json file
+ * @param packageJsonModule The module ID of the package.json file
  * @param phrase The custom phrase for the footer
  * @param suffix A suffix to append to the repository URL
  * @returns The footer ANSI string, if a package.json file was found; otherwise undefined
  */
 export async function sectionFooter(
-  packageJsonPath: URL,
+  packageJsonModule: string,
   phrase: string = '#0',
   suffix: string = '',
 ): Promise<AnsiString | undefined> {
-  const data = await readFile(packageJsonPath);
-  if (data !== undefined) {
-    const { repository } = JSON.parse(data) as { repository?: string | { url?: string } };
+  const packageJson = await import(packageJsonModule);
+  if (packageJson) {
+    const { repository } = packageJson as { repository?: string | { url?: string } };
     if (repository) {
       const repoUrl = typeof repository === 'string' ? repository : repository.url;
       if (repoUrl) {

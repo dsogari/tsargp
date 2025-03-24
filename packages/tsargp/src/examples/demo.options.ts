@@ -16,7 +16,7 @@ import {
 import { numberInRange, sectionFooter } from 'tsargp/utility';
 import helloOpts from './demo.hello.options.js';
 
-const packageJsonPath = import.meta.resolve && new URL(import.meta.resolve('../../package.json'));
+const packageJsonPath = import.meta.resolve?.('../../package.json');
 const footerText =
   packageJsonPath && (await sectionFooter(packageJsonPath, `Report bugs: #0`, '/issues'));
 
@@ -116,7 +116,7 @@ export default {
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    version: packageJsonPath,
+    versionModule: packageJsonPath,
   },
   /**
    * A flag option that is deprecated for some reason.

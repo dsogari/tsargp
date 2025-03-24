@@ -904,15 +904,14 @@ async function handleHelp(
  * @returns The version message
  */
 async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
-  let { version } = option;
-  if (version instanceof URL) {
-    const data = await readFile(version);
-    if (data === undefined) {
-      throw ErrorMessage.create(ErrorItem.versionFileNotFound, {}, version);
-    }
-    version = JSON.parse(data).version as string;
+  const { version, versionModule } = option;
+  let str = version;
+  if (versionModule) {
+    str = (await import(versionModule)).version as string | undefined;
   }
-  const str = isString(version) ? new AnsiString().split(version) : version;
+  if (isString(str)) {
+    str = new AnsiString().split(str);
+  }
   return new AnsiMessage(...(str ? [str] : []));
 }
 
