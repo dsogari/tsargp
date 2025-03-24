@@ -355,7 +355,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
     if (j < rest.length - 1 && (isCommand(option.type) || min < max)) {
-      throw ErrorMessage.create(ErrorItem.invalidClusterOption, {}, letter);
+      throw ErrorMessage.create(ErrorItem.invalidClusterOption, {}, getSymbol(letter));
     }
     if (name !== undefined) {
       args.splice(i++, 0, name);
@@ -908,7 +908,7 @@ async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
   if (version instanceof URL) {
     const data = await readFile(version);
     if (data === undefined) {
-      throw ErrorMessage.create(ErrorItem.versionFileNotFound);
+      throw ErrorMessage.create(ErrorItem.versionFileNotFound, {}, version);
     }
     version = JSON.parse(data).version as string;
   }

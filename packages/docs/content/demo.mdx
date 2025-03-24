@@ -84,11 +84,13 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 
 ### Cluster arguments
 
-- check if cluster arguments can be specified (e.g., `-sn 1 -1` or `-s 1 -n -1`)
-- check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`; same result as above)
+1. check if cluster arguments can be specified (e.g., `-sn 1 -1` or `-s 1 -n -1`)
+2. check if cluster arguments can be specified with inline parameters (e.g., `-s1 -n-1`; same result as above)
+3. check that variadic options cannot appear in the middle of a cluster argument (e.g., try `-Ss 0` and see that it fails)
+4. check if variadic options may appear at the end of a cluster argument (e.g., `-nN 0`)
 
 <details>
-  <summary>Expected output</summary>
+  <summary>Expected output (1)</summary>
 {/* cSpell:disable */}
 
 ```ansi
@@ -96,6 +98,33 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
   [90m...[0m
   [0mstrRegex[2m:[0m [0m[32m[0m[32m"1"[0m[0m[0m[2m,[0m
   [0mnumRange[2m:[0m [0m[33m-1[0m[0m[2m,[0m
+  [90m...[0m
+}
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (3)</summary>
+{/* cSpell:disable */}
+
+```ansi
+Option letter [35mS[39m must be the last in a cluster.
+```
+
+{/* cSpell:enable */}
+
+</details>
+<details>
+  <summary>Expected output (4)</summary>
+{/* cSpell:disable */}
+
+```ansi
+{
+  [90m...[0m
+  [0mnumRange[2m:[0m [0m[33m0[0m[0m[2m,[0m
+  [0mnumArray[2m:[0m [][0m[2m,[0m
   [90m...[0m
 }
 ```

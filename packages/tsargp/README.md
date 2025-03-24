@@ -80,7 +80,7 @@ The documentation also shows how to _return_ (not throw) the help or version mes
 
 ### Validate options in test script
 
-Do not forget to sanity-check the options during development. Below is an example:
+Do not forget to sanity-check the option definitions during development. Below is an example:
 
 ```ts
 import { validate } from 'tsargp';

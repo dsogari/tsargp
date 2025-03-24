@@ -16,6 +16,17 @@ describe('validate', () => {
     expect(validate(options)).resolves.toEqual({});
   });
 
+  it('accept an option with environment variable with same name as a name', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['dup'],
+        sources: ['dup'],
+      },
+    } as const satisfies Options;
+    expect(validate(options)).resolves.toEqual({});
+  });
+
   it('throw an error on option with invalid name', () => {
     const options = {
       flag: {

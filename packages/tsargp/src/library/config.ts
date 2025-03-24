@@ -53,7 +53,7 @@ export const config: MessageConfig = {
     [ErrorItem.missingRequiredOption]: 'Option #0 is required.',
     [ErrorItem.missingParameter]:
       'Missing parameter(s) to option #0: requires (exactly|at least|between) #1.',
-    [ErrorItem.versionFileNotFound]: 'Could not find a version JSON file.',
+    [ErrorItem.versionFileNotFound]: 'Could not locate a version JSON file at #0.',
     [ErrorItem.disallowedInlineParameter]:
       '(Option|Positional marker) #0 does not accept inline parameters.',
     [ErrorItem.choiceConstraintViolation]: 'Invalid parameter to #0: #1. Value must be one of: #2.',
@@ -78,7 +78,7 @@ export const config: MessageConfig = {
     [ErrorItem.mixedNamingConvention]: '#0: Name slot #1 has mixed naming conventions: #2.',
     [ErrorItem.invalidParamCount]: 'Option #0 has invalid parameter count #1.',
     [ErrorItem.variadicWithClusterLetter]:
-      'Variadic option #0 may only appear as the last option in a cluster.',
+      'Variadic option #0 may only appear at the end of a cluster.',
     [ErrorItem.invalidInlineConstraint]: 'Option #0 has invalid inline constraint.',
     [ErrorItem.invalidOption]: 'Option #0 is not suppliable.',
   },
