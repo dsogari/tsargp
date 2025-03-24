@@ -60,6 +60,6 @@ export default ts.config(
     },
   },
   {
-    ignores: ['**/.next', '**/dist', '**/public'],
+    ignores: ['.husky', '**/.next', '**/dist', '**/public'],
   },
 );
