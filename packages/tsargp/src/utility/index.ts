@@ -19,8 +19,8 @@ export function numberInRange(range: Range, phrase: string): ParsingCallback<str
 }
 
 /**
- * Gets a version field from a JSON module.
- * @param jsonModule The ID of the JSON module
+ * Gets a version text to be used with version options.
+ * @param jsonModule The ID of the JSON module containing a version field
  * @returns The version, if the module was found; otherwise undefined
  */
 export async function getVersion(jsonModule: string): Promise<string | undefined> {
@@ -30,19 +30,19 @@ export async function getVersion(jsonModule: string): Promise<string | undefined
 
 /**
  * Create a footer text to be used in help sections.
- * @param packageJsonModule The module ID of the package.json file
+ * @param jsonModule The ID of the JSON module containing a repository URL field
  * @param phrase The custom phrase for the footer
  * @param suffix A suffix to append to the repository URL
  * @returns The footer ANSI string, if a package.json file was found; otherwise undefined
  */
 export async function sectionFooter(
-  packageJsonModule: string,
+  jsonModule: string,
   phrase: string = '#0',
   suffix: string = '',
 ): Promise<AnsiString | undefined> {
-  const packageJson = await import(packageJsonModule, jsonImportOptions);
-  if (packageJson) {
-    const { repository } = packageJson as { repository?: string | { url?: string } };
+  const json = await import(jsonModule, jsonImportOptions);
+  if (json) {
+    const { repository } = json as { repository?: string | { url?: string } };
     if (repository) {
       const repoUrl = typeof repository === 'string' ? repository : repository.url;
       if (repoUrl) {

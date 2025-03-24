@@ -11,7 +11,7 @@
     "directory": "packages/tsargp"
   },
   "devDependencies": {
-    "@tsconfig/bun": "1.0.7",
+    "@tsconfig/bun": "^1.0.7",
     "@types/bun": "^1.2.5",
     "@withfig/autocomplete-types": "^1.31.0",
     "typescript": "^5.8.2"

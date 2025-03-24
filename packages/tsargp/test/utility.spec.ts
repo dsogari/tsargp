@@ -46,9 +46,9 @@ describe('parse', () => {
   });
 
   describe('getVersion', () => {
-    it('return the version from a Node.js package (only works in Bun)', () => {
-      const url = '@tsconfig/bun/package.json';
-      expect(getVersion(url)).resolves.toEqual('1.0.7');
+    it('throw an error when the module cannot be found', () => {
+      const url = import.meta.resolve('./data/absent.json');
+      expect(getVersion(url)).rejects.toThrow(/^Cannot find module/);
     });
 
     it('throw an error when the module is a JavaScript module', () => {
@@ -56,9 +56,9 @@ describe('parse', () => {
       expect(getVersion(url)).rejects.toThrow(/^JSON Parse error/);
     });
 
-    it('return the version from a valid JSON module', () => {
-      const url = import.meta.resolve('./data/with-version.json');
-      expect(getVersion(url)).resolves.toEqual('0.0.0');
+    it('throw an error when the module is not valid JSON', () => {
+      const url = import.meta.resolve('./data/invalid.jsonc');
+      expect(getVersion(url)).rejects.toThrow(/^JSON Parse error/);
     });
 
     it('return undefined when the module does not contain a version field', () => {
@@ -66,14 +66,9 @@ describe('parse', () => {
       expect(getVersion(url)).resolves.toBeUndefined();
     });
 
-    it('throw an error when the module is not valid JSON', () => {
-      const url = import.meta.resolve('./data/invalid.jsonc');
-      expect(getVersion(url)).rejects.toThrow(/^JSON Parse error/);
-    });
-
-    it('throw an error when the module cannot be found', () => {
-      const url = import.meta.resolve('./data/absent.json');
-      expect(getVersion(url)).rejects.toThrow(/^Cannot find module/);
+    it('return the version from a valid JSON module', () => {
+      const url = import.meta.resolve('./data/with-version.json');
+      expect(getVersion(url)).resolves.toEqual('0.0.0');
     });
   });
 

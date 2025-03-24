@@ -311,22 +311,22 @@ describe('makeUnique', () => {
 
 describe('setUnion', () => {
   it('add elements while preserving order', () => {
-    const set = setUnion(new Set([2, 3, 2]), new Set([1, 3, 1]));
+    const set = setUnion(new Set([2, 3]), new Set([1, 3]));
     expect([...set]).toEqual([2, 3, 1]);
   });
 });
 
 describe('setDifference', () => {
   it('remove elements while preserving order', () => {
-    const set = setDifference(new Set([2, 3, 2]), new Set([1, 3, 1]));
-    expect([...set]).toEqual([2]);
+    const set = setDifference(new Set([2, 3, 4]), new Set([1, 3]));
+    expect([...set]).toEqual([2, 4]);
   });
 });
 
 describe('setIntersection', () => {
   it('keep elements while preserving order', () => {
-    const set = setIntersection(new Set([2, 3, 2]), new Set([1, 3, 1]));
-    expect([...set]).toEqual([3]);
+    const set = setIntersection(new Set([2, 3, 1]), new Set([1, 3]));
+    expect([...set]).toEqual([3, 1]);
   });
 });
 
