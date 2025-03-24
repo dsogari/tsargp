@@ -44,12 +44,7 @@ The parsing procedure can be configured via a `ParsingFlags` object that has som
 
 ### Program name
 
-The `progName` property is a custom name for the main command, and may be used in two places:
-
-- in the [process title]; and
-- in [usage statements]
-
-It defaults to the _basename_ of the executing script, and can be suppressed by setting it to an empty string.
+The `progName` property is a custom name for the main command. It may be used in two places: the [process title] and in [usage statements]. It defaults to the _basename_ of the executing script, and can be suppressed by setting it to an empty string.
 
 > [!NOTE]
 >
@@ -81,7 +76,7 @@ The `optionPrefix` property specifies the prefix for [option names]. If set, the
 
 ### Standard input symbol
 
-The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage statements] produced by [help] options. If not present, the standard input will not appear in usage statements.
+The `stdinSymbol` property specifies a symbol for the [standard input] to be displayed in [usage statements] produced by [help] options. If not present, the standard input will not appear in usage statements.
 
 ## Parsing features
 
@@ -206,7 +201,7 @@ When the parser expects an option name and the current argument is not a valid o
 
 ### Inline parameters
 
-An [option parameter] may be passed on the command line using the syntax `<name>=<param>`. The parameter can also be a series of values delimited with a [separator], in the case of [array] options.
+An [option parameter] may be passed on the command line using the syntax `<name>=<param>`. In the case of [array] options, the parameter can also be a series of values delimited with a [separator].
 
 > [!NOTE]
 >

@@ -152,7 +152,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['aa'], flags)).rejects.toThrow(
-        `Option letter 'a' must be the last in a cluster.`,
+        `Option letter a must be the last in a cluster.`,
       );
     });
 
@@ -165,7 +165,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['ff'], flags)).rejects.toThrow(
-        `Option letter 'f' must be the last in a cluster.`,
+        `Option letter f must be the last in a cluster.`,
       );
     });
 
@@ -178,7 +178,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['cc'], flags)).rejects.toThrow(
-        `Option letter 'c' must be the last in a cluster.`,
+        `Option letter c must be the last in a cluster.`,
       );
     });
   });
