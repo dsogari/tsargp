@@ -21,6 +21,7 @@ import type { RecordKeyMap, UsageStatement } from './utils.js';
 
 import { config } from './config.js';
 import { HelpItem } from './enums.js';
+import { AnsiString, AnsiMessage } from './styles.js';
 import {
   getParamCount,
   getOptionNames,
@@ -30,9 +31,6 @@ import {
   getLastOptionName,
   isEnvironmentOnly,
   hasTemplate,
-} from './common.js';
-import { AnsiString, AnsiMessage } from './styles.js';
-import {
   getSymbol,
   isArray,
   getValues,

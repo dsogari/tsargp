@@ -20,6 +20,14 @@ import { config } from './config.js';
 import { ErrorItem } from './enums.js';
 import { format, FormatterFlags } from './formatter.js';
 import {
+  WarnMessage,
+  TextMessage,
+  AnsiMessage,
+  AnsiString,
+  ErrorMessage,
+  JsonMessage,
+} from './styles.js';
+import {
   getParamCount,
   isMessage,
   visitRequirements,
@@ -29,16 +37,6 @@ import {
   isCommand,
   checkInline,
   normalizeArray,
-} from './common.js';
-import {
-  WarnMessage,
-  TextMessage,
-  AnsiMessage,
-  AnsiString,
-  ErrorMessage,
-  JsonMessage,
-} from './styles.js';
-import {
   getCmdLine,
   findSimilar,
   getEnv,

@@ -12,8 +12,10 @@ import {
   allHelpItems,
   HelpItem,
   envHelpItems,
+  getVersion,
+  numberInRange,
+  sectionFooter,
 } from 'tsargp';
-import { getVersion, numberInRange, sectionFooter } from 'tsargp/utility';
 import helloOpts from './demo.hello.options.js';
 
 const isBrowser = typeof self === 'object' && !self.Bun; // Bun defines self with a Bun property

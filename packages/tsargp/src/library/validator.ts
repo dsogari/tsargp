@@ -11,6 +11,7 @@ import type {
 import type { NamingRules } from './utils.js';
 
 import { ErrorItem } from './enums.js';
+import { ErrorMessage, WarnMessage } from './styles.js';
 import {
   getParamCount,
   getOptionNames,
@@ -21,9 +22,6 @@ import {
   isCommand,
   normalizeArray,
   isEnvironmentOnly,
-} from './common.js';
-import { ErrorMessage, WarnMessage } from './styles.js';
-import {
   findSimilar,
   getEntries,
   getSymbol,
