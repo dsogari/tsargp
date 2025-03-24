@@ -6,7 +6,6 @@
     "noEmit": false,
     "sourceMap": true,
     "incremental": true,
-    "stripInternal": true,
     "declarationMap": true,
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false, // https://github.com/microsoft/TypeScript/issues/40344

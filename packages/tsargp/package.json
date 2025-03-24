@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -18,8 +18,8 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.min.js"
+      "types": "./dist/library/index.d.ts",
+      "default": "./dist/library/index.js"
     },
     "./enums": {
       "types": "./dist/enums/enums.d.ts",
@@ -29,13 +29,9 @@
       "types": "./dist/examples/index.d.ts",
       "default": "./dist/examples/index.js"
     },
-    "./library": {
-      "types": "./dist/library/index.d.ts",
-      "default": "./dist/library/index.js"
-    },
     "./utility": {
-      "types": "./dist/utility/index.d.ts",
-      "default": "./dist/utility/index.js"
+      "types": "./dist/library/utils.d.ts",
+      "default": "./dist/library/utils.js"
     },
     "./package": "./package.json"
   },
@@ -58,9 +54,9 @@
   "license": "MIT",
   "scripts": {
     "prepare": "bun run build",
-    "build": "tsc -b && tsc -b src && bun build dist/index.js --outfile dist/index.min.js --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "build": "tsc -b && tsc -b src && bun build dist/library/index.js --outfile /dev/null --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
   },
   "type": "module",
-  "main": "./dist/index.min.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/library/index.js",
+  "types": "./dist/library/index.d.ts"
 }
