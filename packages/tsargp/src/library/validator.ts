@@ -21,7 +21,7 @@ import {
   isCommand,
   normalizeArray,
   isEnvironmentOnly,
-} from './options.js';
+} from './common.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import {
   findSimilar,

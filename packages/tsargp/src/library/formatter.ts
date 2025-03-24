@@ -30,8 +30,8 @@ import {
   getLastOptionName,
   isEnvironmentOnly,
   hasTemplate,
-} from './options.js';
-import { formatFunctions, AnsiString, AnsiMessage } from './styles.js';
+} from './common.js';
+import { AnsiString, AnsiMessage } from './styles.js';
 import {
   getSymbol,
   isArray,
@@ -931,7 +931,7 @@ function formatUsageOption(
     } else {
       hasRequiredPart = true; // stdin is required
     }
-    formatFunctions.m(getSymbol(stdinSymbol), result);
+    result.value(getSymbol(stdinSymbol));
     if (enclose) {
       result.openAt(exprOpen, count).close(exprClose);
     }
@@ -957,7 +957,7 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
   if (uniqueNames.size) {
     const sep = config.connectives.optionAlt;
     const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true }; // keep names compact
-    formatFunctions.a([...uniqueNames].map(getSymbol), result, flags);
+    result.value([...uniqueNames].map(getSymbol), flags);
   }
   return uniqueNames.size;
 }
@@ -993,7 +993,7 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
-    formatFunctions.v(param, result, { sep: '', ...openArrayNoMergeFlags });
+    result.value(param, { sep: '', ...openArrayNoMergeFlags });
   } else if (isString(name)) {
     result.split(name);
   } else if (name) {
@@ -1059,7 +1059,7 @@ function formatRequiredKey(
     result.word(config.connectives.no);
   }
   const name = options[requiredKey].preferredName ?? '';
-  formatFunctions.m(getSymbol(name), result);
+  result.value(getSymbol(name));
 }
 
 /**
@@ -1086,7 +1086,7 @@ function formatRequiresExp<T>(
     close: enclose ? connectives.exprClose : '',
   };
   const sep = isAll === negate ? connectives.or : connectives.and;
-  formatFunctions.a(items, result, { ...flags, sep, custom, mergePrev: false });
+  result.value(items, { ...flags, sep, custom, mergePrev: false });
 }
 
 /**
@@ -1110,11 +1110,10 @@ function formatRequiredValue(
     result.word(connectives.no);
   }
   const name = option.preferredName ?? '';
-  formatFunctions.m(getSymbol(name), result);
+  result.value(getSymbol(name));
   if (!requireAbsent && !requirePresent) {
     const connective = negate ? connectives.notEquals : connectives.equals;
-    result.word(connective);
-    formatFunctions.v(value, result, {});
+    result.word(connective).value(value);
   }
 }
 
@@ -1133,5 +1132,5 @@ function formatRequirementCallback(
   if (negate) {
     result.word(config.connectives.not);
   }
-  formatFunctions.v(callback, result, {});
+  result.value(callback);
 }

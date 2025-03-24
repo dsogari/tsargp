@@ -111,15 +111,14 @@ const typeMapping: Readonly<Record<string, FormatSpecifier>> = {
 
 /**
  * The formatting function for each data type.
- * @internal
  */
-export const formatFunctions = {
+const formatFunctions = {
   /**
    * The formatting function for boolean values.
    * @param value The boolean value
    * @param result The resulting string
    */
-  b(value: boolean, result) {
+  b(value: boolean, result: AnsiString) {
     result.word('' + value, config.styles.boolean);
   },
   /**
@@ -127,7 +126,7 @@ export const formatFunctions = {
    * @param value The string value
    * @param result The resulting string
    */
-  s(value: string, result) {
+  s(value: string, result: AnsiString) {
     const quote = config.connectives.stringQuote;
     result.word(quote + value + quote, config.styles.string);
   },
@@ -136,7 +135,7 @@ export const formatFunctions = {
    * @param value The number value
    * @param result The resulting string
    */
-  n(value: number, result) {
+  n(value: number, result: AnsiString) {
     result.word('' + value, config.styles.number);
   },
   /**
@@ -144,7 +143,7 @@ export const formatFunctions = {
    * @param value The regular expression
    * @param result The resulting string
    */
-  r(value: RegExp, result) {
+  r(value: RegExp, result: AnsiString) {
     result.word('' + value, config.styles.regex);
   },
   /**
@@ -152,7 +151,7 @@ export const formatFunctions = {
    * @param value The symbol value
    * @param result The resulting string
    */
-  m(value: symbol, result) {
+  m(value: symbol, result: AnsiString) {
     result.word(Symbol.keyFor(value) ?? '', config.styles.symbol);
   },
   /**
@@ -160,7 +159,7 @@ export const formatFunctions = {
    * @param url The URL object
    * @param result The resulting string
    */
-  u(url: URL, result) {
+  u(url: URL, result: AnsiString) {
     result.word(url.href, config.styles.url);
   },
   /**
@@ -168,7 +167,7 @@ export const formatFunctions = {
    * @param str The ANSI string
    * @param result The resulting string
    */
-  t(str: AnsiString, result) {
+  t(str: AnsiString, result: AnsiString) {
     result.other(str);
   },
   /**
@@ -178,7 +177,7 @@ export const formatFunctions = {
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  c(arg: unknown, result, flags) {
+  c(arg: unknown, result: AnsiString, flags: FormattingFlags) {
     flags.custom?.bind(result)(arg);
   },
   /**
@@ -188,7 +187,7 @@ export const formatFunctions = {
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  a(value: Array<unknown>, result, flags) {
+  a(value: Array<unknown>, result: AnsiString, flags: FormattingFlags) {
     const { connectives } = config;
     const sep = flags.sep ?? connectives.arraySep;
     const open = flags.open ?? connectives.arrayOpen;
@@ -212,7 +211,7 @@ export const formatFunctions = {
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  o(value: object, result, flags) {
+  o(value: object, result: AnsiString, flags: FormattingFlags) {
     const { connectives } = config;
     const newFlags: FormattingFlags = {
       ...flags,
@@ -239,7 +238,7 @@ export const formatFunctions = {
    * @param result The resulting string
    * @param flags The formatting flags
    */
-  v(value: unknown, result, flags) {
+  v(value: unknown, result: AnsiString, flags: FormattingFlags) {
     const spec =
       value instanceof URL
         ? 'u'
@@ -753,11 +752,22 @@ export class AnsiString {
       function (spec) {
         const index = Number(spec.slice(1));
         if (index >= 0 && index < args.length) {
-          formatFunctions.v(args[index], this, flags);
+          this.value(args[index], flags);
         }
       };
     const alternative = flags.alt !== undefined ? selectAlternative(phrase, flags.alt) : phrase;
     return this.split(alternative, formatFn);
+  }
+
+  /**
+   * Formats a unknown value.
+   * @param value The value to be formatted
+   * @param flags The formatting flags
+   * @returns The ANSI string instance
+   */
+  value(value: unknown, flags: FormattingFlags = {}): this {
+    formatFunctions.v(value, this, flags);
+    return this;
   }
 
   /**

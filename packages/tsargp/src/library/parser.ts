@@ -29,9 +29,8 @@ import {
   isCommand,
   checkInline,
   normalizeArray,
-} from './options.js';
+} from './common.js';
 import {
-  formatFunctions,
   WarnMessage,
   TextMessage,
   AnsiMessage,
@@ -1064,16 +1063,14 @@ function checkRequiresEntry(
     if (present !== invert) {
       error.word(connectives.no);
     }
-    formatFunctions.m(Symbol.for(name), error);
+    error.value(Symbol.for(name));
     return false;
   }
   if (areEqual(actual, expected) !== negate) {
     return true;
   }
   const connective = negate !== invert ? connectives.notEquals : connectives.equals;
-  formatFunctions.m(Symbol.for(name), error);
-  error.word(connective);
-  formatFunctions.v(expected, error, {});
+  error.value(Symbol.for(name)).word(connective).value(expected);
   return false;
 }
 
@@ -1149,7 +1146,7 @@ async function checkRequirementCallback(
     if (negate !== invert) {
       error.word(config.connectives.not);
     }
-    formatFunctions.v(callback, error, {});
+    error.value(callback);
     return false;
   }
   return true;

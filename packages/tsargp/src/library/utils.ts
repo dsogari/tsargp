@@ -73,12 +73,11 @@ export type NamingRules = Readonly<Record<string, NamingRuleSet>>;
 /**
  * The result of matching names against naming rules.
  * It includes the first match in each ruleset.
- * Please do not use {@link Record} here.
  */
 export type NamingMatch<T extends NamingRules> = Resolve<{
   -readonly [key1 in keyof T]: {
     -readonly [key2 in keyof T[key1]]?: string;
-  };
+  }; // NOTE: do not use `Record` here
 }>;
 
 /**

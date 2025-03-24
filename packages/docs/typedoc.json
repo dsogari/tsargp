@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["../tsargp/src/library/index.ts"],
+  "entryPoints": ["../tsargp/src/index.ts"],
   "tsconfig": "../tsargp/src/tsconfig.json",
   "favicon": "favicon.svg",
   "out": "public/api",
