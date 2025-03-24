@@ -1,6 +1,30 @@
+//--------------------------------------------------------------------------------------------------
+// Imports and Exports
+//--------------------------------------------------------------------------------------------------
 import { AnsiString, ErrorMessage, ParsingCallback, Range } from '../library/index.js';
-import { getSymbol, jsonImportOptions } from '../library/utils.js';
+import { getSymbol } from '../library/utils.js';
 
+export * from '../library/utils.js';
+
+//--------------------------------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------------------------------
+/**
+ * The import attributes for JSON modules.
+ */
+const jsonImportAttributes: ImportAttributes = { type: 'json' };
+
+/**
+ * The import options for JSON modules.
+ */
+const jsonImportOptions: ImportCallOptions = {
+  with: jsonImportAttributes,
+  assert: jsonImportAttributes,
+};
+
+//--------------------------------------------------------------------------------------------------
+// Functions
+//--------------------------------------------------------------------------------------------------
 /**
  * Create a parsing callback for numbers that should be within a range.
  * @param range The numeric range
