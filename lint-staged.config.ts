@@ -1,12 +1,11 @@
+import { Configuration } from 'lint-staged';
+
 export default {
-  '*': (paths) => {
-    const joined = paths.map((path) => `'${path}'`).join(' ');
-    return [
-      `prettier --write ${joined}`, // other tools may choke on badly formatted input
-      `cspell --no-must-find-files ${joined}`,
-      `eslint --no-warn-ignored ${joined}`,
-    ];
-  },
+  '*': [
+    `prettier --write`, // other tools may choke on badly formatted input
+    `cspell --no-must-find-files`,
+    `eslint --no-warn-ignored`,
+  ],
   '*.ts': () => 'bun test --coverage', // this can be run concurrently
   'packages/tsargp/**/*': () => [
     'bun run --cwd packages/tsargp build', // should print the minified size
@@ -16,4 +15,4 @@ export default {
     'bun run --cwd packages/docs build', // this is slow
     'publint --strict packages/docs', // publint needs the dist files
   ],
-};
+} as const satisfies Configuration;
