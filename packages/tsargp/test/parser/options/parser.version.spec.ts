@@ -55,7 +55,7 @@ describe('parse', () => {
       expect(parse(options, ['-v'])).rejects.toThrow(/^0.0.0$/);
     });
 
-    it('throw an empty message when a version file does not contain a version field', () => {
+    it('throw an empty message when a version module does not contain a version field', () => {
       const options = {
         version: {
           type: 'version',
@@ -66,7 +66,7 @@ describe('parse', () => {
       expect(parse(options, ['-v'])).rejects.toThrow(/^$/);
     });
 
-    it('throw an empty message when a version file is not valid JSON', () => {
+    it('throw an empty message when a version module is not valid JSON', () => {
       const options = {
         version: {
           type: 'version',
@@ -77,7 +77,7 @@ describe('parse', () => {
       expect(parse(options, ['-v'])).rejects.toThrow(/^$/);
     });
 
-    it('throw an error when a version file cannot be found', () => {
+    it('throw an error when a version module cannot be found', () => {
       const options = {
         version: {
           type: 'version',

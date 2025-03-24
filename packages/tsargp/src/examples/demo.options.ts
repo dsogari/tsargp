@@ -116,7 +116,7 @@ export default {
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    version: packageJsonPath,
+    versionModule: packageJsonPath,
   },
   /**
    * A flag option that is deprecated for some reason.
