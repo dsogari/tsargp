@@ -113,6 +113,11 @@ export type RecordKeyMap = Record<string, Array<string>>;
  */
 export type UsageStatement = Array<string | UsageStatement>;
 
+/**
+ * A record of string keys with unknown values.
+ */
+export type UnknownRecord = Record<string, unknown>;
+
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
@@ -182,6 +187,9 @@ const jsonImportOptions: ImportCallOptions = {
   with: jsonImportAttributes,
   assert: jsonImportAttributes,
 };
+
+const { min, max } = Math;
+export { min, max };
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -617,11 +625,7 @@ export function areEqual(actual: unknown, expected: unknown): boolean {
       return (
         keys1.length === keys2.length &&
         !keys1.find(
-          (key) =>
-            !areEqual(
-              (actual as Record<string, unknown>)[key],
-              (expected as Record<string, unknown>)[key],
-            ),
+          (key) => !areEqual((actual as UnknownRecord)[key], (expected as UnknownRecord)[key]),
         )
       );
     }
@@ -868,21 +872,31 @@ export function selectAlternative(phrase: string, alt = 0): string {
 }
 
 /**
- * Merges the first-level properties of a source object with those of a template object.
+ * Merges the properties of a source object with those of a template object.
  * @param template The template object
  * @param source The source object
+ * @param maxDepth The maximum recursion depth
  * @returns The result object
  */
-export function mergeValues<T extends Record<string, unknown>>(
+export function mergeValues<T extends Readonly<UnknownRecord>, N extends number>(
   template: T,
-  source: PartialWithDepth<T>,
+  source: PartialWithDepth<T, N>,
+  maxDepth: N,
 ): T {
-  const result: Record<string, unknown> = {};
+  if (!maxDepth) {
+    return { ...template, ...source };
+  }
+  const result: UnknownRecord = {};
   for (const [key, val] of getEntries(template)) {
+    const sourceVal = source[key as keyof T];
+    const isObj = val !== null && isObject(val) && !isArray(val);
+    const isSourceObj = sourceVal !== null && isObject(sourceVal) && !isArray(sourceVal);
     result[key] =
-      isArray(val) || !isObject(val)
-        ? (source[key] ?? val)
-        : { ...val, ...(source[key] as object) };
+      isObj && isSourceObj
+        ? mergeValues(val as Readonly<UnknownRecord>, sourceVal, maxDepth - 1)
+        : sourceVal === undefined
+          ? val
+          : sourceVal;
   }
   return result as T;
 }
@@ -899,26 +913,6 @@ export function findValue<T>(rec: Record<string, T>, pred: (val: T) => boolean):
       return val;
     }
   }
-}
-
-/**
- * Gets the maximum of two numbers.
- * @param a The first operand
- * @param b The second operand
- * @returns The maximum of the two
- */
-export function max(a: number, b: number): number {
-  return a > b ? a : b;
-}
-
-/**
- * Gets the minimum of two numbers.
- * @param a The first operand
- * @param b The second operand
- * @returns The minimum of the two
- */
-export function min(a: number, b: number): number {
-  return a < b ? a : b;
 }
 
 /**

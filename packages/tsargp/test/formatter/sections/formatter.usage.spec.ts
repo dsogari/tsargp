@@ -120,6 +120,13 @@ describe('rendering a usage section', () => {
       );
     });
 
+    it('indent the program name and the options, and include a trailing break', () => {
+      const sections: HelpSections = [{ type: 'usage', content: { indent: 2 } }];
+      expect(format(options2, sections, flags).wrap(12, false, true)).toEqual(
+        '  prog [-f]\n       [-f2]\n',
+      );
+    });
+
     it('replace the program name with a string content text', () => {
       const sections: HelpSections = [{ type: 'usage', content: { text: 'prog  name' } }];
       expect(format(options, sections).wrap()).toEqual('prog name [-f]\n');
@@ -136,7 +143,7 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the options', () => {
-    it('render usage with comment and AnsiString parameter name', () => {
+    it('render usage with AnsiString comment and parameter name', () => {
       const options = {
         single: {
           type: 'single',
@@ -144,8 +151,12 @@ describe('rendering a usage section', () => {
           usageParamName: new AnsiString().split('my  param'),
         },
       } as const satisfies Options;
-      const sections: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];
-      expect(format(options, sections).wrap()).toEqual('[-s my param] this is a comment\n');
+      const sections0: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];
+      const sections1: HelpSections = [
+        { type: 'usage', comment: new AnsiString().split('this is a  comment') },
+      ];
+      expect(format(options, sections0).wrap()).toEqual('[-s my param] this is a comment\n');
+      expect(format(options, sections1).wrap()).toEqual('[-s my param] this is a comment\n');
     });
 
     it('render a positional option without template', () => {

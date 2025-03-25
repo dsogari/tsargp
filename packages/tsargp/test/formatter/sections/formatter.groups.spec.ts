@@ -14,7 +14,7 @@ describe('rendering a groups section', () => {
     ...options,
     flag2: {
       type: 'flag',
-      names: ['-f2'],
+      names: ['--flag'],
       group: 'group',
     },
   } as const satisfies Options;
@@ -37,7 +37,7 @@ describe('rendering a groups section', () => {
 
     it('avoid braking the heading', () => {
       const sections: HelpSections = [{ type: 'groups', heading: { text: 'text' } }];
-      expect(format(options, sections).wrap()).toEqual('text -f\n');
+      expect(format(options, sections).wrap()).toEqual('text\n  -f\n');
     });
 
     it('break the heading with no text', () => {
@@ -47,26 +47,26 @@ describe('rendering a groups section', () => {
 
     it('break the heading with text', () => {
       const sections: HelpSections = [{ type: 'groups', heading: { text: 'text', breaks: 1 } }];
-      expect(format(options, sections).wrap()).toEqual('\ntext -f\n');
+      expect(format(options, sections).wrap()).toEqual('\ntext\n  -f\n');
     });
 
     it('avoid breaking the heading with no text at the beginning of the message', () => {
       const sections: HelpSections = [
         { type: 'groups', heading: { breaks: 1, noBreakFirst: true } },
       ];
-      expect(format(options2, sections).wrap()).toEqual('  -f\n\ngroup -f2\n');
+      expect(format(options2, sections).wrap()).toEqual('  -f\n\ngroup\n  --flag\n');
     });
 
     it('avoid breaking the heading with text at the beginning of the message', () => {
       const sections: HelpSections = [
         { type: 'groups', heading: { text: 'text', breaks: 1, noBreakFirst: true } },
       ];
-      expect(format(options2, sections).wrap()).toEqual('text -f\n\ngroup -f2\n');
+      expect(format(options2, sections).wrap()).toEqual('text -f\n\ngroup\n  --flag\n');
     });
 
     it('indent the heading with text', () => {
       const sections: HelpSections = [{ type: 'groups', heading: { text: 'text', indent: 2 } }];
-      expect(format(options, sections).wrap()).toEqual('  text -f\n');
+      expect(format(options, sections).wrap()).toEqual('  text\n  -f\n');
     });
 
     it('right-align the heading with text', () => {
@@ -80,12 +80,12 @@ describe('rendering a groups section', () => {
       const sections: HelpSections = [
         { type: 'groups', heading: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
       ];
-      expect(format(options, sections).wrap()).toEqual('text  spaces -f\n');
+      expect(format(options, sections).wrap()).toEqual('text  spaces\n  -f\n');
     });
 
     it('replace the heading with the group name', () => {
       const sections: HelpSections = [{ type: 'groups', heading: { text: 'text' } }];
-      expect(format(options2, sections).wrap()).toEqual('text -f\ngroup -f2\n');
+      expect(format(options2, sections).wrap()).toEqual('text -f\ngroup\n  --flag\n');
     });
 
     it('avoid splitting the group name', () => {
@@ -97,7 +97,7 @@ describe('rendering a groups section', () => {
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'groups', heading: { noSplit: true } }];
-      expect(format(options, sections).wrap()).toEqual('text  spaces -f\n');
+      expect(format(options, sections).wrap()).toEqual('text  spaces\n  -f\n');
     });
   });
 
@@ -126,14 +126,14 @@ describe('rendering a groups section', () => {
       const sections: HelpSections = [
         { type: 'groups', content: { breaks: 1, noBreakFirst: true } },
       ];
-      expect(format(options2, sections).wrap()).toEqual('  -f\n\n  -f2\n');
+      expect(format(options2, sections).wrap()).toEqual('  -f\n\n  --flag\n');
     });
 
     it('avoid breaking the content with text at the beginning of the message', () => {
       const sections: HelpSections = [
         { type: 'groups', content: { text: 'text', breaks: 1, noBreakFirst: true } },
       ];
-      expect(format(options2, sections).wrap()).toEqual('text\n\n  -f\n\n  -f2\n');
+      expect(format(options2, sections).wrap()).toEqual('text\n\n  -f\n\n  --flag\n');
     });
 
     it('indent the content with text', () => {
@@ -157,7 +157,7 @@ describe('rendering a groups section', () => {
 
     it('remove the content in a non-default group', () => {
       const sections: HelpSections = [{ type: 'groups', content: { text: 'text' } }];
-      expect(format(options2, sections).wrap()).toEqual('text\n\n  -f\n  -f2\n');
+      expect(format(options2, sections).wrap()).toEqual('text\n\n  -f\n  --flag\n');
     });
   });
 

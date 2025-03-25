@@ -57,11 +57,11 @@ export type NumericRange = readonly [min: number, max: number];
  */
 export type WithColumnLayout = {
   /**
-   * The type of column alignment. (Defaults to 'left')
+   * The type of text alignment. (Defaults to 'left')
    */
   readonly align: TextAlignment;
   /**
-   * The indentation level. (Defaults to 2)
+   * The column indentation level. (Defaults to 2)
    */
   readonly indent: number;
   /**
@@ -69,33 +69,19 @@ export type WithColumnLayout = {
    */
   readonly breaks: number;
   /**
-   * Whether the column should be hidden. (Defaults to false)
-   */
-  readonly hidden: boolean;
-  /**
-   * Whether the column has slots. (Defaults to false)
-   */
-  readonly slotted: boolean;
-  /**
-   * The column width. (Defaults to none)
-   */
-  readonly width: number;
-};
-
-/**
- * Defines layout attributes for columns that may be preceded by other columns.
- */
-export type WithMergeLayout = {
-  /**
-   * Whether the column should be merged with the previous column. (Defaults to false)
-   */
-  readonly merge: boolean;
-  /**
-   * Whether the indentation level should be relative to the beginning of the line instead of the
-   * end of the previous column. Ignored if {@link WithMergeLayout.merge} is `true`.
-   * (Defaults to false)
+   * Whether {@link WithColumnLayout.indent} should be relative to the beginning of the line.
+   * Ignored by the names column. (Defaults to false)
    */
   readonly absolute: boolean;
+  /**
+   * The slot indentation level, or zero to disable slots. Does not apply to the first slot.
+   * Ignored if the column is merged. (Defaults to 0)
+   */
+  readonly slotIndent: number;
+  /**
+   * Reserved for the column width.
+   */
+  readonly width?: never;
 };
 
 /**
@@ -104,16 +90,21 @@ export type WithMergeLayout = {
 export type HelpColumnsLayout = {
   /**
    * The settings for the names column.
+   * Use the value `null` to hide it from the help message.
    */
-  readonly names: WithColumnLayout;
+  readonly names: WithColumnLayout | null;
   /**
    * The settings for the parameter column.
+   * Use the value `null` to hide it from the help message.
+   * Use the value `'merge'` to merge it with the previous column.
    */
-  readonly param: WithColumnLayout & WithMergeLayout;
+  readonly param: WithColumnLayout | null | 'merge';
   /**
    * The settings for the description column.
+   * Use the value `null` to hide it from the help message.
+   * Use the value `'merge'` to merge it with the previous column.
    */
-  readonly descr: WithColumnLayout & WithMergeLayout;
+  readonly descr: WithColumnLayout | null | 'merge';
 };
 
 /**
@@ -217,7 +208,7 @@ export type WithSectionUsage = {
   /**
    * A commentary to append to the usage.
    */
-  readonly comment?: string;
+  readonly comment?: StyledString;
   /**
    * Whether to keep alternatives compact. (Defaults to true)
    */
@@ -476,7 +467,7 @@ export type WithBasic = {
   readonly deprecated?: StyledString;
   /**
    * The option group in the help message.
-   * Use null to hide it from the help message.
+   * Use the value `null` to hide it from the help message.
    */
   readonly group?: string | null;
   /**

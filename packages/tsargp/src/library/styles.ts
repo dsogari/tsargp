@@ -3,7 +3,7 @@
 //--------------------------------------------------------------------------------------------------
 import type { ConnectiveWords } from './config.js';
 import type { ErrorItem } from './enums.js';
-import type { Alias, Args, Enumerate } from './utils.js';
+import type { Alias, Args, Enumerate, UnknownRecord } from './utils.js';
 
 import { config } from './config.js';
 import { cs, tf, fg, bg, ul } from './enums.js';
@@ -229,7 +229,7 @@ const formatFunctions = {
         this['v'](val, result, flags);
       },
     };
-    const entries = getEntries(value as Record<string, unknown>);
+    const entries = getEntries(value as UnknownRecord);
     this['a'](entries, result, newFlags);
   },
   /**
@@ -445,6 +445,23 @@ export class AnsiString {
   }
 
   /**
+   * @returns The maximum line width without wrapping
+   */
+  get lineWidth(): number {
+    let ans = 0;
+    let acc = 0;
+    for (const str of this.strings) {
+      if (str) {
+        acc += str.length + (acc ? 1 : 0);
+        ans = max(ans, acc);
+      } else {
+        acc = 0;
+      }
+    }
+    return ans;
+  }
+
+  /**
    * Creates a ANSI string.
    * @param indent The starting column for text wrapping
    * @param align Whether the string should be left- or right-aligned
@@ -455,21 +472,6 @@ export class AnsiString {
     public align: TextAlignment = 'left',
     public width: number = NaN,
   ) {}
-
-  /**
-   * Removes all strings.
-   * @returns The ANSI string instance
-   */
-  clear(): this {
-    this.strings.length = 0;
-    this.styled.length = 0;
-    this.styles.length = 0;
-    this.curStyle.length = 0;
-    this.maxLength = 0;
-    this.mergeLeft = false;
-    this.merge = false;
-    return this;
-  }
 
   /**
    * Appends another ANSI string.
@@ -667,17 +669,17 @@ export class AnsiString {
 
   /**
    * Wraps the internal strings to fit in a terminal width.
-   * @param result The resulting list (can be undefined, to only compute the final column)
+   * @param result The resulting list
    * @param column The current terminal column
-   * @param width The desired terminal width (or zero or NaN to avoid wrapping)
+   * @param terminalWidth The desired terminal width (or zero or NaN to avoid wrapping)
    * @param emitStyles True if styles should be emitted
    * @param emitSpaces True if spaces should be emitted instead of move sequences
    * @returns The updated terminal column
    */
   wrap(
-    result?: Array<string>,
+    result: Array<string>,
     column: number = 0,
-    width: number = max(0, this.indent) + this.width,
+    terminalWidth: number = 0,
     emitStyles: boolean = false,
     emitSpaces: boolean = true,
   ): number {
@@ -687,26 +689,27 @@ export class AnsiString {
     }
     /** @ignore */
     function align() {
-      if (needToAlign && result && (j ?? NaN) < result.length && column < width) {
+      if (needToAlign && j < result.length && column < width) {
         const pad = move(column, width); // remaining columns until right boundary
-        result.splice(j ?? NaN, 0, pad); // insert padding at the indentation boundary
+        result.splice(j, 0, pad); // insert padding at the indentation boundary
         column = width;
       }
     }
     /** @ignore */
-    function push(str: string, col: number): number | undefined {
+    function push(str: string, col: number): number {
       column = col;
-      return result?.push(str);
+      return result.push(str);
     }
     if (!this.count) {
       return column;
     }
-    column = max(0, column); // sanitize
-    width = max(0, width); // sanitize
-    let start = max(0, min(this.indent, width || Infinity)); // sanitize
-    const needToAlign = width && this.align === 'right';
+    column = max(0, column) || 0; // sanitize
+    const indent = max(0, this.indent) || 0; // sanitize
+    const width = indent + max(0, this.width) || max(0, terminalWidth) || Infinity; // sanitize
+    let start = max(0, min(indent, width)); // sanitize
+    const needToAlign = isFinite(width) && this.align === 'right';
 
-    if (width && width < start + this.maxLength) {
+    if (width < start + this.maxLength) {
       start = 0; // wrap to the first column instead
       if (column && this.strings[0]) {
         push('\n', 0); // forcefully break the first line
@@ -715,8 +718,8 @@ export class AnsiString {
       push(move(column, start), start); // pad until start
     }
 
-    const indent = start ? move(0, start) : '';
-    let j = result?.length; // save index for right-alignment
+    const pad = start ? move(0, start) : '';
+    let j = result.length; // save index for right-alignment
     for (let i = 0; i < this.count; i++) {
       let str = this.strings[i];
       const len = str.length;
@@ -726,20 +729,20 @@ export class AnsiString {
         j = push(styledStr, 0); // save index for right-alignment
         continue;
       }
-      if (!column && indent) {
-        j = push(indent, start); // save index for right-alignment
+      if (!column && pad) {
+        j = push(pad, start); // save index for right-alignment
       }
       if (emitStyles) {
         str = styledStr;
       }
       if (column === start) {
         push(str, column + len);
-      } else if (!width || column + len < width) {
+      } else if (column + len < width) {
         push(' ' + str, column + 1 + len);
       } else {
         align();
-        j = push('\n' + indent, start + len); // save index for right-alignment
-        result?.push(str);
+        j = push('\n' + pad, start + len); // save index for right-alignment
+        result.push(str);
       }
     }
     align();

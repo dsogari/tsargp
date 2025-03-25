@@ -147,6 +147,14 @@ describe('AnsiString', () => {
           expect(result).toEqual(['abc' + clr, ' def']);
         });
       });
+
+      describe('right-aligned', () => {
+        it('do not align when breaking the line', () => {
+          const result: Array<string> = [];
+          new AnsiString(0, 'right').word('abc').break().wrap(result);
+          expect(result).toEqual(['abc', '\n']);
+        });
+      });
     });
 
     describe('a width is provided', () => {
@@ -199,6 +207,18 @@ describe('AnsiString', () => {
           new AnsiString(0, 'left', 5).word('abc').open('lar').other(str).wrap(result, 2);
           expect(result).toEqual(['\n', 'abc', '\n', 'largest']);
         });
+
+        it('add a line break when a word does not fit the width', () => {
+          const result: Array<string> = [];
+          new AnsiString(0, 'left', 5).word('word').wrap(result, 2);
+          expect(result).toEqual(['\n', 'word']);
+        });
+
+        it('avoid adding a line break when a word fits the width', () => {
+          const result: Array<string> = [];
+          new AnsiString(0, 'left', 8).word('word').wrap(result, 2);
+          expect(result).toEqual([' word']);
+        });
       });
 
       describe('the starting column is not zero', () => {
@@ -224,6 +244,20 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           new AnsiString(1, 'left', 5).split('abc largest').wrap(result);
           expect(result).toEqual(['abc', '\n', 'largest']);
+        });
+
+        describe('the current column is not zero', () => {
+          it('add a line break when a word does not fit the width', () => {
+            const result: Array<string> = [];
+            new AnsiString(2, 'left', 6).word('word').wrap(result, 4);
+            expect(result).toEqual(['\n  ', 'word']);
+          });
+
+          it('avoid adding a line break when a word fits the width', () => {
+            const result: Array<string> = [];
+            new AnsiString(2, 'left', 6).word('word').wrap(result, 3);
+            expect(result).toEqual([' word']);
+          });
         });
 
         describe('emitting styles', () => {

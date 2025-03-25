@@ -100,7 +100,7 @@ export default {
           noBreakFirst: true,
         },
         content: { breaks: 2 },
-        layout: { param: { hidden: true } },
+        layout: { param: null },
         items: envHelpItems,
         useEnv: true,
       },

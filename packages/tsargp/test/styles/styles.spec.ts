@@ -26,6 +26,18 @@ describe('AnsiString', () => {
     });
   });
 
+  describe('lineWidth', () => {
+    it('return zero if no strings', () => {
+      const str = new AnsiString();
+      expect(str.lineWidth).toEqual(0);
+    });
+
+    it('compute maximum line width among all lines, counting spaces', () => {
+      const str = new AnsiString().break().word('type').break().word('script').word('is').break();
+      expect(str.lineWidth).toEqual(9);
+    });
+  });
+
   describe('word', () => {
     it('add words with no style', () => {
       const str = new AnsiString().word('type').word('script');
@@ -39,28 +51,6 @@ describe('AnsiString', () => {
       const str = new AnsiString().word('type', sty);
       expect(str.strings).toEqual(['type']);
       expect(str.styled).toEqual([sty + 'type' + rst]);
-    });
-  });
-
-  describe('clear', () => {
-    it('remove all strings', () => {
-      const str = new AnsiString().word('type').word('script').clear();
-      expect(str.count).toEqual(0);
-      expect(str.strings).toBeEmpty();
-      expect(str.styled).toBeEmpty();
-      expect(str.maxLength).toEqual(0);
-    });
-
-    it('clear the styles', () => {
-      const str = new AnsiString().pushSty(bold).word('type').clear().popSty().word('script');
-      expect(str.strings).toEqual(['script']);
-      expect(str.styled).toEqual(['script']);
-    });
-
-    it('clear the merge flags', () => {
-      const str = new AnsiString().close('type').open('script').clear();
-      expect(str.mergeLeft).toBeFalse();
-      expect(str.merge).toBeFalse();
     });
   });
 

@@ -14,11 +14,17 @@ import {
 
 describe('mergeValues', () => {
   it('merge source properties with the template object', () => {
-    expect(mergeValues({ a: { b: 2, c: 3 } }, { a: { c: 2 } })).toEqual({ a: { b: 2, c: 2 } });
+    expect(mergeValues({ a: { b: 2, c: 3 } }, { a: { c: 2 } }, 1)).toEqual({ a: { b: 2, c: 2 } });
   });
 
   it('replace array values from the template object', () => {
-    expect(mergeValues({ a: [1] }, { a: [2] })).toEqual({ a: [2] });
+    expect(mergeValues({ a: [1] }, { a: [2] }, 1)).toEqual({ a: [2] });
+  });
+
+  it('handle null values', () => {
+    type Template = { a: object | null };
+    expect(mergeValues({ a: {} } as Template, { a: null }, 1)).toEqual({ a: null });
+    expect(mergeValues({ a: null } as Template, { a: {} }, 1)).toEqual({ a: {} });
   });
 });
 

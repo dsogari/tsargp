@@ -51,6 +51,7 @@ import {
   regex,
   isString,
   isFunction,
+  max as max2,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -411,7 +412,7 @@ async function parseArgs(context: ParseContext) {
         if (await handleNiladic(context, info, j, args.slice(j + 1))) {
           return; // skip requirements
         }
-        prev[0] += Math.max(0, option.skipCount ?? 0);
+        prev[0] += max2(0, option.skipCount ?? 0);
         prev[1] = undefined;
         continue; // fetch more
       }
