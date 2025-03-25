@@ -377,7 +377,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: 'merge' },
+        layout: { param: { merge: true } },
         items: [HelpItem.synopsis],
       },
     ];
@@ -415,7 +415,7 @@ describe('format', () => {
         type: 'groups',
         layout: {
           names: { slotIndent: 1 }, // ignored by the formatter
-          param: 'merge',
+          param: { merge: true },
         },
         items: [HelpItem.synopsis],
       },
@@ -454,7 +454,7 @@ describe('format', () => {
         type: 'groups',
         layout: {
           names: { align: 'right' },
-          param: 'merge',
+          param: { merge: true },
         },
         items: [HelpItem.synopsis],
       },
@@ -484,7 +484,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: 'merge' },
+        layout: { descr: { merge: true } },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -511,7 +511,7 @@ describe('format', () => {
         type: 'groups',
         layout: {
           param: { align: 'right' },
-          descr: 'merge',
+          descr: { merge: true },
         },
       },
     ];
@@ -539,14 +539,14 @@ describe('format', () => {
         layout: {
           names: { slotIndent: 1 }, // ignored by the formatter
           param: null,
-          descr: 'merge',
+          descr: { merge: true },
         },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(`  -s A string option\n  A flag option\n`);
   });
 
-  it('merge option descriptions with option parameters and option names', () => {
+  it('merge option descriptions and parameters with left-aligned option names', () => {
     const options = {
       single: {
         type: 'single',
@@ -569,13 +569,80 @@ describe('format', () => {
       {
         type: 'groups',
         layout: {
-          param: 'merge',
-          descr: 'merge',
+          param: { merge: true },
+          descr: { merge: true },
         },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
       `  -s <param> A string option\n  <param> A string option\n  -f A flag option\n`,
     );
+  });
+
+  it('merge option descriptions and parameters with right-aligned option names', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      single2: {
+        type: 'single',
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: {
+          names: { align: 'right' },
+          param: { merge: true },
+          descr: { merge: true },
+        },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      `  -s <param> A string option\n     <param> A string option\n            -f A flag option\n`,
+    );
+
+    it('merge option descriptions and parameters with option names, with leading line feeds', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          synopsis: 'A string option',
+          paramName: '<param>',
+        },
+        single2: {
+          type: 'single',
+          synopsis: 'A string option',
+          paramName: '<param>',
+        },
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+          synopsis: 'A flag option',
+        },
+      } as const satisfies Options;
+      const sections: HelpSections = [
+        {
+          type: 'groups',
+          layout: {
+            param: { merge: true, breaks: 1 },
+            descr: { merge: true, breaks: 1 },
+          },
+        },
+      ];
+      expect(format(options, sections).wrap()).toEqual(
+        `  -s\n  <param>\n  A string option\n  <param>\n  A string option\n  -f\n  A flag option\n`,
+      );
+    });
   });
 });

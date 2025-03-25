@@ -467,11 +467,11 @@ function formatGroups(
     }
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option, flags, items);
-    if (!layout.descr || layout.descr === 'merge') {
+    if (!layout.descr || 'merge' in layout.descr) {
       param.push(...descr.splice(0)); // extract from descr
       param.splice(1).forEach((str) => param[0].other(str));
     }
-    if (!layout.param || layout.param === 'merge') {
+    if (!layout.param || 'merge' in layout.param) {
       names.push(...param.splice(0)); // extract from param
       names.splice(1).forEach((str) => names[0].other(str));
     }
@@ -525,7 +525,7 @@ function adjustEntries(
     widths: Array<number>,
     prevEnd: number = 0,
   ): [start: number, width: number, slotIndent: number] {
-    return column === null || column === 'merge'
+    return !column || 'merge' in column
       ? [0, prevEnd, NaN]
       : [
           column.absolute ? max(0, column.indent || 0) : prevEnd + (column.indent || 0),
@@ -562,7 +562,7 @@ function adjustEntries(
  * @returns [The text alignment, The number of leading line feeds]
  */
 function getAlignment(column: HelpColumnsLayout['param']): [align: TextAlignment, breaks: number] {
-  if (!column || column === 'merge') {
+  if (!column || 'merge' in column) {
     return ['left', 0];
   }
   const { align, breaks } = column;
@@ -596,7 +596,7 @@ function formatNames(
       if (slotted) {
         result.pop(); // will be re-added within the loop
       }
-      names.forEach((name) => {
+      for (const name of names) {
         if (name !== null) {
           if (sep !== undefined) {
             str.close(sep);
@@ -613,7 +613,7 @@ function formatNames(
         } else if (slotted) {
           result.push(new AnsiString());
         }
-      });
+      }
       str.popSty(); // pop style of the last string
     }
   }
@@ -669,7 +669,7 @@ function formatDescription(
       result = new AnsiString(0, align); // nothing to be rendered
     }
   }
-  return [result.break()];
+  return [result.break()]; // include trailing line feed
 }
 
 /**

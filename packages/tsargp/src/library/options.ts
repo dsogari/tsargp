@@ -85,6 +85,21 @@ export type WithColumnLayout = {
 };
 
 /**
+ * Defines layout attributes for columns that can be merged with previous columns.
+ */
+export type WithMergedLayout = {
+  /**
+   * True to merge the column with the previous one.
+   * Text alignment and indentation will be those of the last previous non-merged column.
+   */
+  readonly merge: true;
+  /**
+   * The number of leading line feeds. (Defaults to 0)
+   */
+  readonly breaks: number;
+};
+
+/**
  * The help columns layout.
  */
 export type HelpColumnsLayout = {
@@ -96,15 +111,13 @@ export type HelpColumnsLayout = {
   /**
    * The settings for the parameter column.
    * Use the value `null` to hide it from the help message.
-   * Use the value `'merge'` to merge it with the previous column.
    */
-  readonly param: WithColumnLayout | null | 'merge';
+  readonly param: WithColumnLayout | null | WithMergedLayout;
   /**
    * The settings for the description column.
    * Use the value `null` to hide it from the help message.
-   * Use the value `'merge'` to merge it with the previous column.
    */
-  readonly descr: WithColumnLayout | null | 'merge';
+  readonly descr: WithColumnLayout | null | WithMergedLayout;
 };
 
 /**
