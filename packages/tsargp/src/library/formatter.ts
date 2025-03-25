@@ -16,7 +16,7 @@ import type {
   OptionDependencies,
   StyledString,
 } from './options.js';
-import type { FormattingFlags } from './styles.js';
+import type { FormattingFlags, TextAlignment } from './styles.js';
 import type { RecordKeyMap, UsageStatement } from './utils.js';
 
 import { config } from './config.js';
@@ -170,11 +170,6 @@ const defaultLayout: HelpColumnsLayout = {
   param: defaultColumnLayout,
   descr: defaultColumnLayout,
 };
-
-/**
- * The layout for merged columns.
- */
-const mergedColumnLayout: Partial<WithColumnLayout> = { breaks: 0, align: 'left' };
 
 /**
  * The default help sections.
@@ -467,7 +462,7 @@ function formatGroups(
   /** @ignore */
   function build(option: OpaqueOption): HelpEntry | undefined {
     const names = formatNames(layout, option, useEnv);
-    if (useEnv && !names.length) {
+    if (useEnv && names.length === 1 && !names[0].maxLength) {
       return; // skip options without environment variable names, in this case
     }
     const param = formatParams(layout, option);
@@ -514,7 +509,7 @@ function adjustEntries(
     widths: Array<number>,
     start: number,
     slotIndent: number,
-    isLast: boolean,
+    isLast: boolean, // use the terminal width for the last slot of the last column
   ) {
     column.forEach((str, i) => {
       str.indent = start;
@@ -562,6 +557,19 @@ function adjustEntries(
 }
 
 /**
+ * Gets the text alignment setting from a column layout.
+ * @param column The column layout
+ * @returns [The text alignment, The number of leading line feeds]
+ */
+function getAlignment(column: HelpColumnsLayout['param']): [align: TextAlignment, breaks: number] {
+  if (!column || column === 'merge') {
+    return ['left', 0];
+  }
+  const { align, breaks } = column;
+  return [align, breaks];
+}
+
+/**
  * Formats an option's names to be printed on the terminal.
  * This does not include the positional marker.
  * @param layout The help columns layout
@@ -574,34 +582,41 @@ function formatNames(
   option: OpaqueOption,
   useEnv: boolean = false,
 ): HelpColumn {
-  const names = useEnv ? getOptionEnvVars(option) : option.names;
-  if (!layout.names || !names?.length) {
-    return []; // nothing to be rendered
-  }
-  const { breaks, align, slotIndent } = layout.names;
-  const { optionSep } = config.connectives;
-  const sty = option.styles?.names ?? config.styles.symbol;
-  if (!slotIndent) {
-    let sep = ''; // no separator before first name
-    const result = new AnsiString(0, align).break(breaks).pushSty(config.styles.base);
-    names.forEach((name) => name && (result.close(sep).word(name, sty), (sep = optionSep)));
-    return [result.popSty()];
-  }
-  const result: Array<AnsiString> = [];
-  let str: AnsiString | undefined;
-  names.forEach((name) => {
-    if (name !== null) {
-      str?.close(optionSep).popSty(); // pop the base text style
-      str = new AnsiString(0, align)
-        .break(str ? 0 : breaks) // break only on the first name
-        .pushSty(config.styles.base) // base style will be popped later
-        .word(name, sty);
-      result.push(str);
-    } else {
-      result.push(new AnsiString());
+  const [align, breaks] = getAlignment(layout.names);
+  let str = new AnsiString(0, align);
+  const result: Array<AnsiString> = [str];
+  if (layout.names) {
+    const names = useEnv ? getOptionEnvVars(option) : option.names;
+    if (names?.length) {
+      const { styles, connectives } = config;
+      const sty = option.styles?.names ?? styles.symbol;
+      const slotted = !!layout.names.slotIndent;
+      let sep: string | undefined; // no separator before first name
+      str.break(breaks).pushSty(styles.base);
+      if (slotted) {
+        result.pop(); // will be re-added within the loop
+      }
+      names.forEach((name) => {
+        if (name !== null) {
+          if (sep !== undefined) {
+            str.close(sep);
+            if (slotted) {
+              str.popSty(); // pop style of the last string
+              str = new AnsiString(0, align).pushSty(styles.base);
+            }
+          }
+          if (slotted) {
+            result.push(str);
+          }
+          str.word(name, sty);
+          sep = connectives.optionSep;
+        } else if (slotted) {
+          result.push(new AnsiString());
+        }
+      });
+      str.popSty(); // pop style of the last string
     }
-  });
-  str?.popSty(); // pop the base text style of the last name
+  }
   return result;
 }
 
@@ -612,13 +627,14 @@ function formatNames(
  * @returns The help column
  */
 function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): HelpColumn {
-  if (!layout.param || !hasTemplate(option, false)) {
-    return []; // nothing to be rendered
+  const [align, breaks] = getAlignment(layout.param);
+  const result = new AnsiString(0, align);
+  if (layout.param && hasTemplate(option, false)) {
+    result.break(breaks).pushSty(config.styles.base);
+    formatParam(option, false, result);
+    result.popSty();
   }
-  const { breaks, align } = layout.param === 'merge' ? mergedColumnLayout : layout.param;
-  const result = new AnsiString(0, align).break(breaks).pushSty(config.styles.base);
-  formatParam(option, false, result);
-  return [result.popSty()];
+  return [result];
 }
 
 /**
@@ -638,22 +654,22 @@ function formatDescription(
   flags: FormatterFlags,
   items: ReadonlyArray<HelpItem> = allHelpItems,
 ): HelpColumn {
+  const [align, breaks] = getAlignment(layout.descr);
+  let result = new AnsiString(0, align);
   if (layout.descr) {
-    const { breaks, align } = layout.descr === 'merge' ? mergedColumnLayout : layout.descr;
-    const result = new AnsiString(0, align)
-      .break(breaks)
-      .pushSty(config.styles.base)
-      .pushSty(option.styles?.descr);
+    result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
     for (const item of items) {
       if (item !== HelpItem.cluster || flags.clusterPrefix !== undefined) {
         helpFunctions[item](option, config.helpPhrases[item], options, result);
       }
     }
     if (result.maxLength) {
-      return [result.popSty().popSty().break()];
+      result.popSty().popSty();
+    } else {
+      result = new AnsiString(0, align); // nothing to be rendered
     }
   }
-  return [new AnsiString().break()]; // nothing to be rendered, but include trailing line feed
+  return [result.break()];
 }
 
 /**

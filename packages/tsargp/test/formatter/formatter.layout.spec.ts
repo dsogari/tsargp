@@ -288,6 +288,26 @@ describe('format', () => {
     expect(format(options, sections).wrap()).toEqual('  -f,         --flag\n      --flag2\n');
   });
 
+  it('align option names within slots to the right boundary', () => {
+    const options = {
+      flag1: {
+        type: 'flag',
+        names: ['-f1', '--flag1'],
+      },
+      flag2: {
+        type: 'flag',
+        names: ['--flag2', '-f2'],
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: { names: { align: 'right', slotIndent: 1 } },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual('      -f1, --flag1\n  --flag2,     -f2\n');
+  });
+
   it('align option parameters to the right boundary', () => {
     const options = {
       single1: {
@@ -405,7 +425,7 @@ describe('format', () => {
     );
   });
 
-  it.skip('merge option parameters with right-aligned option names', () => {
+  it('merge option parameters with right-aligned option names', () => {
     const options = {
       single1: {
         type: 'single',
@@ -441,13 +461,13 @@ describe('format', () => {
     ];
     expect(format(options, sections).wrap()).toEqual(
       '  -s1, --single <param>\n' +
-        '                long-parameter-name\n' +
+        '    long-parameter-name\n' +
         '            -s3=<param>\n' +
-        '        --array[=<param>]\n',
+        '      --array[=<param>]\n',
     );
   });
 
-  it('merge option descriptions with option parameters', () => {
+  it('merge option descriptions with left-aligned option parameters', () => {
     const options = {
       single: {
         type: 'single',
@@ -469,6 +489,34 @@ describe('format', () => {
     ];
     expect(format(options, sections).wrap()).toEqual(
       `  -s  <param> A string option\n  -f  A flag option\n`,
+    );
+  });
+
+  it('merge option descriptions with right-aligned option parameters', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: {
+          param: { align: 'right' },
+          descr: 'merge',
+        },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      `  -s  <param> A string option\n  -f            A flag option\n`,
     );
   });
 
