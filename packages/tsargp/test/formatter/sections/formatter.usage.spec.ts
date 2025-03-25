@@ -168,6 +168,23 @@ describe('rendering a usage section', () => {
       expect(format(options, case1).wrap()).toEqual('-s2\n');
     });
 
+    it('render usage with non-compact alternatives', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f', '--flag'],
+          required: true,
+        },
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+        },
+      } as const satisfies Options;
+      const sections: HelpSections = [{ type: 'usage', compact: false }];
+      expect(format(options, sections, flags).wrap()).toEqual('prog (-f | --flag) [-s | -]\n');
+    });
+
     it('render a flag option', () => {
       const options = {
         singleName: {

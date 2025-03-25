@@ -767,7 +767,7 @@ function formatUsage(
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, exclude, required, requires, inclusive, comment } = section;
+  const { filter, exclude, required, requires, inclusive, comment, compact } = section;
   const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
   const requiredSet = new Set(required?.filter((key) => key in options));
   const selectedSet = new Set(keys);
@@ -787,7 +787,7 @@ function formatUsage(
   }
   const usage = createUsage(adjacency);
   sortUsageStatement(withMarkerSet, usage);
-  formatUsageStatement(requiredSet, options, flags, result, components, usage);
+  formatUsageStatement(requiredSet, options, flags, compact, result, components, usage);
   if (!result.maxLength) {
     result.clear();
   } else if (comment) {
@@ -850,6 +850,7 @@ function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStateme
  * @param requiredKeys The set of options to consider always required
  * @param options The option definitions
  * @param flags The formatter flags
+ * @param compact Whether to keep alternatives compact
  * @param result The resulting string
  * @param components The option components
  * @param usage The usage statement
@@ -858,6 +859,7 @@ function formatUsageStatement(
   requiredKeys: ReadonlySet<string>,
   options: OpaqueOptions,
   flags: FormatterFlags,
+  compact: boolean = true,
   result: AnsiString,
   components: Readonly<RecordKeyMap>,
   usage: Readonly<UsageStatement>,
@@ -867,7 +869,7 @@ function formatUsageStatement(
   const count = result.count;
   for (const element of usage) {
     if (isArray(element)) {
-      formatUsageStatement(requiredKeys, options, flags, result, components, element);
+      formatUsageStatement(requiredKeys, options, flags, compact, result, components, element);
       continue;
     }
     const keys = components[element];
@@ -879,7 +881,14 @@ function formatUsageStatement(
         styles.symbol = option.styles?.names ?? saved; // use configured style, if any
         const isAlone = usage.length === 1 && keys.length === 1;
         const isRequired = option.required || requiredKeys.has(key);
-        const hasRequiredPart = formatUsageOption(option, flags, isAlone, isRequired, result);
+        const hasRequiredPart = formatUsageOption(
+          option,
+          flags,
+          compact,
+          isAlone,
+          isRequired,
+          result,
+        );
         alwaysRequired ||= isRequired;
         renderBrackets ||= hasRequiredPart;
       } finally {
@@ -897,6 +906,7 @@ function formatUsageStatement(
  * Formats an option to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
+ * @param compact Whether to keep alternatives compact
  * @param isAlone True if the option is alone in a dependency group
  * @param isRequired True if the option is considered always required
  * @param result The resulting string
@@ -905,17 +915,18 @@ function formatUsageStatement(
 function formatUsageOption(
   option: OpaqueOption,
   flags: FormatterFlags,
+  compact: boolean,
   isAlone: boolean,
   isRequired: boolean,
   result: AnsiString,
 ): boolean {
-  const { exprOpen, exprClose, optionalOpen, optionalClose } = config.connectives;
+  const { exprOpen, exprClose, optionAlt, optionalOpen, optionalClose } = config.connectives;
   const { stdinSymbol } = flags;
   const count = result.count;
   const hasParam = hasTemplate(option, true);
   const hasStdin = option.stdin && stdinSymbol !== undefined;
   const isPositional = option.positional !== undefined;
-  const nameCount = formatUsageNames(option, flags, result);
+  const nameCount = formatUsageNames(option, flags, compact, result);
   let hasRequiredPart = !!nameCount;
   if (isPositional) {
     if (nameCount && (hasParam || !isAlone)) {
@@ -931,7 +942,11 @@ function formatUsageOption(
   if (hasStdin) {
     let enclose = false;
     if (result.count > count) {
-      result.close(config.connectives.optionAlt).merge = true;
+      if (compact) {
+        result.close(optionAlt).merge = true;
+      } else {
+        result.word(optionAlt);
+      }
       enclose = !isAlone || !hasRequiredPart || isRequired;
     } else {
       hasRequiredPart = true; // stdin is required
@@ -948,10 +963,16 @@ function formatUsageOption(
  * Formats an option's names to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
+ * @param compact Whether to keep alternatives compact
  * @param result The resulting string
  * @returns The number of names rendered
  */
-function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString): number {
+function formatUsageNames(
+  option: OpaqueOption,
+  flags: FormatterFlags,
+  compact: boolean,
+  result: AnsiString,
+): number {
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
   if (clusterPrefix !== undefined) {
@@ -960,8 +981,12 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
     }
   }
   if (uniqueNames.size) {
-    const sep = config.connectives.optionAlt;
-    const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true }; // keep names compact
+    const flags: FormattingFlags = {
+      sep: config.connectives.optionAlt,
+      ...openArrayFlags,
+      mergePrev: compact,
+      mergeNext: compact,
+    };
     result.value([...uniqueNames].map(getSymbol), flags);
   }
   return uniqueNames.size;

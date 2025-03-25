@@ -219,7 +219,7 @@ export type WithSectionUsage = {
    */
   readonly comment?: string;
   /**
-   * Whether to keep alternatives compact.
+   * Whether to keep alternatives compact. (Defaults to true)
    */
   readonly compact?: boolean;
 };
