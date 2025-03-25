@@ -595,8 +595,14 @@ export class AnsiString {
    */
   break(count = 1): this {
     if (count > 0) {
-      this.strings.push(''); // the only case where the string can be empty
-      this.styled.push('\n'.repeat(count)); // special case for line feeds
+      const breaks = '\n'.repeat(count);
+      count = this.count;
+      if (!count || this.strings[count - 1]) {
+        this.strings.push(''); // the only case where the string can be empty
+        this.styled.push(breaks); // special case of styled string for line feeds
+      } else {
+        this.styled[count - 1] += breaks;
+      }
       this.merge = false;
     }
     return this;
@@ -633,7 +639,7 @@ export class AnsiString {
       return close ? this.closeSty(sty) : this.openSty(sty);
     }
     const count = this.count;
-    if (count && (this.merge || close)) {
+    if (count && (this.merge || close) && this.strings[count - 1]) {
       this.strings[count - 1] += text;
       this.styled[count - 1] += this.curStyle + styledText;
       text = this.strings[count - 1]; // to update maxLength

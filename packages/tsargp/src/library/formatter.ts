@@ -467,11 +467,11 @@ function formatGroups(
     }
     const param = formatParams(layout, option);
     const descr = formatDescription(options, layout, option, flags, items);
-    if (!layout.descr || 'merge' in layout.descr) {
+    if (!layout.descr || layout.descr.merge) {
       param.push(...descr.splice(0)); // extract from descr
       param.splice(1).forEach((str) => param[0].other(str));
     }
-    if (!layout.param || 'merge' in layout.param) {
+    if (!layout.param || layout.param.merge) {
       names.push(...param.splice(0)); // extract from param
       names.splice(1).forEach((str) => names[0].other(str));
     }
@@ -525,7 +525,7 @@ function adjustEntries(
     widths: Array<number>,
     prevEnd: number = 0,
   ): [start: number, width: number, slotIndent: number] {
-    return !column || 'merge' in column
+    return !column || column.merge
       ? [0, prevEnd, NaN]
       : [
           column.absolute ? max(0, column.indent || 0) : prevEnd + (column.indent || 0),
@@ -562,8 +562,8 @@ function adjustEntries(
  * @returns [The text alignment, The number of leading line feeds]
  */
 function getAlignment(column: HelpColumnsLayout['param']): [align: TextAlignment, breaks: number] {
-  if (!column || 'merge' in column) {
-    return ['left', 0];
+  if (!column || column.merge) {
+    return ['left', column?.breaks ?? 0];
   }
   const { align, breaks } = column;
   return [align, breaks];

@@ -82,6 +82,10 @@ export type WithColumnLayout = {
    * Reserved for the column width.
    */
   readonly width?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithColumnLayout} properties.
+   */
+  readonly merge?: never;
 };
 
 /**
@@ -97,6 +101,26 @@ export type WithMergedLayout = {
    * The number of leading line feeds. (Defaults to 0)
    */
   readonly breaks: number;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly align?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly indent?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly absolute?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly slotIndent?: number;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly width?: never;
 };
 
 /**
