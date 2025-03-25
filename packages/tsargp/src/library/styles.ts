@@ -479,20 +479,21 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   other(other: AnsiString): this {
+    const { strings, styled, styles, curStyle, maxLength } = this;
     const [firstString, ...restStrings] = other.strings;
     const [firstStyled, ...restStyled] = other.styled;
     if (firstString) {
       this.add(firstString, firstStyled, other.mergeLeft);
     } else if (firstStyled) {
-      this.strings.push(firstString);
-      this.styled.push(firstStyled); // line feed
-      this.curStyle.length = 0; // reset opening style
+      strings.push(firstString);
+      styled.push(firstStyled); // line feed
+      curStyle.length = 0; // reset opening style
     }
-    this.strings.push(...restStrings);
-    this.styled.push(...restStyled);
-    this.styles.push(...other.styles);
-    this.curStyle.push(...other.curStyle);
-    this.maxLength = max(this.maxLength, other.maxLength);
+    strings.push(...restStrings);
+    styled.push(...restStyled);
+    styles.push(...other.styles);
+    curStyle.push(...other.curStyle);
+    this.maxLength = max(maxLength, other.maxLength);
     this.merge = other.merge;
     return this;
   }
@@ -505,12 +506,13 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   openAt(word: string, pos: number): this {
-    if (pos >= this.count) {
+    const { strings, styled, count } = this;
+    if (pos >= count) {
       return this.open(word);
     }
     if (pos >= 0) {
-      this.strings[pos] = word + this.strings[pos];
-      this.styled[pos] = word + this.styled[pos];
+      strings[pos] = word + strings[pos];
+      styled[pos] = word + styled[pos];
     }
     return this;
   }
@@ -530,9 +532,11 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   popSty(): this {
-    const close = this.styles.pop();
-    const open = this.styles.at(-1);
-    return this.closeSty(mergeStyles(close, open));
+    const { styles } = this;
+    const close = styles.pop();
+    const open = styles.at(-1); // keep order of these calls
+    const sty = mergeStyles(close, open);
+    return this.closeSty(sty);
   }
 
   /**
@@ -552,10 +556,11 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   private closeSty(sty: Style): this {
-    if (this.curStyle.length) {
-      this.curStyle.length = 0; // reset opening style because it was not applied
-    } else if (this.maxLength) {
-      this.styled[this.count - 1] += sty; // close with style
+    const { styled, count, curStyle, maxLength } = this;
+    if (curStyle.length) {
+      curStyle.length = 0; // reset opening style because it was not applied
+    } else if (maxLength) {
+      styled[count - 1] += sty; // close with style
     } else {
       this.openSty(sty); // fallback to opening if no strings
     }
@@ -569,8 +574,7 @@ export class AnsiString {
    */
   open(word: string): this {
     if (word) {
-      this.add(word, word);
-      this.merge = true;
+      this.add(word, word).merge = true;
     }
     return this;
   }
@@ -594,14 +598,14 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   break(count = 1): this {
-    if (count > 0) {
-      const breaks = '\n'.repeat(count);
-      count = this.count;
-      if (!count || this.strings[count - 1]) {
-        this.strings.push(''); // the only case where the string can be empty
-        this.styled.push(breaks); // special case of styled string for line feeds
+    const breaks = '\n'.repeat(max(0, count));
+    if (breaks) {
+      const { strings, styled, count } = this;
+      if (!count || strings[count - 1]) {
+        strings.push(''); // the only case where the string can be empty
+        styled.push(breaks); // special case of styled string for line feeds
       } else {
-        this.styled[count - 1] += breaks;
+        styled[count - 1] += breaks;
       }
       this.merge = false;
     }
@@ -638,20 +642,20 @@ export class AnsiString {
       const sty: Style = seqFromText(cs.sgr, styledText);
       return close ? this.closeSty(sty) : this.openSty(sty);
     }
-    const count = this.count;
-    if (count && (this.merge || close) && this.strings[count - 1]) {
-      this.strings[count - 1] += text;
-      this.styled[count - 1] += this.curStyle + styledText;
-      text = this.strings[count - 1]; // to update maxLength
+    const { strings, styled, count, curStyle, merge, maxLength } = this;
+    if (count && (merge || close) && strings[count - 1]) {
+      strings[count - 1] += text;
+      styled[count - 1] += curStyle + styledText;
+      text = strings[count - 1]; // to update maxLength
     } else {
-      this.strings.push(text);
-      this.styled.push(this.curStyle + styledText);
+      strings.push(text);
+      styled.push(curStyle + styledText);
     }
-    if (!this.maxLength) {
-      this.mergeLeft = this.merge || close;
+    if (!maxLength) {
+      this.mergeLeft = merge || close;
     }
-    this.maxLength = max(this.maxLength, text.length);
-    this.curStyle.length = 0; // reset opening style
+    this.maxLength = max(maxLength, text.length);
+    curStyle.length = 0; // reset opening style
     this.merge = false;
     return this;
   }
@@ -694,7 +698,7 @@ export class AnsiString {
       return emitSpaces ? ' '.repeat(to - from) : '' + sequence(cs.cuf, to - from);
     }
     /** @ignore */
-    function align() {
+    function alignRight() {
       if (needToAlign && j < result.length && column < width) {
         const pad = move(column, width); // remaining columns until right boundary
         result.splice(j, 0, pad); // insert padding at the indentation boundary
@@ -706,32 +710,33 @@ export class AnsiString {
       column = col;
       return result.push(str);
     }
-    if (!this.count) {
+    const { strings, styled, count, maxLength, align } = this;
+    if (!count) {
       return column;
     }
     column = max(0, column) || 0; // sanitize
     const indent = max(0, this.indent) || 0; // sanitize
     const width = indent + max(0, this.width) || max(0, terminalWidth) || Infinity; // sanitize
     let start = max(0, min(indent, width)); // sanitize
-    const needToAlign = isFinite(width) && this.align === 'right';
 
-    if (width < start + this.maxLength) {
+    if (width < start + maxLength) {
       start = 0; // wrap to the first column instead
-      if (column && this.strings[0]) {
+      if (column && strings[0]) {
         push('\n', 0); // forcefully break the first line
       }
-    } else if (column < start && this.strings[0]) {
+    } else if (column < start && strings[0]) {
       push(move(column, start), start); // pad until start
     }
 
+    const needToAlign = isFinite(width) && align === 'right';
     const pad = start ? move(0, start) : '';
     let j = result.length; // save index for right-alignment
-    for (let i = 0; i < this.count; i++) {
-      let str = this.strings[i];
+    for (let i = 0; i < count; i++) {
+      let str = strings[i];
       const len = str.length;
-      const styledStr = this.styled[i];
+      const styledStr = styled[i];
       if (!len) {
-        align();
+        alignRight();
         j = push(styledStr, 0); // save index for right-alignment
         continue;
       }
@@ -746,12 +751,12 @@ export class AnsiString {
       } else if (column + len < width) {
         push(' ' + str, column + 1 + len);
       } else {
-        align();
+        alignRight();
         j = push('\n' + pad, start + len); // save index for right-alignment
         result.push(str);
       }
     }
-    align();
+    alignRight();
     return column;
   }
 
