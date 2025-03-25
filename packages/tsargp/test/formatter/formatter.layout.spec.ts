@@ -257,7 +257,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'slot' } },
+        layout: { names: { slotted: true } },
       },
     ];
     config.connectives.optionSep = '';
@@ -282,7 +282,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'slot' } },
+        layout: { names: { slotted: true } },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f,          --flag\n      --flag2\n');
@@ -357,7 +357,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { align: 'merge' } },
+        layout: { param: { merge: true } },
         items: [HelpItem.synopsis],
       },
     ];
@@ -394,8 +394,8 @@ describe('format', () => {
       {
         type: 'groups',
         layout: {
-          names: { align: 'slot' }, // ignored by the formatter
-          param: { align: 'merge' },
+          names: { slotted: true }, // ignored by the formatter
+          param: { merge: true },
         },
         items: [HelpItem.synopsis],
       },
@@ -434,7 +434,7 @@ describe('format', () => {
         type: 'groups',
         layout: {
           names: { align: 'right' },
-          param: { align: 'merge' },
+          param: { merge: true },
         },
         items: [HelpItem.synopsis],
       },
@@ -464,7 +464,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { align: 'merge' } },
+        layout: { descr: { merge: true } },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -489,9 +489,9 @@ describe('format', () => {
       {
         type: 'groups',
         layout: {
-          names: { align: 'slot' }, // ignored by the formatter
+          names: { slotted: true }, // ignored by the formatter
           param: { hidden: true },
-          descr: { align: 'merge' },
+          descr: { merge: true },
         },
       },
     ];
@@ -521,8 +521,8 @@ describe('format', () => {
       {
         type: 'groups',
         layout: {
-          param: { align: 'merge' },
-          descr: { align: 'merge' },
+          param: { merge: true },
+          descr: { merge: true },
         },
       },
     ];

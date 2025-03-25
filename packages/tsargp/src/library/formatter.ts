@@ -15,6 +15,7 @@ import type {
   HelpTextBlock,
   OptionDependencies,
   StyledString,
+  WithMergeLayout,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
 import type { RecordKeyMap, UsageStatement } from './utils.js';
@@ -130,7 +131,14 @@ const defaultColumnLayout: WithColumnLayout = {
   indent: 2,
   breaks: 0,
   hidden: false,
+  slotted: false,
+  width: NaN,
 };
+
+/**
+ * The default merge column layout.
+ */
+const defaultMergeLayout: WithMergeLayout = { merge: false, absolute: false };
 
 /**
  * The complete list of help items.
@@ -159,9 +167,9 @@ export const envHelpItems: ReadonlyArray<HelpItem> = [
  * The default help columns layout.
  */
 const defaultLayout: HelpColumnsLayout = {
-  names: defaultColumnLayout,
-  param: { ...defaultColumnLayout, absolute: false },
-  descr: { ...defaultColumnLayout, absolute: false },
+  names: { ...defaultColumnLayout },
+  param: { ...defaultColumnLayout, ...defaultMergeLayout },
+  descr: { ...defaultColumnLayout, ...defaultMergeLayout },
 };
 
 /**
@@ -513,24 +521,23 @@ function adjustEntries(
   mergedWidth: number,
 ) {
   /** @ignore */
-  function getStart(column: HelpColumnsLayout['param'], prevEnd: number): number {
+  function getStart(column: WithColumnLayout & WithMergeLayout, prevEnd: number): number {
     return column.absolute && !column.hidden
       ? max(0, column.indent)
       : prevEnd + (column.hidden ? 0 : column.indent);
   }
   const { names, param, descr } = layout;
-  const namesSlotted = names.align === 'slot';
   const namesRight = names.align === 'right';
   const paramRight = param.align === 'right';
-  const paramMerge = param.align === 'merge';
-  const descrMerge = descr.align === 'merge';
+  const paramMerge = param.merge;
+  const descrMerge = descr.merge;
   const paramHidden = param.hidden;
   const namesStart = names.hidden ? 0 : max(0, names.indent);
   const namesEnd = namesStart + namesWidth;
   const paramStart = getStart(param, namesEnd);
   const paramEnd = paramStart + paramWidth;
   const descrStart = getStart(descr, paramMerge ? namesStart + mergedWidth : paramEnd);
-  const useSlot = namesSlotted && !paramMerge && !(paramHidden && descrMerge);
+  const useSlot = names.slotted && !paramMerge && !(paramHidden && descrMerge);
   for (const [names, param, descr] of getValues(groups).flat()) {
     let indent = namesRight
       ? namesEnd - names.reduce((acc, str) => acc + str.indent, 0) // compute width
@@ -634,7 +641,7 @@ function formatDescription(
   items: ReadonlyArray<HelpItem> = allHelpItems,
 ): AnsiString {
   const { hidden, breaks, align } = layout.descr;
-  const result = new AnsiString(0, align === 'right')
+  const result = new AnsiString(0, align)
     .break(breaks)
     .pushSty(config.styles.base)
     .pushSty(option.styles?.descr);
@@ -699,7 +706,7 @@ function formatHelpSection(
         indent = str.wrap() + 1; // get last column with indentation
         breaks = 0; // avoid breaking between program name and usage
       }
-      const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
+      const str = new AnsiString(indent, content?.align).break(breaks).pushSty(baseSty);
       formatUsage(keys, options, section, flags, str);
       if (str.maxLength) {
         result.push(...prev, str.popSty().break()); // include trailing line feed
@@ -735,7 +742,7 @@ function appendStyledString(str: StyledString, result: AnsiString, noSplit: bool
 function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter: number = 0) {
   const { text, style, align, indent, breaks, noSplit, noBreakFirst } = block;
   const breaksBefore = noBreakFirst && !result.length ? 0 : (breaks ?? 0);
-  const str = new AnsiString(indent, align === 'right').break(breaksBefore);
+  const str = new AnsiString(indent, align).break(breaksBefore);
   if (text) {
     str.pushSty(config.styles.base).pushSty(style);
     appendStyledString(text, str, noSplit);

@@ -2,7 +2,7 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
-import type { AnsiMessage, AnsiString, Style } from './styles.js';
+import type { AnsiMessage, AnsiString, Style, TextAlignment } from './styles.js';
 import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -53,45 +53,47 @@ export class RequiresNot {
 export type NumericRange = readonly [min: number, max: number];
 
 /**
- * A text alignment setting.
- */
-export type TextAlignment = 'left' | 'right';
-
-/**
- * A column alignment setting.
- */
-export type ColumnAlignment = TextAlignment | 'slot' | 'merge';
-
-/**
  * Defines layout attributes common to all help columns.
- * @template T The type of text alignment
  */
-export type WithColumnLayout<T extends ColumnAlignment = TextAlignment> = {
+export type WithColumnLayout = {
   /**
-   * The text alignment for the column. (Defaults to 'left')
+   * The type of column alignment. (Defaults to 'left')
    */
-  readonly align: T;
+  readonly align: TextAlignment;
   /**
-   * The indentation level for the column. (Defaults to 2)
+   * The indentation level. (Defaults to 2)
    */
   readonly indent: number;
   /**
-   * The number of leading line feeds for the column. (Defaults to 0)
+   * The number of leading line feeds. (Defaults to 0)
    */
   readonly breaks: number;
   /**
    * Whether the column should be hidden. (Defaults to false)
    */
   readonly hidden: boolean;
+  /**
+   * Whether the column has slots. (Defaults to false)
+   */
+  readonly slotted: boolean;
+  /**
+   * The column width. (Defaults to none)
+   */
+  readonly width: number;
 };
 
 /**
  * Defines layout attributes for columns that may be preceded by other columns.
  */
-export type WithAbsoluteLayout = {
+export type WithMergeLayout = {
+  /**
+   * Whether the column should be merged with the previous column. (Defaults to false)
+   */
+  readonly merge: boolean;
   /**
    * Whether the indentation level should be relative to the beginning of the line instead of the
-   * end of the previous column. (Defaults to false)
+   * end of the previous column. Ignored if {@link WithMergeLayout.merge} is `true`.
+   * (Defaults to false)
    */
   readonly absolute: boolean;
 };
@@ -103,15 +105,15 @@ export type HelpColumnsLayout = {
   /**
    * The settings for the names column.
    */
-  readonly names: WithColumnLayout<TextAlignment | 'slot'>;
+  readonly names: WithColumnLayout;
   /**
    * The settings for the parameter column.
    */
-  readonly param: WithColumnLayout<TextAlignment | 'merge'> & WithAbsoluteLayout;
+  readonly param: WithColumnLayout & WithMergeLayout;
   /**
    * The settings for the description column.
    */
-  readonly descr: WithColumnLayout<TextAlignment | 'merge'> & WithAbsoluteLayout;
+  readonly descr: WithColumnLayout & WithMergeLayout;
 };
 
 /**
@@ -216,6 +218,10 @@ export type WithSectionUsage = {
    * A commentary to append to the usage.
    */
   readonly comment?: string;
+  /**
+   * Whether to keep alternatives compact.
+   */
+  readonly compact?: boolean;
 };
 
 /**

@@ -33,7 +33,7 @@ const options = {
         type: 'groups',
         heading: { text: 'Options:', style: style(tf.bold), breaks: 1 },
         content: { breaks: 2 },
-        layout: { param: { align: 'merge' } },
+        layout: { param: { merge: true } },
         items: allHelpItems.filter((item) => item !== HelpItem.positional),
       },
     ],

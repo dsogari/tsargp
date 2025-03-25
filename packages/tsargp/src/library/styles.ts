@@ -357,6 +357,11 @@ export type StylingAttribute = tf | fg | bg | ul;
  */
 export type ExtendedAttribute = StylingAttribute | IndexedColor | RgbColor;
 
+/**
+ * A text alignment setting.
+ */
+export type TextAlignment = 'left' | 'right';
+
 //--------------------------------------------------------------------------------------------------
 // Internal types
 //--------------------------------------------------------------------------------------------------
@@ -441,12 +446,14 @@ export class AnsiString {
 
   /**
    * Creates a ANSI string.
-   * @param indent The starting column for this string (negative values are replaced by zero)
-   * @param righty True if the string should be right-aligned to the terminal width
+   * @param indent The starting column for text wrapping
+   * @param align Whether the string should be left- or right-aligned
+   * @param width The wrapping width relative to the indentation level
    */
   constructor(
     public indent: number = 0,
-    public righty: boolean = false,
+    public align: TextAlignment = 'left',
+    public width: number = NaN,
   ) {}
 
   /**
@@ -662,7 +669,7 @@ export class AnsiString {
    * Wraps the internal strings to fit in a terminal width.
    * @param result The resulting list (can be undefined, to only compute the final column)
    * @param column The current terminal column
-   * @param width The desired terminal width (or zero to avoid wrapping)
+   * @param width The desired terminal width (or zero or NaN to avoid wrapping)
    * @param emitStyles True if styles should be emitted
    * @param emitSpaces True if spaces should be emitted instead of move sequences
    * @returns The updated terminal column
@@ -670,7 +677,7 @@ export class AnsiString {
   wrap(
     result?: Array<string>,
     column: number = 0,
-    width: number = 0,
+    width: number = max(0, this.indent) + this.width,
     emitStyles: boolean = false,
     emitSpaces: boolean = true,
   ): number {
@@ -697,7 +704,7 @@ export class AnsiString {
     column = max(0, column); // sanitize
     width = max(0, width); // sanitize
     let start = max(0, min(this.indent, width || Infinity)); // sanitize
-    const needToAlign = width && this.righty;
+    const needToAlign = width && this.align === 'right';
 
     if (width && width < start + this.maxLength) {
       start = 0; // wrap to the first column instead
