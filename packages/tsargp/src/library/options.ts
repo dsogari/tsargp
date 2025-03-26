@@ -57,19 +57,23 @@ export type NumericRange = readonly [min: number, max: number];
  */
 export type WithBasicLayout = {
   /**
-   * The type of text alignment. (Defaults to 'left')
+   * The type of text alignment.
+   * @default 'left'
    */
   readonly align?: TextAlignment;
   /**
-   * The column indentation level. (Defaults to 2)
+   * The column indentation level.
+   * @default 2
    */
   readonly indent?: number;
   /**
-   * The number of leading line feeds. (Defaults to 0)
+   * The number of leading line feeds.
+   * @default 0
    */
   readonly breaks?: number;
   /**
-   * The maximum column or slot width. (Defaults to unlimited)
+   * The maximum column or slot width.
+   * @default Infinity
    */
   readonly maxWidth?: number;
   /**
@@ -83,8 +87,9 @@ export type WithBasicLayout = {
  */
 export type WithSlottedLayout = {
   /**
-   * The slot indentation level, or zero to disable slots.
-   * Does not apply to the first slot. Ignored if the column is merged. (Defaults to 0)
+   * The slot indentation level, or zero or `NaN` to disable slots.
+   * Does not apply to the first slot. Ignored if the column is merged.
+   * @default 0
    */
   readonly slotIndent?: number;
 };
@@ -94,8 +99,8 @@ export type WithSlottedLayout = {
  */
 export type WithAbsoluteLayout = {
   /**
-   * Whether {@link WithBasicLayout.indent} should be relative to the beginning of the line.
-   * (Defaults to false)
+   * Whether the indentation level should be relative to the beginning of the line.
+   * @default false
    */
   readonly absolute?: boolean;
 };
@@ -107,10 +112,12 @@ export type WithMergedLayout = {
   /**
    * True to merge the column with the previous one.
    * Text alignment and indentation will be that of the last previous non-merged column.
+   * @default false
    */
   readonly merge: true;
   /**
-   * The number of leading line feeds. (Defaults to 0)
+   * The number of leading line feeds.
+   * @default 0
    */
   readonly breaks?: number;
   /**
@@ -136,27 +143,6 @@ export type WithMergedLayout = {
 };
 
 /**
- * The help message layout settings.
- */
-export type HelpLayout = {
-  /**
-   * The settings for the names column.
-   * Use the value `null` to hide it from the help message.
-   */
-  readonly names?: (WithBasicLayout & WithSlottedLayout) | null;
-  /**
-   * The settings for the parameter column.
-   * Use the value `null` to hide it from the help message.
-   */
-  readonly param?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
-  /**
-   * The settings for the description column.
-   * Use the value `null` to hide it from the help message.
-   */
-  readonly descr?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
-};
-
-/**
  * A string that may contain inline styles.
  */
 export type StyledString = string | AnsiString;
@@ -166,31 +152,36 @@ export type StyledString = string | AnsiString;
  */
 export type HelpTextBlock = {
   /**
-   * The text. (Defaults to none)
+   * The text.
    */
   readonly text?: StyledString;
   /**
-   * The fallback style. (Defaults to none)
+   * The fallback style.
    */
   readonly style?: Style;
   /**
-   * The text alignment. (Defaults to 'left')
+   * The text alignment.
+   * @default 'left'
    */
   readonly align?: TextAlignment;
   /**
-   * The indentation level. (Defaults to 0)
+   * The indentation level.
+   * @default 0
    */
   readonly indent?: number;
   /**
-   * The number of leading line feeds. (Defaults to 0)
+   * The number of leading line feeds.
+   * @default 0
    */
   readonly breaks?: number;
   /**
-   * Whether to disable text splitting. (Defaults to false)
+   * Whether to disable text splitting.
+   * @default false
    */
   readonly noSplit?: true;
   /**
    * Whether to avoid line feeds at the beginning of the message.
+   * @default false
    */
   readonly noBreakFirst?: true;
 };
@@ -224,6 +215,7 @@ export type WithSectionFilter = {
   /**
    * True if the filter should exclude, or what to exclude.
    * Has precedence over {@link WithSectionFilter.filter}.
+   * @default false
    */
   readonly exclude?: true | ReadonlyArray<string>;
 };
@@ -259,7 +251,8 @@ export type WithSectionUsage = {
    */
   readonly comment?: StyledString;
   /**
-   * Whether to keep alternatives compact. (Defaults to true)
+   * Whether to keep alternatives compact.
+   * @default true
    */
   readonly compact?: boolean;
 };
@@ -269,15 +262,27 @@ export type WithSectionUsage = {
  */
 export type WithSectionGroups = {
   /**
-   * The help layout settings.
+   * The layout settings for the names column.
+   * Use the value `null` to hide it from the help message.
    */
-  readonly layout?: HelpLayout;
+  readonly names?: (WithBasicLayout & WithSlottedLayout) | null;
+  /**
+   * The layout settings for the parameter column.
+   * Use the value `null` to hide it from the help message.
+   */
+  readonly param?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
+  /**
+   * The layout settings for the description column.
+   * Use the value `null` to hide it from the help message.
+   */
+  readonly descr?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
   /**
    * The (order of) items to display in option descriptions.
    */
   readonly items?: HelpItems;
   /**
    * Whether option names should be replaced by environment variable names.
+   * @default false
    */
   readonly useEnv?: true;
 };
@@ -540,6 +545,7 @@ export type WithBasicAttributes = {
 export type WithMessageAttributes = {
   /**
    * Whether to save the message in the option value instead of throwing it.
+   * @default false
    */
   readonly saveMessage?: true;
 };
@@ -555,6 +561,7 @@ export type WithValueAttributes<T> = {
   readonly cluster?: string;
   /**
    * True if the option is always required.
+   * @default false
    */
   readonly required?: true;
   /**
@@ -594,10 +601,12 @@ export type WithEnvironmentAttributes = {
    *
    * Warning: this may block the application if {@link WithValueAttributes.required} is set and the
    * terminal is interactive.
+   * @default false
    */
   readonly stdin?: true;
   /**
    * True to break the parsing loop after parsing the option.
+   * @default false
    */
   readonly break?: true;
 };
@@ -618,7 +627,8 @@ export type WithTemplateAttributes = {
   readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
-   * Overrides {@link WithTemplateAttributes.paramName} in usage statements.
+   * Overrides {@link WithTemplateAttributes.example} and {@link WithTemplateAttributes.paramName}
+   * in usage statements.
    */
   readonly usageParamName?: StyledString;
 };
@@ -636,6 +646,7 @@ export type WithParameterAttributes = {
    * marker will be considered positional.
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
+   * @default false
    */
   readonly positional?: true | string;
   /**
@@ -685,10 +696,12 @@ export type WithHelpAttributes = {
   /**
    * Whether to use the next argument as the name of a subcommand.
    * Has precedence over {@link WithHelpAttributes.useFilter}.
+   * @default false
    */
   readonly useCommand?: true;
   /**
    * Whether to use the remaining arguments as option filter.
+   * @default false
    */
   readonly useFilter?: true;
 };
@@ -745,14 +758,17 @@ export type WithArrayAttributes = {
   readonly separator?: string | RegExp;
   /**
    * True if duplicate elements should be removed.
+   * @default false
    */
   readonly unique?: true;
   /**
    * Allows appending elements if supplied multiple times.
+   * @default false
    */
   readonly append?: true;
   /**
    * The maximum allowed number of elements.
+   * @default Infinity
    */
   readonly limit?: number;
 };
@@ -764,16 +780,18 @@ export type WithFunctionAttributes = {
   /**
    * The function's parameter count:
    *
-   * - If unspecified or negative, the option accepts unlimited parameters.
+   * - If unspecified or `Infinity`, the option accepts unlimited parameters.
    * - If zero, the option accepts unknown number of parameters
    *   (use with {@link WithFunctionAttributes.skipCount}).
    * - If positive, then the option expects exactly this number of parameters.
    * - If a range, then the option expects between `min` and `max` parameters.
+   * @default Infinity
    */
   readonly paramCount?: number | NumericRange;
   /**
    * The number of remaining arguments to skip.
    * It is meant to be changed by the callback. (The parser does not alter this value.)
+   * @default 0
    */
   skipCount?: number;
 };

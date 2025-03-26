@@ -59,7 +59,7 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups', layout: { descr: null } }],
+          sections: [{ type: 'groups', descr: null }],
           useCommand: true,
           useFilter: true,
         },
@@ -98,7 +98,7 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups', layout: { descr: null } }],
+          sections: [{ type: 'groups', descr: null }],
           useCommand: true,
           useFilter: true,
         },
@@ -114,7 +114,7 @@ describe('parse', () => {
               help: {
                 type: 'help',
                 names: ['-h'],
-                sections: [{ type: 'groups', layout: { descr: null } }],
+                sections: [{ type: 'groups', descr: null }],
                 useFilter: true,
               },
             }) as const satisfies Options,
@@ -130,7 +130,7 @@ describe('parse', () => {
         help: {
           type: 'help',
           names: ['-h'],
-          sections: [{ type: 'groups', layout: { descr: null } }],
+          sections: [{ type: 'groups', descr: null }],
           useCommand: true,
           useFilter: true,
         },

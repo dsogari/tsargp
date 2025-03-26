@@ -2,8 +2,8 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
+  HelpGroupsSection,
   HelpItems,
-  HelpLayout,
   HelpSection,
   HelpSections,
   HelpTextBlock,
@@ -423,24 +423,16 @@ function buildEntries(
 /**
  * Formats the help entries for a groups section.
  * @param options The option definitions
- * @param layout The help layout
+ * @param section The groups section
  * @param keys The filtered option keys
  * @param flags The formatter flags
- * @param items The help items
- * @param include The group inclusion filter
- * @param exclude The group exclusion filter
- * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The option groups
  */
 function formatGroups(
   options: OpaqueOptions,
-  layout: HelpLayout,
+  section: HelpGroupsSection,
   keys: ReadonlyArray<string>,
   flags: FormatterFlags,
-  items?: HelpItems,
-  include?: ReadonlyArray<string>,
-  exclude?: ReadonlyArray<string>,
-  useEnv?: boolean,
 ): EntriesByGroup {
   /** @ignore */
   function compute(column: HelpColumn, widths: Array<number>) {
@@ -448,17 +440,17 @@ function formatGroups(
   }
   /** @ignore */
   function build(option: OpaqueOption): HelpEntry | undefined {
-    const namesColumn = formatNames(layout, option, useEnv);
+    const namesColumn = formatNames(names, option, useEnv);
     if (useEnv && namesColumn.length === 1 && !namesColumn[0].maxLength) {
       return; // skip options without environment variable names, in this case
     }
-    const paramColumn = formatParams(layout, option);
-    const descrColumn = formatDescription(options, layout, option, flags, items);
-    if (layout.descr === null || layout.descr?.merge) {
+    const paramColumn = formatParams(param, option);
+    const descrColumn = formatDescription(options, descr, option, flags, items);
+    if (descr === null || descr?.merge) {
       paramColumn.push(...descrColumn.splice(0)); // extract from descr
       paramColumn.splice(1).forEach((str) => paramColumn[0].other(str));
     }
-    if (layout.param === null || layout.param?.merge) {
+    if (param === null || param?.merge) {
       namesColumn.push(...paramColumn.splice(0)); // extract from param
       namesColumn.splice(1).forEach((str) => namesColumn[0].other(str));
     }
@@ -470,21 +462,23 @@ function formatGroups(
   const namesWidths: Array<number> = [];
   const paramWidths: Array<number> = [];
   const descrWidths: Array<number> = [];
-  const groups = buildEntries(options, keys, build, include, exclude);
-  adjustEntries(layout, groups, namesWidths, paramWidths, descrWidths);
+  const { filter, exclude, items, useEnv, names, param, descr } = section;
+  const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
+  const groups = buildEntries(options, keys, build, incl, excl);
+  adjustEntries(section, groups, namesWidths, paramWidths, descrWidths);
   return groups;
 }
 
 /**
  * Adjust the help entries for a help message.
- * @param layout The help layout
+ * @param section The groups section
  * @param groups The option groups and their help entries
  * @param namesWidths The width of each slot in the names column
  * @param paramWidths The width of each slot in the parameter column
  * @param descrWidths The width of each slot in the description column
  */
 function adjustEntries(
-  layout: HelpLayout,
+  section: HelpGroupsSection,
   groups: EntriesByGroup,
   namesWidths: Array<number>,
   paramWidths: Array<number>,
@@ -525,7 +519,7 @@ function adjustEntries(
       ),
     ];
   }
-  const { names, param, descr } = layout;
+  const { names, param, descr } = section;
   const slotIndent = names?.slotIndent;
   const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, slotIndent);
   const [paramStart, paramWidth] = getStartAndWidth(
@@ -565,17 +559,17 @@ function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks
 /**
  * Formats an option's names to be printed on the terminal.
  * This does not include the positional marker.
- * @param layout The help columns layout
+ * @param layout The column layout settings
  * @param option The option definition
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The help column
  */
 function formatNames(
-  layout: HelpLayout,
+  layout: HelpGroupsSection['names'],
   option: OpaqueOption,
   useEnv: boolean = false,
 ): HelpColumn {
-  const [align, breaks] = getAlignment(layout.names);
+  const [align, breaks] = getAlignment(layout);
   let str = new AnsiString(0, align);
   const result: HelpColumn = [str];
   if (breaks !== undefined) {
@@ -583,7 +577,7 @@ function formatNames(
     if (names?.length) {
       const { styles, connectives } = config;
       const sty = option.styles?.names ?? styles.symbol;
-      const slotted = !!layout.names?.slotIndent;
+      const slotted = !!layout?.slotIndent;
       let sep: string | undefined; // no separator before first name
       str.break(breaks).pushSty(styles.base);
       if (slotted) {
@@ -615,12 +609,12 @@ function formatNames(
 
 /**
  * Formats an option's parameter to be printed on the terminal.
- * @param layout The help columns layout
+ * @param layout The column layout settings
  * @param option The option definition
  * @returns The help column
  */
-function formatParams(layout: HelpLayout, option: OpaqueOption): HelpColumn {
-  const [align, breaks] = getAlignment(layout.param);
+function formatParams(layout: HelpGroupsSection['param'], option: OpaqueOption): HelpColumn {
+  const [align, breaks] = getAlignment(layout);
   const result = new AnsiString(0, align);
   if (breaks !== undefined && hasTemplate(option, false)) {
     result.break(breaks).pushSty(config.styles.base);
@@ -634,7 +628,7 @@ function formatParams(layout: HelpLayout, option: OpaqueOption): HelpColumn {
  * Formats an option's description to be printed in a groups section.
  * The description always ends with a single line break.
  * @param options The option definitions
- * @param layout The help columns layout
+ * @param layout The column layout settings
  * @param option The option definition
  * @param flags The formatter flags
  * @param items The help items
@@ -642,12 +636,12 @@ function formatParams(layout: HelpLayout, option: OpaqueOption): HelpColumn {
  */
 function formatDescription(
   options: OpaqueOptions,
-  layout: HelpLayout,
+  layout: HelpGroupsSection['descr'],
   option: OpaqueOption,
   flags: FormatterFlags,
   items: HelpItems = allHelpItems,
 ): HelpColumn {
-  const [align, breaks] = getAlignment(layout.descr);
+  const [align, breaks] = getAlignment(layout);
   const result = new AnsiString(0, align);
   if (breaks !== undefined) {
     result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
@@ -679,9 +673,7 @@ function formatHelpSection(
 ) {
   const { type, heading, content } = section;
   if (type === 'groups') {
-    const { layout, filter, exclude, items, useEnv } = section;
-    const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
-    const groups = formatGroups(options, layout ?? {}, keys, flags, items, incl, excl, useEnv);
+    const groups = formatGroups(options, section, keys, flags);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
@@ -762,7 +754,7 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
  * Options are rendered in the order specified in the definitions or in the section filter.
  * @param keys The filtered option keys
  * @param options The option definitions
- * @param section The help section
+ * @param section The usage section
  * @param flags The formatter flags
  * @param result The resulting string
  */

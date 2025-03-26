@@ -94,5 +94,16 @@ describe('parse', () => {
       expect(parse(options, ['-f', '0'])).rejects.toThrow('Unknown option 0.');
       expect(parse(options, ['-f', '-1'])).rejects.toThrow('Unknown option -1.');
     });
+
+    it('accept infinite parameter count', () => {
+      const options = {
+        function: {
+          type: 'function',
+          names: ['-f'],
+          paramCount: Infinity,
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-f'])).resolves.toEqual({ function: [] });
+    });
   });
 });

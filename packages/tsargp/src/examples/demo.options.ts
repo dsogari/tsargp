@@ -38,7 +38,7 @@ export default {
         },
         content: { breaks: 2 },
         items: allHelpItems.filter((item) => item !== HelpItem.sources),
-        layout: { names: { align: 'right' } },
+        names: { align: 'right' },
       },
       {
         type: 'usage',
@@ -82,7 +82,7 @@ export default {
           noBreakFirst: true,
         },
         content: { breaks: 2 },
-        layout: { param: null },
+        param: null,
         items: envHelpItems,
         useEnv: true,
       },

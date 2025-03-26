@@ -15,11 +15,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 0 },
-          param: { breaks: -1 },
-          descr: { breaks: NaN },
-        },
+        names: { breaks: 0 },
+        param: { breaks: -1 },
+        descr: { breaks: NaN },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  <param>  A string option\n');
@@ -42,11 +40,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 1 },
-          param: { breaks: 1 },
-          descr: { breaks: 1 },
-        },
+        names: { breaks: 1 },
+        param: { breaks: 1 },
+        descr: { breaks: 1 },
       },
     ];
     expect(format(options, sections).wrap()).toMatch(
@@ -70,11 +66,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 1 },
-          param: { breaks: 1, absolute: true },
-          descr: { breaks: 1, absolute: true },
-        },
+        names: { breaks: 1 },
+        param: { breaks: 1, absolute: true },
+        descr: { breaks: 1, absolute: true },
       },
     ];
     expect(format(options, sections).wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
@@ -92,11 +86,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 1, indent: 0 },
-          param: { breaks: 1, indent: -1 },
-          descr: { breaks: 1, indent: NaN },
-        },
+        names: { breaks: 1, indent: 0 },
+        param: { breaks: 1, indent: -1 },
+        descr: { breaks: 1, indent: NaN },
       },
     ];
     expect(format(options, sections).wrap()).toMatch('\n-s\n <param>\n        A string option\n');
@@ -114,7 +106,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: null },
+        names: null,
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  <param>  A string option\n');
@@ -132,7 +124,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: null },
+        param: null,
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  A string option\n');
@@ -150,7 +142,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: null },
+        descr: null,
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  <param>\n');
@@ -172,7 +164,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'left' } },
+        names: { align: 'left' },
       },
     ];
     config.connectives.optionSep = '';
@@ -199,7 +191,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'left' } },
+        names: { align: 'left' },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f, --flag\n  --flag2\n');
@@ -219,7 +211,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'right' } },
+        names: { align: 'right' },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f, --flag\n     --flag2\n');
@@ -241,7 +233,7 @@ describe('format', () => {
       {
         type: 'groups',
         filter: ['group', ''], // change the group order
-        layout: { names: { align: 'right' } },
+        names: { align: 'right' },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('     --flag2\n  -f, --flag\n');
@@ -261,7 +253,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { slotIndent: 2 } },
+        names: { slotIndent: 2 },
       },
     ];
     config.connectives.optionSep = '';
@@ -286,7 +278,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { slotIndent: 1 } },
+        names: { slotIndent: 1 },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f,         --flag\n      --flag2\n');
@@ -306,7 +298,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'right', slotIndent: 1 } },
+        names: { align: 'right', slotIndent: 1 },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('      -f1, --flag1\n  --flag2,     -f2\n');
@@ -328,7 +320,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { align: 'right' } },
+        param: { align: 'right' },
         items: [],
       },
     ];
@@ -346,7 +338,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { align: 'right' } },
+        descr: { align: 'right' },
       },
     ];
     expect(format(options, sections).wrap(14, false, true)).toEqual(
@@ -381,7 +373,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { merge: true } },
+        param: { merge: true },
         items: [],
       },
     ];
@@ -421,10 +413,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { slotIndent: 1 }, // ignored by the formatter
-          param: { merge: true },
-        },
+        names: { slotIndent: 1 }, // ignored by the formatter
+        param: { merge: true },
         items: [],
       },
     ];
@@ -464,10 +454,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { align: 'right' },
-          param: { merge: true },
-        },
+        names: { align: 'right' },
+        param: { merge: true },
         items: [],
       },
     ];
@@ -507,7 +495,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { merge: true, breaks: 1 } },
+        param: { merge: true, breaks: 1 },
         items: [],
       },
     ];
@@ -540,7 +528,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { merge: true } },
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -565,10 +553,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          param: { align: 'right' },
-          descr: { merge: true },
-        },
+        param: { align: 'right' },
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -593,7 +579,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { merge: true, breaks: 1 } },
+        descr: { merge: true, breaks: 1 },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -617,11 +603,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { slotIndent: 1 }, // ignored by the formatter
-          param: null,
-          descr: { merge: true },
-        },
+        names: { slotIndent: 1 }, // ignored by the formatter
+        param: null,
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(`  -s A string option\n  A flag option\n`);
@@ -649,10 +633,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          param: { merge: true },
-          descr: { merge: true },
-        },
+        param: { merge: true },
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -685,11 +667,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { align: 'right' },
-          param: { merge: true },
-          descr: { merge: true },
-        },
+        names: { align: 'right' },
+        param: { merge: true },
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -722,10 +702,8 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          param: { merge: true, breaks: 1 },
-          descr: { merge: true, breaks: 1 },
-        },
+        param: { merge: true, breaks: 1 },
+        descr: { merge: true, breaks: 1 },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -757,11 +735,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { maxWidth: 8 },
-          param: { maxWidth: 12 },
-          descr: { maxWidth: 20 },
-        },
+        names: { maxWidth: 8 },
+        param: { maxWidth: 12 },
+        descr: { maxWidth: 20 },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(

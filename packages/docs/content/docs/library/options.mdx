@@ -389,10 +389,6 @@ All [non-niladic] options and [subcommands] share a set of attributes, which are
 
 The `example` attribute, if present, specifies a value to display in place of option parameter(s) in help messages. It will appear in the [parameter column] and, when a [parameter name] is not present, in the [usage statement] as well.
 
-> [!NOTE]
->
-> Mutually exclusive with [usage parameter name].
-
 #### Parameter name
 
 The `paramName` attribute, if present, specifies a name to to display in place of option parameter(s) in help messages. It will appear in the [usage statement] and, when an [example value] is not present, in the [parameter column] as well.
@@ -407,7 +403,7 @@ The `usageParamName` attribute, if present, specifies a name to to display in pl
 
 > [!NOTE]
 >
-> Overrides [parameter name] in usage statements. Mutually exclusive with [example value].
+> Overrides [example value] and [parameter name] in usage statements.
 
 ### Parameter attributes
 
@@ -650,12 +646,12 @@ This option has the following sets of attributes: [basic], [value], [environment
 
 The `paramCount` attribute, if present, specifies the number of parameters that the option expects on the command line. Its value can be either of:
 
-- **unspecified** or **negative** -- the option accepts _unlimited_ parameters;
+- **unspecified** or `Infinity{:ts}` -- the option accepts _unlimited_ parameters;
 - **zero** -- the option accepts _unknown_ number of parameters (see below);
 - **positive** -- the option expects _exactly_ this amount; or
 - **range** -- the option expects between a _minimum_ and a _maximum_ count
 
-In the special case of _zero_, the [parsing callback] will receive a copy of all remaining command-line arguments. This feature should be used in conjunction with the [skip count] attribute.
+In case of a numeric range, the minimum should be strictly less than the maximum, but not less than zero. In the special case of _zero_, the [parsing callback] will receive a copy of all remaining command-line arguments. This feature should be used in conjunction with the [skip count] attribute.
 
 > [!WARNING]
 >

@@ -336,7 +336,7 @@ export function getParamCount(option: OpaqueOption): NumericRange {
   return type === 'function'
     ? isObject(paramCount)
       ? paramCount
-      : paramCount !== undefined && paramCount >= 0
+      : paramCount !== undefined && isFinite(paramCount)
         ? [paramCount, paramCount]
         : [0, Infinity]
     : type === 'array'
@@ -433,7 +433,7 @@ export async function getNestedOptions(option: OpaqueOption): Promise<OpaqueOpti
  */
 export function checkInline(option: OpaqueOption, name: string): boolean | 'always' {
   const { inline } = option;
-  return (isObject(inline) ? inline[name] : inline) ?? true;
+  return (isObject(inline) ? inline[name] : inline) ?? true; // allowed by default, but not required
 }
 
 /**

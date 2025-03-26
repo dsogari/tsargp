@@ -135,7 +135,7 @@ describe('getParamCount', () => {
     const options = {
       function1: {
         type: 'function',
-        paramCount: -1,
+        paramCount: Infinity,
       },
       function2: {
         type: 'function',

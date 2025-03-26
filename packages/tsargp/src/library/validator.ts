@@ -15,6 +15,8 @@ import { ErrorMessage, WarnMessage } from './styles.js';
 import {
   findSimilar,
   getEntries,
+  getKeys,
+  getLastOptionName,
   getNestedOptions,
   getOptionEnvVars,
   getOptionNames,
@@ -63,9 +65,9 @@ const namingConventions: NamingRules = {
  */
 export type ValidationFlags = {
   /**
-   * Whether the validation procedure should skip detection of naming inconsistencies.
+   * Whether the validation procedure should skip generation of warnings.
    */
-  readonly noNamingIssues?: boolean;
+  readonly noWarnings?: boolean;
   /**
    * Whether the validation procedure should skip recursion into nested options.
    */
@@ -159,7 +161,7 @@ async function validateOptions(context: ValidationContext) {
       positional = key;
     }
   }
-  if (!flags.noNamingIssues) {
+  if (!flags.noWarnings) {
     detectNamingIssues(context, names);
   }
 }
@@ -340,8 +342,8 @@ function validateConstraints(
   prefixedKey: symbol,
   option: OpaqueOption,
 ) {
-  const [, , warning] = context;
-  const { type, choices, paramCount, example, default: def } = option;
+  const [, flags, warning] = context;
+  const { type, choices, paramCount, example, inline, append, separator, cluster, names } = option;
   if (choices) {
     const set = new Set(choices);
     if (set.size !== choices.length) {
@@ -351,18 +353,25 @@ function validateConstraints(
       }
     }
   }
-  if (isObject(paramCount) && (paramCount[0] < 0 || paramCount[0] >= paramCount[1])) {
+  if (
+    (typeof paramCount === 'number' && (paramCount < 0 || isNaN(paramCount))) ||
+    (isObject(paramCount) && (paramCount[0] < 0 || paramCount[0] >= paramCount[1]))
+  ) {
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, prefixedKey, paramCount);
   }
   const [min, max] = getParamCount(option);
-  if ((!max || max > 1) && !option.separator && !option.append && option.inline) {
+  if (
+    ((!max || max > 1) && !separator && !append && inline === 'always') ||
+    (getLastOptionName(option) === undefined && !cluster && inline !== undefined) ||
+    (typeof inline === 'object' && getKeys(inline).findIndex((key) => !names?.includes(key)) >= 0)
+  ) {
     throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, prefixedKey);
   }
-  if (min < max && option.cluster) {
+  if (!flags.noWarnings && min < max && cluster) {
     warning.add(ErrorItem.variadicWithClusterLetter, {}, prefixedKey);
   }
   if (type === 'array') {
     normalizeArray(option, prefixedKey, example); // ignored if undefined
-    normalizeArray(option, prefixedKey, def); // ignored if undefined
+    normalizeArray(option, prefixedKey, option.default); // ignored if undefined
   }
 }

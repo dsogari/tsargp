@@ -57,6 +57,7 @@ describe('validate', () => {
         paramCount: [0, 1],
       },
     } as const satisfies Options;
+    expect(validate(options, { noWarnings: true })).resolves.toEqual({});
     expect(validate(options)).resolves.toEqual({
       warning: expect.objectContaining({
         message: `Variadic option function may only appear at the end of a cluster.\n`,
@@ -71,6 +72,7 @@ describe('validate', () => {
         cluster: 'a',
       },
     } as const satisfies Options;
+    expect(validate(options, { noWarnings: true })).resolves.toEqual({});
     expect(validate(options)).resolves.toEqual({
       warning: expect.objectContaining({
         message: `Variadic option array may only appear at the end of a cluster.\n`,
