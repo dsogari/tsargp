@@ -84,7 +84,8 @@ export type WithBasicLayout = {
 export type WithSlottedLayout = {
   /**
    * The slot indentation level, or zero to disable slots.
-   * Does not apply to the first slot. Ignored if the column is merged. (Defaults to 0)
+   * Does not apply to the first slot. (Defaults to 0)
+   * Ignored if the column is merged or if {@link WithBasicLayout.width} is set.
    */
   readonly slotIndent: number;
 };

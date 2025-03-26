@@ -50,7 +50,11 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toMatch(
-      /^\n\n {15}A flag option\n\n {2}-s\n {6}<param>\n {15}A string option\n$/,
+      '\n\n' +
+        '               A flag option\n\n' +
+        '  -s\n' +
+        '      <param>\n' +
+        '               A string option\n',
     );
   });
 
@@ -95,7 +99,7 @@ describe('format', () => {
         },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch(/^\n-s\n <param>\n {8}A string option\n$/);
+    expect(format(options, sections).wrap()).toMatch('\n-s\n <param>\n        A string option\n');
   });
 
   it('hide the option names from the help message when configured to do so', () => {
@@ -382,7 +386,11 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      '  -s1, --single <param>\n  long-parameter-name\n  -s3=<param>\n  --array[=<param>]\n',
+      '' +
+        '  -s1, --single <param>\n' +
+        '  long-parameter-name\n' +
+        '  -s3=<param>\n' +
+        '  --array[=<param>]\n',
     );
   });
 
@@ -421,7 +429,11 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s1, --single <param>\n  long-parameter-name\n  -s3=<param>\n  --array[=<param>]\n`,
+      '' +
+        '  -s1, --single <param>\n' +
+        '  long-parameter-name\n' +
+        '  -s3=<param>\n' +
+        '  --array[=<param>]\n',
     );
   });
 
@@ -460,7 +472,8 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      '  -s1, --single <param>\n' +
+      '' +
+        '  -s1, --single <param>\n' +
         '    long-parameter-name\n' +
         '            -s3=<param>\n' +
         '      --array[=<param>]\n',
@@ -499,10 +512,14 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      '  -s1, --single\n  <param>\n' +
-        '\n  long-parameter-name\n' +
-        '  -s3\n  =<param>\n' +
-        '  --array\n  [=<param>]\n',
+      '' +
+        '  -s1, --single\n' +
+        '  <param>\n\n' +
+        '  long-parameter-name\n' +
+        '  -s3\n' +
+        '  =<param>\n' +
+        '  --array\n' +
+        '  [=<param>]\n',
     );
   });
 
@@ -639,7 +656,10 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s <param> A string option\n  <param> A string option\n  -f A flag option\n`,
+      '' +
+        '  -s <param> A string option\n' +
+        '  <param> A string option\n' +
+        '  -f A flag option\n',
     );
   });
 
@@ -673,7 +693,10 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s <param> A string option\n     <param> A string option\n            -f A flag option\n`,
+      '' +
+        '  -s <param> A string option\n' +
+        '     <param> A string option\n' +
+        '            -f A flag option\n',
     );
   });
 
@@ -706,7 +729,50 @@ describe('format', () => {
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s\n  <param>\n  A string option\n\n  <param>\n  A string option\n  -f\n  A flag option\n`,
+      '' +
+        '  -s\n' +
+        '  <param>\n' +
+        '  A string option\n\n' +
+        '  <param>\n' +
+        '  A string option\n' +
+        '  -f\n' +
+        '  A flag option\n',
+    );
+  });
+
+  it('force the width of all columns', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: {
+          names: { width: 8 },
+          param: { width: 12 },
+          descr: { width: 20 },
+        },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s,\n' +
+        '  --single  <param>       A single option with\n' +
+        '                          big synopsis.\n' +
+        '  -a,\n' +
+        '  --array   [<param>\n' +
+        '            <param>...]   Accepts multiple\n' +
+        '                          parameters.\n',
     );
   });
 });
