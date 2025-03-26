@@ -2,48 +2,49 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
+  HelpItems,
   HelpLayout,
-  WithBasicLayout,
-  WithMergedLayout,
   HelpSection,
-  HelpUsageSection,
   HelpSections,
+  HelpTextBlock,
+  HelpUsageSection,
   OpaqueOption,
   OpaqueOptions,
-  Requires,
-  RequirementCallback,
-  RequiresEntry,
-  HelpTextBlock,
   OptionDependencies,
+  RequirementCallback,
+  Requires,
+  RequiresEntry,
   StyledString,
+  WithBasicLayout,
+  WithMergedLayout,
 } from './options.js';
 import type { FormattingFlags, TextAlignment } from './styles.js';
 import type { RecordKeyMap, UsageStatement } from './utils.js';
 
 import { config } from './config.js';
 import { HelpItem } from './enums.js';
-import { AnsiString, AnsiMessage } from './styles.js';
+import { AnsiMessage, AnsiString } from './styles.js';
 import {
-  getParamCount,
-  getOptionNames,
-  getOptionEnvVars,
-  visitRequirements,
   checkInline,
-  getLastOptionName,
-  isEnvironmentOnly,
-  hasTemplate,
-  getSymbol,
-  isArray,
-  getValues,
-  max,
-  getEntries,
-  stronglyConnected,
   createUsage,
+  getEntries,
+  getLastOptionName,
+  getOptionEnvVars,
+  getOptionNames,
+  getParamCount,
+  getSymbol,
+  getValues,
+  hasTemplate,
+  isArray,
+  isEnvironmentOnly,
   isString,
+  max,
+  min,
   regex,
   setDifference,
   setIntersection,
-  min,
+  stronglyConnected,
+  visitRequirements,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -137,14 +138,14 @@ type ColumnLayout = WithBasicLayout | null | WithMergedLayout;
 /**
  * The complete list of help items.
  */
-export const allHelpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
+export const allHelpItems: HelpItems = Array(HelpItem._count)
   .fill(0)
   .map((_, index) => HelpItem.synopsis + index);
 
 /**
  * The list of help items that are useful for help messages with environment variables only.
  */
-export const envHelpItems: ReadonlyArray<HelpItem> = [
+export const envHelpItems: HelpItems = [
   HelpItem.synopsis,
   HelpItem.separator,
   HelpItem.choices,
@@ -436,7 +437,7 @@ function formatGroups(
   layout: HelpLayout,
   keys: ReadonlyArray<string>,
   flags: FormatterFlags,
-  items?: ReadonlyArray<HelpItem>,
+  items?: HelpItems,
   include?: ReadonlyArray<string>,
   exclude?: ReadonlyArray<string>,
   useEnv?: boolean,
@@ -511,15 +512,18 @@ function adjustEntries(
     slotIndent?: number,
     absolute?: boolean,
   ): [start: number, width: number] {
-    return !column || column.merge
-      ? [prevEnd, 0]
-      : [
-          absolute ? max(0, (column.indent ?? 2) || 0) : prevEnd + ((column.indent ?? 2) || 0),
-          widths.reduce(
-            (acc, width) => acc + min(width, column.maxWidth || Infinity),
-            ((widths.length || 1) - 1) * (slotIndent || 0),
-          ),
-        ];
+    if (!column || column.merge) {
+      return [prevEnd, 0];
+    }
+    const indent = (column.indent ?? 2) || 0;
+    const maxWidth = column.maxWidth || Infinity;
+    return [
+      absolute ? max(0, indent) : prevEnd + indent,
+      widths.reduce(
+        (acc, width) => acc + min(width, maxWidth),
+        ((widths.length || 1) - 1) * (slotIndent || 0),
+      ),
+    ];
   }
   const { names, param, descr } = layout;
   const slotIndent = names?.slotIndent;
@@ -641,7 +645,7 @@ function formatDescription(
   layout: HelpLayout,
   option: OpaqueOption,
   flags: FormatterFlags,
-  items: ReadonlyArray<HelpItem> = allHelpItems,
+  items: HelpItems = allHelpItems,
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.descr);
   const result = new AnsiString(0, align);

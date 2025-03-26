@@ -69,7 +69,7 @@ export type WithBasicLayout = {
    */
   readonly breaks?: number;
   /**
-   * The maximum column width. (Defaults to unlimited)
+   * The maximum column or slot width. (Defaults to unlimited)
    */
   readonly maxWidth?: number;
   /**
@@ -275,7 +275,7 @@ export type WithSectionGroups = {
   /**
    * The (order of) items to display in option descriptions.
    */
-  readonly items?: ReadonlyArray<HelpItem>;
+  readonly items?: HelpItems;
   /**
    * Whether option names should be replaced by environment variable names.
    */
@@ -311,6 +311,11 @@ export type HelpSection = HelpTextSection | HelpUsageSection | HelpGroupsSection
  * A list of help sections.
  */
 export type HelpSections = ReadonlyArray<HelpSection>;
+
+/**
+ * A list of help items.
+ */
+export type HelpItems = ReadonlyArray<HelpItem>;
 
 /**
  * A set of styles for displaying an option on the terminal.

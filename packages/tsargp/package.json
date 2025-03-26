@@ -54,7 +54,8 @@
   "license": "MIT",
   "scripts": {
     "prepare": "bun run build",
-    "build": "tsc -b && tsc -b src && bun build dist/library/index.js --outfile /dev/null --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts"
+    "build": "tsc -b && tsc -b src && bun build dist/library/index.js --outfile /dev/null --minify && sed -i 's/const enum/enum/g' dist/enums/*.d.ts",
+    "generate": "FORCE_WIDTH=100 FORCE_SPACES=1 bun run dist/examples/demo.js -h > out.txt"
   },
   "type": "module",
   "main": "./dist/library/index.js",

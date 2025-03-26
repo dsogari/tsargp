@@ -2,33 +2,33 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
+  NestedOptions,
   OpaqueOption,
+  OpaqueOptions,
   Requires,
   RequiresVal,
-  OpaqueOptions,
-  NestedOptions,
 } from './options.js';
 import type { NamingRules } from './utils.js';
 
 import { ErrorItem } from './enums.js';
 import { ErrorMessage, WarnMessage } from './styles.js';
 import {
-  getParamCount,
-  getOptionNames,
-  getOptionEnvVars,
-  visitRequirements,
-  isMessage,
-  getNestedOptions,
-  isCommand,
-  normalizeArray,
-  isEnvironmentOnly,
   findSimilar,
   getEntries,
+  getNestedOptions,
+  getOptionEnvVars,
+  getOptionNames,
+  getParamCount,
   getSymbol,
   getValues,
+  isCommand,
+  isEnvironmentOnly,
+  isMessage,
   isObject,
   matchNamingRules,
+  normalizeArray,
   regex,
+  visitRequirements,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
