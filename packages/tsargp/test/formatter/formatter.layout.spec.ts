@@ -257,12 +257,12 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { slotIndent: 1 } },
+        layout: { names: { slotIndent: 2 } },
       },
     ];
     config.connectives.optionSep = '';
     try {
-      expect(format(options, sections).wrap()).toEqual('  -f         --flag\n     --flag2\n');
+      expect(format(options, sections).wrap()).toEqual('  -f           --flag\n      --flag2\n');
     } finally {
       config.connectives.optionSep = ',';
     }

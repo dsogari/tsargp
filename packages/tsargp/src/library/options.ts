@@ -75,7 +75,7 @@ export type WithColumnLayout = {
   readonly absolute: boolean;
   /**
    * The slot indentation level, or zero to disable slots. Does not apply to the first slot.
-   * Ignored if the column is merged. (Defaults to 0)
+   * Only used by the names column, but ignored if the column is merged. (Defaults to 0)
    */
   readonly slotIndent: number;
   /**
@@ -261,7 +261,7 @@ export type WithSectionGroups = {
    */
   readonly layout?: PartialWithDepth<HelpColumnsLayout>;
   /**
-   * The order of items display in option descriptions.
+   * The (order of) items to display in option descriptions.
    */
   readonly items?: ReadonlyArray<HelpItem>;
   /**
@@ -595,13 +595,13 @@ export type WithTemplate = {
    */
   readonly example?: NonCallable;
   /**
-   * The parameter name to display in the parameter column.
+   * The parameter name to display in the parameter column or in usage statements.
    * Overrides {@link WithTemplate.example} in usage statements.
    */
   readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
-   * Overrides {@link WithTemplate.example} in usage statements.
+   * Overrides {@link WithTemplate.paramName} in usage statements.
    */
   readonly usageParamName?: StyledString;
 };

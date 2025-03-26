@@ -638,7 +638,7 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): HelpColu
 }
 
 /**
- * Formats an option's description to be printed on the terminal.
+ * Formats an option's description to be printed in a groups section.
  * The description always ends with a single line break.
  * @param options The option definitions
  * @param layout The help columns layout
@@ -655,7 +655,7 @@ function formatDescription(
   items: ReadonlyArray<HelpItem> = allHelpItems,
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.descr);
-  let result = new AnsiString(0, align);
+  const result = new AnsiString(0, align);
   if (layout.descr) {
     result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
     for (const item of items) {
@@ -663,11 +663,7 @@ function formatDescription(
         helpFunctions[item](option, config.helpPhrases[item], options, result);
       }
     }
-    if (result.maxLength) {
-      result.popSty().popSty();
-    } else {
-      result = new AnsiString(0, align); // nothing to be rendered
-    }
+    result.popSty().popSty();
   }
   return [result.break()]; // include trailing line feed
 }
@@ -1015,7 +1011,7 @@ function formatUsageNames(
 function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
   const { optionalOpen, optionalClose } = config.connectives;
   const { example, separator, paramName, usageParamName } = option;
-  const name = isUsage ? usageParamName : paramName;
+  const name = isUsage ? (usageParamName ?? paramName) : paramName;
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && !!max;
