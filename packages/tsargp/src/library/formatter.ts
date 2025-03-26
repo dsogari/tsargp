@@ -2,8 +2,9 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
-  HelpColumnsLayout,
-  WithColumnLayout,
+  HelpLayout,
+  WithBasicLayout,
+  WithMergedLayout,
   HelpSection,
   HelpUsageSection,
   HelpSections,
@@ -125,6 +126,11 @@ type HelpFunctions = Readonly<Record<HelpItem, HelpFunction>>;
  */
 type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
 
+/**
+ * The common layout settings for a help column.
+ */
+type ColumnLayout = WithBasicLayout | null | WithMergedLayout;
+
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
@@ -154,21 +160,20 @@ export const envHelpItems: ReadonlyArray<HelpItem> = [
 /**
  * The default help column layout.
  */
-const defaultColumnLayout: WithColumnLayout = {
+const defaultColumnLayout: WithBasicLayout = {
   align: 'left',
   indent: 2,
   breaks: 0,
-  absolute: false,
-  slotIndent: 0,
+  width: 0,
 };
 
 /**
  * The default help columns layout.
  */
-const defaultLayout: HelpColumnsLayout = {
-  names: defaultColumnLayout,
-  param: defaultColumnLayout,
-  descr: defaultColumnLayout,
+const defaultLayout: HelpLayout = {
+  names: { ...defaultColumnLayout, slotIndent: 0 },
+  param: { ...defaultColumnLayout, absolute: false },
+  descr: { ...defaultColumnLayout, absolute: false },
 };
 
 /**
@@ -436,7 +441,7 @@ function buildEntries(
 /**
  * Formats the help entries for a groups section.
  * @param options The option definitions
- * @param layout The help columns layout
+ * @param layout The help layout
  * @param keys The filtered option keys
  * @param flags The formatter flags
  * @param items The help items
@@ -447,7 +452,7 @@ function buildEntries(
  */
 function formatGroups(
   options: OpaqueOptions,
-  layout: HelpColumnsLayout,
+  layout: HelpLayout,
   keys: ReadonlyArray<string>,
   flags: FormatterFlags,
   items?: ReadonlyArray<HelpItem>,
@@ -490,14 +495,14 @@ function formatGroups(
 
 /**
  * Adjust the help entries for a help message.
- * @param layout The help columns layout
+ * @param layout The help layout
  * @param groups The option groups and their help entries
  * @param namesWidths The width of each slot in the names column
  * @param paramWidths The width of each slot in the parameter column
  * @param descrWidths The width of each slot in the description column
  */
 function adjustEntries(
-  layout: HelpColumnsLayout,
+  layout: HelpLayout,
   groups: EntriesByGroup,
   namesWidths: Array<number>,
   paramWidths: Array<number>,
@@ -508,8 +513,8 @@ function adjustEntries(
     column: HelpColumn,
     widths: Array<number>,
     start: number,
-    slotIndent: number,
-    isLast: boolean, // use the terminal width for the last slot of the last column
+    slotIndent: number = 0,
+    isLast: boolean = false, // use the terminal width for the last slot of the last column
   ) {
     column.forEach((str, i) => {
       str.indent = start;
@@ -521,38 +526,41 @@ function adjustEntries(
   }
   /** @ignore */
   function getStartAndWidth(
-    column: HelpColumnsLayout['param'],
+    column: ColumnLayout,
     widths: Array<number>,
-    prevEnd: number = 0,
-  ): [start: number, width: number, slotIndent: number] {
+    prevEnd: number,
+    slotIndent: number = 0,
+    absolute: boolean = false,
+  ): [start: number, width: number] {
     return !column || column.merge
-      ? [0, prevEnd, NaN]
+      ? [0, prevEnd]
       : [
-          column.absolute ? max(0, column.indent || 0) : prevEnd + (column.indent || 0),
+          absolute ? max(0, column.indent || 0) : prevEnd + (column.indent || 0),
           column.width ||
-            widths.reduce(
-              (acc, len) => acc + len,
-              ((widths.length || 1) - 1) * (column.slotIndent || 0),
-            ),
-          column.slotIndent || 0,
+            widths.reduce((acc, len) => acc + len, ((widths.length || 1) - 1) * (slotIndent || 0)),
         ];
   }
   const { names, param, descr } = layout;
-  const [namesStart, namesWidth, namesSlotIndent] = getStartAndWidth(names, namesWidths);
-  const [paramStart, paramWidth, paramSlotIndent] = getStartAndWidth(
+  const slotIndent = names?.slotIndent;
+  const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, slotIndent);
+  const [paramStart, paramWidth] = getStartAndWidth(
     param,
     paramWidths,
     namesStart + namesWidth,
+    0,
+    param?.absolute,
   );
-  const [descrStart, , descrSlotIndent] = getStartAndWidth(
+  const [descrStart] = getStartAndWidth(
     descr,
     descrWidths,
     paramStart + paramWidth,
+    0,
+    descr?.absolute,
   );
-  for (const [names, param, descr] of getValues(groups).flat()) {
-    adjustColumn(names, namesWidths, namesStart, namesSlotIndent, false);
-    adjustColumn(param, paramWidths, paramStart, paramSlotIndent, false);
-    adjustColumn(descr, descrWidths, descrStart, descrSlotIndent, true);
+  for (const [namesColumn, paramColumn, descrColumn] of getValues(groups).flat()) {
+    adjustColumn(namesColumn, namesWidths, namesStart, slotIndent);
+    adjustColumn(paramColumn, paramWidths, paramStart);
+    adjustColumn(descrColumn, descrWidths, descrStart, 0, true);
   }
 }
 
@@ -561,7 +569,7 @@ function adjustEntries(
  * @param column The column layout
  * @returns [The text alignment, The number of leading line feeds]
  */
-function getAlignment(column: HelpColumnsLayout['param']): [align: TextAlignment, breaks: number] {
+function getAlignment(column: ColumnLayout): [align: TextAlignment, breaks: number] {
   if (!column || column.merge) {
     return ['left', column?.breaks ?? 0];
   }
@@ -578,7 +586,7 @@ function getAlignment(column: HelpColumnsLayout['param']): [align: TextAlignment
  * @returns The help column
  */
 function formatNames(
-  layout: HelpColumnsLayout,
+  layout: HelpLayout,
   option: OpaqueOption,
   useEnv: boolean = false,
 ): HelpColumn {
@@ -626,7 +634,7 @@ function formatNames(
  * @param option The option definition
  * @returns The help column
  */
-function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): HelpColumn {
+function formatParams(layout: HelpLayout, option: OpaqueOption): HelpColumn {
   const [align, breaks] = getAlignment(layout.param);
   const result = new AnsiString(0, align);
   if (layout.param && hasTemplate(option, false)) {
@@ -649,7 +657,7 @@ function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): HelpColu
  */
 function formatDescription(
   options: OpaqueOptions,
-  layout: HelpColumnsLayout,
+  layout: HelpLayout,
   option: OpaqueOption,
   flags: FormatterFlags,
   items: ReadonlyArray<HelpItem> = allHelpItems,
