@@ -3,7 +3,7 @@
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
 import type { AnsiMessage, AnsiString, Style, TextAlignment } from './styles.js';
-import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
+import type { Promissory, Resolve } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -59,19 +59,19 @@ export type WithBasicLayout = {
   /**
    * The type of text alignment. (Defaults to 'left')
    */
-  readonly align: TextAlignment;
+  readonly align?: TextAlignment;
   /**
    * The column indentation level. (Defaults to 2)
    */
-  readonly indent: number;
+  readonly indent?: number;
   /**
    * The number of leading line feeds. (Defaults to 0)
    */
-  readonly breaks: number;
+  readonly breaks?: number;
   /**
-   * The column width, or zero for unlimited width. (Defaults to 0)
+   * The maximum column width. (Defaults to unlimited)
    */
-  readonly width: number;
+  readonly maxWidth?: number;
   /**
    * @deprecated Mutually exclusive with {@link WithBasicLayout} properties.
    */
@@ -84,10 +84,9 @@ export type WithBasicLayout = {
 export type WithSlottedLayout = {
   /**
    * The slot indentation level, or zero to disable slots.
-   * Does not apply to the first slot. (Defaults to 0)
-   * Ignored if the column is merged or if {@link WithBasicLayout.width} is set.
+   * Does not apply to the first slot. Ignored if the column is merged. (Defaults to 0)
    */
-  readonly slotIndent: number;
+  readonly slotIndent?: number;
 };
 
 /**
@@ -98,7 +97,7 @@ export type WithAbsoluteLayout = {
    * Whether {@link WithBasicLayout.indent} should be relative to the beginning of the line.
    * (Defaults to false)
    */
-  readonly absolute: boolean;
+  readonly absolute?: boolean;
 };
 
 /**
@@ -107,13 +106,13 @@ export type WithAbsoluteLayout = {
 export type WithMergedLayout = {
   /**
    * True to merge the column with the previous one.
-   * Text alignment and indentation will be those of the last previous non-merged column.
+   * Text alignment and indentation will be that of the last previous non-merged column.
    */
   readonly merge: true;
   /**
    * The number of leading line feeds. (Defaults to 0)
    */
-  readonly breaks: number;
+  readonly breaks?: number;
   /**
    * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
    */
@@ -125,7 +124,7 @@ export type WithMergedLayout = {
   /**
    * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
    */
-  readonly width?: never;
+  readonly maxWidth?: never;
   /**
    * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
    */
@@ -144,17 +143,17 @@ export type HelpLayout = {
    * The settings for the names column.
    * Use the value `null` to hide it from the help message.
    */
-  readonly names: (WithBasicLayout & WithSlottedLayout) | null;
+  readonly names?: (WithBasicLayout & WithSlottedLayout) | null;
   /**
    * The settings for the parameter column.
    * Use the value `null` to hide it from the help message.
    */
-  readonly param: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
+  readonly param?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
   /**
    * The settings for the description column.
    * Use the value `null` to hide it from the help message.
    */
-  readonly descr: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
+  readonly descr?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
 };
 
 /**
@@ -272,7 +271,7 @@ export type WithSectionGroups = {
   /**
    * The help layout settings.
    */
-  readonly layout?: PartialWithDepth<HelpLayout>;
+  readonly layout?: HelpLayout;
   /**
    * The (order of) items to display in option descriptions.
    */

@@ -10,7 +10,6 @@
   "intentionallyNotExported": [
     "Alias",
     "Enumerate",
-    "PartialWithDepth",
     "Resolve",
     "Args",
     "Promissory",
@@ -18,8 +17,6 @@
     "OptionDataType",
     "WithRequired",
     "WithDefault",
-    "WithExample",
-    "WithUsageParamName",
     "WithChoices",
     "WithRegex"
   ]

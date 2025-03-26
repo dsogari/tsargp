@@ -713,10 +713,11 @@ export class AnsiString {
     if (!count) {
       return column;
     }
-    column = max(0, column) || 0; // sanitize
-    const indent = max(0, this.indent) || 0; // sanitize
-    const width = indent + max(0, this.width) || max(0, terminalWidth) || Infinity; // sanitize
-    let start = max(0, min(indent, width)); // sanitize
+    // sanitize input
+    column = max(0, column || 0);
+    const indent = max(0, this.indent || 0);
+    const width = indent + max(0, this.width || NaN) || max(0, terminalWidth || 0) || Infinity;
+    let start = max(0, min(indent, width));
 
     if (width < start + maxLength) {
       start = 0; // wrap to the first column instead

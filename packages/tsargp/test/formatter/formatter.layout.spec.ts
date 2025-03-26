@@ -758,9 +758,9 @@ describe('format', () => {
       {
         type: 'groups',
         layout: {
-          names: { width: 8 },
-          param: { width: 12 },
-          descr: { width: 20 },
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
         },
       },
     ];

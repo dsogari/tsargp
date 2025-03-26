@@ -34,18 +34,6 @@ export type Enumerate<N extends number, A extends Array<number> = []> = A['lengt
   : Enumerate<N, [...A, A['length']]>;
 
 /**
- * A helper type to add optionality to types and their properties.
- * @template T The source type
- * @template N The maximum recursion depth
- * @template A The helper array
- */
-export type PartialWithDepth<
-  T,
-  N extends number = 1,
-  A extends Array<number> = [],
-> = A['length'] extends N ? Partial<T> : { [K in keyof T]?: PartialWithDepth<T[K], N, [...A, 1]> };
-
-/**
  * A helper type to alias another type while eliding type resolution in IntelliSense.
  * @template T The type to be aliased
  */
@@ -872,37 +860,6 @@ export function selectAlternative(phrase: string, alt = 0): string {
     return result.join('');
   }
   return phrase;
-}
-
-/**
- * Merges the properties of a source object with those of a template object.
- * @template T The type of template object
- * @param template The template object
- * @param source The source object
- * @param maxDepth The maximum recursion depth
- * @returns The result object
- */
-export function mergeValues<T extends Readonly<UnknownRecord>, N extends number>(
-  template: T,
-  source: PartialWithDepth<T, N>,
-  maxDepth: N,
-): T {
-  if (!maxDepth) {
-    return { ...template, ...source };
-  }
-  const result: UnknownRecord = {};
-  for (const [key, val] of getEntries(template)) {
-    const sourceVal = source[key as keyof T];
-    const isObj = val !== null && isObject(val) && !isArray(val);
-    const isSourceObj = sourceVal !== null && isObject(sourceVal) && !isArray(sourceVal);
-    result[key] =
-      isObj && isSourceObj
-        ? mergeValues(val as Readonly<UnknownRecord>, sourceVal, maxDepth - 1)
-        : sourceVal === undefined
-          ? val
-          : sourceVal;
-  }
-  return result as T;
 }
 
 /**

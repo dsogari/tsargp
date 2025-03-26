@@ -40,10 +40,10 @@ import {
   stronglyConnected,
   createUsage,
   isString,
-  mergeValues,
   regex,
   setDifference,
   setIntersection,
+  min,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -156,25 +156,6 @@ export const envHelpItems: ReadonlyArray<HelpItem> = [
   HelpItem.deprecated,
   HelpItem.link,
 ];
-
-/**
- * The default help column layout.
- */
-const defaultColumnLayout: WithBasicLayout = {
-  align: 'left',
-  indent: 2,
-  breaks: 0,
-  width: 0,
-};
-
-/**
- * The default help columns layout.
- */
-const defaultLayout: HelpLayout = {
-  names: { ...defaultColumnLayout, slotIndent: 0 },
-  param: { ...defaultColumnLayout, absolute: false },
-  descr: { ...defaultColumnLayout, absolute: false },
-};
 
 /**
  * The default help sections.
@@ -472,29 +453,22 @@ function formatGroups(
     }
     const paramColumn = formatParams(layout, option);
     const descrColumn = formatDescription(options, layout, option, flags, items);
-    if (!descr || descr.merge) {
+    if (layout.descr === null || layout.descr?.merge) {
       paramColumn.push(...descrColumn.splice(0)); // extract from descr
       paramColumn.splice(1).forEach((str) => paramColumn[0].other(str));
     }
-    if (!param || param.merge) {
+    if (layout.param === null || layout.param?.merge) {
       namesColumn.push(...paramColumn.splice(0)); // extract from param
       namesColumn.splice(1).forEach((str) => namesColumn[0].other(str));
     }
-    if (!names?.width) {
-      compute(namesColumn, namesWidths);
-    }
-    if (!param?.width) {
-      compute(paramColumn, paramWidths);
-    }
-    if (!descr?.width) {
-      compute(descrColumn, descrWidths);
-    }
+    compute(namesColumn, namesWidths);
+    compute(paramColumn, paramWidths);
+    compute(descrColumn, descrWidths);
     return [namesColumn, paramColumn, descrColumn];
   }
-  const { names, param, descr } = layout;
-  const namesWidths: Array<number> = [names?.width ?? 0];
-  const paramWidths: Array<number> = [param?.width ?? 0];
-  const descrWidths: Array<number> = [descr?.width ?? 0];
+  const namesWidths: Array<number> = [];
+  const paramWidths: Array<number> = [];
+  const descrWidths: Array<number> = [];
   const groups = buildEntries(options, keys, build, include, exclude);
   adjustEntries(layout, groups, namesWidths, paramWidths, descrWidths);
   return groups;
@@ -520,30 +494,31 @@ function adjustEntries(
     column: HelpColumn,
     widths: Array<number>,
     start: number,
-    slotIndent: number = 0,
-    isLast: boolean = false, // use the terminal width for the last slot of the last column
+    slotIndent?: number,
+    maxWidth: number = Infinity,
   ) {
     column.forEach((str, i) => {
       str.indent = start;
-      if (!isLast || i < column.length - 1) {
-        str.width = widths[i];
-        start += str.width + slotIndent;
-      }
+      str.width = min(widths[i], maxWidth);
+      start += str.width + (slotIndent || 0);
     });
   }
   /** @ignore */
   function getStartAndWidth(
-    column: ColumnLayout,
+    column: ColumnLayout = {},
     widths: Array<number>,
     prevEnd: number,
-    slotIndent: number = 0,
-    absolute: boolean = false,
+    slotIndent?: number,
+    absolute?: boolean,
   ): [start: number, width: number] {
     return !column || column.merge
       ? [prevEnd, 0]
       : [
-          absolute ? max(0, column.indent || 0) : prevEnd + (column.indent || 0),
-          widths.reduce((acc, len) => acc + len, ((widths.length || 1) - 1) * (slotIndent || 0)),
+          absolute ? max(0, (column.indent ?? 2) || 0) : prevEnd + ((column.indent ?? 2) || 0),
+          widths.reduce(
+            (acc, width) => acc + min(width, column.maxWidth || Infinity),
+            ((widths.length || 1) - 1) * (slotIndent || 0),
+          ),
         ];
   }
   const { names, param, descr } = layout;
@@ -553,34 +528,34 @@ function adjustEntries(
     param,
     paramWidths,
     namesStart + namesWidth,
-    0,
+    0, // non-slotted
     param?.absolute,
   );
   const [descrStart] = getStartAndWidth(
     descr,
     descrWidths,
     paramStart + paramWidth,
-    0,
+    0, // non-slotted
     descr?.absolute,
   );
   for (const [namesColumn, paramColumn, descrColumn] of getValues(groups).flat()) {
-    adjustColumn(namesColumn, namesWidths, namesStart, slotIndent);
-    adjustColumn(paramColumn, paramWidths, paramStart);
-    adjustColumn(descrColumn, descrWidths, descrStart, 0, !descr?.width);
+    adjustColumn(namesColumn, namesWidths, namesStart, slotIndent, names?.maxWidth);
+    adjustColumn(paramColumn, paramWidths, paramStart, 0, param?.maxWidth);
+    adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth ?? NaN);
   }
 }
 
 /**
  * Gets the text alignment setting from a column layout.
  * @param column The column layout
- * @returns [The text alignment, The number of leading line feeds]
+ * @returns [The text alignment, if any, The number of leading line feeds, if any]
  */
-function getAlignment(column: ColumnLayout): [align: TextAlignment, breaks: number] {
-  if (!column || column.merge) {
-    return ['left', column?.breaks ?? 0];
+function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks?: number] {
+  if (!column) {
+    return [];
   }
   const { align, breaks } = column;
-  return [align, breaks];
+  return [align, breaks ?? 0];
 }
 
 /**
@@ -599,13 +574,12 @@ function formatNames(
   const [align, breaks] = getAlignment(layout.names);
   let str = new AnsiString(0, align);
   const result: HelpColumn = [str];
-  if (layout.names) {
+  if (breaks !== undefined) {
     const names = useEnv ? getOptionEnvVars(option) : option.names;
     if (names?.length) {
       const { styles, connectives } = config;
       const sty = option.styles?.names ?? styles.symbol;
-      const { width, slotIndent } = layout.names;
-      const slotted = !width && !!slotIndent;
+      const slotted = !!layout.names?.slotIndent;
       let sep: string | undefined; // no separator before first name
       str.break(breaks).pushSty(styles.base);
       if (slotted) {
@@ -644,7 +618,7 @@ function formatNames(
 function formatParams(layout: HelpLayout, option: OpaqueOption): HelpColumn {
   const [align, breaks] = getAlignment(layout.param);
   const result = new AnsiString(0, align);
-  if (layout.param && hasTemplate(option, false)) {
+  if (breaks !== undefined && hasTemplate(option, false)) {
     result.break(breaks).pushSty(config.styles.base);
     formatParam(option, false, result);
     result.popSty();
@@ -671,7 +645,7 @@ function formatDescription(
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.descr);
   const result = new AnsiString(0, align);
-  if (layout.descr) {
+  if (breaks !== undefined) {
     result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
     for (const item of items) {
       if (item !== HelpItem.cluster || flags.clusterPrefix !== undefined) {
@@ -703,8 +677,7 @@ function formatHelpSection(
   if (type === 'groups') {
     const { layout, filter, exclude, items, useEnv } = section;
     const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
-    const mergedLayout = mergeValues(defaultLayout, layout ?? {}, 1);
-    const groups = formatGroups(options, mergedLayout, keys, flags, items, incl, excl, useEnv);
+    const groups = formatGroups(options, layout ?? {}, keys, flags, items, incl, excl, useEnv);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
