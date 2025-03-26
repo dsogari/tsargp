@@ -595,13 +595,13 @@ export type WithTemplate = {
    */
   readonly example?: NonCallable;
   /**
-   * The parameter name to display in the parameter column or in usage statements.
+   * The parameter name to display in the parameter column.
    * Overrides {@link WithTemplate.example} in usage statements.
    */
   readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
-   * Overrides {@link WithTemplate.paramName} in usage statements.
+   * Overrides {@link WithTemplate.example} in usage statements.
    */
   readonly usageParamName?: StyledString;
 };
@@ -778,8 +778,7 @@ export type CommandOption = WithOptionType<'command'> &
   WithBasic &
   WithOptionValue<OpaqueOptionValues> &
   WithTemplate &
-  (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName);
+  (WithDefault | WithRequired);
 
 /**
  * An option that has a value, but is niladic.
@@ -803,7 +802,6 @@ export type SingleOption = WithOptionType<'single'> &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
@@ -818,7 +816,6 @@ export type ArrayOption = WithOptionType<'array'> &
   WithParameter &
   WithSelection &
   (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
@@ -831,8 +828,7 @@ export type FunctionOption = WithOptionType<'function'> &
   WithEnvironment &
   WithTemplate &
   WithParameter &
-  (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName);
+  (WithDefault | WithRequired);
 
 /**
  * The public option types.
@@ -940,27 +936,6 @@ type WithDefault = {
    * {@link WithOptionValue.requiredIf}
    */
   readonly required?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with the `example` attribute.
- */
-type WithExample = {
-  /**
-   * @deprecated mutually exclusive with {@link WithTemplate.example}.
-   * Use {@link WithTemplate.paramName} in this case.
-   */
-  readonly usageParamName?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with the `usageParamName` attribute.
- */
-type WithUsageParamName = {
-  /**
-   * @deprecated mutually exclusive with {@link WithTemplate.usageParamName}
-   */
-  readonly example?: never;
 };
 
 /**

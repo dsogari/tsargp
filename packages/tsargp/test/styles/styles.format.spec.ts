@@ -16,7 +16,7 @@ describe('AnsiString', () => {
 
     it('format single-valued arguments out of order', () => {
       const str = new AnsiString().format(
-        '#9 #8 #7 #6 #5 #4 #3 #2 #1 #0',
+        '#10 #9 #8 #7 #6 #5 #4 #3 #2 #1 #0',
         {},
         true,
         'some text',
@@ -28,8 +28,10 @@ describe('AnsiString', () => {
         [1, 'a', false],
         { a: 1, 0: 'c', 'd-': /ghi/i },
         () => 1,
+        undefined,
       );
       expect(str.strings).toEqual([
+        '<undefined>',
         '<()',
         '=>',
         '1>',
@@ -68,6 +70,7 @@ describe('AnsiString', () => {
         new URL('https://abc'),
         str1,
         str1,
+        undefined,
       ]);
       expect(str2.strings).toEqual([
         '[true;',
@@ -85,7 +88,8 @@ describe('AnsiString', () => {
         'type',
         'script;',
         'type',
-        'script]',
+        'script;',
+        '<undefined>]',
       ]);
     });
 
@@ -104,6 +108,7 @@ describe('AnsiString', () => {
           a: [1, 'a', false],
           o: { a: 1, 0: 'c', 'd-': /ghi/i },
           v: () => 1,
+          v2: undefined,
         },
       );
       expect(str.strings).toEqual([
@@ -149,7 +154,10 @@ describe('AnsiString', () => {
         'v:',
         '<()',
         '=>',
-        '1>}',
+        '1>',
+        ',',
+        'v2:',
+        '<undefined>}',
       ]);
     });
   });

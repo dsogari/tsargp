@@ -96,6 +96,7 @@ export type NamingRules = Readonly<Record<string, NamingRuleSet>>;
 /**
  * The result of matching names against naming rules.
  * It includes the first match in each ruleset.
+ * @template T The type of naming rulesets
  */
 export type NamingMatch<T extends NamingRules> = Resolve<{
   -readonly [key1 in keyof T]: {
@@ -357,6 +358,7 @@ export function getParamCount(option: OpaqueOption): NumericRange {
 
 /**
  * Visits an option's requirements, executing a callback according to the type of the requirement.
+ * @template T The type of the callback result
  * @param requires The option requirements
  * @param keyFn The callback to process an option key
  * @param notFn The callback to process a "not" expression
@@ -725,6 +727,7 @@ export function findSimilar(
 
 /**
  * Matches names against naming rules.
+ * @template T The type of naming rulesets
  * @param names The list of names
  * @param rulesets The sets of rules
  * @returns The matching result
@@ -873,6 +876,7 @@ export function selectAlternative(phrase: string, alt = 0): string {
 
 /**
  * Merges the properties of a source object with those of a template object.
+ * @template T The type of template object
  * @param template The template object
  * @param source The source object
  * @param maxDepth The maximum recursion depth
@@ -903,6 +907,7 @@ export function mergeValues<T extends Readonly<UnknownRecord>, N extends number>
 
 /**
  * Finds a value that matches a predicate in an object.
+ * @template T The type of record value
  * @param rec The record-like object to search in
  * @param pred The predicate function
  * @returns The first value matching the predicate
@@ -944,6 +949,7 @@ export function getKeys(rec: object): Array<string> {
 
 /**
  * Gets a list of values from an object.
+ * @template T The type of record value
  * @param rec The record-like object
  * @returns The list of object values
  */
@@ -953,6 +959,7 @@ export function getValues<T>(rec: Readonly<Record<string, T>>): Array<T> {
 
 /**
  * Gets a list of entries from an object.
+ * @template T The type of record value
  * @param rec The record-like object
  * @returns The list of object entries
  */
@@ -962,10 +969,11 @@ export function getEntries<T>(rec: Readonly<Record<string, T>>): Array<[string, 
 
 /**
  * Checks if a value is an array.
+ * @template T The type of array
  * @param value The value
  * @returns True if the value is an array
  */
-export function isArray<T = unknown>(value: unknown): value is Array<T> {
+export function isArray<T = Array<unknown>>(value: unknown): value is T {
   return Array.isArray(value);
 }
 
@@ -1042,6 +1050,7 @@ export function getCompIndex(): number | undefined {
 
 /**
  * Remove duplicate values from an array without sorting.
+ * @template T The type of array element
  * @param vals The values
  * @returns The unique values
  */
@@ -1051,6 +1060,7 @@ export function makeUnique<T>(vals: ReadonlyArray<T>): Array<T> {
 
 /**
  * Add elements to a set from another set.
+ * @template T The type of set element
  * @param lhs The left-hand side of the operation (may be updated)
  * @param rhs The right-hand side of the operation
  * @returns The set union
@@ -1062,6 +1072,7 @@ export function setUnion<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 
 /**
  * Removes elements from a set that also appear in another set.
+ * @template T The type of set element
  * @param lhs The left-hand side of the operation (may be updated)
  * @param rhs The right-hand side of the operation
  * @returns The set difference
@@ -1073,6 +1084,7 @@ export function setDifference<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 
 /**
  * Removes elements from a set that do not appear in another set.
+ * @template T The type of set element
  * @param lhs The left-hand side of the operation (may be updated)
  * @param rhs The right-hand side of the operation
  * @returns The set intersection

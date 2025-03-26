@@ -644,18 +644,17 @@ export class AnsiString {
     }
     const { strings, styled, count, curStyle, merge, maxLength } = this;
     if (count && (merge || close) && strings[count - 1]) {
-      strings[count - 1] += text;
+      text = strings[count - 1] += text; // to update maxLength
       styled[count - 1] += curStyle + styledText;
-      text = strings[count - 1]; // to update maxLength
     } else {
       strings.push(text);
       styled.push(curStyle + styledText);
     }
+    curStyle.length = 0; // reset opening style
     if (!maxLength) {
       this.mergeLeft = merge || close;
     }
     this.maxLength = max(maxLength, text.length);
-    curStyle.length = 0; // reset opening style
     this.merge = false;
     return this;
   }

@@ -222,21 +222,20 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s'],
           cluster: 's', // merge with option name
-          paramName: '<param>',
+          usageParamName: '<param>',
         },
-        alwaysRequiredWithClusterAndOverrideParamName: {
+        alwaysRequiredWithCluster: {
           type: 'single',
           names: ['-s2'],
           cluster: 'x',
           required: true, // should appear first
-          paramName: '<param>',
           usageParamName: '<arg>',
         },
         emptyMarker: {
           type: 'single',
           names: ['-s3'],
           positional: '', // should appear last
-          paramName: '<arg>',
+          usageParamName: '<arg>',
         },
         requiredInline: {
           type: 'single',
@@ -265,7 +264,7 @@ describe('rendering a usage section', () => {
           type: 'single',
           cluster: 'x',
           example: true,
-          paramName: '<arg>',
+          usageParamName: '<arg>',
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
@@ -280,19 +279,18 @@ describe('rendering a usage section', () => {
           type: 'array',
           names: ['-a1'],
           cluster: 'a',
-          paramName: '<param>',
+          usageParamName: '<param>',
         },
-        alwaysRequiredAndOverrideParamName: {
+        alwaysRequired: {
           type: 'array',
           names: ['-a2'],
           required: true, // should appear first
-          paramName: '<param>',
           usageParamName: '<arg>',
         },
         markerWithEmptyParamName: {
           type: 'array',
           positional: '--', // should appear last
-          paramName: '',
+          usageParamName: '',
         },
         requiredInline: {
           type: 'array',
@@ -321,7 +319,7 @@ describe('rendering a usage section', () => {
           type: 'array',
           names: ['-a9'],
           example: true,
-          paramName: '<arg>',
+          usageParamName: '<arg>',
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
@@ -336,13 +334,12 @@ describe('rendering a usage section', () => {
           type: 'function',
           names: ['-f1'],
           paramCount: 0,
-          paramName: '',
+          usageParamName: '',
         },
-        alwaysRequiredWithRangeParamCountAndOverrideParamName: {
+        alwaysRequiredWithRangeParamCount: {
           type: 'function',
           names: ['-f2'],
           required: true, // should appear first
-          paramName: '<param>',
           usageParamName: '<arg1> [<arg2>]',
           paramCount: [1, 2],
         },
@@ -350,7 +347,7 @@ describe('rendering a usage section', () => {
           type: 'function',
           positional: true,
           paramCount: 2,
-          paramName: '<arg1> <arg2>',
+          usageParamName: '<arg1> <arg2>',
         },
         rangeParamCountAndRequiredInline: {
           type: 'function',
@@ -380,7 +377,7 @@ describe('rendering a usage section', () => {
           type: 'function',
           names: ['-f9'],
           example: true,
-          paramName: '<arg>',
+          usageParamName: '<arg>',
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
@@ -393,13 +390,13 @@ describe('rendering a usage section', () => {
       const options = {
         optionalUnnamedWithTemplate: {
           type: 'single',
-          paramName: '<arg1>',
+          usageParamName: '<arg1>',
           stdin: true,
         },
         requiredWithTemplate: {
           type: 'single',
           names: ['-s2'],
-          paramName: '<arg2>',
+          usageParamName: '<arg2>',
           required: true,
           stdin: true,
         },
@@ -426,13 +423,13 @@ describe('rendering a usage section', () => {
         optionalWithTemplate: {
           type: 'single',
           names: ['-s7'],
-          paramName: '<arg7>',
+          usageParamName: '<arg7>',
           stdin: true,
         },
         array: {
           type: 'array',
           names: ['-a'],
-          paramName: '<arg>',
+          usageParamName: '<arg>',
           positional: true,
           stdin: true,
         },
@@ -474,7 +471,7 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s'],
           positional: '--',
-          paramName: '<param>',
+          usageParamName: '<param>',
         },
       } as const satisfies Options;
       const sections0: HelpSections = [{ type: 'usage', filter: [] }]; // empty filter
@@ -733,7 +730,7 @@ describe('rendering a usage section', () => {
           type: 'array',
           names: ['-a'],
           positional: true,
-          paramName: '',
+          usageParamName: '',
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage', inclusive: { flag: 'array', array: 'flag' } }];
@@ -754,12 +751,12 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s'],
           positional: '--',
-          paramName: '<arg>',
+          usageParamName: '<arg>',
         },
         array: {
           type: 'array',
           names: ['-a'],
-          paramName: '<arg>',
+          usageParamName: '<arg>',
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage', inclusive: { flag: 'single' } }];

@@ -584,7 +584,7 @@ function formatNames(
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.names);
   let str = new AnsiString(0, align);
-  const result: Array<AnsiString> = [str];
+  const result: HelpColumn = [str];
   if (layout.names) {
     const names = useEnv ? getOptionEnvVars(option) : option.names;
     if (names?.length) {
@@ -1015,7 +1015,7 @@ function formatUsageNames(
 function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString): boolean {
   const { optionalOpen, optionalClose } = config.connectives;
   const { example, separator, paramName, usageParamName } = option;
-  const name = isUsage ? (usageParamName ?? paramName) : paramName;
+  const name = isUsage ? usageParamName : paramName;
   const inline = checkInline(option, getLastOptionName(option) ?? '') === 'always';
   const [min, max] = getParamCount(option);
   const optional = !min && !!max;
@@ -1030,17 +1030,15 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
     .pushSty(sty)
     .open(openBracket)
     .open(inline ? '=' : '');
-  if (example !== undefined && (!isUsage || name === undefined)) {
+  if (name === undefined) {
     let param = example;
     if (separator && isArray(param)) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
     result.value(param, { sep: '', ...openArrayNoMergeFlags });
-  } else if (isString(name)) {
-    result.split(name);
-  } else if (name) {
-    result.other(name);
+  } else {
+    appendStyledString(name, result);
   }
   if (result.count > count) {
     result.close(ellipsis);
