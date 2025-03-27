@@ -171,8 +171,12 @@ describe('format', () => {
           1. item3`,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toMatch(
-      /^ {2}-f {4}A flag option with lists:\n {8}- item1\n {8}\* item2\n {8}1\. item3\n$/,
+    expect(format(options).wrap()).toEqual(
+      '' +
+        '  -f    A flag option with lists:\n' +
+        '        - item1\n' +
+        '        * item2\n' +
+        '        1. item3\n',
     );
   });
 

@@ -682,8 +682,8 @@ export class AnsiString {
    * @param result The resulting list
    * @param currentColumn The current terminal column
    * @param terminalWidth The desired terminal width (or zero or NaN to avoid wrapping)
-   * @param emitStyles True if styles should be emitted
-   * @param emitSpaces True if spaces should be emitted instead of move sequences
+   * @param emitStyles Whether styles should be emitted
+   * @param emitSpaces Whether spaces should be emitted instead of move sequences
    * @returns The updated terminal column
    */
   wrap(
@@ -694,13 +694,13 @@ export class AnsiString {
     emitSpaces: boolean = true,
   ): number {
     /** @ignore */
-    function move(from: number, to: number): string {
-      return emitSpaces ? ' '.repeat(to - from) : '' + sequence(cs.cuf, to - from);
+    function move(count: number): string {
+      return emitSpaces ? ' '.repeat(count) : '' + sequence(cs.cuf, count);
     }
     /** @ignore */
     function alignRight() {
       if (needToAlign && j < result.length && column < width) {
-        result.splice(j, 0, move(column, width)); // insert padding at the beginning of the line
+        result.splice(j, 0, move(width - column)); // insert padding at the beginning of the line
         column = width;
       }
     }
@@ -709,11 +709,6 @@ export class AnsiString {
       alignRight();
       column = 0;
       j = result.push('\n'); // save index for right-alignment
-    }
-    /** @ignore */
-    function push(str: string, col: number) {
-      column = col;
-      result.push(str);
     }
     const { strings, styled, count, maxLength, align } = this;
     if (!count) {
@@ -726,38 +721,35 @@ export class AnsiString {
     let start = max(0, min(indent, width));
     let j = result.length; // save index for right-alignment
     const needToAlign = isFinite(width) && align === 'right';
-
     if (width < start + maxLength) {
       start = 0; // wrap to the first column instead
       if (column && strings[0]) {
         feed(); // forcefully break the first line
       }
-    } else if (column < start && strings[0]) {
-      push(move(column, start), start); // pad until start
     }
-
-    const pad = start ? move(0, start) : '';
+    const pad = start ? move(start) : ''; // precomputed for efficiency
     for (let i = 0; i < count; i++) {
-      let str = strings[i];
+      const str = strings[i];
       const len = str.length;
       if (!len) {
-        feed();
+        feed(); // keep line feeds separate from the rest
         continue;
       }
-      if (!column && start) {
-        push(pad, start);
+      let len2 = start; // start at indentation level, unless we are in the middle of the line
+      let pad2 = pad;
+      if (column) {
+        if (column < start) {
+          len2 = start - column;
+          pad2 = move(len2); // pad until start (only executed once)
+        } else if (column + len < width) {
+          len2 = 1;
+          pad2 = ' '; // single space separating words
+        } else {
+          feed(); // keep line feeds separate from the rest
+        }
       }
-      if (emitStyles) {
-        str = styled[i];
-      }
-      if (column === start) {
-        push(str, column + len);
-      } else if (column + len < width) {
-        push(' ' + str, column + 1 + len);
-      } else {
-        feed(); // keep line feeds separate from the rest
-        push(pad + str, start + len);
-      }
+      column += len2 + len;
+      result.push(pad2 + (emitStyles ? styled[i] : str));
     }
     alignRight();
     return column;
