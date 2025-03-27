@@ -186,7 +186,7 @@ type ParseEntry = [
    */
   isNew?: boolean,
   /**
-   * True if it is positional, but not the marker.
+   * True if it is positional, but not with a marker.
    */
   isPositional?: boolean,
 ];
@@ -400,7 +400,7 @@ async function parseArgs(context: ParseContext) {
             prev[4] = false;
             continue;
           }
-          const [alt, name2] = isMarker ? [1, `${option.positional}`] : [0, name];
+          const [alt, name2] = isMarker ? [1, '' + option.positional] : [0, name];
           throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       }
@@ -507,7 +507,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
         }
         const isMarker = name === option.positional;
         const newInfo: OptionInfo | undefined = isMarker ? positional : [optionKey!, option, name];
-        return [i, newInfo, value, comp, isMarker, true, false];
+        return [i, newInfo, value, comp, isMarker, true];
       }
       case ArgType.cluster:
         if (comp) {
@@ -537,7 +537,7 @@ function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
           prevInfo = undefined;
           i--; // reprocess the current argument
         } else if (comp) {
-          return [i, prevInfo, arg, comp, prevMarker, false];
+          return [i, prevInfo, arg, comp, prevMarker];
         }
         break; // continue looking for parameters or option names
       }
@@ -755,7 +755,7 @@ async function parseParams(
   if (type === 'single') {
     values[key] = await parse2(params[0]);
   } else {
-    const prev = (append && (values[key] as Array<unknown>)) ?? [];
+    const prev = append ? ((values[key] as Array<unknown>) ?? []) : [];
     // do not use `map` with `Promise.all`, because the promises need to be chained
     for (const param of params) {
       prev.push(await parse2(param));
@@ -890,7 +890,7 @@ async function handleHelp(
   const flags: FormatterFlags = {
     progName,
     clusterPrefix: context[6].clusterPrefix,
-    optionFilter: option.useFilter && rest,
+    optionFilter: option.useFilter ? rest : undefined,
     stdinSymbol: context[6].stdinSymbol,
   };
   return format(registry.options, option.sections, flags);

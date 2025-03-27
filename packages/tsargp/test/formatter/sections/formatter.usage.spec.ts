@@ -174,8 +174,8 @@ describe('rendering a usage section', () => {
           required: true,
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', filter: ['optional'] }];
-      const case1: HelpSections = [{ type: 'usage', filter: ['alwaysRequired'] }];
+      const case0: HelpSections = [{ type: 'usage', include: ['optional'] }];
+      const case1: HelpSections = [{ type: 'usage', include: ['alwaysRequired'] }];
       expect(format(options, case0).wrap()).toEqual('[-s1]\n');
       expect(format(options, case1).wrap()).toEqual('-s2\n');
     });
@@ -224,6 +224,7 @@ describe('rendering a usage section', () => {
           names: ['-s'],
           cluster: 's', // merge with option name
           paramName: '<param>',
+          positional: false, // explicitly not positional
         },
         alwaysRequiredWithCluster: {
           type: 'single',
@@ -281,6 +282,7 @@ describe('rendering a usage section', () => {
           names: ['-a1'],
           cluster: 'a',
           paramName: '<param>',
+          positional: false, // explicitly not positional
         },
         alwaysRequired: {
           type: 'array',
@@ -336,6 +338,7 @@ describe('rendering a usage section', () => {
           names: ['-f1'],
           paramCount: 0,
           paramName: '',
+          positional: false, // explicitly not positional
         },
         alwaysRequiredWithRangeParamCount: {
           type: 'function',
@@ -435,13 +438,12 @@ describe('rendering a usage section', () => {
           stdin: true,
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', filter: ['array'], exclude: true }];
-      const case1: HelpSections = [{ type: 'usage', filter: ['array'] }];
-      const case2: HelpSections = [{ type: 'usage', filter: ['requiredWithoutTemplate'] }];
+      const case0: HelpSections = [{ type: 'usage', exclude: ['array'] }];
+      const case1: HelpSections = [{ type: 'usage', include: ['array'] }];
+      const case2: HelpSections = [{ type: 'usage', include: ['requiredWithoutTemplate'] }];
       const case3: HelpSections = [
-        { type: 'usage', filter: ['array'], inclusive: { array: 'optionalUnnamedWithTemplate' } },
+        { type: 'usage', include: ['array'], inclusive: { array: 'optionalUnnamedWithTemplate' } },
       ];
-      const case4: HelpSections = [{ type: 'usage', exclude: ['array'] }];
       const flags: FormatterFlags = { stdinSymbol: '-' };
       expect(format(options, case0, flags).wrap()).toEqual(
         '(-s2 <arg2>|-) (-s3|--single|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
@@ -449,9 +451,6 @@ describe('rendering a usage section', () => {
       expect(format(options, case1, flags).wrap()).toEqual('([-a] [<arg>...]|-)\n');
       expect(format(options, case2, flags).wrap()).toEqual('(-s3|--single|-)\n');
       expect(format(options, case3, flags).wrap()).toEqual('[(<arg1>|-) ([-a] [<arg>...]|-)]\n');
-      expect(format(options, case4, flags).wrap()).toEqual(
-        '(-s2 <arg2>|-) (-s3|--single|-) - [<arg1>|-] [-s4|-] [-] [-s7 <arg7>|-]\n',
-      );
     });
 
     it('filter, include and exclude options', () => {
@@ -475,17 +474,14 @@ describe('rendering a usage section', () => {
           paramName: '<param>',
         },
       } as const satisfies Options;
-      const sections0: HelpSections = [{ type: 'usage', filter: [] }]; // empty filter
-      const sections1: HelpSections = [{ type: 'usage', filter: ['flag1'] }];
-      const sections2: HelpSections = [
-        { type: 'usage', filter: ['flag1', 'single'], exclude: true },
-      ];
-      const sections3: HelpSections = [{ type: 'usage', filter: ['flag1'], required: ['flag1'] }];
-      const sections4: HelpSections = [{ type: 'usage', filter: ['flag2', 'flag1'] }];
-      const sections5: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
-      const sections6: HelpSections = [{ type: 'usage', filter: ['single', 'flag1'] }];
-      const sections7: HelpSections = [{ type: 'usage', filter: ['flag3'] }];
-      const sections8: HelpSections = [{ type: 'usage', exclude: ['flag1', 'single'] }];
+      const sections0: HelpSections = [{ type: 'usage', include: [] }]; // empty filter
+      const sections1: HelpSections = [{ type: 'usage', include: ['flag1'] }];
+      const sections2: HelpSections = [{ type: 'usage', exclude: ['flag1', 'single'] }];
+      const sections3: HelpSections = [{ type: 'usage', include: ['flag1'], required: ['flag1'] }];
+      const sections4: HelpSections = [{ type: 'usage', include: ['flag2', 'flag1'] }];
+      const sections5: HelpSections = [{ type: 'usage', include: ['flag3'] }];
+      const sections6: HelpSections = [{ type: 'usage', include: ['single', 'flag1'] }];
+      const sections7: HelpSections = [{ type: 'usage', include: ['flag3'] }];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s'] };
       expect(format(options, sections0, flags).wrap()).toEqual('');
       expect(format(options, sections1, flags).wrap()).toEqual('[-f1]\n');
@@ -495,7 +491,6 @@ describe('rendering a usage section', () => {
       expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
       expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
       expect(format(options, sections7, flags).wrap()).toEqual('');
-      expect(format(options, sections8, flags).wrap()).toEqual('[-f2]\n');
     });
   });
 
@@ -545,14 +540,14 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          filter: ['flag3', 'flag2', 'flag1'],
+          include: ['flag3', 'flag2', 'flag1'],
           inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
-          filter: ['flag3', 'flag2', 'flag1'],
+          include: ['flag3', 'flag2', 'flag1'],
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
@@ -619,14 +614,14 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          filter: ['flag3', 'flag2', 'flag1'],
+          include: ['flag3', 'flag2', 'flag1'],
           inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
-          filter: ['flag3', 'flag2', 'flag1'],
+          include: ['flag3', 'flag2', 'flag1'],
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
@@ -692,14 +687,14 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          filter: ['flag3', 'flag2', 'flag1'],
+          include: ['flag3', 'flag2', 'flag1'],
           inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
-          filter: ['flag3', 'flag2', 'flag1'],
+          include: ['flag3', 'flag2', 'flag1'],
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
@@ -735,8 +730,8 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage', inclusive: { flag: 'array', array: 'flag' } }];
-      const case1: HelpSections = [{ type: 'usage', filter: ['flag'] }];
-      const case2: HelpSections = [{ type: 'usage', filter: ['array'] }];
+      const case1: HelpSections = [{ type: 'usage', include: ['flag'] }];
+      const case2: HelpSections = [{ type: 'usage', include: ['array'] }];
       expect(format(options, case0).wrap()).toEqual('[(-f1|-f2) [-a] [...]]\n');
       expect(format(options, case1).wrap()).toEqual('[-f1|-f2]\n');
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');

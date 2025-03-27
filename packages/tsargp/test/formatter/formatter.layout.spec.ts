@@ -232,7 +232,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        filter: ['group', ''], // change the group order
+        include: ['group', ''], // change the group order
         names: { align: 'right' },
       },
     ];

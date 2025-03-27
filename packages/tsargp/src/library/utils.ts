@@ -209,7 +209,7 @@ export class OptionRegistry {
   constructor(readonly options: OpaqueOptions) {
     for (const [key, option] of getEntries(this.options)) {
       registerNames(this.names, this.letters, key, option);
-      if (option.positional !== undefined) {
+      if (isPositional(option)) {
         this.positional = [key, option, option.preferredName ?? ''];
       }
     }
@@ -331,6 +331,15 @@ export function isNiladic(type: OptionType): type is NiladicOptionType {
  */
 export function isCommand(type: OptionType): type is 'command' {
   return type === 'command';
+}
+
+/**
+ * Tests if an option accepts positional arguments.
+ * @param option The option definition
+ * @returns True if the option type is positional
+ */
+export function isPositional(option: OpaqueOption): boolean {
+  return !!option.positional || option.positional === '';
 }
 
 /**

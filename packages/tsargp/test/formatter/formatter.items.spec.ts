@@ -131,6 +131,17 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`      Will be read from the standard input.\n`);
   });
 
+  it('handle a single-valued option that does not accept positional arguments', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        positional: false,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(`  -s\n`);
+  });
+
   it('handle a single-valued option that accepts positional arguments', () => {
     const options = {
       single: {
