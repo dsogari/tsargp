@@ -15,7 +15,7 @@ describe('AnsiString', () => {
       it('preserve line breaks', () => {
         const result: Array<string> = [];
         new AnsiString().split('abc\n\ndef').wrap(result, 0, 0, false, true);
-        expect(result).toEqual(['abc', '\n\n', 'def']);
+        expect(result).toEqual(['abc', '\n', '\n', 'def']);
       });
 
       it('preserve emojis', () => {
@@ -74,7 +74,7 @@ describe('AnsiString', () => {
         it('keep indentation in new lines', () => {
           const result: Array<string> = [];
           new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, false, true);
-          expect(result).toEqual(['  ', 'abc', '\n\n', '  ', 'def']);
+          expect(result).toEqual(['  ', 'abc', '\n', '\n', '  ', 'def']);
         });
 
         it('avoid adjusting the current line if the string is empty', () => {
@@ -115,7 +115,7 @@ describe('AnsiString', () => {
           it('keep indentation in new lines with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, false);
-            expect(result).toEqual(['' + moveFwd2, 'abc', '\n\n', '' + moveFwd2, 'def']);
+            expect(result).toEqual(['' + moveFwd2, 'abc', '\n', '\n', '' + moveFwd2, 'def']);
           });
 
           it('adjust the current line with spaces', () => {
@@ -127,7 +127,7 @@ describe('AnsiString', () => {
           it('keep indentation in new lines with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, true);
-            expect(result).toEqual(['  ', 'abc', '\n\n', '  ', 'def']);
+            expect(result).toEqual(['  ', 'abc', '\n', '\n', '  ', 'def']);
           });
         });
       });
@@ -167,7 +167,7 @@ describe('AnsiString', () => {
       it('preserve line breaks', () => {
         const result: Array<string> = [];
         new AnsiString(0, 'left', 8).split('abc\n\nlargest').wrap(result);
-        expect(result).toEqual(['abc', '\n\n', 'largest']);
+        expect(result).toEqual(['abc', '\n', '\n', 'largest']);
       });
 
       it('preserve emojis', () => {
@@ -231,7 +231,7 @@ describe('AnsiString', () => {
         it('keep indentation in new lines if the largest word fits', () => {
           const result: Array<string> = [];
           new AnsiString(1, 'left', 8).split('abc\n\nlargest').wrap(result);
-          expect(result).toEqual([' ', 'abc', '\n\n', ' ', 'largest']);
+          expect(result).toEqual([' ', 'abc', '\n', '\n', ' ', 'largest']);
         });
 
         it('keep indentation in wrapped lines if the largest word fits', () => {

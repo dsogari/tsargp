@@ -490,7 +490,7 @@ export class AnsiString {
     const [firstStyled, ...restStyled] = other.styled;
     if (firstString) {
       this.add(firstString, firstStyled, other.mergeLeft);
-    } else if (firstStyled) {
+    } else if (firstString !== undefined) {
       strings.push(firstString);
       styled.push(firstStyled); // line feed
       curStyle.length = 0; // reset opening style
@@ -604,15 +604,11 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   break(count = 1): this {
-    const breaks = '\n'.repeat(max(0, count || 0));
-    if (breaks) {
-      const { strings, styled, count } = this;
-      if (!count || strings[count - 1]) {
-        strings.push(''); // the only case where the string can be empty
-        styled.push(breaks); // special case of styled string for line feeds
-      } else {
-        styled[count - 1] += breaks; // merge with previous line feeds
-      }
+    if (count > 0) {
+      const { strings, styled } = this;
+      const breaks = Array(count).fill('');
+      strings.push(...breaks); // the only case where the string can be empty
+      styled.push(...breaks); // special case of styled string for line feeds
       this.merge = false;
     }
     return this;
@@ -709,10 +705,10 @@ export class AnsiString {
       }
     }
     /** @ignore */
-    function feed(str: string) {
+    function feed() {
       alignRight();
       column = 0;
-      j = result.push(str); // save index for right-alignment
+      j = result.push('\n'); // save index for right-alignment
     }
     /** @ignore */
     function push(str: string, col: number) {
@@ -734,7 +730,7 @@ export class AnsiString {
     if (width < start + maxLength) {
       start = 0; // wrap to the first column instead
       if (column && strings[0]) {
-        feed('\n'); // forcefully break the first line
+        feed(); // forcefully break the first line
       }
     } else if (column < start && strings[0]) {
       push(move(column, start), start); // pad until start
@@ -744,23 +740,22 @@ export class AnsiString {
     for (let i = 0; i < count; i++) {
       let str = strings[i];
       const len = str.length;
-      const styledStr = styled[i];
       if (!len) {
-        feed(styledStr);
+        feed();
         continue;
       }
       if (!column && start) {
         push(pad, start);
       }
       if (emitStyles) {
-        str = styledStr;
+        str = styled[i];
       }
       if (column === start) {
         push(str, column + len);
       } else if (column + len < width) {
         push(' ' + str, column + 1 + len);
       } else {
-        feed('\n'); // keep line feeds separate from the rest
+        feed(); // keep line feeds separate from the rest
         push(pad + str, start + len);
       }
     }
