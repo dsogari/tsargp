@@ -78,13 +78,12 @@ export type FormatterFlags = {
 // Types
 //--------------------------------------------------------------------------------------------------
 /**
- * The precomputed ANSI strings for a help column.
- * Each item represents a slot in the column.
+ * The precomputed ANSI strings for a help column. Each item represents a slot in the column.
  */
 type HelpColumn = Array<AnsiString>;
 
 /**
- * The precomputed ANSI strings for a help entry.
+ * The precomputed ANSI strings for a help entry. Each item represents a help column.
  */
 type HelpEntry = [
   /**
@@ -433,6 +432,11 @@ function formatGroups(
   flags: FormatterFlags,
 ): EntriesByGroup {
   /** @ignore */
+  function merge(into: HelpColumn, from: HelpColumn) {
+    into.push(...from.splice(0)); // extract strings
+    into.splice(1).forEach((str) => into[0].other(str));
+  }
+  /** @ignore */
   function compute(column: HelpColumn, widths: Array<number>) {
     column.forEach((str, i) => (widths[i] = max(widths[i] ?? 0, str.lineWidth)));
   }
@@ -443,14 +447,12 @@ function formatGroups(
       return; // skip options without environment variable names, in this case
     }
     const paramColumn = formatParams(param, option);
-    const descrColumn = formatDescription(options, descr, option, flags, items);
+    const descrColumn = formatDescription(descr, options, option, flags, items);
     if (descr === null || descr?.merge) {
-      paramColumn.push(...descrColumn.splice(0)); // extract from descr
-      paramColumn.splice(1).forEach((str) => paramColumn[0].other(str));
+      merge(paramColumn, descrColumn);
     }
     if (param === null || param?.merge) {
-      namesColumn.push(...paramColumn.splice(0)); // extract from param
-      namesColumn.splice(1).forEach((str) => namesColumn[0].other(str));
+      merge(namesColumn, paramColumn);
     }
     compute(namesColumn, namesWidths);
     compute(paramColumn, paramWidths);
@@ -518,8 +520,7 @@ function adjustEntries(
     ];
   }
   const { names, param, descr } = section;
-  const slotIndent = names?.slotIndent;
-  const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, slotIndent);
+  const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, names?.slotIndent);
   const [paramStart, paramWidth] = getStartAndWidth(
     param,
     paramWidths,
@@ -535,27 +536,27 @@ function adjustEntries(
     descr?.absolute,
   );
   for (const [namesColumn, paramColumn, descrColumn] of getValues(groups).flat()) {
-    adjustColumn(namesColumn, namesWidths, namesStart, slotIndent, names?.maxWidth);
+    adjustColumn(namesColumn, namesWidths, namesStart, names?.slotIndent, names?.maxWidth);
     adjustColumn(paramColumn, paramWidths, paramStart, 0, param?.maxWidth);
-    adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth ?? NaN);
+    adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth ?? NaN); // terminal width
   }
 }
 
 /**
  * Gets the text alignment setting from a column layout.
  * @param column The column layout
- * @returns [The text alignment, if any, The number of leading line feeds, if any]
+ * @returns [The text alignment, The number of leading line feeds]
  */
 function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks?: number] {
   if (!column) {
     return [];
   }
   const { align, breaks } = column;
-  return [align, breaks ?? 0];
+  return [align, breaks ?? 0]; // breaks are used to determine if the column is present
 }
 
 /**
- * Formats an option's names to be printed on the terminal.
+ * Formats an option's names to be printed in a groups section.
  * This does not include the positional marker.
  * @param layout The column layout settings
  * @param option The option definition
@@ -593,10 +594,10 @@ function formatNames(
           if (slotted) {
             result.push(str);
           }
-          str.word(name, sty);
+          str.word(name, sty); // do not split the name
           sep = connectives.optionSep;
         } else if (slotted) {
-          result.push(new AnsiString());
+          result.push(new AnsiString()); // skip a slot
         }
       }
       str.popSty(); // pop style of the last string
@@ -606,7 +607,7 @@ function formatNames(
 }
 
 /**
- * Formats an option's parameter to be printed on the terminal.
+ * Formats an option's parameter to be printed in a groups section.
  * @param layout The column layout settings
  * @param option The option definition
  * @returns The help column
@@ -625,16 +626,16 @@ function formatParams(layout: HelpGroupsSection['param'], option: OpaqueOption):
 /**
  * Formats an option's description to be printed in a groups section.
  * The description always ends with a single line break.
- * @param options The option definitions
  * @param layout The column layout settings
+ * @param options The option definitions
  * @param option The option definition
  * @param flags The formatter flags
  * @param items The help items
  * @returns The help column
  */
 function formatDescription(
-  options: OpaqueOptions,
   layout: HelpGroupsSection['descr'],
+  options: OpaqueOptions,
   option: OpaqueOption,
   flags: FormatterFlags,
   items: HelpItems = allHelpItems,
@@ -654,7 +655,7 @@ function formatDescription(
 }
 
 /**
- * Formats a help section to be included in the full help message.
+ * Formats a help section to be included in the help message.
  * Options are rendered in the order specified in the definitions or in the section filter.
  * @param options The option definitions
  * @param section The help section
@@ -687,34 +688,54 @@ function formatHelpSection(
       formatTextBlock(heading, result);
     }
     if (type === 'usage') {
-      const baseSty = config.styles.base;
-      const prev: Array<AnsiString> = [];
-      let indent = content?.indent ?? 0;
-      let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
-      const progName = content?.text ?? flags.progName;
-      if (progName) {
-        const str = new AnsiString(indent)
-          .break(breaks)
-          .pushSty(baseSty)
-          .pushSty(content?.style)
-          .append(progName, !content?.noSplit)
-          .popSty()
-          .popSty();
-        prev.push(str);
-        indent = indent + str.lineWidth + 1; // get last column with indentation
-        breaks = 0; // avoid breaking between program name and usage
-      }
-      const str = new AnsiString(indent, content?.align).break(breaks).pushSty(baseSty);
-      formatUsage(keys, options, section, flags, str);
-      if (str.maxLength) {
-        if (section.comment) {
-          str.append(section.comment, !content?.noSplit);
-        }
-        result.push(...prev, str.popSty().break()); // include trailing line feed
-      }
+      formatUsageSection(options, section, keys, flags, result);
     } else if (content) {
       formatTextBlock(content, result, 1); // include trailing line feed
     }
+  }
+}
+
+/**
+ * Formats a usage section to be included in the help message.
+ * Options are rendered in the order specified in the definitions or in the section filter.
+ * @param options The option definitions
+ * @param section The help section
+ * @param keys The filtered option keys
+ * @param flags The formatter flags
+ * @param result The resulting message
+ */
+function formatUsageSection(
+  options: OpaqueOptions,
+  section: HelpUsageSection,
+  keys: ReadonlyArray<string>,
+  flags: FormatterFlags,
+  result: AnsiMessage,
+) {
+  const { text, style, align, noSplit, noBreakFirst } = section.content ?? {};
+  const progName = text ?? flags.progName;
+  const baseSty = config.styles.base;
+  const prev: Array<AnsiString> = [];
+  let indent = section.content?.indent ?? 0;
+  let breaks = noBreakFirst && !result.length ? 0 : (section.content?.breaks ?? 0);
+  if (progName) {
+    const str = new AnsiString(indent)
+      .break(breaks)
+      .pushSty(baseSty)
+      .pushSty(style)
+      .append(progName, !noSplit)
+      .popSty()
+      .popSty();
+    prev.push(str);
+    indent += str.lineWidth + 1; // get last column with indentation
+    breaks = 0; // avoid breaking between program name and usage
+  }
+  const str = new AnsiString(indent, align).break(breaks).pushSty(baseSty);
+  formatUsage(keys, options, section, flags, str);
+  if (str.maxLength) {
+    if (section.comment) {
+      str.append(section.comment, !noSplit);
+    }
+    result.push(...prev, str.popSty().break()); // include trailing line feed
   }
 }
 
@@ -776,7 +797,7 @@ function formatUsage(
   }
   const usage = createUsage(adjacency);
   sortUsageStatement(withMarkerSet, usage);
-  formatUsageStatement(requiredSet, options, flags, compact, result, components, usage);
+  formatUsageStatement(requiredSet, options, flags, result, components, usage, compact);
 }
 
 /**
@@ -834,26 +855,26 @@ function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStateme
  * @param requiredKeys The set of options to consider always required
  * @param options The option definitions
  * @param flags The formatter flags
- * @param compact Whether to keep alternatives compact
  * @param result The resulting string
  * @param components The option components
  * @param usage The usage statement
+ * @param compact Whether to keep alternatives compact
  */
 function formatUsageStatement(
   requiredKeys: ReadonlySet<string>,
   options: OpaqueOptions,
   flags: FormatterFlags,
-  compact: boolean = true,
   result: AnsiString,
   components: Readonly<RecordKeyMap>,
   usage: Readonly<UsageStatement>,
+  compact: boolean = true,
 ) {
   let alwaysRequired = false;
   let renderBrackets = false;
   const count = result.count;
   for (const element of usage) {
     if (isArray(element)) {
-      formatUsageStatement(requiredKeys, options, flags, compact, result, components, element);
+      formatUsageStatement(requiredKeys, options, flags, result, components, element, compact);
       continue;
     }
     const keys = components[element];
@@ -868,9 +889,9 @@ function formatUsageStatement(
         const hasRequiredPart = formatUsageOption(
           option,
           flags,
-          compact,
           isAlone,
           isRequired,
+          compact,
           result,
         );
         alwaysRequired ||= isRequired;
@@ -890,18 +911,18 @@ function formatUsageStatement(
  * Formats an option to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
- * @param compact Whether to keep alternatives compact
  * @param isAlone True if the option is alone in a dependency group
  * @param isRequired True if the option is considered always required
+ * @param compact Whether to keep alternatives compact
  * @param result The resulting string
  * @returns True if a non-optional part was rendered
  */
 function formatUsageOption(
   option: OpaqueOption,
   flags: FormatterFlags,
-  compact: boolean,
   isAlone: boolean,
   isRequired: boolean,
+  compact: boolean,
   result: AnsiString,
 ): boolean {
   const { exprOpen, exprClose, optionAlt, optionalOpen, optionalClose } = config.connectives;
@@ -1009,7 +1030,7 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
     }
     result.value(param, { sep: '', ...openArrayNoMergeFlags });
   } else {
-    result.append(name);
+    result.append(name); // split parameter name, if necessary
   }
   if (result.count > count) {
     result.close(ellipsis);

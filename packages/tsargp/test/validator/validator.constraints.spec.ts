@@ -6,7 +6,7 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
   describe('when an option has choices', () => {
-    it('throw an error on single-valued option duplicate choice value', () => {
+    it('throw an error on single-valued option with duplicate choice value', () => {
       const options = {
         single: {
           type: 'single',
@@ -82,7 +82,7 @@ describe('validate', () => {
           single: {
             type: 'single',
             names: ['-s'],
-            inline: { a: false },
+            inline: { a: 'always' },
           },
         } as const satisfies Options;
         expect(validate(options)).rejects.toThrow(`Option single has invalid inline constraint.`);
@@ -114,7 +114,7 @@ describe('validate', () => {
         expect(validate(options)).rejects.toThrow(`Option single has invalid inline constraint.`);
       });
 
-      it('accept a single-valued option with a name', () => {
+      it('accept an array-valued option with a name', () => {
         const options = {
           array: {
             type: 'array',

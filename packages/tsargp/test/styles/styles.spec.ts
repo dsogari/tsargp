@@ -6,7 +6,7 @@ const bold = style(tf.bold);
 
 describe('AnsiString', () => {
   describe('break', () => {
-    it('add consecutive line feeds', () => {
+    it('merge consecutive line feeds', () => {
       const str = new AnsiString().break(2).break();
       expect(str.strings).toEqual(['']);
       expect(str.styled).toEqual(['\n\n\n']);
@@ -26,8 +26,8 @@ describe('AnsiString', () => {
     });
 
     it('compute maximum line width among all lines, counting spaces', () => {
-      const str = new AnsiString().break().word('type').break().word('script').word('is').break();
-      expect(str.lineWidth).toEqual(9);
+      const str = new AnsiString().break().word('type').word('is').break().word('script').break();
+      expect(str.lineWidth).toEqual(7);
     });
   });
 

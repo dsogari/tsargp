@@ -45,7 +45,7 @@ describe('format', () => {
         descr: { breaks: 1 },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch(
+    expect(format(options, sections).wrap()).toEqual(
       '\n\n' +
         '               A flag option\n\n' +
         '  -s\n' +
@@ -71,7 +71,7 @@ describe('format', () => {
         descr: { breaks: 1, absolute: true },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
+    expect(format(options, sections).wrap()).toEqual(`\n  -s\n  <param>\n  A string option\n`);
   });
 
   it('break columns in the help message when configured non-positive indentation', () => {
@@ -91,7 +91,7 @@ describe('format', () => {
         descr: { breaks: 1, indent: NaN },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch('\n-s\n <param>\n        A string option\n');
+    expect(format(options, sections).wrap()).toEqual('\n-s\n <param>\n        A string option\n');
   });
 
   it('hide the option names from the help message when configured to do so', () => {

@@ -604,14 +604,14 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   break(count = 1): this {
-    const breaks = '\n'.repeat(max(0, count));
+    const breaks = '\n'.repeat(max(0, count || 0));
     if (breaks) {
       const { strings, styled, count } = this;
       if (!count || strings[count - 1]) {
         strings.push(''); // the only case where the string can be empty
         styled.push(breaks); // special case of styled string for line feeds
       } else {
-        styled[count - 1] += breaks;
+        styled[count - 1] += breaks; // merge with previous line feeds
       }
       this.merge = false;
     }
@@ -684,7 +684,7 @@ export class AnsiString {
   /**
    * Wraps the internal strings to fit in a terminal width.
    * @param result The resulting list
-   * @param column The current terminal column
+   * @param currentColumn The current terminal column
    * @param terminalWidth The desired terminal width (or zero or NaN to avoid wrapping)
    * @param emitStyles True if styles should be emitted
    * @param emitSpaces True if spaces should be emitted instead of move sequences
@@ -692,7 +692,7 @@ export class AnsiString {
    */
   wrap(
     result: Array<string>,
-    column: number = 0,
+    currentColumn: number = 0,
     terminalWidth: number = 0,
     emitStyles: boolean = false,
     emitSpaces: boolean = true,
@@ -716,10 +716,10 @@ export class AnsiString {
     }
     const { strings, styled, count, maxLength, align } = this;
     if (!count) {
-      return column;
+      return currentColumn;
     }
     // sanitize input
-    column = max(0, column || 0);
+    let column = max(0, currentColumn || 0);
     const indent = max(0, this.indent || 0);
     const width = indent + max(0, this.width || NaN) || max(0, terminalWidth || 0) || Infinity;
     let start = max(0, min(indent, width));
@@ -799,9 +799,9 @@ export class AnsiString {
   /**
    * Appends a text that may contain inline styles.
    * @param text The text to be appended (may be a normal string or another ANSI string)
-   * @param split Whether to split the text if it is a normal string
+   * @param split Whether to split the text if it is a normal string (defaults to `true`)
    * @param close Whether the text should be merged with the previous string, if it is a normal
-   * string and is not split
+   * string and is not split (defaults to `false`)
    * @returns The ANSI string instance
    */
   append(text: StyledString, split: boolean = true, close: boolean = false): this {
