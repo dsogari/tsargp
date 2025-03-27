@@ -148,6 +148,21 @@ The `noBreakFirst` is useful in two cases:
 - in a **groups** section with many groups, to ensure that the first group heading will have no leading line feed; or
 - when it is not known whether previous sections will have content (e.g., if the help can be invoked with an [option filter])
 
+### Filter properties
+
+The **usage** and **groups** sections share these properties:
+
+- `include` -- a list of options or groups to include (defaults to including all)
+- `exclude` -- a list of options or groups to exclude (defaults to excluding none)
+
+> [!TIP]
+>
+> These properties can be used to create multiple usages of the same command.
+
+> [!NOTE]
+>
+> These properties match exactly. Options and groups are listed in order of inclusion. The exception is an option with a [positional marker], which comes _last_ in a usage statement.
+
 ### Text section
 
 A **text** section can be used to write various kinds of content, such as introduction, instructions, afterword, copyright notice or external references. It contains only the [common properties].
@@ -178,23 +193,13 @@ The [usage statement] is a concise representation of the command-line structure.
 
 Option parameters are rendered similarly to the [parameter column], except that [parameter name] attributes are given priority over [example value]. Also, the `content.text` property can be used to override the [program name].
 
-In addition to the [common properties], a **usage** section has the following optional properties:
+In addition to the [common properties] and [filter properties], a **usage** section has the following optional properties:
 
-- `filter` -- a list of options to include or exclude (defaults to including all options)
-- `exclude` -- whether the filter should exclude, or what to exclude (defaults to `false{:ts}`)
 - `required` -- a list of options that should be considered always required (defaults to none)
 - `inclusive` -- a record that specifies inclusive [option dependencies] (defaults to none)
 - `exclusive` -- reserved for mutually exclusive [option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
 - `compact` -- whether to keep alternatives compact (defaults to true)
-
-> [!TIP]
->
-> The `filter` property can be used to create multiple usages of the same command, with different options.
-
-> [!NOTE]
->
-> The `filter` and `exclude` properties match exactly. Options are listed in order of inclusion. The exception is an option with a [positional marker], which comes _last_ in the usage.
 
 #### Option dependencies
 
@@ -223,10 +228,8 @@ The `exclusive` property of a **usage** section is reserved for mutual exclusivi
 
 A **groups** section is a collection of option groups and their help entries. The [option group] attribute is used as a heading for each group, except for the _default_ group, which borrows the `heading.text` property, if present. The default group also includes the value of `content.text`, if present, as a preface before listing its entries.
 
-In addition to the [common properties], this type of section has the following optional properties:
+In addition to the [common properties] and [filter properties], this type of section has the following optional properties:
 
-- `filter` -- a list of group names to include or exclude (defaults to including all groups)
-- `exclude` -- whether the filter should exclude, or what to exclude (defaults to `false{:ts}`)
 - `names` -- the [layout settings] for the [names column]
 - `param` -- the [layout settings] for the [parameter column]
 - `descr` -- the [layout settings] for the [description column]
@@ -236,10 +239,6 @@ In addition to the [common properties], this type of section has the following o
 > [!TIP]
 >
 > The `useEnv` property can be used to create a dedicated section for environment variables.
-
-> [!NOTE]
->
-> The `filter` and `exclude` properties match exactly. Groups are listed in order of inclusion.
 
 ## Layout settings
 
@@ -370,6 +369,7 @@ Below is an excerpt of a help message produced with the above configuration:
 [help items]: #help-items
 [name slots]: #name-slots
 [common properties]: #common-properties
+[filter properties]: #filter-properties
 [text block]: #text-block
 [formatter flags]: #formatter-flags
 [option dependencies]: #option-dependencies
