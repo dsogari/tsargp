@@ -14,7 +14,6 @@ import type {
   RequirementCallback,
   Requires,
   RequiresEntry,
-  StyledString,
   WithBasicLayout,
   WithMergedLayout,
 } from './options.js';
@@ -40,7 +39,6 @@ import {
   isString,
   max,
   min,
-  regex,
   setDifference,
   setIntersection,
   stronglyConnected,
@@ -695,9 +693,14 @@ function formatHelpSection(
       let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
       const progName = content?.text ?? flags.progName;
       if (progName) {
-        const str = new AnsiString(indent).break(breaks).pushSty(baseSty).pushSty(content?.style);
-        appendStyledString(progName, str, content?.noSplit);
-        prev.push(str.popSty().popSty());
+        const str = new AnsiString(indent)
+          .break(breaks)
+          .pushSty(baseSty)
+          .pushSty(content?.style)
+          .append(progName, !content?.noSplit)
+          .popSty()
+          .popSty();
+        prev.push(str);
         indent = indent + str.lineWidth + 1; // get last column with indentation
         breaks = 0; // avoid breaking between program name and usage
       }
@@ -705,29 +708,13 @@ function formatHelpSection(
       formatUsage(keys, options, section, flags, str);
       if (str.maxLength) {
         if (section.comment) {
-          appendStyledString(section.comment, str, content?.noSplit);
+          str.append(section.comment, !content?.noSplit);
         }
         result.push(...prev, str.popSty().break()); // include trailing line feed
       }
     } else if (content) {
       formatTextBlock(content, result, 1); // include trailing line feed
     }
-  }
-}
-
-/**
- * Appends a string that may contain inline styles to a ANSI string.
- * @param str The string to be appended
- * @param result The resulting string
- * @param noSplit Whether to disable text splitting
- */
-function appendStyledString(str: StyledString, result: AnsiString, noSplit: boolean = false) {
-  if (!isString(str)) {
-    result.other(str);
-  } else if (noSplit) {
-    result.add(str.replace(regex.sgr, ''), str);
-  } else {
-    result.split(str);
   }
 }
 
@@ -742,9 +729,13 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
   const breaksBefore = noBreakFirst && !result.length ? 0 : (breaks ?? 0);
   const str = new AnsiString(indent, align).break(breaksBefore);
   if (text) {
-    str.pushSty(config.styles.base).pushSty(style);
-    appendStyledString(text, str, noSplit);
-    str.popSty().popSty().break(breaksAfter);
+    str
+      .pushSty(config.styles.base)
+      .pushSty(style)
+      .append(text, !noSplit)
+      .popSty()
+      .popSty()
+      .break(breaksAfter);
   }
   result.push(str);
 }
@@ -1018,7 +1009,7 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
     }
     result.value(param, { sep: '', ...openArrayNoMergeFlags });
   } else {
-    appendStyledString(name, result);
+    result.append(name);
   }
   if (result.count > count) {
     result.close(ellipsis);

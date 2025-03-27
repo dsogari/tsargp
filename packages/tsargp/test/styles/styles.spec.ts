@@ -1,23 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import { AnsiString, cs, fg, bg, tf, ul, ext8, rgb, seq, style } from '../../src/library';
+import { AnsiString, fg, bg, tf, ul, ext8, rgb, style } from '../../src/library';
 
 const clr = style(tf.clear);
 const bold = style(tf.bold);
 
 describe('AnsiString', () => {
-  describe('add', () => {
-    it('add sequences', () => {
-      const str = new AnsiString()
-        .add('', '' + seq(cs.rcp))
-        .add('', '' + seq(cs.cbt, 1))
-        .add('', '' + seq(cs.tbm, 1, 2))
-        .add('', '' + seq(cs.rm, 1, 2, 3));
-      expect(str.count).toEqual(0);
-      expect(str.strings).toBeEmpty();
-      expect(str.styled).toBeEmpty();
-    });
-  });
-
   describe('break', () => {
     it('add consecutive line feeds', () => {
       const str = new AnsiString().break(2).break();
@@ -273,6 +260,10 @@ describe('AnsiString', () => {
   });
 
   describe('value', () => {
+    // TODO
+  });
+
+  describe('append', () => {
     // TODO
   });
 

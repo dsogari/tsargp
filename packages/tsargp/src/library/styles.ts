@@ -18,6 +18,7 @@ import {
   streamWidth,
   min,
   getValues,
+  isString,
 } from './utils.js';
 
 export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };
@@ -362,6 +363,11 @@ export type ExtendedAttribute = StylingAttribute | IndexedColor | RgbColor;
  */
 export type TextAlignment = 'left' | 'right';
 
+/**
+ * A string that may contain inline styles.
+ */
+export type StyledString = string | AnsiString;
+
 //--------------------------------------------------------------------------------------------------
 // Internal types
 //--------------------------------------------------------------------------------------------------
@@ -631,13 +637,12 @@ export class AnsiString {
 
   /**
    * Appends a text.
-   * This is supposed to be a private method, but we need to call it from within the module.
    * @param text The text with no control sequences
    * @param styledText The text with possible control sequences (should not be empty)
    * @param close True if the text should be merged with the previous string, if any
    * @returns The ANSI string instance
    */
-  add(text: string, styledText: string, close = false): this {
+  private add(text: string, styledText: string, close: boolean = false): this {
     if (!text) {
       const sty: Style = seqFromText(cs.sgr, styledText);
       return close ? this.closeSty(sty) : this.openSty(sty);
@@ -789,6 +794,22 @@ export class AnsiString {
   value(value: unknown, flags: FormattingFlags = {}): this {
     formatFunctions.v(value, this, flags);
     return this;
+  }
+
+  /**
+   * Appends a text that may contain inline styles.
+   * @param text The text to be appended (may be a normal string or another ANSI string)
+   * @param split Whether to split the text if it is a normal string
+   * @param close Whether the text should be merged with the previous string, if it is a normal
+   * string and is not split
+   * @returns The ANSI string instance
+   */
+  append(text: StyledString, split: boolean = true, close: boolean = false): this {
+    return !isString(text)
+      ? this.other(text)
+      : split
+        ? this.split(text)
+        : this.add(text.replace(regex.sgr, ''), text, close);
   }
 
   /**
@@ -999,15 +1020,13 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
   for (const word of words) {
     if (word) {
       const parts = word.split(regex.spec);
-      let text = parts[0].replace(regex.sgr, '');
-      result.add(text, parts[0]);
+      result.append(parts[0], false);
       for (let i = 1; i < parts.length; i += 2) {
-        if (text) {
+        if (parts[i - 1]) {
           result.merge = true;
         }
         boundFormat?.(parts[i]);
-        text = parts[i + 1].replace(regex.sgr, '');
-        result.add(text, parts[i + 1], true);
+        result.append(parts[i + 1], false, true);
       }
     }
   }

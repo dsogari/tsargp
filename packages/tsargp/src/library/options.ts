@@ -2,7 +2,7 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
-import type { AnsiMessage, AnsiString, Style, TextAlignment } from './styles.js';
+import type { AnsiMessage, Style, StyledString, TextAlignment } from './styles.js';
 import type { Promissory, Resolve } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -141,11 +141,6 @@ export type WithMergedLayout = {
    */
   readonly absolute?: never;
 };
-
-/**
- * A string that may contain inline styles.
- */
-export type StyledString = string | AnsiString;
 
 /**
  * Defines attributes for a help text block.
