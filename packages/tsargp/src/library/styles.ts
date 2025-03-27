@@ -431,7 +431,7 @@ export class AnsiString {
   /**
    * Whether the first string should be merged with the previous string.
    */
-  public mergeLeft: boolean = false;
+  private mergeLeft: boolean = false;
 
   /**
    * Whether the last string should be merged with the next string.
@@ -704,15 +704,20 @@ export class AnsiString {
     /** @ignore */
     function alignRight() {
       if (needToAlign && j < result.length && column < width) {
-        const pad = move(column, width); // remaining columns until right boundary
-        result.splice(j, 0, pad); // insert padding at the indentation boundary
+        result.splice(j, 0, move(column, width)); // insert padding at the beginning of the line
         column = width;
       }
     }
     /** @ignore */
-    function push(str: string, col: number): number {
+    function feed(str: string) {
+      alignRight();
+      column = 0;
+      j = result.push(str); // save index for right-alignment
+    }
+    /** @ignore */
+    function push(str: string, col: number) {
       column = col;
-      return result.push(str);
+      result.push(str);
     }
     const { strings, styled, count, maxLength, align } = this;
     if (!count) {
@@ -723,30 +728,29 @@ export class AnsiString {
     const indent = max(0, this.indent || 0);
     const width = indent + max(0, this.width || NaN) || max(0, terminalWidth || 0) || Infinity;
     let start = max(0, min(indent, width));
+    let j = result.length; // save index for right-alignment
+    const needToAlign = isFinite(width) && align === 'right';
 
     if (width < start + maxLength) {
       start = 0; // wrap to the first column instead
       if (column && strings[0]) {
-        push('\n', 0); // forcefully break the first line
+        feed('\n'); // forcefully break the first line
       }
     } else if (column < start && strings[0]) {
       push(move(column, start), start); // pad until start
     }
 
-    const needToAlign = isFinite(width) && align === 'right';
     const pad = start ? move(0, start) : '';
-    let j = result.length; // save index for right-alignment
     for (let i = 0; i < count; i++) {
       let str = strings[i];
       const len = str.length;
       const styledStr = styled[i];
       if (!len) {
-        alignRight();
-        j = push(styledStr, 0); // save index for right-alignment
+        feed(styledStr);
         continue;
       }
-      if (!column && pad) {
-        j = push(pad, start); // save index for right-alignment
+      if (!column && start) {
+        push(pad, start);
       }
       if (emitStyles) {
         str = styledStr;
@@ -756,9 +760,8 @@ export class AnsiString {
       } else if (column + len < width) {
         push(' ' + str, column + 1 + len);
       } else {
-        alignRight();
-        j = push('\n' + pad, start + len); // save index for right-alignment
-        result.push(str);
+        feed('\n'); // keep line feeds separate from the rest
+        push(pad + str, start + len);
       }
     }
     alignRight();

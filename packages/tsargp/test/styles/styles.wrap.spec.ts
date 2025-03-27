@@ -225,7 +225,7 @@ describe('AnsiString', () => {
         it('adjust the current line with indentation if the largest word fits', () => {
           const result: Array<string> = [];
           new AnsiString(1, 'left', 8).split('abc largest').wrap(result);
-          expect(result).toEqual([' ', 'abc', '\n ', 'largest']);
+          expect(result).toEqual([' ', 'abc', '\n', ' largest']);
         });
 
         it('keep indentation in new lines if the largest word fits', () => {
@@ -237,7 +237,7 @@ describe('AnsiString', () => {
         it('keep indentation in wrapped lines if the largest word fits', () => {
           const result: Array<string> = [];
           new AnsiString(1, 'left', 8).split('abc largest').wrap(result);
-          expect(result).toEqual([' ', 'abc', '\n ', 'largest']);
+          expect(result).toEqual([' ', 'abc', '\n', ' largest']);
         });
 
         it('avoid keeping indentation when the largest word does not fit', () => {
@@ -250,7 +250,7 @@ describe('AnsiString', () => {
           it('add a line break when a word does not fit the width', () => {
             const result: Array<string> = [];
             new AnsiString(2, 'left', 6).word('word').wrap(result, 4);
-            expect(result).toEqual(['\n  ', 'word']);
+            expect(result).toEqual(['\n', '  word']);
           });
 
           it('avoid adding a line break when a word fits the width', () => {
@@ -266,13 +266,13 @@ describe('AnsiString', () => {
           it('keep indentation in wrapped lines with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, false);
-            expect(result).toEqual(['' + moveFwd1, 'abc', '\n' + moveFwd1, 'largest']);
+            expect(result).toEqual(['' + moveFwd1, 'abc', '\n', moveFwd1 + 'largest']);
           });
 
           it('keep indentation in wrapped lines with spaces', () => {
             const result: Array<string> = [];
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, true);
-            expect(result).toEqual([' ', 'abc', '\n ', 'largest']);
+            expect(result).toEqual([' ', 'abc', '\n', ' largest']);
           });
         });
       });
@@ -292,6 +292,14 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           new AnsiString(0, 'right', 8).split('type script').wrap(result);
           expect(result).toEqual(['    ', 'type', '\n', '  ', 'script']);
+        });
+
+        describe('the starting column and current column is not zero', () => {
+          it('align when the largest word does not fit ', () => {
+            const result: Array<string> = [];
+            new AnsiString(1, 'right', 5).split('abc largest').wrap(result, 2);
+            expect(result).toEqual(['\n', '   ', 'abc', '\n', 'largest']);
+          });
         });
 
         describe('emitting styles', () => {
