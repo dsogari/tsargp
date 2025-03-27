@@ -26,14 +26,14 @@ describe('AnsiString', () => {
 
     it('split text with paragraphs', () => {
       const str = new AnsiString().split('type\nscript\n\nis\nfun');
-      expect(str.strings).toEqual(['type', 'script', '', 'is', 'fun']);
-      expect(str.styled).toEqual(['type', 'script', '\n\n', 'is', 'fun']);
+      expect(str.strings).toEqual(['type', 'script', '', '', 'is', 'fun']);
+      expect(str.styled).toEqual(['type', 'script', '', '', 'is', 'fun']);
     });
 
     it('split text with list items', () => {
       const str = new AnsiString().split('type:\n- script\n1. is fun');
       expect(str.strings).toEqual(['type:', '', '-', 'script', '', '1.', 'is', 'fun']);
-      expect(str.styled).toEqual(['type:', '\n', '-', 'script', '\n', '1.', 'is', 'fun']);
+      expect(str.styled).toEqual(['type:', '', '-', 'script', '', '1.', 'is', 'fun']);
     });
 
     describe('using placeholders', () => {
@@ -55,7 +55,7 @@ describe('AnsiString', () => {
         });
         const str = new AnsiString().split('#0', format);
         expect(str.strings).toEqual(['-', 'item', '', '*', 'item', '', '1.', 'item']);
-        expect(str.styled).toEqual(['-', 'item', '\n', '*', 'item', '\n', '1.', 'item']);
+        expect(str.styled).toEqual(['-', 'item', '', '*', 'item', '', '1.', 'item']);
         expect(format).toHaveBeenCalledTimes(1);
         expect(format).toHaveBeenCalledWith('#0');
       });

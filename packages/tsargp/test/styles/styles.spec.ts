@@ -6,16 +6,10 @@ const bold = style(tf.bold);
 
 describe('AnsiString', () => {
   describe('break', () => {
-    it('merge consecutive line feeds', () => {
+    it('avoid merging consecutive line feeds', () => {
       const str = new AnsiString().break(2).break();
-      expect(str.strings).toEqual(['']);
-      expect(str.styled).toEqual(['\n\n\n']);
-    });
-
-    it('add non-consecutive line feeds', () => {
-      const str = new AnsiString().break(2).word('word').break();
-      expect(str.strings).toEqual(['', 'word', '']);
-      expect(str.styled).toEqual(['\n\n', 'word', '\n']);
+      expect(str.strings).toEqual(['', '', '']);
+      expect(str.styled).toEqual(['', '', '']);
     });
   });
 
@@ -69,7 +63,7 @@ describe('AnsiString', () => {
     it('avoid merging with the next string if it is a line feed', () => {
       const str = new AnsiString().open('type').break().word(']');
       expect(str.strings).toEqual(['type', '', ']']);
-      expect(str.styled).toEqual(['type', '\n', ']']);
+      expect(str.styled).toEqual(['type', '', ']']);
     });
   });
 
@@ -159,7 +153,7 @@ describe('AnsiString', () => {
         const str1 = new AnsiString().break();
         const str2 = new AnsiString().open('type').other(str1).word('script');
         expect(str2.strings).toEqual(['type', '', 'script']);
-        expect(str2.styled).toEqual(['type', '\n', 'script']);
+        expect(str2.styled).toEqual(['type', '', 'script']);
       });
 
       it('merge the endpoint strings if the merge flag is set in the self string', () => {
@@ -223,7 +217,7 @@ describe('AnsiString', () => {
     it('avoid merging with the last string if it is a line feed', () => {
       const str = new AnsiString().word('type').break().close(']');
       expect(str.strings).toEqual(['type', '', ']']);
-      expect(str.styled).toEqual(['type', '\n', ']']);
+      expect(str.styled).toEqual(['type', '', ']']);
     });
   });
 
