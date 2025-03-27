@@ -16,13 +16,13 @@ import {
   findSimilar,
   getEntries,
   getKeys,
-  getLastOptionName,
   getNestedOptions,
   getOptionEnvVars,
   getOptionNames,
   getParamCount,
   getSymbol,
   getValues,
+  hasSuppliableName,
   isCommand,
   isEnvironmentOnly,
   isMessage,
@@ -67,7 +67,7 @@ export type ValidationFlags = {
   /**
    * Whether the validation procedure should skip generation of warnings.
    */
-  readonly noWarnings?: boolean;
+  readonly noWarn?: boolean;
   /**
    * Whether the validation procedure should skip recursion into nested options.
    */
@@ -161,7 +161,7 @@ async function validateOptions(context: ValidationContext) {
       positional = key;
     }
   }
-  if (!flags.noWarnings) {
+  if (!flags.noWarn) {
     detectNamingIssues(context, names);
   }
 }
@@ -348,26 +348,30 @@ function validateConstraints(
     const set = new Set(choices);
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
-      if (dup) {
+      if (dup !== undefined) {
         throw ErrorMessage.create(ErrorItem.duplicateParameterChoice, {}, prefixedKey, dup);
       }
     }
   }
   if (
-    (typeof paramCount === 'number' && (paramCount < 0 || isNaN(paramCount))) ||
-    (isObject(paramCount) && (paramCount[0] < 0 || paramCount[0] >= paramCount[1]))
+    paramCount !== undefined &&
+    (isObject(paramCount)
+      ? !(paramCount[0] >= 0) || !(paramCount[0] < paramCount[1])
+      : !(paramCount >= 0)) // handle NaN
   ) {
     throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, prefixedKey, paramCount);
   }
   const [min, max] = getParamCount(option);
   if (
-    ((!max || max > 1) && !separator && !append && inline === 'always') ||
-    (getLastOptionName(option) === undefined && !cluster && inline !== undefined) ||
-    (typeof inline === 'object' && getKeys(inline).findIndex((key) => !names?.includes(key)) >= 0)
+    inline !== undefined &&
+    (!hasSuppliableName(option) ||
+      (inline === 'always'
+        ? (!max || max > 1) && !separator && !append
+        : inline && getKeys(inline).findIndex((key) => !names?.includes(key)) >= 0))
   ) {
     throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, prefixedKey);
   }
-  if (!flags.noWarnings && min < max && cluster) {
+  if (!flags.noWarn && min < max && cluster) {
     warning.add(ErrorItem.variadicWithClusterLetter, {}, prefixedKey);
   }
   if (type === 'array') {

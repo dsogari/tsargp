@@ -9,7 +9,6 @@ const footerSection: HelpTextSection = {
   content: {
     text: await sectionFooter('tsargp/package', `Report bugs: #0`, '/issues'),
     breaks: 1,
-    noSplit: true,
   },
 };
 

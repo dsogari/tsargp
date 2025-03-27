@@ -10,16 +10,18 @@ describe('validate', () => {
       const options = {
         single: {
           type: 'single',
-          choices: ['dup', 'dup'],
+          names: ['-s'],
+          choices: ['', ''], // test empty choice
         },
       } as const satisfies Options;
-      expect(validate(options)).rejects.toThrow(`Option single has duplicate choice 'dup'.`);
+      expect(validate(options)).rejects.toThrow(`Option single has duplicate choice ''.`);
     });
 
     it('throw an error on array-valued option with duplicate choice value', () => {
       const options = {
         array: {
           type: 'array',
+          names: ['-a'],
           choices: ['dup', 'dup'],
         },
       } as const satisfies Options;
@@ -47,7 +49,7 @@ describe('validate', () => {
           inline: {},
         },
       } as const satisfies Options;
-      expect(validate(options, { noWarnings: true })).resolves.toEqual({});
+      expect(validate(options, { noWarn: true })).resolves.toEqual({});
     });
 
     describe('when an option disallows inline parameters', () => {
@@ -263,6 +265,7 @@ describe('validate', () => {
         const options = {
           function: {
             type: 'function',
+            names: ['-f'],
             paramCount: [0, 0],
           },
         } as const satisfies Options;
@@ -275,11 +278,38 @@ describe('validate', () => {
         const options = {
           function: {
             type: 'function',
+            names: ['-f'],
             paramCount: [-1, 1],
           },
         } as const satisfies Options;
         expect(validate(options)).rejects.toThrow(
           `Option function has invalid parameter count [-1, 1].`,
+        );
+      });
+
+      it('throw an error on function option with invalid range maximum with NaN', () => {
+        const options = {
+          function: {
+            type: 'function',
+            names: ['-f'],
+            paramCount: [1, NaN],
+          },
+        } as const satisfies Options;
+        expect(validate(options)).rejects.toThrow(
+          `Option function has invalid parameter count [1, NaN].`,
+        );
+      });
+
+      it('throw an error on function option with invalid range minimum with NaN', () => {
+        const options = {
+          function: {
+            type: 'function',
+            names: ['-f'],
+            paramCount: [NaN, 1],
+          },
+        } as const satisfies Options;
+        expect(validate(options)).rejects.toThrow(
+          `Option function has invalid parameter count [NaN, 1].`,
         );
       });
     });

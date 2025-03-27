@@ -170,7 +170,7 @@ export type HelpTextBlock = {
    */
   readonly breaks?: number;
   /**
-   * Whether to disable text splitting.
+   * Whether to disable text splitting. Ignored if the text is a ANSI string.
    * @default false
    */
   readonly noSplit?: true;

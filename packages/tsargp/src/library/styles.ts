@@ -9,16 +9,16 @@ import { config } from './config.js';
 import { cs, tf, fg, bg, ul } from './enums.js';
 import {
   getEntries,
+  getValues,
   isArray,
+  isString,
   max,
-  omitStyles,
+  min,
   omitSpaces,
+  omitStyles,
   regex,
   selectAlternative,
   streamWidth,
-  min,
-  getValues,
-  isString,
 } from './utils.js';
 
 export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };

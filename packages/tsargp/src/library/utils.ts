@@ -103,7 +103,7 @@ export type RecordKeyMap = Record<string, Array<string>>;
 export type UsageStatement = Array<string | UsageStatement>;
 
 /**
- * A record of string keys with unknown values.
+ * A record of string keys and unknown values.
  */
 export type UnknownRecord = Record<string, unknown>;
 
@@ -178,7 +178,7 @@ const jsonImportOptions: ImportCallOptions = {
 };
 
 const { min, max } = Math;
-export { min, max };
+export { min, max }; // to avoid typing `Math` all the time and reduce footprint
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -278,13 +278,23 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
 }
 
 /**
+ * Checks whether an option has a name that can be supplied on the command line.
+ * Does not include the positional marker.
+ * @param option The option definition
+ * @returns True if the option has a name that can be supplied
+ */
+export function hasSuppliableName(option: OpaqueOption): boolean {
+  return !!option.cluster || getLastOptionName(option) !== undefined;
+}
+
+/**
  * Checks whether an option can only be supplied through the environment.
  * Does not check whether the environment attributes are actually set.
  * @param option The option definition
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;
+  return !hasSuppliableName(option) && option.positional === undefined;
 }
 
 /**
