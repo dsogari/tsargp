@@ -59,7 +59,7 @@ export default {
         content: { indent: 2 },
         filter: ['help', 'version', 'helpEnv', 'hello'],
         exclude: true,
-        requires: { boolean: 'strChoice' },
+        inclusive: { boolean: 'strChoice' },
       },
     ],
     useCommand: true,

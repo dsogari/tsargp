@@ -756,7 +756,7 @@ function formatUsage(
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, exclude, required, requires, inclusive, compact } = section;
+  const { filter, exclude, required, inclusive, compact } = section;
   const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
   const requiredSet = new Set(required?.filter((key) => key in options));
   const selectedSet = new Set(keys);
@@ -764,7 +764,7 @@ function formatUsage(
     incl ? setIntersection(new Set(incl), selectedSet) : selectedSet,
     new Set(excl),
   ); // preserve filter order
-  const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive ?? requires);
+  const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {
