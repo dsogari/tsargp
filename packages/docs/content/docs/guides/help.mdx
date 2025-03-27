@@ -74,11 +74,9 @@ export default {
       {
         type: 'groups',
         // ...
-        layout: {
-          names: { indent: 4 }, // indent option names by 4 spaces
-          descr: { breaks: 1 }, // line feed before option descriptions
-          param: { hidden: true }, // hide option parameter/examples
-        },
+        names: { indent: 4 }, // indent option names by 4 spaces
+        descr: { breaks: 1 }, // line feed before option descriptions
+        param: null, // hide option parameter/examples
         items: [HelpItem.synopsis, HelpItem.deprecated],
       },
       // ...
