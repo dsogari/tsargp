@@ -740,7 +740,7 @@ export class AnsiString {
       if (column) {
         if (column < start) {
           len2 = start - column;
-          pad2 = move(len2); // pad until start (only executed once)
+          pad2 = move(len2); // pad until start (only executed once, i.e., for the first line)
         } else if (column + len < width) {
           len2 = 1;
           pad2 = ' '; // single space separating words

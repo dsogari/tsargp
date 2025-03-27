@@ -278,7 +278,7 @@ describe('AnsiString', () => {
           it('keep indentation in wrapped lines with a move sequence', () => {
             const result: Array<string> = [];
             new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, false);
-            expect(result).toEqual(['' + moveFwd1 + 'abc', '\n', moveFwd1 + 'largest']);
+            expect(result).toEqual([moveFwd1 + 'abc', '\n', moveFwd1 + 'largest']);
           });
 
           it('keep indentation in wrapped lines with spaces', () => {
@@ -306,7 +306,7 @@ describe('AnsiString', () => {
           expect(result).toEqual(['    ', 'type', '\n', '  ', 'script']);
         });
 
-        describe('the starting column and current column is not zero', () => {
+        describe('the starting column and current column are not zero', () => {
           it('align when the largest word does not fit ', () => {
             const result: Array<string> = [];
             new AnsiString(1, 'right', 5).split('abc largest').wrap(result, 2);
