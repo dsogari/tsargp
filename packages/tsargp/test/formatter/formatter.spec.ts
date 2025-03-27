@@ -87,9 +87,10 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      '           A phantom option.\n' + // one unquoted name with spaces
-        '           A phantom option.\n' + // one unquoted name with spaces
-        '   ,       A phantom option.\n', // two unquoted names with spaces
+      '' +
+        '  ,        A phantom option.\n' +
+        '   ,       A phantom option.\n' +
+        '   ,       A phantom option.\n',
     );
   });
 

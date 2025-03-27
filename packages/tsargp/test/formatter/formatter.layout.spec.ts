@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSections, Options } from '../../src/library';
-import { format, config, HelpItem } from '../../src/library';
+import { format, config } from '../../src/library';
 
 describe('format', () => {
-  it('not break columns in the help message when configured with negative values', () => {
+  it('not break columns in the help message when configured with non-positive values', () => {
     const options = {
       single: {
         type: 'single',
@@ -15,11 +15,9 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: -1 },
-          param: { breaks: -1 },
-          descr: { breaks: -1 },
-        },
+        names: { breaks: 0 },
+        param: { breaks: -1 },
+        descr: { breaks: NaN },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  <param>  A string option\n');
@@ -42,15 +40,17 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 1 },
-          param: { breaks: 1 },
-          descr: { breaks: 1 },
-        },
+        names: { breaks: 1 },
+        param: { breaks: 1 },
+        descr: { breaks: 1 },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch(
-      /^\n {15}A flag option\n\n {2}-s\n {6}<param>\n {15}A string option\n$/,
+    expect(format(options, sections).wrap()).toEqual(
+      '\n\n' +
+        '               A flag option\n\n' +
+        '  -s\n' +
+        '      <param>\n' +
+        '               A string option\n',
     );
   });
 
@@ -66,17 +66,15 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 1 },
-          param: { breaks: 1, absolute: true },
-          descr: { breaks: 1, absolute: true },
-        },
+        names: { breaks: 1 },
+        param: { breaks: 1, absolute: true },
+        descr: { breaks: 1, absolute: true },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch(`\n  -s\n  <param>\n  A string option\n`);
+    expect(format(options, sections).wrap()).toEqual(`\n  -s\n  <param>\n  A string option\n`);
   });
 
-  it('break columns in the help message when configured with negative indentation', () => {
+  it('break columns in the help message when configured non-positive indentation', () => {
     const options = {
       single: {
         type: 'single',
@@ -88,14 +86,12 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { breaks: 1, indent: -1 },
-          param: { breaks: 1, indent: -1 },
-          descr: { breaks: 1, indent: -1 },
-        },
+        names: { breaks: 1, indent: 0 },
+        param: { breaks: 1, indent: -1 },
+        descr: { breaks: 1, indent: NaN },
       },
     ];
-    expect(format(options, sections).wrap()).toMatch(/^\n-s\n <param>\n {7}A string option\n$/);
+    expect(format(options, sections).wrap()).toEqual('\n-s\n <param>\n        A string option\n');
   });
 
   it('hide the option names from the help message when configured to do so', () => {
@@ -110,7 +106,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { hidden: true } },
+        names: null,
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  <param>  A string option\n');
@@ -128,7 +124,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { hidden: true, absolute: true } },
+        param: null,
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  A string option\n');
@@ -146,7 +142,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { hidden: true, absolute: true } },
+        descr: null,
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  <param>\n');
@@ -168,7 +164,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'left' } },
+        names: { align: 'left' },
       },
     ];
     config.connectives.optionSep = '';
@@ -195,13 +191,13 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'left' } },
+        names: { align: 'left' },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f, --flag\n  --flag2\n');
   });
 
-  it('align option names to the right boundary', () => {
+  it('align option names to the right boundary in the same group', () => {
     const options = {
       flag1: {
         type: 'flag',
@@ -215,13 +211,13 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'right' } },
+        names: { align: 'right' },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f, --flag\n     --flag2\n');
   });
 
-  it('align option names to the right boundary with different groups', () => {
+  it('align option names to the right boundary in different groups', () => {
     const options = {
       flag1: {
         type: 'flag',
@@ -237,7 +233,7 @@ describe('format', () => {
       {
         type: 'groups',
         filter: ['group', ''], // change the group order
-        layout: { names: { align: 'right' } },
+        names: { align: 'right' },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('     --flag2\n  -f, --flag\n');
@@ -257,12 +253,12 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'slot' } },
+        names: { slotIndent: 2 },
       },
     ];
     config.connectives.optionSep = '';
     try {
-      expect(format(options, sections).wrap()).toEqual('  -f         --flag\n     --flag2\n');
+      expect(format(options, sections).wrap()).toEqual('  -f           --flag\n      --flag2\n');
     } finally {
       config.connectives.optionSep = ',';
     }
@@ -282,10 +278,30 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { names: { align: 'slot' } },
+        names: { slotIndent: 1 },
       },
     ];
-    expect(format(options, sections).wrap()).toEqual('  -f,          --flag\n      --flag2\n');
+    expect(format(options, sections).wrap()).toEqual('  -f,         --flag\n      --flag2\n');
+  });
+
+  it('align option names within slots to the right boundary', () => {
+    const options = {
+      flag1: {
+        type: 'flag',
+        names: ['-f1', '--flag1'],
+      },
+      flag2: {
+        type: 'flag',
+        names: ['--flag2', '-f2'],
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        names: { align: 'right', slotIndent: 1 },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual('      -f1, --flag1\n  --flag2,     -f2\n');
   });
 
   it('align option parameters to the right boundary', () => {
@@ -304,7 +320,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { align: 'right' } },
+        param: { align: 'right' },
         items: [],
       },
     ];
@@ -322,7 +338,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { align: 'right' } },
+        descr: { align: 'right' },
       },
     ];
     expect(format(options, sections).wrap(14, false, true)).toEqual(
@@ -357,12 +373,16 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { param: { align: 'merge' } },
-        items: [HelpItem.synopsis],
+        param: { merge: true },
+        items: [],
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      '  -s1, --single <param>\n  long-parameter-name\n  -s3=<param>\n  --array[=<param>]\n',
+      '' +
+        '  -s1, --single <param>\n' +
+        '  long-parameter-name\n' +
+        '  -s3=<param>\n' +
+        '  --array[=<param>]\n',
     );
   });
 
@@ -393,15 +413,17 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { align: 'slot' }, // ignored by the formatter
-          param: { align: 'merge' },
-        },
-        items: [HelpItem.synopsis],
+        names: { slotIndent: 1 }, // ignored by the formatter
+        param: { merge: true },
+        items: [],
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s1, --single <param>\n  long-parameter-name\n  -s3=<param>\n  --array[=<param>]\n`,
+      '' +
+        '  -s1, --single <param>\n' +
+        '  long-parameter-name\n' +
+        '  -s3=<param>\n' +
+        '  --array[=<param>]\n',
     );
   });
 
@@ -432,22 +454,64 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { align: 'right' },
-          param: { align: 'merge' },
-        },
-        items: [HelpItem.synopsis],
+        names: { align: 'right' },
+        param: { merge: true },
+        items: [],
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      '  -s1, --single <param>\n' +
-        '                long-parameter-name\n' +
+      '' +
+        '  -s1, --single <param>\n' +
+        '    long-parameter-name\n' +
         '            -s3=<param>\n' +
-        '        --array[=<param>]\n',
+        '      --array[=<param>]\n',
     );
   });
 
-  it('merge option descriptions with option parameters', () => {
+  it('merge option parameters with option names, with leading line feeds', () => {
+    const options = {
+      single1: {
+        type: 'single',
+        names: ['-s1', '--single'],
+        paramName: '<param>',
+      },
+      single2: {
+        type: 'single',
+        paramName: 'long-parameter-name',
+      },
+      single3: {
+        type: 'single',
+        names: [null, '-s3'],
+        inline: 'always',
+        paramName: '<param>',
+      },
+      array: {
+        type: 'array',
+        names: ['--array'],
+        inline: 'always',
+        paramName: '<param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        param: { merge: true, breaks: 1 },
+        items: [],
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s1, --single\n' +
+        '  <param>\n\n' +
+        '  long-parameter-name\n' +
+        '  -s3\n' +
+        '  =<param>\n' +
+        '  --array\n' +
+        '  [=<param>]\n',
+    );
+  });
+
+  it('merge option descriptions with left-aligned option parameters', () => {
     const options = {
       single: {
         type: 'single',
@@ -464,11 +528,62 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: { descr: { align: 'merge' } },
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
       `  -s  <param> A string option\n  -f  A flag option\n`,
+    );
+  });
+
+  it('merge option descriptions with right-aligned option parameters', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        param: { align: 'right' },
+        descr: { merge: true },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      `  -s  <param> A string option\n  -f            A flag option\n`,
+    );
+  });
+
+  it('merge option descriptions with option parameters, with leading line feeds', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        descr: { merge: true, breaks: 1 },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      `  -s  <param>\n      A string option\n  -f\n      A flag option\n`,
     );
   });
 
@@ -488,17 +603,15 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { align: 'slot' }, // ignored by the formatter
-          param: { hidden: true },
-          descr: { align: 'merge' },
-        },
+        names: { slotIndent: 1 }, // ignored by the formatter
+        param: null,
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(`  -s A string option\n  A flag option\n`);
   });
 
-  it('merge option descriptions with option parameters and option names', () => {
+  it('merge option descriptions and parameters with left-aligned option names', () => {
     const options = {
       single: {
         type: 'single',
@@ -520,14 +633,122 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          param: { align: 'merge' },
-          descr: { align: 'merge' },
-        },
+        param: { merge: true },
+        descr: { merge: true },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
-      `  -s <param> A string option\n  <param> A string option\n  -f A flag option\n`,
+      '' +
+        '  -s <param> A string option\n' +
+        '  <param> A string option\n' +
+        '  -f A flag option\n',
+    );
+  });
+
+  it('merge option descriptions and parameters with right-aligned option names', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      single2: {
+        type: 'single',
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        names: { align: 'right' },
+        param: { merge: true },
+        descr: { merge: true },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s <param> A string option\n' +
+        '     <param> A string option\n' +
+        '            -f A flag option\n',
+    );
+  });
+
+  it('merge option descriptions and parameters with option names, with leading line feeds', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      single2: {
+        type: 'single',
+        synopsis: 'A string option',
+        paramName: '<param>',
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        param: { merge: true, breaks: 1 },
+        descr: { merge: true, breaks: 1 },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s\n' +
+        '  <param>\n' +
+        '  A string option\n\n' +
+        '  <param>\n' +
+        '  A string option\n' +
+        '  -f\n' +
+        '  A flag option\n',
+    );
+  });
+
+  it('force the width of all columns', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        names: { maxWidth: 8 },
+        param: { maxWidth: 12 },
+        descr: { maxWidth: 20 },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s,\n' +
+        '  --single  <param>       A single option with\n' +
+        '                          big synopsis.\n' +
+        '  -a,\n' +
+        '  --array   [<param>\n' +
+        '            <param>...]   Accepts multiple\n' +
+        '                          parameters.\n',
     );
   });
 });

@@ -2,8 +2,8 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type { HelpItem } from './enums.js';
-import type { AnsiMessage, AnsiString, Style } from './styles.js';
-import type { PartialWithDepth, Promissory, Resolve } from './utils.js';
+import type { AnsiMessage, Style, StyledString, TextAlignment } from './styles.js';
+import type { Promissory, Resolve } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -53,102 +53,130 @@ export class RequiresNot {
 export type NumericRange = readonly [min: number, max: number];
 
 /**
- * A text alignment setting.
- */
-export type TextAlignment = 'left' | 'right';
-
-/**
- * A column alignment setting.
- */
-export type ColumnAlignment = TextAlignment | 'slot' | 'merge';
-
-/**
  * Defines layout attributes common to all help columns.
- * @template T The type of text alignment
  */
-export type WithColumnLayout<T extends ColumnAlignment = TextAlignment> = {
+export type WithBasicLayout = {
   /**
-   * The text alignment for the column. (Defaults to 'left')
+   * The type of text alignment.
+   * @default 'left'
    */
-  readonly align: T;
+  readonly align?: TextAlignment;
   /**
-   * The indentation level for the column. (Defaults to 2)
+   * The column indentation level.
+   * @default 2
    */
-  readonly indent: number;
+  readonly indent?: number;
   /**
-   * The number of leading line feeds for the column. (Defaults to 0)
+   * The number of leading line feeds.
+   * @default 0
    */
-  readonly breaks: number;
+  readonly breaks?: number;
   /**
-   * Whether the column should be hidden. (Defaults to false)
+   * The maximum column or slot width.
+   * @default Infinity
    */
-  readonly hidden: boolean;
+  readonly maxWidth?: number;
+  /**
+   * @deprecated Mutually exclusive with {@link WithBasicLayout} properties.
+   */
+  readonly merge?: never;
 };
 
 /**
- * Defines layout attributes for columns that may be preceded by other columns.
+ * Defines layout attributes for columns that can be slotted.
+ */
+export type WithSlottedLayout = {
+  /**
+   * The slot indentation level, or zero or `NaN` to disable slots.
+   * Does not apply to the first slot. Ignored if the column is merged.
+   * @default 0
+   */
+  readonly slotIndent?: number;
+};
+
+/**
+ * Defines layout attributes for columns that can be indented with absolute number.
  */
 export type WithAbsoluteLayout = {
   /**
-   * Whether the indentation level should be relative to the beginning of the line instead of the
-   * end of the previous column. (Defaults to false)
+   * Whether the indentation level should be relative to the beginning of the line.
+   * @default false
    */
-  readonly absolute: boolean;
+  readonly absolute?: boolean;
 };
 
 /**
- * The help columns layout.
+ * Defines layout attributes for columns that can be merged with previous columns.
  */
-export type HelpColumnsLayout = {
+export type WithMergedLayout = {
   /**
-   * The settings for the names column.
+   * True to merge the column with the previous one.
+   * Text alignment and indentation will be that of the last previous non-merged column.
+   * @default false
    */
-  readonly names: WithColumnLayout<TextAlignment | 'slot'>;
+  readonly merge: true;
   /**
-   * The settings for the parameter column.
+   * The number of leading line feeds.
+   * @default 0
    */
-  readonly param: WithColumnLayout<TextAlignment | 'merge'> & WithAbsoluteLayout;
+  readonly breaks?: number;
   /**
-   * The settings for the description column.
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
    */
-  readonly descr: WithColumnLayout<TextAlignment | 'merge'> & WithAbsoluteLayout;
+  readonly align?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly indent?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly maxWidth?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly slotIndent?: never;
+  /**
+   * @deprecated Mutually exclusive with {@link WithMergedLayout.merge}.
+   */
+  readonly absolute?: never;
 };
-
-/**
- * A string that may contain inline styles.
- */
-export type StyledString = string | AnsiString;
 
 /**
  * Defines attributes for a help text block.
  */
 export type HelpTextBlock = {
   /**
-   * The text. (Defaults to none)
+   * The text.
    */
   readonly text?: StyledString;
   /**
-   * The fallback style. (Defaults to none)
+   * The fallback style.
    */
   readonly style?: Style;
   /**
-   * The text alignment. (Defaults to 'left')
+   * The text alignment.
+   * @default 'left'
    */
   readonly align?: TextAlignment;
   /**
-   * The indentation level. (Defaults to 0)
+   * The indentation level.
+   * @default 0
    */
   readonly indent?: number;
   /**
-   * The number of leading line feeds. (Defaults to 0)
+   * The number of leading line feeds.
+   * @default 0
    */
   readonly breaks?: number;
   /**
-   * Whether to disable text splitting. (Defaults to false)
+   * Whether to disable text splitting. Ignored if the text is a ANSI string.
+   * @default false
    */
   readonly noSplit?: true;
   /**
    * Whether to avoid line feeds at the beginning of the message.
+   * @default false
    */
   readonly noBreakFirst?: true;
 };
@@ -182,6 +210,7 @@ export type WithSectionFilter = {
   /**
    * True if the filter should exclude, or what to exclude.
    * Has precedence over {@link WithSectionFilter.filter}.
+   * @default false
    */
   readonly exclude?: true | ReadonlyArray<string>;
 };
@@ -200,11 +229,6 @@ export type WithSectionUsage = {
    */
   readonly required?: ReadonlyArray<string>;
   /**
-   * A record that maps option keys to required option keys.
-   * @deprecated use {@link WithSectionUsage.inclusive} instead.
-   */
-  readonly requires?: Readonly<Record<string, string>>;
-  /**
    * A record that specifies inclusive option dependencies.
    */
   readonly inclusive?: OptionDependencies;
@@ -215,7 +239,12 @@ export type WithSectionUsage = {
   /**
    * A commentary to append to the usage.
    */
-  readonly comment?: string;
+  readonly comment?: StyledString;
+  /**
+   * Whether to keep alternatives compact.
+   * @default true
+   */
+  readonly compact?: boolean;
 };
 
 /**
@@ -223,15 +252,27 @@ export type WithSectionUsage = {
  */
 export type WithSectionGroups = {
   /**
-   * The help columns layout.
+   * The layout settings for the names column.
+   * Use the value `null` to hide it from the help message.
    */
-  readonly layout?: PartialWithDepth<HelpColumnsLayout>;
+  readonly names?: (WithBasicLayout & WithSlottedLayout) | null;
   /**
-   * The order of items display in option descriptions.
+   * The layout settings for the parameter column.
+   * Use the value `null` to hide it from the help message.
    */
-  readonly items?: ReadonlyArray<HelpItem>;
+  readonly param?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
+  /**
+   * The layout settings for the description column.
+   * Use the value `null` to hide it from the help message.
+   */
+  readonly descr?: (WithBasicLayout & WithAbsoluteLayout) | null | WithMergedLayout;
+  /**
+   * The (order of) items to display in option descriptions.
+   */
+  readonly items?: HelpItems;
   /**
    * Whether option names should be replaced by environment variable names.
+   * @default false
    */
   readonly useEnv?: true;
 };
@@ -265,6 +306,11 @@ export type HelpSection = HelpTextSection | HelpUsageSection | HelpGroupsSection
  * A list of help sections.
  */
 export type HelpSections = ReadonlyArray<HelpSection>;
+
+/**
+ * A list of help items.
+ */
+export type HelpItems = ReadonlyArray<HelpItem>;
 
 /**
  * A set of styles for displaying an option on the terminal.
@@ -444,7 +490,7 @@ export type WithOptionType<T extends OptionType> = {
 /**
  * Defines attributes common to all options.
  */
-export type WithBasic = {
+export type WithBasicAttributes = {
   /**
    * The option names, as they appear on the command-line (e.g. `-h` or `--help`).
    *
@@ -457,7 +503,7 @@ export type WithBasic = {
    * when evaluating option requirements or processing positional arguments). It is not validated
    * and can be anything.
    *
-   * If not specified, the first name in the {@link WithBasic.names} array will be used.
+   * If not specified, the first name in the {@link WithBasicAttributes.names} array will be used.
    */
   preferredName?: string;
   /**
@@ -470,7 +516,7 @@ export type WithBasic = {
   readonly deprecated?: StyledString;
   /**
    * The option group in the help message.
-   * Use null to hide it from the help message.
+   * Use the value `null` to hide it from the help message.
    */
   readonly group?: string | null;
   /**
@@ -486,9 +532,10 @@ export type WithBasic = {
 /**
  * Defines attributes for options that throw messages.
  */
-export type WithMessage = {
+export type WithMessageAttributes = {
   /**
    * Whether to save the message in the option value instead of throwing it.
+   * @default false
    */
   readonly saveMessage?: true;
 };
@@ -497,13 +544,14 @@ export type WithMessage = {
  * Defines attributes common to options that have values.
  * @template T The type of parse parameter
  */
-export type WithOptionValue<T> = {
+export type WithValueAttributes<T> = {
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
    */
   readonly cluster?: string;
   /**
    * True if the option is always required.
+   * @default false
    */
   readonly required?: true;
   /**
@@ -530,23 +578,25 @@ export type WithOptionValue<T> = {
 /**
  * Defines attributes for options that may read data from the environment.
  */
-export type WithEnvironment = {
+export type WithEnvironmentAttributes = {
   /**
    * The names of data sources to try reading from (in that order), if the option was not supplied
    * on the command line. A string means an environment variable, while a URL means a local file.
    *
-   * This has precedence over {@link WithEnvironment.stdin}.
+   * This has precedence over {@link WithEnvironmentAttributes.stdin}.
    */
   readonly sources?: ReadonlyArray<string | URL>;
   /**
    * True to read data from the standard input, if the option was not supplied.
    *
-   * Warning: this may block the application if {@link WithOptionValue.required} is set and the
+   * Warning: this may block the application if {@link WithValueAttributes.required} is set and the
    * terminal is interactive.
+   * @default false
    */
   readonly stdin?: true;
   /**
    * True to break the parsing loop after parsing the option.
+   * @default false
    */
   readonly break?: true;
 };
@@ -555,19 +605,20 @@ export type WithEnvironment = {
  * Defines attributes for options that may have a template to be displayed in place of option
  * parameter(s) in help messages.
  */
-export type WithTemplate = {
+export type WithTemplateAttributes = {
   /**
    * The example value to display in the parameter column or in usage statements.
    */
   readonly example?: NonCallable;
   /**
    * The parameter name to display in the parameter column or in usage statements.
-   * Overrides {@link WithTemplate.example} in usage statements.
+   * Overrides {@link WithTemplateAttributes.example} in usage statements.
    */
   readonly paramName?: StyledString;
   /**
    * The parameter name to display in usage statements.
-   * Overrides {@link WithTemplate.paramName} in usage statements.
+   * Overrides {@link WithTemplateAttributes.example} and {@link WithTemplateAttributes.paramName}
+   * in usage statements.
    */
   readonly usageParamName?: StyledString;
 };
@@ -575,7 +626,7 @@ export type WithTemplate = {
 /**
  * Defines attributes for options that may have parameters.
  */
-export type WithParameter = {
+export type WithParameterAttributes = {
   /**
    * Whether the option accepts positional arguments.
    * There may be at most one option with this setting.
@@ -584,7 +635,8 @@ export type WithParameter = {
    * Additionally, if a string is specified as positional marker, then all arguments beyond this
    * marker will be considered positional.
    *
-   * We recommend also setting {@link WithBasic.preferredName} to some explanatory name.
+   * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
+   * @default false
    */
   readonly positional?: true | string;
   /**
@@ -604,7 +656,7 @@ export type WithParameter = {
 /**
  * Defines attributes for options that may have parameter selection constraints.
  */
-export type WithSelection = {
+export type WithSelectionAttributes = {
   /**
    * The regular expression that parameters should match.
    */
@@ -626,18 +678,20 @@ export type WithSelection = {
 /**
  * Defines attributes for the help option.
  */
-export type WithHelp = {
+export type WithHelpAttributes = {
   /**
    * The help sections to be rendered.
    */
   readonly sections?: HelpSections;
   /**
    * Whether to use the next argument as the name of a subcommand.
-   * Has precedence over {@link WithHelp.useFilter}.
+   * Has precedence over {@link WithHelpAttributes.useFilter}.
+   * @default false
    */
   readonly useCommand?: true;
   /**
    * Whether to use the remaining arguments as option filter.
+   * @default false
    */
   readonly useFilter?: true;
 };
@@ -645,7 +699,7 @@ export type WithHelp = {
 /**
  * Defines attributes for the version option.
  */
-export type WithVersion = {
+export type WithVersionAttributes = {
   /**
    * The version information (e.g., a semantic version).
    */
@@ -655,7 +709,7 @@ export type WithVersion = {
 /**
  * Defines attributes for the command option.
  */
-export type WithCommand = {
+export type WithCommandAttributes = {
   /**
    * The subcommand's options.
    * It can also be a module path or a callback that returns the options.
@@ -664,7 +718,7 @@ export type WithCommand = {
   /**
    * The prefix of cluster arguments.
    * If set, then eligible arguments that have this prefix will be considered a cluster.
-   * Has precedence over {@link WithCommand.optionPrefix}.
+   * Has precedence over {@link WithCommandAttributes.optionPrefix}.
    */
   readonly clusterPrefix?: string;
   /**
@@ -677,31 +731,34 @@ export type WithCommand = {
 /**
  * Defines attributes for the flag option.
  */
-export type WithFlag = unknown; // disappears in type intersection
+export type WithFlagAttributes = unknown; // disappears in type intersection
 
 /**
  * Defines attributes common to single-valued options.
  */
-export type WithSingle = unknown; // disappears in type intersection
+export type WithSingleAttributes = unknown; // disappears in type intersection
 
 /**
  * Defines attributes common to array-valued options.
  */
-export type WithArray = {
+export type WithArrayAttributes = {
   /**
    * The parameter value separator.
    */
   readonly separator?: string | RegExp;
   /**
    * True if duplicate elements should be removed.
+   * @default false
    */
   readonly unique?: true;
   /**
    * Allows appending elements if supplied multiple times.
+   * @default false
    */
   readonly append?: true;
   /**
    * The maximum allowed number of elements.
+   * @default Infinity
    */
   readonly limit?: number;
 };
@@ -709,19 +766,22 @@ export type WithArray = {
 /**
  * Defines attributes for the function option.
  */
-export type WithFunction = {
+export type WithFunctionAttributes = {
   /**
-   * The function's parameter count.
+   * The function's parameter count:
    *
-   * If unspecified or negative, the option accepts unlimited parameters.
-   * If zero, the option accepts unknown number of parameters (use with {@link WithFunction.skipCount}).
-   * If positive, then the option expects exactly this number of parameters.
-   * If a range, then the option expects between `min` and `max` parameters.
+   * - If unspecified or `Infinity`, the option accepts unlimited parameters.
+   * - If zero, the option accepts unknown number of parameters
+   *   (use with {@link WithFunctionAttributes.skipCount}).
+   * - If positive, then the option expects exactly this number of parameters.
+   * - If a range, then the option expects between `min` and `max` parameters.
+   * @default Infinity
    */
   readonly paramCount?: number | NumericRange;
   /**
    * The number of remaining arguments to skip.
    * It is meant to be changed by the callback. (The parser does not alter this value.)
+   * @default 0
    */
   skipCount?: number;
 };
@@ -729,76 +789,78 @@ export type WithFunction = {
 /**
  * An option that throws a help message.
  */
-export type HelpOption = WithOptionType<'help'> & WithBasic & WithHelp & WithMessage;
+export type HelpOption = WithOptionType<'help'> &
+  WithBasicAttributes &
+  WithHelpAttributes &
+  WithMessageAttributes;
 
 /**
  * An option that throws a version message.
  */
-export type VersionOption = WithOptionType<'version'> & WithVersion & WithBasic & WithMessage;
+export type VersionOption = WithOptionType<'version'> &
+  WithVersionAttributes &
+  WithBasicAttributes &
+  WithMessageAttributes;
 
 /**
  * An option that executes a command.
  */
 export type CommandOption = WithOptionType<'command'> &
-  WithCommand &
-  WithBasic &
-  WithOptionValue<OpaqueOptionValues> &
-  WithTemplate &
-  (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName);
+  WithCommandAttributes &
+  WithBasicAttributes &
+  WithValueAttributes<OpaqueOptionValues> &
+  WithTemplateAttributes &
+  (WithDefault | WithRequired);
 
 /**
  * An option that has a value, but is niladic.
  */
 export type FlagOption = WithOptionType<'flag'> &
-  WithFlag &
-  WithBasic &
-  WithOptionValue<null> &
-  WithEnvironment &
+  WithFlagAttributes &
+  WithBasicAttributes &
+  WithValueAttributes<null> &
+  WithEnvironmentAttributes &
   (WithDefault | WithRequired);
 
 /**
  * An option that has a single value and requires a single parameter.
  */
 export type SingleOption = WithOptionType<'single'> &
-  WithSingle &
-  WithBasic &
-  WithOptionValue<string> &
-  WithEnvironment &
-  WithTemplate &
-  WithParameter &
-  WithSelection &
+  WithSingleAttributes &
+  WithBasicAttributes &
+  WithValueAttributes<string> &
+  WithEnvironmentAttributes &
+  WithTemplateAttributes &
+  WithParameterAttributes &
+  WithSelectionAttributes &
   (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
  * An option that has an array value and accepts zero or more parameters.
  */
 export type ArrayOption = WithOptionType<'array'> &
-  WithArray &
-  WithBasic &
-  WithOptionValue<string> &
-  WithEnvironment &
-  WithTemplate &
-  WithParameter &
-  WithSelection &
+  WithArrayAttributes &
+  WithBasicAttributes &
+  WithValueAttributes<string> &
+  WithEnvironmentAttributes &
+  WithTemplateAttributes &
+  WithParameterAttributes &
+  WithSelectionAttributes &
   (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName) &
   (WithChoices | WithRegex);
 
 /**
  * An option that has any value and can be configured with a parameter count.
  */
 export type FunctionOption = WithOptionType<'function'> &
-  WithFunction &
-  WithBasic &
-  WithOptionValue<Array<string>> &
-  WithEnvironment &
-  WithTemplate &
-  WithParameter &
-  (WithDefault | WithRequired) &
-  (WithExample | WithUsageParamName);
+  WithFunctionAttributes &
+  WithBasicAttributes &
+  WithValueAttributes<Array<string>> &
+  WithEnvironmentAttributes &
+  WithTemplateAttributes &
+  WithParameterAttributes &
+  (WithDefault | WithRequired);
 
 /**
  * The public option types.
@@ -846,19 +908,19 @@ export type OptionType = NiladicOptionType | 'single' | 'array' | 'function';
  * An opaque option definition.
  */
 export type OpaqueOption = WithOptionType<OptionType> &
-  WithBasic &
-  WithHelp &
-  WithVersion &
-  WithCommand &
-  WithFlag &
-  WithFunction &
-  WithMessage &
-  WithOptionValue<any> & // eslint-disable-line @typescript-eslint/no-explicit-any
-  WithEnvironment &
-  WithTemplate &
-  WithParameter &
-  WithSelection &
-  WithArray;
+  WithBasicAttributes &
+  WithHelpAttributes &
+  WithVersionAttributes &
+  WithCommandAttributes &
+  WithFlagAttributes &
+  WithFunctionAttributes &
+  WithMessageAttributes &
+  WithValueAttributes<any> & // eslint-disable-line @typescript-eslint/no-explicit-any
+  WithEnvironmentAttributes &
+  WithTemplateAttributes &
+  WithParameterAttributes &
+  WithSelectionAttributes &
+  WithArrayAttributes;
 
 /**
  * A collection of opaque option definitions.
@@ -888,11 +950,11 @@ export type OptionInfo = [key: string, option: OpaqueOption, name: string];
  */
 type WithRequired = {
   /**
-   * @deprecated mutually exclusive with {@link WithOptionValue.required}
+   * @deprecated mutually exclusive with {@link WithValueAttributes.required}
    */
   readonly default?: never;
   /**
-   * @deprecated mutually exclusive with {@link WithOptionValue.required}
+   * @deprecated mutually exclusive with {@link WithValueAttributes.required}
    */
   readonly requiredIf?: never;
 };
@@ -902,31 +964,10 @@ type WithRequired = {
  */
 type WithDefault = {
   /**
-   * @deprecated mutually exclusive with {@link WithOptionValue.default} and
-   * {@link WithOptionValue.requiredIf}
+   * @deprecated mutually exclusive with {@link WithValueAttributes.default} and
+   * {@link WithValueAttributes.requiredIf}
    */
   readonly required?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with the `example` attribute.
- */
-type WithExample = {
-  /**
-   * @deprecated mutually exclusive with {@link WithTemplate.example}.
-   * Use {@link WithTemplate.paramName} in this case.
-   */
-  readonly usageParamName?: never;
-};
-
-/**
- * Removes mutually exclusive attributes from an option with the `usageParamName` attribute.
- */
-type WithUsageParamName = {
-  /**
-   * @deprecated mutually exclusive with {@link WithTemplate.usageParamName}
-   */
-  readonly example?: never;
 };
 
 /**
@@ -934,7 +975,7 @@ type WithUsageParamName = {
  */
 type WithChoices = {
   /**
-   * @deprecated mutually exclusive with {@link WithSelection.choices}
+   * @deprecated mutually exclusive with {@link WithSelectionAttributes.choices}
    */
   readonly regex?: never;
 };
@@ -944,7 +985,7 @@ type WithChoices = {
  */
 type WithRegex = {
   /**
-   * @deprecated mutually exclusive with {@link WithSelection.regex}
+   * @deprecated mutually exclusive with {@link WithSelectionAttributes.regex}
    */
   readonly choices?: never;
 };

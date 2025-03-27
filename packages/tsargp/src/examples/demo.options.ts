@@ -12,19 +12,9 @@ import {
   allHelpItems,
   HelpItem,
   envHelpItems,
-  getVersion,
   numberInRange,
-  sectionFooter,
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
-
-const isBrowser = typeof self === 'object' && !self.Bun; // Bun defines self with a Bun property
-const [packageVersion, footerText] = isBrowser
-  ? []
-  : [
-      await getVersion('tsargp/package'),
-      await sectionFooter('tsargp/package', `Report bugs: #0`, '/issues'),
-    ];
 
 /**
  * The main option definitions.
@@ -48,7 +38,7 @@ export default {
         },
         content: { breaks: 2 },
         items: allHelpItems.filter((item) => item !== HelpItem.sources),
-        layout: { names: { align: 'right' } },
+        names: { align: 'right' },
       },
       {
         type: 'usage',
@@ -69,15 +59,7 @@ export default {
         content: { indent: 2 },
         filter: ['help', 'version', 'helpEnv', 'hello'],
         exclude: true,
-        requires: { boolean: 'strChoice' },
-      },
-      {
-        type: 'text',
-        content: {
-          text: footerText,
-          breaks: 1,
-          noSplit: true,
-        },
+        inclusive: { boolean: 'strChoice' },
       },
     ],
     useCommand: true,
@@ -100,17 +82,9 @@ export default {
           noBreakFirst: true,
         },
         content: { breaks: 2 },
-        layout: { param: { hidden: true } },
+        param: null,
         items: envHelpItems,
         useEnv: true,
-      },
-      {
-        type: 'text',
-        content: {
-          text: footerText,
-          breaks: 1,
-          noSplit: true,
-        },
       },
     ],
     useFilter: true,
@@ -122,7 +96,7 @@ export default {
     type: 'version',
     names: ['-v', '--version'],
     synopsis: 'A version option. Prints the package version.',
-    version: packageVersion,
+    version: 'unavailable in the browser', // will be injected from demo.ts
   },
   /**
    * A flag option that is deprecated for some reason.

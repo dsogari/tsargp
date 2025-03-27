@@ -9,14 +9,17 @@ describe('validate', () => {
     const options = {
       cmd1: {
         type: 'command',
+        names: ['-c'],
         options: {
           cmd2: {
             type: 'command',
+            names: ['-c'],
             options: { flag: { type: 'flag', names: ['='] } },
           },
         },
       },
     } as const satisfies Options;
+    expect(validate(options, { noRecurse: true })).resolves.toEqual({});
     expect(validate(options)).rejects.toThrow(`Option cmd1.cmd2.flag has invalid name '='.`);
   });
 
@@ -24,9 +27,11 @@ describe('validate', () => {
     const options = {
       cmd1: {
         type: 'command',
+        names: ['-c'],
         options: {
           cmd2: {
             type: 'command',
+            names: ['-c'],
             options: () => ({ flag: { type: 'flag', names: ['='] } }),
           },
         },
@@ -39,31 +44,17 @@ describe('validate', () => {
     const options = {
       cmd1: {
         type: 'command',
+        names: ['-c'],
         options: {
           cmd2: {
             type: 'command',
+            names: ['-c'],
             options: async () => (await import('../data/invalid')).default,
           },
         },
       },
     } as const satisfies Options;
     expect(validate(options)).rejects.toThrow(`Option cmd1.cmd2.flag has invalid name '='.`);
-  });
-
-  it('skip nested options when configured that way', () => {
-    const options = {
-      cmd1: {
-        type: 'command',
-        names: ['-c'],
-        options: {
-          cmd2: {
-            type: 'command',
-            options: { flag: { type: 'flag', names: ['='] } },
-          },
-        },
-      },
-    } as const satisfies Options;
-    expect(validate(options, { noRecurse: true })).resolves.toEqual({});
   });
 
   it('avoid circular references while evaluating nested options', () => {

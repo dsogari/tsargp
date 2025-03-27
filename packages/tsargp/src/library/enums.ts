@@ -114,7 +114,7 @@ export const enum ErrorItem {
    */
   variadicWithClusterLetter,
   /**
-   * Error raised when a variadic option declares an invalid inline constraint.
+   * Error raised when an option declares an invalid inline constraint.
    */
   invalidInlineConstraint,
   /**

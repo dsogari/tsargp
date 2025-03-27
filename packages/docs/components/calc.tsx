@@ -1,7 +1,7 @@
 'use client';
 
 //--------------------------------------------------------------------------------------------------
-// Imports and Exports
+// Imports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
 import { parse, ErrorMessage, AnsiMessage } from 'tsargp';

@@ -137,6 +137,7 @@ describe('validate', () => {
         },
       },
     } as const satisfies Options;
+    expect(validate(options, { noWarn: true })).resolves.toEqual({});
     expect(validate(options)).resolves.toEqual({
       warning: expect.objectContaining({
         message:
@@ -168,6 +169,7 @@ describe('validate', () => {
         },
       },
     } as const satisfies Options;
+    expect(validate(options, { noWarn: true })).resolves.toEqual({});
     expect(validate(options)).resolves.toEqual({
       warning: expect.objectContaining({
         message:

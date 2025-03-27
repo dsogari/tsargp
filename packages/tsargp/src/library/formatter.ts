@@ -2,47 +2,47 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
-  HelpColumnsLayout,
-  WithColumnLayout,
+  HelpGroupsSection,
+  HelpItems,
   HelpSection,
-  HelpUsageSection,
   HelpSections,
+  HelpTextBlock,
+  HelpUsageSection,
   OpaqueOption,
   OpaqueOptions,
-  Requires,
-  RequirementCallback,
-  RequiresEntry,
-  HelpTextBlock,
   OptionDependencies,
-  StyledString,
+  RequirementCallback,
+  Requires,
+  RequiresEntry,
+  WithBasicLayout,
+  WithMergedLayout,
 } from './options.js';
-import type { FormattingFlags } from './styles.js';
+import type { FormattingFlags, TextAlignment } from './styles.js';
 import type { RecordKeyMap, UsageStatement } from './utils.js';
 
 import { config } from './config.js';
 import { HelpItem } from './enums.js';
-import { AnsiString, AnsiMessage } from './styles.js';
+import { AnsiMessage, AnsiString } from './styles.js';
 import {
-  getParamCount,
-  getOptionNames,
-  getOptionEnvVars,
-  visitRequirements,
   checkInline,
-  getLastOptionName,
-  isEnvironmentOnly,
-  hasTemplate,
-  getSymbol,
-  isArray,
-  getValues,
-  max,
-  getEntries,
-  stronglyConnected,
   createUsage,
+  getEntries,
+  getLastOptionName,
+  getOptionEnvVars,
+  getOptionNames,
+  getParamCount,
+  getSymbol,
+  getValues,
+  hasTemplate,
+  isArray,
+  isEnvironmentOnly,
   isString,
-  mergeValues,
-  regex,
+  max,
+  min,
   setDifference,
   setIntersection,
+  stronglyConnected,
+  visitRequirements,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -78,21 +78,26 @@ export type FormatterFlags = {
 // Types
 //--------------------------------------------------------------------------------------------------
 /**
- * The precomputed strings used by the formatter.
+ * The precomputed ANSI strings for a help column. Each item represents a slot in the column.
+ */
+type HelpColumn = Array<AnsiString>;
+
+/**
+ * The precomputed ANSI strings for a help entry. Each item represents a help column.
  */
 type HelpEntry = [
   /**
-   * The list of formatted option names.
+   * The formatted option names.
    */
-  names: Array<AnsiString>,
+  names: HelpColumn,
   /**
    * The formatted option parameter.
    */
-  param: AnsiString,
+  param: HelpColumn,
   /**
    * The formatted option description.
    */
-  descr: AnsiString,
+  descr: HelpColumn,
 ];
 
 /**
@@ -119,30 +124,25 @@ type HelpFunctions = Readonly<Record<HelpItem, HelpFunction>>;
  */
 type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
 
+/**
+ * The common layout settings for a help column.
+ */
+type ColumnLayout = WithBasicLayout | null | WithMergedLayout;
+
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * The default help column layout.
- */
-const defaultColumnLayout: WithColumnLayout = {
-  align: 'left',
-  indent: 2,
-  breaks: 0,
-  hidden: false,
-};
-
-/**
  * The complete list of help items.
  */
-export const allHelpItems: ReadonlyArray<HelpItem> = Array(HelpItem._count)
+export const allHelpItems: HelpItems = Array(HelpItem._count)
   .fill(0)
   .map((_, index) => HelpItem.synopsis + index);
 
 /**
  * The list of help items that are useful for help messages with environment variables only.
  */
-export const envHelpItems: ReadonlyArray<HelpItem> = [
+export const envHelpItems: HelpItems = [
   HelpItem.synopsis,
   HelpItem.separator,
   HelpItem.choices,
@@ -154,15 +154,6 @@ export const envHelpItems: ReadonlyArray<HelpItem> = [
   HelpItem.deprecated,
   HelpItem.link,
 ];
-
-/**
- * The default help columns layout.
- */
-const defaultLayout: HelpColumnsLayout = {
-  names: defaultColumnLayout,
-  param: { ...defaultColumnLayout, absolute: false },
-  descr: { ...defaultColumnLayout, absolute: false },
-};
 
 /**
  * The default help sections.
@@ -429,227 +420,242 @@ function buildEntries(
 /**
  * Formats the help entries for a groups section.
  * @param options The option definitions
- * @param layout The help columns layout
+ * @param section The groups section
  * @param keys The filtered option keys
  * @param flags The formatter flags
- * @param items The help items
- * @param include The group inclusion filter
- * @param exclude The group exclusion filter
- * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The option groups
  */
 function formatGroups(
   options: OpaqueOptions,
-  layout: HelpColumnsLayout,
+  section: HelpGroupsSection,
   keys: ReadonlyArray<string>,
   flags: FormatterFlags,
-  items?: ReadonlyArray<HelpItem>,
-  include?: ReadonlyArray<string>,
-  exclude?: ReadonlyArray<string>,
-  useEnv?: boolean,
 ): EntriesByGroup {
   /** @ignore */
-  function build(option: OpaqueOption): HelpEntry | undefined {
-    const names = formatNames(layout, option, useEnv);
-    if (useEnv && !names.length) {
-      return undefined; // skip options without environment variable names, in this case
-    }
-    const param = formatParams(layout, option);
-    const descr = formatDescription(options, layout, option, flags, items);
-    const paramLen = param.wrap(); // get parameter length without indentation
-    param.indent = paramLen; // HACK: save the length, since we will need it in `adjustEntries`
-    let prev: AnsiString | undefined;
-    let namesLen = 0;
-    names.forEach((str, i) => {
-      const nameLen = str.wrap(); // get name length without indentation
-      if (nameLen) {
-        if (prev) {
-          prev.close(optionSep).popSty(); // pop the base text style
-          prev.indent += slotInc; // length in non-slotted alignment
-          namesLen += slotInc; // length in non-slotted alignment
-        }
-        prev = str;
-      }
-      prev?.popSty(); // pop the base text style of the last name
-      const inc = i < names.length - 1 ? slotInc : 0; // include sep in slot width
-      slotWidths[i] = max(slotWidths[i] ?? 0, nameLen + inc); // longest across all entries
-      str.indent = nameLen; // HACK: save the length, since we will need it in `adjustEntries`
-      namesLen += nameLen;
-    });
-    namesWidth = max(namesWidth, namesLen); // longest across all entries
-    paramWidth = max(paramWidth, paramLen); // longest across all entries
-    mergedWidth = max(
-      mergedWidth, // longest across all entries
-      namesLen + paramLen + (namesLen && paramLen && !param.mergeLeft ? 1 : 0),
-    );
-    return [names, param, descr];
+  function merge(into: HelpColumn, from: HelpColumn) {
+    into.push(...from.splice(0)); // extract strings
+    into.splice(1).forEach((str) => into[0].other(str));
   }
-  const { optionSep } = config.connectives;
-  const slotInc = optionSep.length + 1; // include separator and space in slot width
-  const slotWidths: Array<number> = [];
-  let namesWidth = 0; // for non-slotted alignment
-  let paramWidth = 0; // for non-slotted alignment
-  let mergedWidth = 0; // names + param
-  const groups = buildEntries(options, keys, build, include, exclude);
-  adjustEntries(layout, groups, slotWidths, namesWidth, paramWidth, mergedWidth);
+  /** @ignore */
+  function compute(column: HelpColumn, widths: Array<number>) {
+    column.forEach((str, i) => (widths[i] = max(widths[i] ?? 0, str.lineWidth)));
+  }
+  /** @ignore */
+  function build(option: OpaqueOption): HelpEntry | undefined {
+    const namesColumn = formatNames(names, option, useEnv);
+    if (useEnv && namesColumn.length === 1 && !namesColumn[0].maxLength) {
+      return; // skip options without environment variable names, in this case
+    }
+    const paramColumn = formatParams(param, option);
+    const descrColumn = formatDescription(descr, options, option, flags, items);
+    if (descr === null || descr?.merge) {
+      merge(paramColumn, descrColumn);
+    }
+    if (param === null || param?.merge) {
+      merge(namesColumn, paramColumn);
+    }
+    compute(namesColumn, namesWidths);
+    compute(paramColumn, paramWidths);
+    compute(descrColumn, descrWidths);
+    return [namesColumn, paramColumn, descrColumn];
+  }
+  const namesWidths: Array<number> = [];
+  const paramWidths: Array<number> = [];
+  const descrWidths: Array<number> = [];
+  const { filter, exclude, items, useEnv, names, param, descr } = section;
+  const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
+  const groups = buildEntries(options, keys, build, incl, excl);
+  adjustEntries(section, groups, namesWidths, paramWidths, descrWidths);
   return groups;
 }
 
 /**
  * Adjust the help entries for a help message.
- * @param layout The help columns layout
+ * @param section The groups section
  * @param groups The option groups and their help entries
- * @param slotWidths The widths of the name slots
- * @param namesWidth The width of the names column
- * @param paramWidth The width of the parameter column
- * @param mergedWidth The width of the names and parameter columns merged
+ * @param namesWidths The width of each slot in the names column
+ * @param paramWidths The width of each slot in the parameter column
+ * @param descrWidths The width of each slot in the description column
  */
 function adjustEntries(
-  layout: HelpColumnsLayout,
+  section: HelpGroupsSection,
   groups: EntriesByGroup,
-  slotWidths: ReadonlyArray<number>,
-  namesWidth: number,
-  paramWidth: number,
-  mergedWidth: number,
+  namesWidths: Array<number>,
+  paramWidths: Array<number>,
+  descrWidths: Array<number>,
 ) {
   /** @ignore */
-  function getStart(column: HelpColumnsLayout['param'], prevEnd: number): number {
-    return column.absolute && !column.hidden
-      ? max(0, column.indent)
-      : prevEnd + (column.hidden ? 0 : column.indent);
-  }
-  const { names, param, descr } = layout;
-  const namesSlotted = names.align === 'slot';
-  const namesRight = names.align === 'right';
-  const paramRight = param.align === 'right';
-  const paramMerge = param.align === 'merge';
-  const descrMerge = descr.align === 'merge';
-  const paramHidden = param.hidden;
-  const namesStart = names.hidden ? 0 : max(0, names.indent);
-  const namesEnd = namesStart + namesWidth;
-  const paramStart = getStart(param, namesEnd);
-  const paramEnd = paramStart + paramWidth;
-  const descrStart = getStart(descr, paramMerge ? namesStart + mergedWidth : paramEnd);
-  const useSlot = namesSlotted && !paramMerge && !(paramHidden && descrMerge);
-  for (const [names, param, descr] of getValues(groups).flat()) {
-    let indent = namesRight
-      ? namesEnd - names.reduce((acc, str) => acc + str.indent, 0) // compute width
-      : namesStart;
-    let lastName: AnsiString | undefined; // last non-empty name
-    names.forEach((str, i) => {
-      const saved = str.indent; // TODO: fix length hack
-      if (saved) {
-        str.indent = indent;
-        lastName = str;
-      }
-      indent += useSlot ? slotWidths[i] : saved;
+  function adjustColumn(
+    column: HelpColumn,
+    widths: Array<number>,
+    start: number,
+    slotIndent?: number,
+    maxWidth: number = Infinity,
+  ) {
+    column.forEach((str, i) => {
+      str.indent = start;
+      str.width = min(widths[i], maxWidth);
+      start += str.width + (slotIndent || 0);
     });
-    if (descrMerge) {
-      param.other(descr); // no need to reset param style
-      descr.clear();
-    } else {
-      descr.indent = descrStart;
+  }
+  /** @ignore */
+  function getStartAndWidth(
+    column: ColumnLayout = {},
+    widths: Array<number>,
+    prevEnd: number,
+    slotIndent?: number,
+    absolute?: boolean,
+  ): [start: number, width: number] {
+    if (!column || column.merge) {
+      return [prevEnd, 0];
     }
-    if ((paramMerge || paramHidden) && lastName) {
-      lastName.other(param); // no need to reset names style
-      param.clear();
-    } else {
-      param.indent =
-        paramMerge || paramHidden
-          ? namesRight
-            ? namesEnd + 1 // start column where it would normally (i.e., without mergeRight)
-            : namesStart
-          : paramRight
-            ? paramEnd - param.indent // TODO: fix length hack
-            : paramStart;
-    }
+    const indent = (column.indent ?? 2) || 0;
+    const maxWidth = column.maxWidth || Infinity;
+    return [
+      absolute ? max(0, indent) : prevEnd + indent,
+      widths.reduce(
+        (acc, width) => acc + min(width, maxWidth),
+        ((widths.length || 1) - 1) * (slotIndent || 0),
+      ),
+    ];
+  }
+  const { names, param, descr } = section;
+  const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, names?.slotIndent);
+  const [paramStart, paramWidth] = getStartAndWidth(
+    param,
+    paramWidths,
+    namesStart + namesWidth,
+    0, // non-slotted
+    param?.absolute,
+  );
+  const [descrStart] = getStartAndWidth(
+    descr,
+    descrWidths,
+    paramStart + paramWidth,
+    0, // non-slotted
+    descr?.absolute,
+  );
+  for (const [namesColumn, paramColumn, descrColumn] of getValues(groups).flat()) {
+    adjustColumn(namesColumn, namesWidths, namesStart, names?.slotIndent, names?.maxWidth);
+    adjustColumn(paramColumn, paramWidths, paramStart, 0, param?.maxWidth);
+    adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth ?? NaN); // terminal width
   }
 }
 
 /**
- * Formats an option's names to be printed on the terminal.
- * This does not include the positional marker.
- * @param layout The help columns layout
- * @param option The option definition
- * @param useEnv Whether option names should be replaced by environment variable names
- * @returns The list of ANSI strings, one for each name
+ * Gets the text alignment setting from a column layout.
+ * @param column The column layout
+ * @returns [The text alignment, The number of leading line feeds]
  */
-function formatNames(
-  layout: HelpColumnsLayout,
-  option: OpaqueOption,
-  useEnv: boolean = false,
-): Array<AnsiString> {
-  const { breaks, hidden } = layout.names;
-  const names = useEnv ? getOptionEnvVars(option) : option.names;
-  if (hidden || !names?.length) {
+function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks?: number] {
+  if (!column) {
     return [];
   }
-  const sty = option.styles?.names ?? config.styles.symbol;
-  const result: Array<AnsiString> = [];
-  let str: AnsiString | undefined;
-  names.forEach((name) => {
-    if (name) {
-      str = new AnsiString()
-        .break(str ? 0 : breaks) // break only on the first name
-        .pushSty(config.styles.base) // base style will be popped later
-        .word(name, sty);
-      result.push(str);
-    } else {
-      result.push(new AnsiString());
+  const { align, breaks } = column;
+  return [align, breaks ?? 0]; // breaks are used to determine if the column is present
+}
+
+/**
+ * Formats an option's names to be printed in a groups section.
+ * This does not include the positional marker.
+ * @param layout The column layout settings
+ * @param option The option definition
+ * @param useEnv Whether option names should be replaced by environment variable names
+ * @returns The help column
+ */
+function formatNames(
+  layout: HelpGroupsSection['names'],
+  option: OpaqueOption,
+  useEnv: boolean = false,
+): HelpColumn {
+  const [align, breaks] = getAlignment(layout);
+  let str = new AnsiString(0, align);
+  const result: HelpColumn = [str];
+  if (breaks !== undefined) {
+    const names = useEnv ? getOptionEnvVars(option) : option.names;
+    if (names?.length) {
+      const { styles, connectives } = config;
+      const sty = option.styles?.names ?? styles.symbol;
+      const slotted = !!layout?.slotIndent;
+      let sep: string | undefined; // no separator before first name
+      str.break(breaks).pushSty(styles.base);
+      if (slotted) {
+        result.pop(); // will be re-added within the loop
+      }
+      for (const name of names) {
+        if (name !== null) {
+          if (sep !== undefined) {
+            str.close(sep);
+            if (slotted) {
+              str.popSty(); // pop style of the last string
+              str = new AnsiString(0, align).pushSty(styles.base);
+            }
+          }
+          if (slotted) {
+            result.push(str);
+          }
+          str.word(name, sty); // do not split the name
+          sep = connectives.optionSep;
+        } else if (slotted) {
+          result.push(new AnsiString()); // skip a slot
+        }
+      }
+      str.popSty(); // pop style of the last string
     }
-  });
+  }
   return result;
 }
 
 /**
- * Formats an option's parameter to be printed on the terminal.
- * @param layout The help columns layout
+ * Formats an option's parameter to be printed in a groups section.
+ * @param layout The column layout settings
  * @param option The option definition
- * @returns The ANSI string
+ * @returns The help column
  */
-function formatParams(layout: HelpColumnsLayout, option: OpaqueOption): AnsiString {
-  const { hidden, breaks } = layout.param;
-  const result = new AnsiString().break(breaks).pushSty(config.styles.base);
-  if (!hidden && hasTemplate(option, false)) {
+function formatParams(layout: HelpGroupsSection['param'], option: OpaqueOption): HelpColumn {
+  const [align, breaks] = getAlignment(layout);
+  const result = new AnsiString(0, align);
+  if (breaks !== undefined && hasTemplate(option, false)) {
+    result.break(breaks).pushSty(config.styles.base);
     formatParam(option, false, result);
+    result.popSty();
   }
-  return result.maxLength ? result.popSty() : result.clear();
+  return [result];
 }
 
 /**
- * Formats an option's description to be printed on the terminal.
+ * Formats an option's description to be printed in a groups section.
  * The description always ends with a single line break.
+ * @param layout The column layout settings
  * @param options The option definitions
- * @param layout The help columns layout
  * @param option The option definition
  * @param flags The formatter flags
  * @param items The help items
- * @returns The ANSI string
+ * @returns The help column
  */
 function formatDescription(
+  layout: HelpGroupsSection['descr'],
   options: OpaqueOptions,
-  layout: HelpColumnsLayout,
   option: OpaqueOption,
   flags: FormatterFlags,
-  items: ReadonlyArray<HelpItem> = allHelpItems,
-): AnsiString {
-  const { hidden, breaks, align } = layout.descr;
-  const result = new AnsiString(0, align === 'right')
-    .break(breaks)
-    .pushSty(config.styles.base)
-    .pushSty(option.styles?.descr);
-  if (!hidden) {
+  items: HelpItems = allHelpItems,
+): HelpColumn {
+  const [align, breaks] = getAlignment(layout);
+  const result = new AnsiString(0, align);
+  if (breaks !== undefined) {
+    result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
     for (const item of items) {
       if (item !== HelpItem.cluster || flags.clusterPrefix !== undefined) {
         helpFunctions[item](option, config.helpPhrases[item], options, result);
       }
     }
+    result.popSty().popSty();
   }
-  return result.maxLength ? result.popSty().popSty() : result.clear();
+  return [result.break()]; // include trailing line feed
 }
 
 /**
- * Formats a help section to be included in the full help message.
+ * Formats a help section to be included in the help message.
  * Options are rendered in the order specified in the definitions or in the section filter.
  * @param options The option definitions
  * @param section The help section
@@ -666,10 +672,7 @@ function formatHelpSection(
 ) {
   const { type, heading, content } = section;
   if (type === 'groups') {
-    const { layout, filter, exclude, items, useEnv } = section;
-    const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
-    const mergedLayout = mergeValues(defaultLayout, layout ?? {});
-    const groups = formatGroups(options, mergedLayout, keys, flags, items, incl, excl, useEnv);
+    const groups = formatGroups(options, section, keys, flags);
     for (const [group, entries] of getEntries(groups)) {
       // there is always at least one entry per group
       if (heading) {
@@ -678,32 +681,14 @@ function formatHelpSection(
       if (content) {
         formatTextBlock({ ...content, text: group ? '' : content.text }, result, 2);
       }
-      for (const [names, param, descr] of entries) {
-        result.push(...names, param, descr.break()); // include trailing line feed
-      }
+      result.push(...entries.flat().flat());
     }
   } else {
     if (heading) {
       formatTextBlock(heading, result);
     }
     if (type === 'usage') {
-      const baseSty = config.styles.base;
-      const prev: Array<AnsiString> = [];
-      let indent = content?.indent ?? 0;
-      let breaks = content?.noBreakFirst && !result.length ? 0 : (content?.breaks ?? 0);
-      const progName = content?.text ?? flags.progName;
-      if (progName) {
-        const str = new AnsiString(indent).break(breaks).pushSty(baseSty).pushSty(content?.style);
-        appendStyledString(progName, str, content?.noSplit);
-        prev.push(str.popSty().popSty());
-        indent = str.wrap() + 1; // get last column with indentation
-        breaks = 0; // avoid breaking between program name and usage
-      }
-      const str = new AnsiString(indent, content?.align === 'right').break(breaks).pushSty(baseSty);
-      formatUsage(keys, options, section, flags, str);
-      if (str.maxLength) {
-        result.push(...prev, str.popSty().break()); // include trailing line feed
-      }
+      formatUsageSection(options, section, keys, flags, result);
     } else if (content) {
       formatTextBlock(content, result, 1); // include trailing line feed
     }
@@ -711,18 +696,46 @@ function formatHelpSection(
 }
 
 /**
- * Appends a string that may contain inline styles to a ANSI string.
- * @param str The string to be appended
- * @param result The resulting string
- * @param noSplit Whether to disable text splitting
+ * Formats a usage section to be included in the help message.
+ * Options are rendered in the order specified in the definitions or in the section filter.
+ * @param options The option definitions
+ * @param section The help section
+ * @param keys The filtered option keys
+ * @param flags The formatter flags
+ * @param result The resulting message
  */
-function appendStyledString(str: StyledString, result: AnsiString, noSplit: boolean = false) {
-  if (!isString(str)) {
-    result.other(str);
-  } else if (noSplit) {
-    result.add(str.replace(regex.sgr, ''), str);
-  } else {
-    result.split(str);
+function formatUsageSection(
+  options: OpaqueOptions,
+  section: HelpUsageSection,
+  keys: ReadonlyArray<string>,
+  flags: FormatterFlags,
+  result: AnsiMessage,
+) {
+  const { text, style, align, noSplit, noBreakFirst } = section.content ?? {};
+  const progName = text ?? flags.progName;
+  const baseSty = config.styles.base;
+  const prev: Array<AnsiString> = [];
+  let indent = section.content?.indent ?? 0;
+  let breaks = noBreakFirst && !result.length ? 0 : (section.content?.breaks ?? 0);
+  if (progName) {
+    const str = new AnsiString(indent)
+      .break(breaks)
+      .pushSty(baseSty)
+      .pushSty(style)
+      .append(progName, !noSplit)
+      .popSty()
+      .popSty();
+    prev.push(str);
+    indent += str.lineWidth + 1; // get last column with indentation
+    breaks = 0; // avoid breaking between program name and usage
+  }
+  const str = new AnsiString(indent, align).break(breaks).pushSty(baseSty);
+  formatUsage(keys, options, section, flags, str);
+  if (str.maxLength) {
+    if (section.comment) {
+      str.append(section.comment, !noSplit);
+    }
+    result.push(...prev, str.popSty().break()); // include trailing line feed
   }
 }
 
@@ -735,11 +748,15 @@ function appendStyledString(str: StyledString, result: AnsiString, noSplit: bool
 function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter: number = 0) {
   const { text, style, align, indent, breaks, noSplit, noBreakFirst } = block;
   const breaksBefore = noBreakFirst && !result.length ? 0 : (breaks ?? 0);
-  const str = new AnsiString(indent, align === 'right').break(breaksBefore);
+  const str = new AnsiString(indent, align).break(breaksBefore);
   if (text) {
-    str.pushSty(config.styles.base).pushSty(style);
-    appendStyledString(text, str, noSplit);
-    str.popSty().popSty().break(breaksAfter);
+    str
+      .pushSty(config.styles.base)
+      .pushSty(style)
+      .append(text, !noSplit)
+      .popSty()
+      .popSty()
+      .break(breaksAfter);
   }
   result.push(str);
 }
@@ -749,7 +766,7 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
  * Options are rendered in the order specified in the definitions or in the section filter.
  * @param keys The filtered option keys
  * @param options The option definitions
- * @param section The help section
+ * @param section The usage section
  * @param flags The formatter flags
  * @param result The resulting string
  */
@@ -760,7 +777,7 @@ function formatUsage(
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, exclude, required, requires, inclusive, comment } = section;
+  const { filter, exclude, required, inclusive, compact } = section;
   const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
   const requiredSet = new Set(required?.filter((key) => key in options));
   const selectedSet = new Set(keys);
@@ -768,7 +785,7 @@ function formatUsage(
     incl ? setIntersection(new Set(incl), selectedSet) : selectedSet,
     new Set(excl),
   ); // preserve filter order
-  const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive ?? requires);
+  const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {
@@ -780,12 +797,7 @@ function formatUsage(
   }
   const usage = createUsage(adjacency);
   sortUsageStatement(withMarkerSet, usage);
-  formatUsageStatement(requiredSet, options, flags, result, components, usage);
-  if (!result.maxLength) {
-    result.clear();
-  } else if (comment) {
-    result.split(comment);
-  }
+  formatUsageStatement(requiredSet, options, flags, result, components, usage, compact);
 }
 
 /**
@@ -846,6 +858,7 @@ function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStateme
  * @param result The resulting string
  * @param components The option components
  * @param usage The usage statement
+ * @param compact Whether to keep alternatives compact
  */
 function formatUsageStatement(
   requiredKeys: ReadonlySet<string>,
@@ -854,13 +867,14 @@ function formatUsageStatement(
   result: AnsiString,
   components: Readonly<RecordKeyMap>,
   usage: Readonly<UsageStatement>,
+  compact: boolean = true,
 ) {
   let alwaysRequired = false;
   let renderBrackets = false;
   const count = result.count;
   for (const element of usage) {
     if (isArray(element)) {
-      formatUsageStatement(requiredKeys, options, flags, result, components, element);
+      formatUsageStatement(requiredKeys, options, flags, result, components, element, compact);
       continue;
     }
     const keys = components[element];
@@ -872,7 +886,14 @@ function formatUsageStatement(
         styles.symbol = option.styles?.names ?? saved; // use configured style, if any
         const isAlone = usage.length === 1 && keys.length === 1;
         const isRequired = option.required || requiredKeys.has(key);
-        const hasRequiredPart = formatUsageOption(option, flags, isAlone, isRequired, result);
+        const hasRequiredPart = formatUsageOption(
+          option,
+          flags,
+          isAlone,
+          isRequired,
+          compact,
+          result,
+        );
         alwaysRequired ||= isRequired;
         renderBrackets ||= hasRequiredPart;
       } finally {
@@ -892,6 +913,7 @@ function formatUsageStatement(
  * @param flags The formatter flags
  * @param isAlone True if the option is alone in a dependency group
  * @param isRequired True if the option is considered always required
+ * @param compact Whether to keep alternatives compact
  * @param result The resulting string
  * @returns True if a non-optional part was rendered
  */
@@ -900,15 +922,16 @@ function formatUsageOption(
   flags: FormatterFlags,
   isAlone: boolean,
   isRequired: boolean,
+  compact: boolean,
   result: AnsiString,
 ): boolean {
-  const { exprOpen, exprClose, optionalOpen, optionalClose } = config.connectives;
+  const { exprOpen, exprClose, optionAlt, optionalOpen, optionalClose } = config.connectives;
   const { stdinSymbol } = flags;
   const count = result.count;
   const hasParam = hasTemplate(option, true);
   const hasStdin = option.stdin && stdinSymbol !== undefined;
   const isPositional = option.positional !== undefined;
-  const nameCount = formatUsageNames(option, flags, result);
+  const nameCount = formatUsageNames(option, flags, compact, result);
   let hasRequiredPart = !!nameCount;
   if (isPositional) {
     if (nameCount && (hasParam || !isAlone)) {
@@ -924,7 +947,11 @@ function formatUsageOption(
   if (hasStdin) {
     let enclose = false;
     if (result.count > count) {
-      result.close(config.connectives.optionAlt).merge = true;
+      if (compact) {
+        result.close(optionAlt).merge = true;
+      } else {
+        result.word(optionAlt);
+      }
       enclose = !isAlone || !hasRequiredPart || isRequired;
     } else {
       hasRequiredPart = true; // stdin is required
@@ -941,10 +968,16 @@ function formatUsageOption(
  * Formats an option's names to be included in the usage statement.
  * @param option The option definition
  * @param flags The formatter flags
+ * @param compact Whether to keep alternatives compact
  * @param result The resulting string
  * @returns The number of names rendered
  */
-function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: AnsiString): number {
+function formatUsageNames(
+  option: OpaqueOption,
+  flags: FormatterFlags,
+  compact: boolean,
+  result: AnsiString,
+): number {
   const { clusterPrefix } = flags;
   const uniqueNames = new Set(getOptionNames(option));
   if (clusterPrefix !== undefined) {
@@ -953,8 +986,12 @@ function formatUsageNames(option: OpaqueOption, flags: FormatterFlags, result: A
     }
   }
   if (uniqueNames.size) {
-    const sep = config.connectives.optionAlt;
-    const flags: FormattingFlags = { sep, ...openArrayFlags, mergeNext: true }; // keep names compact
+    const flags: FormattingFlags = {
+      sep: config.connectives.optionAlt,
+      ...openArrayFlags,
+      mergePrev: compact,
+      mergeNext: compact,
+    };
     result.value([...uniqueNames].map(getSymbol), flags);
   }
   return uniqueNames.size;
@@ -985,17 +1022,15 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
     .pushSty(sty)
     .open(openBracket)
     .open(inline ? '=' : '');
-  if (example !== undefined && (!isUsage || name === undefined)) {
+  if (name === undefined) {
     let param = example;
     if (separator && isArray(param)) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
     result.value(param, { sep: '', ...openArrayNoMergeFlags });
-  } else if (isString(name)) {
-    result.split(name);
-  } else if (name) {
-    result.other(name);
+  } else {
+    result.append(name); // split parameter name, if necessary
   }
   if (result.count > count) {
     result.close(ellipsis);

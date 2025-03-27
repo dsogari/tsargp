@@ -133,7 +133,7 @@ const mainOpts = {
         type: 'groups',
         heading: { text: 'Options:', style: style(tf.bold), breaks: 1, noBreakFirst: true },
         content: { breaks: 2 },
-        layout: { param: { align: 'merge' } },
+        param: { merge: true },
         items: allHelpItems.filter((item) => item !== HelpItem.positional),
       },
     ],

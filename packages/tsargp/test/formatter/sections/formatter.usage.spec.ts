@@ -120,6 +120,13 @@ describe('rendering a usage section', () => {
       );
     });
 
+    it('indent the program name and the options, and include a trailing break', () => {
+      const sections: HelpSections = [{ type: 'usage', content: { indent: 2 } }];
+      expect(format(options2, sections, flags).wrap(12, false, true)).toEqual(
+        '  prog [-f]\n       [-f2]\n',
+      );
+    });
+
     it('replace the program name with a string content text', () => {
       const sections: HelpSections = [{ type: 'usage', content: { text: 'prog  name' } }];
       expect(format(options, sections).wrap()).toEqual('prog name [-f]\n');
@@ -136,16 +143,21 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the options', () => {
-    it('render usage with comment and AnsiString parameter name', () => {
+    it('render usage with comment and usage parameter name', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
+          paramName: 'this will be overridden',
           usageParamName: new AnsiString().split('my  param'),
         },
       } as const satisfies Options;
-      const sections: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];
-      expect(format(options, sections).wrap()).toEqual('[-s my param] this is a comment\n');
+      const sections0: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];
+      const sections1: HelpSections = [
+        { type: 'usage', comment: new AnsiString().split('this is a  comment') },
+      ];
+      expect(format(options, sections0).wrap()).toEqual('[-s my param] this is a comment\n');
+      expect(format(options, sections1).wrap()).toEqual('[-s my param] this is a comment\n');
     });
 
     it('render a positional option without template', () => {
@@ -166,6 +178,23 @@ describe('rendering a usage section', () => {
       const case1: HelpSections = [{ type: 'usage', filter: ['alwaysRequired'] }];
       expect(format(options, case0).wrap()).toEqual('[-s1]\n');
       expect(format(options, case1).wrap()).toEqual('-s2\n');
+    });
+
+    it('render usage with non-compact alternatives', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f', '--flag'],
+          required: true,
+        },
+        single: {
+          type: 'single',
+          names: ['-s'],
+          stdin: true,
+        },
+      } as const satisfies Options;
+      const sections: HelpSections = [{ type: 'usage', compact: false }];
+      expect(format(options, sections, flags).wrap()).toEqual('prog (-f | --flag) [-s | -]\n');
     });
 
     it('render a flag option', () => {
@@ -196,13 +225,12 @@ describe('rendering a usage section', () => {
           cluster: 's', // merge with option name
           paramName: '<param>',
         },
-        alwaysRequiredWithClusterAndOverrideParamName: {
+        alwaysRequiredWithCluster: {
           type: 'single',
           names: ['-s2'],
           cluster: 'x',
           required: true, // should appear first
-          paramName: '<param>',
-          usageParamName: '<arg>',
+          paramName: '<arg>',
         },
         emptyMarker: {
           type: 'single',
@@ -254,12 +282,11 @@ describe('rendering a usage section', () => {
           cluster: 'a',
           paramName: '<param>',
         },
-        alwaysRequiredAndOverrideParamName: {
+        alwaysRequired: {
           type: 'array',
           names: ['-a2'],
           required: true, // should appear first
-          paramName: '<param>',
-          usageParamName: '<arg>',
+          paramName: '<arg>',
         },
         markerWithEmptyParamName: {
           type: 'array',
@@ -310,12 +337,11 @@ describe('rendering a usage section', () => {
           paramCount: 0,
           paramName: '',
         },
-        alwaysRequiredWithRangeParamCountAndOverrideParamName: {
+        alwaysRequiredWithRangeParamCount: {
           type: 'function',
           names: ['-f2'],
           required: true, // should appear first
-          paramName: '<param>',
-          usageParamName: '<arg1> [<arg2>]',
+          paramName: '<arg1> [<arg2>]',
           paramCount: [1, 2],
         },
         unnamedPositionalWithExactParamCount: {

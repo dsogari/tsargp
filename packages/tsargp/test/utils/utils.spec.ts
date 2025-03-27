@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  mergeValues,
   findValue,
   areEqual,
   readFile,
@@ -11,16 +10,6 @@ import {
   setDifference,
   setIntersection,
 } from '../../src/library/utils';
-
-describe('mergeValues', () => {
-  it('merge source properties with the template object', () => {
-    expect(mergeValues({ a: { b: 2, c: 3 } }, { a: { c: 2 } })).toEqual({ a: { b: 2, c: 2 } });
-  });
-
-  it('replace array values from the template object', () => {
-    expect(mergeValues({ a: [1] }, { a: [2] })).toEqual({ a: [2] });
-  });
-});
 
 describe('findValue', () => {
   it('return undefined on no match', () => {

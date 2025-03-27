@@ -2,16 +2,16 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import type {
-  Options,
-  OptionInfo,
-  OptionType,
-  OptionValues,
+  ICompletionSuggestion,
   OpaqueOption,
   OpaqueOptionValues,
+  OptionInfo,
+  Options,
+  OptionType,
+  OptionValues,
+  RequirementCallback,
   Requires,
   RequiresEntry,
-  RequirementCallback,
-  ICompletionSuggestion,
 } from './options.js';
 import type { FormattingFlags } from './styles.js';
 import type { Args } from './utils.js';
@@ -20,37 +20,38 @@ import { config } from './config.js';
 import { ErrorItem } from './enums.js';
 import { format, FormatterFlags } from './formatter.js';
 import {
-  WarnMessage,
-  TextMessage,
   AnsiMessage,
   AnsiString,
   ErrorMessage,
   JsonMessage,
+  TextMessage,
+  WarnMessage,
 } from './styles.js';
 import {
-  getParamCount,
-  isMessage,
-  visitRequirements,
-  OptionRegistry,
-  valuesFor,
-  getNestedOptions,
-  isCommand,
+  areEqual,
   checkInline,
-  normalizeArray,
-  getCmdLine,
   findSimilar,
-  getEnv,
-  getCompIndex,
-  getEntries,
-  getSymbol,
-  getKeys,
   findValue,
   getArgs,
-  readFile,
-  areEqual,
-  regex,
-  isString,
+  getCmdLine,
+  getCompIndex,
+  getEntries,
+  getEnv,
+  getKeys,
+  getNestedOptions,
+  getParamCount,
+  getSymbol,
+  isCommand,
   isFunction,
+  isMessage,
+  isString,
+  max as max2,
+  normalizeArray,
+  OptionRegistry,
+  readFile,
+  regex,
+  valuesFor,
+  visitRequirements,
 } from './utils.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -411,7 +412,7 @@ async function parseArgs(context: ParseContext) {
         if (await handleNiladic(context, info, j, args.slice(j + 1))) {
           return; // skip requirements
         }
-        prev[0] += Math.max(0, option.skipCount ?? 0);
+        prev[0] += max2(0, option.skipCount ?? 0);
         prev[1] = undefined;
         continue; // fetch more
       }

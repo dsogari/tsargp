@@ -24,6 +24,7 @@ const banner = <Banner storageKey="some-key">Nextra 4.0 is released 🎉</Banner
 const navbar = (
   <Navbar
     logo={<b>tsargp</b>}
+    projectLink="https://github.com/dsogari/tsargp"
     // ... Your additional navbar options
   />
 );

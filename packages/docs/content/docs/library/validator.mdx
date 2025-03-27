@@ -25,9 +25,9 @@ It returns a promise that resolves to a `ValidationResult` object containing the
 
 The validation procedure can be configured via a `ValidationFlags` object that has some optional properties, as described below.
 
-### Skip naming issues
+### Skip warnings
 
-The `noNamingIssues` property indicates whether the validator should skip detection of naming inconsistencies.
+The `noWarn` property indicates whether the validator should skip generation of warnings.
 
 ### Skip recursion
 
@@ -44,12 +44,13 @@ The following restrictions will raise an error for any option definition that fa
 - **Invalid option name** -- An [option name], [positional marker], [cluster letter] or [environment variable] name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. Any other Unicode character is allowed (including whitespace).
 - **Duplicate option name** -- An option should not have duplicate names (including all of the above), and there cannot be two options with the same name.
 - **Duplicate parameter choice** -- In an option with [parameter choices], the choices must not contain duplicate values.
-- **Invalid parameter count** -- In a [function] option with a range [parameter count], the minimum value should be strictly less than the maximum, but not less than zero.
+- **Invalid parameter count** -- A [function] option should have a valid [parameter count].
 - **Option requiring itself** -- An option must not declare a requirement that references itself.
 - **Unknown required option** -- An option must not declare a requirement that references an _unknown_ option.
 - **Invalid required option** -- An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
 - **Invalid required value** -- An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is _nullish_ (i.e., `null{:ts}` or `undefined{:ts}`).
 - **Duplicate positional option** -- Since positional arguments have no name, they must pertain to exactly one option. Hence, there cannot be _two_ options with the [positional] attribute in the same definition level.
+- **Invalid inline constraint** -- An [inline constraint] should not be declared if the option has no name, or if it applies to all names and the option is polyadic, or if it applies to specific names and references an _unknown_ name.
 - **Option not suppliable** -- It must be possible for an option to be [supplied], i.e., the latter must either have an [option name] or [cluster letter], accept [positional] arguments or have an [environment] attribute.
 
 > [!NOTE]
@@ -96,13 +97,12 @@ The following restrictions will produce a warning that is returned by the valida
 [element count limit]: options#element-count-limit
 [positional]: options#positional--marker
 [always required]: options#always-required
-[required]: options#disable--require-inline
 [default value]: options#default-value
 [parameter count]: options#parameter-count
 [cluster letter]: options#cluster-letters
 [cluster letters]: options#cluster-letters
 [truth and falsity]: options#truth--falsity-names
-[inline constraint]: options#disable--require-inline
+[inline constraint]: options#inline-constraint
 [requirement callbacks]: options#requirement-callback
 [requirement expressions]: options#requirement-expression
 [supplied]: options#option-supply

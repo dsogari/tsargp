@@ -1,15 +1,22 @@
 'use client';
 
 //--------------------------------------------------------------------------------------------------
-// Imports and Exports
+// Imports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
 import { parseInto, ErrorMessage, AnsiMessage, valuesFor, type ParsingFlags } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { demo as options } from 'tsargp/examples';
 
-// @ts-expect-error remove version option since there's no package.json in the browser
-delete options.version;
+//--------------------------------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------------------------------
+const flags: ParsingFlags = {
+  progName: 'tsargp',
+  clusterPrefix: '-',
+  optionPrefix: '-',
+  stdinSymbol: '-',
+};
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -22,14 +29,7 @@ class DemoCommand extends Command {
   override async run(line: string, compIndex?: number) {
     try {
       const values = valuesFor(options);
-      const flags: ParsingFlags = {
-        progName: 'tsargp',
-        compIndex,
-        clusterPrefix: '-',
-        optionPrefix: '-',
-        stdinSymbol: '-',
-      };
-      const { warning } = await parseInto(options, values, line, flags);
+      const { warning } = await parseInto(options, values, line, { ...flags, compIndex });
       if (warning) {
         this.println(warning.wrap(this.state.width));
       }

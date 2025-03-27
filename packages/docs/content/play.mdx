@@ -51,7 +51,8 @@ return {
 
 - check if an error is reported for duplicate parameter choices
 - check if an error is reported for an invalid parameter count
-- check if an error is reported for a variadic option with an inline constraint (and no parameter separator or allowing appending values)
+- check if an error is reported for an invalid inline constraint
+- check if an error is reported for an array-valued option with too many values in the default or example value, when configured with an element count
 
 ### Requirements validation
 
@@ -63,6 +64,7 @@ return {
 ### Miscellaneous
 
 - check if an error is reported for duplicate positional options
+- check if an error is reported for an option that cannot be supplied
 
 ### Validation warnings
 

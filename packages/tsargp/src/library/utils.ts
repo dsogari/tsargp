@@ -34,18 +34,6 @@ export type Enumerate<N extends number, A extends Array<number> = []> = A['lengt
   : Enumerate<N, [...A, A['length']]>;
 
 /**
- * A helper type to add optionality to types and their properties.
- * @template T The source type
- * @template N The maximum recursion depth
- * @template A The helper array
- */
-export type PartialWithDepth<
-  T,
-  N extends number = 1,
-  A extends Array<number> = [],
-> = A['length'] extends N ? Partial<T> : { [K in keyof T]?: PartialWithDepth<T[K], N, [...A, 1]> };
-
-/**
  * A helper type to alias another type while eliding type resolution in IntelliSense.
  * @template T The type to be aliased
  */
@@ -96,6 +84,7 @@ export type NamingRules = Readonly<Record<string, NamingRuleSet>>;
 /**
  * The result of matching names against naming rules.
  * It includes the first match in each ruleset.
+ * @template T The type of naming rulesets
  */
 export type NamingMatch<T extends NamingRules> = Resolve<{
   -readonly [key1 in keyof T]: {
@@ -112,6 +101,11 @@ export type RecordKeyMap = Record<string, Array<string>>;
  * A forest structure representing a usage statement.
  */
 export type UsageStatement = Array<string | UsageStatement>;
+
+/**
+ * A record of string keys and unknown values.
+ */
+export type UnknownRecord = Record<string, unknown>;
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -182,6 +176,9 @@ const jsonImportOptions: ImportCallOptions = {
   with: jsonImportAttributes,
   assert: jsonImportAttributes,
 };
+
+const { min, max } = Math;
+export { min, max }; // to avoid typing `Math` all the time and reduce footprint
 
 //--------------------------------------------------------------------------------------------------
 // Classes
@@ -281,13 +278,23 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
 }
 
 /**
+ * Checks whether an option has a name that can be supplied on the command line.
+ * Does not include the positional marker.
+ * @param option The option definition
+ * @returns True if the option has a name that can be supplied
+ */
+export function hasSuppliableName(option: OpaqueOption): boolean {
+  return !!option.cluster || getLastOptionName(option) !== undefined;
+}
+
+/**
  * Checks whether an option can only be supplied through the environment.
  * Does not check whether the environment attributes are actually set.
  * @param option The option definition
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !option.cluster && (option.positional ?? getLastOptionName(option)) === undefined;
+  return !hasSuppliableName(option) && option.positional === undefined;
 }
 
 /**
@@ -339,7 +346,7 @@ export function getParamCount(option: OpaqueOption): NumericRange {
   return type === 'function'
     ? isObject(paramCount)
       ? paramCount
-      : paramCount !== undefined && paramCount >= 0
+      : paramCount !== undefined && isFinite(paramCount)
         ? [paramCount, paramCount]
         : [0, Infinity]
     : type === 'array'
@@ -349,6 +356,7 @@ export function getParamCount(option: OpaqueOption): NumericRange {
 
 /**
  * Visits an option's requirements, executing a callback according to the type of the requirement.
+ * @template T The type of the callback result
  * @param requires The option requirements
  * @param keyFn The callback to process an option key
  * @param notFn The callback to process a "not" expression
@@ -435,7 +443,7 @@ export async function getNestedOptions(option: OpaqueOption): Promise<OpaqueOpti
  */
 export function checkInline(option: OpaqueOption, name: string): boolean | 'always' {
   const { inline } = option;
-  return (isObject(inline) ? inline[name] : inline) ?? true;
+  return (isObject(inline) ? inline[name] : inline) ?? true; // allowed by default, but not required
 }
 
 /**
@@ -617,11 +625,7 @@ export function areEqual(actual: unknown, expected: unknown): boolean {
       return (
         keys1.length === keys2.length &&
         !keys1.find(
-          (key) =>
-            !areEqual(
-              (actual as Record<string, unknown>)[key],
-              (expected as Record<string, unknown>)[key],
-            ),
+          (key) => !areEqual((actual as UnknownRecord)[key], (expected as UnknownRecord)[key]),
         )
       );
     }
@@ -721,6 +725,7 @@ export function findSimilar(
 
 /**
  * Matches names against naming rules.
+ * @template T The type of naming rulesets
  * @param names The list of names
  * @param rulesets The sets of rules
  * @returns The matching result
@@ -868,27 +873,8 @@ export function selectAlternative(phrase: string, alt = 0): string {
 }
 
 /**
- * Merges the first-level properties of a source object with those of a template object.
- * @param template The template object
- * @param source The source object
- * @returns The result object
- */
-export function mergeValues<T extends Record<string, unknown>>(
-  template: T,
-  source: PartialWithDepth<T>,
-): T {
-  const result: Record<string, unknown> = {};
-  for (const [key, val] of getEntries(template)) {
-    result[key] =
-      isArray(val) || !isObject(val)
-        ? (source[key] ?? val)
-        : { ...val, ...(source[key] as object) };
-  }
-  return result as T;
-}
-
-/**
  * Finds a value that matches a predicate in an object.
+ * @template T The type of record value
  * @param rec The record-like object to search in
  * @param pred The predicate function
  * @returns The first value matching the predicate
@@ -899,26 +885,6 @@ export function findValue<T>(rec: Record<string, T>, pred: (val: T) => boolean):
       return val;
     }
   }
-}
-
-/**
- * Gets the maximum of two numbers.
- * @param a The first operand
- * @param b The second operand
- * @returns The maximum of the two
- */
-export function max(a: number, b: number): number {
-  return a > b ? a : b;
-}
-
-/**
- * Gets the minimum of two numbers.
- * @param a The first operand
- * @param b The second operand
- * @returns The minimum of the two
- */
-export function min(a: number, b: number): number {
-  return a < b ? a : b;
 }
 
 /**
@@ -950,6 +916,7 @@ export function getKeys(rec: object): Array<string> {
 
 /**
  * Gets a list of values from an object.
+ * @template T The type of record value
  * @param rec The record-like object
  * @returns The list of object values
  */
@@ -959,6 +926,7 @@ export function getValues<T>(rec: Readonly<Record<string, T>>): Array<T> {
 
 /**
  * Gets a list of entries from an object.
+ * @template T The type of record value
  * @param rec The record-like object
  * @returns The list of object entries
  */
@@ -968,10 +936,11 @@ export function getEntries<T>(rec: Readonly<Record<string, T>>): Array<[string, 
 
 /**
  * Checks if a value is an array.
+ * @template T The type of array
  * @param value The value
  * @returns True if the value is an array
  */
-export function isArray<T = unknown>(value: unknown): value is Array<T> {
+export function isArray<T = Array<unknown>>(value: unknown): value is T {
   return Array.isArray(value);
 }
 
@@ -1048,6 +1017,7 @@ export function getCompIndex(): number | undefined {
 
 /**
  * Remove duplicate values from an array without sorting.
+ * @template T The type of array element
  * @param vals The values
  * @returns The unique values
  */
@@ -1057,6 +1027,7 @@ export function makeUnique<T>(vals: ReadonlyArray<T>): Array<T> {
 
 /**
  * Add elements to a set from another set.
+ * @template T The type of set element
  * @param lhs The left-hand side of the operation (may be updated)
  * @param rhs The right-hand side of the operation
  * @returns The set union
@@ -1068,6 +1039,7 @@ export function setUnion<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 
 /**
  * Removes elements from a set that also appear in another set.
+ * @template T The type of set element
  * @param lhs The left-hand side of the operation (may be updated)
  * @param rhs The right-hand side of the operation
  * @returns The set difference
@@ -1079,6 +1051,7 @@ export function setDifference<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 
 /**
  * Removes elements from a set that do not appear in another set.
+ * @template T The type of set element
  * @param lhs The left-hand side of the operation (may be updated)
  * @param rhs The right-hand side of the operation
  * @returns The set intersection
