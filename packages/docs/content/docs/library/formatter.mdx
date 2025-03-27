@@ -46,7 +46,7 @@ The `clusterPrefix` property specifies the prefix for [cluster arguments]. If no
 
 ### Option filter
 
-The `optionFilter` property specifies a lists of patterns to select a subset of options. If not present, all options will be included respecting the order of their [definitions].
+The `optionFilter` property specifies a list of patterns to select a subset of options. If not present, all options will be included respecting the order of their [definitions].
 
 The patterns are case-insensitive and match [option names], [synopsis] and [environment variable] names. If multiple patterns are provided, any matched one will suffice to include an option in the message.
 
@@ -64,7 +64,7 @@ Every option definition produces a help entry in its respective group in the hel
 
 ### Names column
 
-The first column contains the options' names separated by the value of the `optionSep` [connective word]. Names are listed in the order specified in the [option names] attribute.
+The first column contains the option names separated by the value of the `optionSep` [connective word]. Names are listed in the order specified in the [option names] attribute.
 
 > [!WARNING]
 >
@@ -72,7 +72,7 @@ The first column contains the options' names separated by the value of the `opti
 
 #### Name slots
 
-Depending on the [column alignment] setting, each option name may reserve a "slot" in the respective position in this column. The width of a slot will be the length of the _longest_ name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
+Depending on the column [alignment setting], each option name may reserve a "slot" in the respective position in this column. The width of a slot will be the length of the _longest_ name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
 
 For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as shown below. Note how the absent name produces whitespace between its neighbors:
 
@@ -82,7 +82,7 @@ For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}
 
 ### Parameter column
 
-The second column is rendered according to the [parameter rules].
+The second column contains the option parameter(s). It is rendered according to [parameter rules].
 
 > [!WARNING]
 >
@@ -105,7 +105,7 @@ The result might be something like `=<param>`, `[<param>...]` or `[...]`.
 
 ### Description column
 
-The last column contains the option description and is composed of [help items].
+The last column contains the option description, which is composed of [help items].
 
 #### Help items
 
@@ -243,7 +243,7 @@ In addition to the [common properties], this type of section has the following o
 
 ## Layout settings
 
-The layout of a [help column] applies to all help entries within the containing [groups section]. It can be configured via the settings described below.
+The layout of a [help column] applies to all help entries within the containing section. It can be configured via the settings described below.
 
 > [!TIP]
 >
@@ -266,7 +266,7 @@ Some help columns may have additional layout settings:
 - `absolute` -- whether `indent` should be relative to the beginning of the line (defaults to `false{:ts}`)
 - `merge` -- whether to merge the contents of the column with the previous one (defaults to `false{:ts}`)
 
-The `slotIndent` setting is currently only available for the [names column]. It means that each name reserves a "slot" in the column, and the name will be aligned within that slot. (See [name slots] for more information.)
+The `slotIndent` setting is currently only available for the [names column]. It causes each name to reserve a "slot" in the column, and the name will be aligned within that slot. (See [name slots] for more information.)
 
 > [!NOTE]
 >
@@ -274,7 +274,7 @@ The `slotIndent` setting is currently only available for the [names column]. It 
 
 The `absolute` and `merge` settings only apply to the other columns.
 
-The `merge` setting is useful, for instance, if you want option parameters to be inlined with option names. Note that merging a column is not the same as using zero indentation. Indentation is always relative to the end of the previous column, which depends on the length of the _longest_ text in that column, across all entries. On the other hand, merging implies having no additional space between text in both columns.
+The `merge` setting is useful, for instance, if you want option parameters to be inlined with option names. Note that merging a column is not the same as using zero indentation. The indentation is always relative to the end of the previous column, which depends on the length of the _longest_ text in that column, across all help entries. On the other hand, merging implies having no additional space between text in both columns.
 
 > [!NOTE]
 >
@@ -325,7 +325,7 @@ import type { WithSectionGroups } from 'tsargp';
 // ---cut---
 const layout: WithSectionGroups = {
   names: {
-    slotIndent: 1, // assign a slot to each option name, with one space between slots
+    slotIndent: 1, // assign a slot to each option name, with a single space between slots
   },
   param: {
     breaks: 1, // break option parameters
@@ -340,7 +340,7 @@ const layout: WithSectionGroups = {
 };
 ```
 
-Below is an excerpt of a help message produced with the above configuration, in a terminal with 60-character width:
+Below is an excerpt of a help message produced with the above configuration:
 
 {/* cSpell:disable */}
 
@@ -367,7 +367,7 @@ Below is an excerpt of a help message produced with the above configuration, in 
 [help column]: #help-columns
 [custom phrases]: #custom-phrases
 [layout settings]: #layout-settings
-[column alignment]: #column-alignment
+[alignment setting]: #common-settings
 [help items]: #help-items
 [name slots]: #name-slots
 [common properties]: #common-properties

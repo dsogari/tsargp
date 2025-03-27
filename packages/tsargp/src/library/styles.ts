@@ -786,7 +786,7 @@ export class AnsiString {
   }
 
   /**
-   * Formats a unknown value.
+   * Appends a value.
    * @param value The value to be formatted
    * @param flags The formatting flags
    * @returns The ANSI string instance

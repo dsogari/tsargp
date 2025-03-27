@@ -260,11 +260,66 @@ describe('AnsiString', () => {
   });
 
   describe('value', () => {
-    // TODO
+    it('append values of various kinds', () => {
+      const str = new AnsiString()
+        .value(true)
+        .value('some text')
+        .value(123)
+        .value(/def/)
+        .value(Symbol.for('some name'))
+        .value(new URL('https://abc'))
+        .value(new AnsiString().word('type').word('script'))
+        .value([1, 'a', false])
+        .value({ a: 1, 0: 'c', 'd-': /ghi/i })
+        .value(() => 1)
+        .value(undefined);
+      expect(str.strings).toEqual([
+        'true',
+        `'some text'`,
+        '123',
+        '/def/',
+        'some name',
+        'https://abc/',
+        'type',
+        'script',
+        '[1,',
+        `'a',`,
+        'false]',
+        `{'0':`,
+        `'c',`,
+        'a:',
+        '1,',
+        `'d-':`,
+        '/ghi/i}',
+        '<()',
+        '=>',
+        '1>',
+        '<undefined>',
+      ]);
+    });
   });
 
   describe('append', () => {
-    // TODO
+    it('append a normal string with splitting', () => {
+      const str = new AnsiString().append('type script');
+      expect(str.strings).toEqual(['type', 'script']);
+    });
+
+    it('append a normal string without splitting', () => {
+      const str = new AnsiString().append('type script', false);
+      expect(str.strings).toEqual(['type script']);
+    });
+
+    it('append a normal string with control sequences without splitting', () => {
+      const str = new AnsiString().append(`type ${bold} script`, false);
+      expect(str.strings).toEqual(['type  script']);
+      expect(str.styled).toEqual(['type ' + bold + ' script']);
+    });
+
+    it('append another ANSI string', () => {
+      const str = new AnsiString().append(new AnsiString().word('type').word('script'));
+      expect(str.strings).toEqual(['type', 'script']);
+    });
   });
 
   describe('toString', () => {
