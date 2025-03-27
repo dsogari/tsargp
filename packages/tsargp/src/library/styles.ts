@@ -681,7 +681,7 @@ export class AnsiString {
    * Wraps the internal strings to fit in a terminal width.
    * @param result The resulting list
    * @param currentColumn The current terminal column
-   * @param terminalWidth The desired terminal width (or zero or NaN to avoid wrapping)
+   * @param terminalWidth The desired terminal width (or zero or `NaN` to avoid wrapping)
    * @param emitStyles Whether styles should be emitted
    * @param emitSpaces Whether spaces should be emitted instead of move sequences
    * @returns The updated terminal column
@@ -689,7 +689,7 @@ export class AnsiString {
   wrap(
     result: Array<string>,
     currentColumn: number = 0,
-    terminalWidth: number = 0,
+    terminalWidth: number = NaN,
     emitStyles: boolean = false,
     emitSpaces: boolean = true,
   ): number {
@@ -717,7 +717,7 @@ export class AnsiString {
     // sanitize input
     let column = max(0, currentColumn || 0);
     const indent = max(0, this.indent || 0);
-    const width = indent + max(0, this.width || NaN) || max(0, terminalWidth || 0) || Infinity;
+    const width = min(indent + max(0, this.width || Infinity), max(0, terminalWidth || Infinity));
     let start = max(0, min(indent, width));
     let j = result.length; // save index for right-alignment
     const needToAlign = isFinite(width) && align === 'right';

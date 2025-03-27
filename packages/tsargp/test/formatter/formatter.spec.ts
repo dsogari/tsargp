@@ -155,8 +155,8 @@ describe('format', () => {
           paragraphs`,
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toMatch(
-      /^ {2}-f {4}A flag option with line breaks, tabs and ...\n\n {8}paragraphs\n$/,
+    expect(format(options).wrap()).toEqual(
+      '  -f    A flag option with line breaks, tabs and ...\n\n        paragraphs\n',
     );
   });
 
@@ -207,5 +207,16 @@ describe('format', () => {
         'section  content\n\n' +
         '  -f\n',
     );
+  });
+
+  it('wrap option parameters when the largest word does not fit the width', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        paramName: 'param_name',
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap(10, false, true)).toEqual('  -s\nparam_name\n');
   });
 });

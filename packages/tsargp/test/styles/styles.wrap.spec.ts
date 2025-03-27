@@ -195,9 +195,15 @@ describe('AnsiString', () => {
       });
 
       describe('the current column is not zero', () => {
-        it('add a line break when the largest word does not fit', () => {
+        it('add a line break when the largest word does not fit the configured width', () => {
           const result: Array<string> = [];
           new AnsiString(0, 'left', 5).split('abc largest').wrap(result, 2);
+          expect(result).toEqual(['\n', 'abc', '\n', 'largest']);
+        });
+
+        it('add a line break when the largest word does not fit the terminal width', () => {
+          const result: Array<string> = [];
+          new AnsiString(0, 'left', 10).split('abc largest').wrap(result, 2, 5);
           expect(result).toEqual(['\n', 'abc', '\n', 'largest']);
         });
 
