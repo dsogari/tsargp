@@ -744,7 +744,7 @@ describe('AnsiString', () => {
             .split('is fun');
           str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
           str.hook.hook = new AnsiString(); // tail
-          str.wrap(result, 0, 1, true);
+          str.wrap(result, 0, 1, true); // should ignore the terminal width
           expect(result).toEqual([
             '  ' + clr + bold + 'type', // bold style is "glued" to the first word
             '    ' + clr + 'type',

@@ -790,8 +790,7 @@ export class AnsiString {
     const needToAlign = isFinite(width) && align === 'right';
     const pad = start ? move(start) : ''; // precomputed for efficiency
     for (let i = context[0]; i < count; i++) {
-      const str = strings[i];
-      const len = str.length;
+      const len = strings[i].length;
       if (!len) {
         alignRight();
         if (hook) {
@@ -827,7 +826,7 @@ export class AnsiString {
         pad2 += recordToStyle(context[1]); // restore SGR attributes
       }
       column += len2 + len;
-      result.push(pad2 + (emitStyles ? styled[i] : str));
+      result.push(pad2 + (emitStyles ? styled[i] : strings[i]));
       if (hook && emitStyles) {
         const styles = styled[i].match(regex.sgr);
         if (styles) {
@@ -1199,7 +1198,7 @@ function applyStyle(sty: Style, result: StyleRecord, onlyIfPresent: boolean = fa
         result[cancelAttr] = attr;
         prev = cancelAttr;
       } else {
-        prev = undefined;
+        prev = undefined; // for completeness, and may also work around developer mistakes
       }
     } else if (prev) {
       // handle extended attribute

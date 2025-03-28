@@ -841,7 +841,8 @@ describe('format', () => {
         responsive: false,
       },
     ];
-    expect(format(options, sections).wrap()).toEqual(
+    // should ignore the terminal width
+    expect(format(options, sections).wrap(1, false, true)).toEqual(
       '' +
         '       -s,       <param>  A single option with\n' +
         '  --single                       big synopsis.\n' +

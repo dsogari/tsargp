@@ -235,7 +235,7 @@ In addition to the [common properties] and [filter properties], this type of sec
 - `descr` -- the [layout settings] for the [description column]
 - `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
 - `useEnv` -- whether option names should be replaced with [environment variable] names (defaults to `false{:ts}`)
-- `responsive` -- whether the layout is responsive (a.k.a., terminal-aware) (defaults to `true{:ts}`)
+- `responsive` -- whether the overall layout is responsive (a.k.a., terminal-aware) (defaults to `true{:ts}`)
 
 > [!TIP]
 >
@@ -359,6 +359,19 @@ Below is an excerpt of a help message produced with the above configuration:
           [90m[<param>...][0m
                      [0mA number array option. Accepts multiple
                              parameters. Defaults to [[33m1[0m, [33m2[0m].[0m
+```
+
+{/* cSpell:enable */}
+
+Here's an excerpt of a help message produced with non-responsive layout, with right-aligned columns:
+
+{/* cSpell:disable */}
+
+```ansi
+       [0m[35m-s[39m,       [0m[90m<param>[39m  [0mA single option with
+  [0;39m[35m--single[39m                       [0mbig synopsis.
+       [0m[35m-a[39m,      [0m[90m[<param>      [0mAccepts multiple
+   [0;39m[35m--array[39m   [0;90m<param>...][39m           [0mparameters.
 ```
 
 {/* cSpell:enable */}
