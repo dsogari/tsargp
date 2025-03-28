@@ -9,9 +9,14 @@ describe('AnsiString', () => {
       expect(str2.strings).toEqual(['[type', 'script']);
     });
 
-    it('preserve add closing word to a formatted generic value', () => {
+    it('add closing word to a formatted generic value', () => {
       const str = new AnsiString().format('#0', {}, () => 1).close('.');
       expect(str.strings).toEqual(['<()', '=>', '1>.']);
+    });
+
+    it('repeat the formatted value', () => {
+      const str = new AnsiString().format('#0 #0', {}, undefined);
+      expect(str.strings).toEqual(['<undefined>', '<undefined>']);
     });
 
     it('format single-valued arguments out of order', () => {
