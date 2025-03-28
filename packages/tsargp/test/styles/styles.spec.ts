@@ -226,7 +226,6 @@ describe('AnsiString', () => {
       const extended = style(fg.extended, ext8(0));
       const boldAndExtended = style(tf.bold, fg.extended, ext8(0));
       const cancelExtended = style(fg.default);
-      const cancelBoldAndExtended = style(tf.notBoldOrFaint, fg.default);
       const str = new AnsiString()
         .popSty() // does nothing
         .word('type')
@@ -238,7 +237,7 @@ describe('AnsiString', () => {
         .word('a')
         .popSty() // should reapply extended, but not bold
         .word('lot')
-        .popSty() // should cancel bold and extended, but not reapply clear
+        .popSty() // should clear all preceding attributes
         .word('of')
         .popSty() // clear needs no cancelling
         .word('fun')
@@ -249,7 +248,7 @@ describe('AnsiString', () => {
         clr + 'script',
         boldAndExtended + 'is',
         cancelExtended + 'a' + extended,
-        'lot' + cancelBoldAndExtended,
+        'lot' + clr,
         'of',
         'fun',
       ]);

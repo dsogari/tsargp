@@ -527,6 +527,50 @@ describe('AnsiString', () => {
               ' fun',
             ]);
           });
+
+          it('wrap a column that has a difference of two lines from the next', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'left', 6).word('type').break(); // feed ignored
+            str.hook.hook = new AnsiString(18, 'left', 6).split('type script is fun');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '    type',
+              '    type',
+              '\n',
+              '  script',
+              '          script',
+              '\n',
+              '  is',
+              ' fun',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has a missing line in the middle', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'left', 6).break().word('type').break(); // feed ignored
+            str.hook.hook = new AnsiString(18, 'left', 6).split('type script is fun');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '            type',
+              '\n',
+              '  script',
+              '  type',
+              '    script',
+              '\n',
+              '  is',
+              ' fun',
+              '          is',
+              ' fun',
+            ]);
+          });
         });
       });
 
@@ -680,7 +724,7 @@ describe('AnsiString', () => {
             const result: Array<string> = [];
             const str = new AnsiString(2, 'right', 6).split('type script is fun');
             str.hook = new AnsiString(10, 'right', 6).split('type script').break(); // feed ignored
-            str.hook.hook = new AnsiString(18, 'right', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script sucks');
             str.hook.hook.hook = new AnsiString(); // tail
             str.wrap(result);
             expect(result).toEqual([
@@ -697,8 +741,8 @@ describe('AnsiString', () => {
               '\n',
               '  is',
               ' fun',
-              '          is',
-              ' fun',
+              ' ',
+              '          sucks',
             ]);
           });
 
@@ -706,7 +750,7 @@ describe('AnsiString', () => {
             const result: Array<string> = [];
             const str = new AnsiString(2, 'right', 6).split('type script is fun');
             str.hook = new AnsiString(10, 'right', 6).break().split('type script');
-            str.hook.hook = new AnsiString(18, 'right', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script sucks');
             str.hook.hook.hook = new AnsiString(); // tail
             str.wrap(result);
             expect(result).toEqual([
@@ -723,8 +767,58 @@ describe('AnsiString', () => {
               '  is',
               ' fun',
               '  script',
+              ' ',
+              '  sucks',
+            ]);
+          });
+
+          it('wrap a column that has a difference of two lines from the next', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'right', 6).word('type').break(); // feed ignored
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script sucks');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '          script',
+              '\n',
               '  is',
               ' fun',
+              ' ',
+              '          sucks',
+            ]);
+          });
+
+          it('wrap a column that has a missing line in the middle', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'right', 6).break().word('type').break(); // feed ignored
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script sucks');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '          type',
+              '\n',
+              '  script',
+              '  ',
+              '  type',
+              '  script',
+              '\n',
+              '  is',
+              ' fun',
+              ' ',
+              '          sucks',
             ]);
           });
         });

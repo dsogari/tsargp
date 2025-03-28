@@ -187,16 +187,22 @@ const formatFunctions = {
    * @param value The array value
    * @param result The resulting string
    * @param flags The formatting flags
+   * @param phrase The phrase to be applied to each array element
    */
-  a(value: Array<unknown>, result: AnsiString, flags: FormattingFlags) {
+  a(value: ReadonlyArray<unknown>, result: AnsiString, flags: FormattingFlags, phrase?: string) {
     const { connectives } = config;
-    const sep = flags.sep ?? connectives.arraySep;
-    const open = flags.open ?? connectives.arrayOpen;
-    const close = flags.close ?? connectives.arrayClose;
+    const { arraySep, arrayOpen, arrayClose } = connectives;
+    const sep = flags.sep ?? arraySep;
+    const open = flags.open ?? arrayOpen;
+    const close = flags.close ?? arrayClose;
     result.open(open);
     value.forEach((val, i) => {
-      const spec = flags.custom ? 'c' : 'v';
-      this[spec](val, result, flags);
+      if (phrase !== undefined) {
+        result.format(phrase, flags, val);
+      } else {
+        const spec = flags.custom ? 'c' : 'v';
+        this[spec](val, result, flags);
+      }
       if (sep && i < value.length - 1) {
         result.merge = flags.mergePrev ?? true;
         result.word(sep);
@@ -213,25 +219,30 @@ const formatFunctions = {
    * @param flags The formatting flags
    */
   o(value: object, result: AnsiString, flags: FormattingFlags) {
+    if ('$phrase' in value && '$elements' in value) {
+      this.a(value.$elements, result, flags, value.$phrase as string);
+      return; // special case of array with phrase
+    }
     const { connectives } = config;
-    const newFlags: FormattingFlags = {
+    const { objectSep, objectOpen, objectClose, valueSep } = connectives;
+    const arrayFlags: FormattingFlags = {
       ...flags,
-      sep: flags.sep ?? connectives.objectSep,
-      open: flags.open ?? connectives.objectOpen,
-      close: flags.close ?? connectives.objectClose,
+      sep: flags.sep ?? objectSep,
+      open: flags.open ?? objectOpen,
+      close: flags.close ?? objectClose,
       custom: (entry) => {
         const [key, val] = entry as [string, unknown];
         if (regex.id.test(key)) {
           result.word(key);
         } else {
-          this['s'](key, result, flags);
+          this.s(key, result, flags);
         }
-        result.close(connectives.valueSep);
-        this['v'](val, result, flags);
+        result.close(valueSep);
+        this.v(val, result, flags);
       },
     };
     const entries = getEntries(value as UnknownRecord);
-    this['a'](entries, result, newFlags);
+    this.a(entries, result, arrayFlags);
   },
   /**
    * The formatting function for unknown values.
@@ -253,12 +264,12 @@ const formatFunctions = {
     if (spec && value !== null) {
       this[spec](value, result, flags);
     } else {
-      const { connectives } = config;
+      const { valueOpen, valueClose } = config.connectives;
       result
         .pushSty(config.styles.value)
-        .open(connectives.valueOpen)
+        .open(valueOpen)
         .split('' + value)
-        .close(connectives.valueClose)
+        .close(valueClose)
         .popSty();
     }
   },
@@ -397,9 +408,14 @@ type FormatSpecifier =
  * @param value The value to be formatted
  * @param result The resulting string
  * @param flags The formatting flags
+ * @param phrase The phrase to be applied to each array element
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FormattingFunction = (value: any, result: AnsiString, flags: FormattingFlags) => void;
+type FormattingFunction = (
+  value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  result: AnsiString,
+  flags: FormattingFlags,
+  phrase?: string,
+) => void;
 
 /**
  * A set of formatting functions.
@@ -1192,18 +1208,24 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
 function applyStyle(sty: Style, result: StyleRecord, onlyIfPresent: boolean = false) {
   let prev: StandardAttribute | undefined;
   for (const attr of sty) {
-    if (isStandard(attr)) {
+    if (attr === tf.clear) {
+      // clear all preceding attributes
+      Reflect.ownKeys(result).forEach((key) => Reflect.deleteProperty(result, key));
+      result[attr] = attr; // set tf.clear
+    } else if (isStandard(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (!onlyIfPresent || cancelAttr in result) {
         result[cancelAttr] = attr;
-        prev = cancelAttr;
-      } else {
-        prev = undefined; // for completeness, and may also work around developer mistakes
+        if ([fg.extended, bg.extended, ul.extended].includes(attr as number)) {
+          prev = cancelAttr;
+          continue; // extended introducer: must be followed by an extended attribute
+        }
       }
     } else if (prev) {
       // handle extended attribute
       result[prev] = [result[prev] as StandardAttribute, attr as ExtendedAttribute];
     }
+    prev = undefined; // for completeness, and may also work around developer mistakes
   }
 }
 

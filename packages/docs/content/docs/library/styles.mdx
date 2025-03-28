@@ -133,26 +133,30 @@ During splitting, numeric placeholders prefixed with a hashtag `#` may be extrac
 >
 > This particular feature is only available in _phrases_, not in other text attributes.
 
-Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which is denoted internally by a single character. The available ones are:
+Placeholders are meant to be replaced with a value. The number on the placeholder indicates the index of the argument that was passed to the formatting function. The resulting format depends on the type of the value, which is denoted internally by a single character. The available ones are:
 
 - `b` -- a `boolean{:ts}` value
 - `s` -- a `string{:ts}` value
 - `n` -- a `number{:ts}` value
 - `r` -- a `RegExp{:ts}` value
 - `m` -- a `symbol{:ts}` value (e.g., option name)
-- `t` -- another ANSI string
+- `t` -- another ANSI string instance
 - `u` -- a `URL{:ts}` value
-- `a` -- an array or tuple
-- `o` -- an `object{:ts}`
-- `v` -- an `unknown{:ts}` value (enclosed in angle brackets)
+- `a` -- an array or tuple (elements are enclosed by the values of the `arrayOpen` and `arrayClose` [connective words])
+- `o` -- an `object{:ts}` (entries are enclosed by the values of the `objectOpen` and `objectClose` [connective words])
+- `v` -- an `unknown{:ts}` value (enclosed by the values of the `valueOpen` and `valueClose` [connective words])
 
-When a phrase includes placeholders, they indicate where in the phrase to place the corresponding value. If a phrase has multiple alternatives (depending on the context), different pieces of text may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`.
+When a phrase includes placeholders, they indicate where in the phrase to place the corresponding value. The same placeholder may be repeated multiple times. If a phrase has multiple alternatives (depending on the context), different pieces of text may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`.
+
+> [!TIP]
+>
+> You can also apply a phrase to each element of an array through the `arrayWithPhrase` function.
 
 #### Inline styles
 
 Text can contain inline styles. This applies not only to phrases, but to text attributes as well (which the [formatter] splits into words before including in a [help message]).
 
-When splitting text, the ANSI string will try its best to preserve inline styles. However, if you find some corner case that is not currently covered by our unit tests, please submit a [bug report].
+When splitting text, the ANSI string instance will try its best to preserve inline styles. However, if you find some corner case that is not currently covered by our unit tests, please submit a [bug report].
 
 > [!TIP]
 >
@@ -185,7 +189,7 @@ Another paragraph
 
 Splitted text is always wrapped according to a configured _width_, i.e., the number of terminal columns by which to limit each line of text.
 
-When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string will by default avoid wrapping and instead suppress control sequences that would otherwise be used to render the text in a terminal.
+When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string instance will by default avoid wrapping and instead suppress control sequences that would otherwise be used to render the text in a terminal.
 
 The following features are supported in text wrapping.
 
@@ -193,7 +197,7 @@ The following features are supported in text wrapping.
 
 The ANSI string has an optional indentation level, i.e., the starting terminal column of each _new_ line of text.
 
-When wrapping text to the desired width, the ANSI string will attempt to respect this setting, but if the desired width does not accommodate the length of the _largest_ word, it will disregard the indentation level.
+When wrapping text to the desired width, the instance will attempt to respect this setting, but if the desired width does not accommodate the length of the _largest_ word, it will disregard the indentation level.
 
 > [!NOTE]
 >
@@ -202,6 +206,18 @@ When wrapping text to the desired width, the ANSI string will attempt to respect
 #### Text alignment
 
 The ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary. This feature is used by the [formatter] in the [description column] of help messages.
+
+#### Line-wise wrapping
+
+The ANSI string can be chained with another instance for the purpose of _multi-column_ wrapping. We call this mode "line-wise", because it allows the lines of each instance to be wrapped independently of other instances. This feature is used by the [formatter] when rendering a [groups section] configured with non-responsive layout.
+
+The first instance in a chain serves as the "head", and it drives the procedure until all lines of all instances are wrapped. The final instance in a chain serves as the "tail", and should be empty (i.e., have no internal strings). Line feeds from child instances are ignored, because it is he head who appends them to the result.
+
+In this mode, the terminal width is ignored, as it makes no sense. Instead, each instance should be configured with its own width. For this to work, the length of the longest word in any instance must not exceed the instance's width. Otherwise, an error will be raised to alert the developer of this issue.
+
+> [!NOTE]
+>
+> The reason why an error may be raised is that we cannot split _words_, as they may have [inline styles] and those styles should not leak into subsequent columns.
 
 ## Messages
 
@@ -403,6 +419,7 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [text formatting]: #text-splitting
 [error phrases]: #error-phrases
 [help phrases]: #help-phrases
+[connective words]: #connective-words
 
 {/* options references */}
 
@@ -439,6 +456,7 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [help message]: formatter#help-message
 [help messages]: formatter#help-message
 [help section]: formatter#help-sections
+[groups section]: formatter#groups-section
 [description column]: formatter#description-column
 [parameter column]: formatter#parameter-column
 [name slot]: formatter#name-slots

@@ -241,11 +241,7 @@ In addition to the [common properties] and [filter properties], this type of sec
 >
 > The `useEnv` property can be used to create a dedicated section for environment variables.
 
-When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text wrapping enters into what we call "line-wise" wrapping. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. For this to work, the length of the longest word in a column must not exceed the column's `maxWidth` property, if set. Otherwise, an error will be raised to alert the developer of this issue.
-
-> [!NOTE]
->
-> The reason why a non-responsive layout may raise an error is that we cannot split _words_, as they may have [inline styles], and those styles should not leak into subsequent columns.
+When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text wrapping enters into what we call [line-wise wrapping]. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns.
 
 ## Layout settings
 
@@ -427,7 +423,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [ANSI message]: styles#ansi-message
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration
-[inline styles]: styles#inline-styles
+[line-wise wrapping]: styles#line-wise-wrapping
 [connective word]: styles#connective-words
 [text splitting]: styles#text-splitting
 
