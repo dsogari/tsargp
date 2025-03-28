@@ -348,27 +348,15 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString(2, 'left', 4).split('type script');
           str.hook = new AnsiString(); // tail
-          expect(() => str.wrap(result)).toThrow(
-            'Cannot wrap to width 4: largest word has length 6.',
-          );
+          expect(() => str.wrap(result)).toThrow('Cannot wrap to width');
         });
 
-        describe('the starting column is not zero', () => {
-          it('wrap a single line', () => {
-            const result: Array<string> = [];
-            const str = new AnsiString(2, 'left', 6).split('type script');
-            str.hook = new AnsiString(); // tail
-            str.wrap(result);
-            expect(result).toEqual(['  type', '\n', '  script']);
-          });
-
-          it('wrap multiple lines', () => {
-            const result: Array<string> = [];
-            const str = new AnsiString(2, 'left', 6).split('type script is fun');
-            str.hook = new AnsiString(); // tail
-            str.wrap(result);
-            expect(result).toEqual(['  type', '\n', '  script', '\n', '  is', ' fun']);
-          });
+        it('wrap multiple lines with indentation', () => {
+          const result: Array<string> = [];
+          const str = new AnsiString(2, 'left', 6).split('type script is fun');
+          str.hook = new AnsiString(); // tail
+          str.wrap(result);
+          expect(result).toEqual(['  type', '\n', '  script', '\n', '  is', ' fun']);
         });
       });
 
