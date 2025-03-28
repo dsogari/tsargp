@@ -409,6 +409,136 @@ describe('AnsiString', () => {
           ]);
         });
       });
+
+      describe('when the head has less lines than the rest', () => {
+        it('wrap a column that has the first line but not the second', () => {
+          const result: Array<string> = [];
+          const str = new AnsiString(2, 'left', 6).split('type script').break(); // feed ignored
+          str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+          str.hook.hook = new AnsiString(); // tail
+          str.wrap(result);
+          expect(result).toEqual([
+            '  type',
+            '    type',
+            '\n',
+            '  script',
+            '  script',
+            '\n',
+            '          is',
+            ' fun',
+          ]);
+        });
+
+        it('wrap a column that has the second line but not the first', () => {
+          const result: Array<string> = [];
+          const str = new AnsiString(2, 'left', 6).break().split('type script');
+          str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+          str.hook.hook = new AnsiString(); // tail
+          str.wrap(result);
+          expect(result).toEqual([
+            '          type',
+            '\n',
+            '  type',
+            '    script',
+            '\n',
+            '  script',
+            '  is',
+            ' fun',
+          ]);
+        });
+      });
+    });
+
+    describe('when the middle has more lines than the rest', () => {
+      it('wrap a column that has the first line but not the second', () => {
+        const result: Array<string> = [];
+        const str = new AnsiString(2, 'left', 6).split('type script').break(); // feed ignored
+        str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+        str.hook.hook = new AnsiString(18, 'left', 6).split('type script').break(); // feed ignored
+        str.hook.hook.hook = new AnsiString(); // tail
+        str.wrap(result);
+        expect(result).toEqual([
+          '  type',
+          '    type',
+          '    type',
+          '\n',
+          '  script',
+          '  script',
+          '  script',
+          '\n',
+          '          is',
+          ' fun',
+        ]);
+      });
+
+      it('wrap a column that has the second line but not the first', () => {
+        const result: Array<string> = [];
+        const str = new AnsiString(2, 'left', 6).break().split('type script');
+        str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+        str.hook.hook = new AnsiString(18, 'left', 6).break().split('type script');
+        str.hook.hook.hook = new AnsiString(); // tail
+        str.wrap(result);
+        expect(result).toEqual([
+          '          type',
+          '\n',
+          '  type',
+          '    script',
+          '  type',
+          '\n',
+          '  script',
+          '  is',
+          ' fun',
+          '  script',
+        ]);
+      });
+    });
+
+    describe('when the middle has less lines than the rest', () => {
+      it('wrap a column that has the first line but not the second', () => {
+        const result: Array<string> = [];
+        const str = new AnsiString(2, 'left', 6).split('type script is fun');
+        str.hook = new AnsiString(10, 'left', 6).split('type script').break(); // feed ignored
+        str.hook.hook = new AnsiString(18, 'left', 6).split('type script is fun');
+        str.hook.hook.hook = new AnsiString(); // tail
+        str.wrap(result);
+        expect(result).toEqual([
+          '  type',
+          '    type',
+          '    type',
+          '\n',
+          '  script',
+          '  script',
+          '  script',
+          '\n',
+          '  is',
+          ' fun',
+          '          is',
+          ' fun',
+        ]);
+      });
+
+      it('wrap a column that has the second line but not the first', () => {
+        const result: Array<string> = [];
+        const str = new AnsiString(2, 'left', 6).split('type script is fun');
+        str.hook = new AnsiString(10, 'left', 6).break().split('type script');
+        str.hook.hook = new AnsiString(18, 'left', 6).split('type script is fun');
+        str.hook.hook.hook = new AnsiString(); // tail
+        str.wrap(result);
+        expect(result).toEqual([
+          '  type',
+          '            type',
+          '\n',
+          '  script',
+          '  type',
+          '    script',
+          '\n',
+          '  is',
+          ' fun',
+          '  script',
+          '  is',
+          ' fun',
+        ]);
+      });
     });
   });
 });

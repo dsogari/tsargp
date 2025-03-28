@@ -751,6 +751,7 @@ export class AnsiString {
     const needToAlign = isFinite(width) && align === 'right';
     if (width < start + maxLength) {
       if (hook) {
+        // developer mistake: see documentation
         throw Error(`Cannot wrap to width ${this.width}: largest word has length ${maxLength}.`);
       }
       start = 0; // wrap to the first column instead
