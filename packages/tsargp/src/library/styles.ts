@@ -1192,18 +1192,24 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
 function applyStyle(sty: Style, result: StyleRecord, onlyIfPresent: boolean = false) {
   let prev: StandardAttribute | undefined;
   for (const attr of sty) {
-    if (isStandard(attr)) {
+    if (attr === tf.clear) {
+      // clear all preceding attributes
+      Reflect.ownKeys(result).forEach((key) => Reflect.deleteProperty(result, key));
+      result[attr] = attr; // set tf.clear
+    } else if (isStandard(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (!onlyIfPresent || cancelAttr in result) {
         result[cancelAttr] = attr;
-        prev = cancelAttr;
-      } else {
-        prev = undefined; // for completeness, and may also work around developer mistakes
+        if ([fg.extended, bg.extended, ul.extended].includes(attr as number)) {
+          prev = cancelAttr;
+          continue; // extended introducer: must be followed by an extended attribute
+        }
       }
     } else if (prev) {
       // handle extended attribute
       result[prev] = [result[prev] as StandardAttribute, attr as ExtendedAttribute];
     }
+    prev = undefined; // for completeness, and may also work around developer mistakes
   }
 }
 
