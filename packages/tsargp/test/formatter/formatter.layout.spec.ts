@@ -751,4 +751,36 @@ describe('format', () => {
         '                          parameters.\n',
     );
   });
+
+  it('force the width of all columns with non-responsive layout', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        names: { maxWidth: 8 },
+        param: { maxWidth: 12 },
+        descr: { maxWidth: 20 },
+        responsive: false,
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s,       <param>       A single option with\n' +
+        '  --single                big synopsis.\n' +
+        '  -a,       [<param>      Accepts multiple\n' +
+        '  --array   <param>...]   parameters.\n',
+    );
+  });
 });
