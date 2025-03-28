@@ -5,4 +5,13 @@ export * from './options.js';
 export * from './parser.js';
 export * from './styles.js';
 export * from './validator.js';
-export { allOf, getVersion, not, numberInRange, oneOf, sectionFooter, valuesFor } from './utils.js';
+export {
+  allOf,
+  arrayWithPhrase,
+  getVersion,
+  not,
+  numberInRange,
+  oneOf,
+  sectionFooter,
+  valuesFor,
+} from './utils.js';

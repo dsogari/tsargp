@@ -107,6 +107,11 @@ export type UsageStatement = Array<string | UsageStatement>;
  */
 export type UnknownRecord = Record<string, unknown>;
 
+/**
+ * An array with a phrase to be applied to each element.
+ */
+export type ArrayWithPhrase<T> = { $phrase: string; $elements: ReadonlyArray<T> };
+
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
@@ -1067,4 +1072,18 @@ export function setDifference<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
  */
 export function setIntersection<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
   return setDifference(new Set(lhs), setDifference(lhs, rhs));
+}
+
+/**
+ * Creates an array with a phrase to be applied to each element.
+ * To be used as argument in formatting functions.
+ * @param $phrase The custom phrase
+ * @param $elements The array elements
+ * @returns The array with a phrase
+ */
+export function arrayWithPhrase<T>(
+  $phrase: string,
+  $elements: ReadonlyArray<T>,
+): ArrayWithPhrase<T> {
+  return { $phrase, $elements };
 }

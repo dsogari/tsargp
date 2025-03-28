@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { AnsiString } from '../../src/library';
+import { arrayWithPhrase } from '../../src/library/utils';
 
 describe('AnsiString', () => {
   describe('format', () => {
@@ -17,6 +18,11 @@ describe('AnsiString', () => {
     it('repeat the formatted value', () => {
       const str = new AnsiString().format('#0 #0', {}, undefined);
       expect(str.strings).toEqual(['<undefined>', '<undefined>']);
+    });
+
+    it('apply a phrase to each array element', () => {
+      const str = new AnsiString().format('#0', {}, arrayWithPhrase('<#0>', [1, 'a', true]));
+      expect(str.strings).toEqual(['[<1>,', "<'a'>,", '<true>]']);
     });
 
     it('format single-valued arguments out of order', () => {
