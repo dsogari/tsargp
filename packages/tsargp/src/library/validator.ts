@@ -27,6 +27,7 @@ import {
   isEnvironmentOnly,
   isMessage,
   isObject,
+  isPositional,
   matchNamingRules,
   normalizeArray,
   regex,
@@ -149,7 +150,7 @@ async function validateOptions(context: ValidationContext) {
     validateNames(letters, option.cluster ?? '', prefixedKey, key);
     validateNames(envVars, getOptionEnvVars(option) ?? [], prefixedKey, key);
     await validateOption(context, prefixedKey, key, option);
-    if (option.positional !== undefined) {
+    if (isPositional(option)) {
       if (positional) {
         throw ErrorMessage.create(
           ErrorItem.duplicatePositionalOption,

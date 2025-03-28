@@ -221,6 +221,7 @@ export const enum HelpItem {
 /**
  * A control sequence introducer command.
  * @see https://xtermjs.org/docs/api/vtfeatures/#csi
+ * @see https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
  */
 const enum ControlSequence {
   /**

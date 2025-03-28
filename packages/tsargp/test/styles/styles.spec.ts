@@ -223,31 +223,34 @@ describe('AnsiString', () => {
 
   describe('pushSty and popSty', () => {
     it('preserve order of pushed styles', () => {
-      const cancel = style(tf.notBoldOrFaint);
+      const extended = style(fg.extended, ext8(0));
+      const boldAndExtended = style(tf.bold, fg.extended, ext8(0));
+      const cancelExtended = style(fg.default);
+      const cancelBoldAndExtended = style(tf.notBoldOrFaint, fg.default);
       const str = new AnsiString()
         .popSty() // does nothing
         .word('type')
         .pushSty(clr)
         .word('script')
-        .pushSty(bold)
+        .pushSty(boldAndExtended)
         .word('is')
-        .pushSty(cancel)
-        .word('very')
-        .popSty() // should reapply tf.bold
-        .word('very')
-        .popSty() // should not reapply tf.clear, but should cancel bold
-        .word('much')
-        .popSty() // tf.clear needs no cancelling
+        .pushSty(cancelExtended)
+        .word('a')
+        .popSty() // should reapply extended, but not bold
+        .word('lot')
+        .popSty() // should cancel bold and extended, but not reapply clear
+        .word('of')
+        .popSty() // clear needs no cancelling
         .word('fun')
         .popSty(); // does nothing
-      expect(str.strings).toEqual(['type', 'script', 'is', 'very', 'very', 'much', 'fun']);
+      expect(str.strings).toEqual(['type', 'script', 'is', 'a', 'lot', 'of', 'fun']);
       expect(str.styled).toEqual([
         'type',
         clr + 'script',
-        bold + 'is',
-        cancel + 'very' + bold,
-        'very' + cancel,
-        'much',
+        boldAndExtended + 'is',
+        cancelExtended + 'a' + extended,
+        'lot' + cancelBoldAndExtended,
+        'of',
         'fun',
       ]);
     });

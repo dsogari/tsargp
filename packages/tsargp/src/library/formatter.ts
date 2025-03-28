@@ -36,6 +36,7 @@ import {
   hasTemplate,
   isArray,
   isEnvironmentOnly,
+  isPositional,
   isString,
   max,
   min,
@@ -462,9 +463,8 @@ function formatGroups(
   const namesWidths: Array<number> = [];
   const paramWidths: Array<number> = [];
   const descrWidths: Array<number> = [];
-  const { filter, exclude, items, useEnv, names, param, descr } = section;
-  const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
-  const groups = buildEntries(options, keys, build, incl, excl);
+  const { include, exclude, items, useEnv, names, param, descr } = section;
+  const groups = buildEntries(options, keys, build, include, exclude);
   adjustEntries(section, groups, namesWidths, paramWidths, descrWidths);
   return groups;
 }
@@ -519,7 +519,12 @@ function adjustEntries(
       ),
     ];
   }
-  const { names, param, descr } = section;
+  /** @ignore */
+  function hook(column: HelpColumn, prev: AnsiString, from: number = 0): AnsiString {
+    column.splice(from).forEach((str) => (prev = prev.hook = str));
+    return prev;
+  }
+  const { names, param, descr, responsive } = section;
   const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, names?.slotIndent);
   const [paramStart, paramWidth] = getStartAndWidth(
     param,
@@ -538,7 +543,11 @@ function adjustEntries(
   for (const [namesColumn, paramColumn, descrColumn] of getValues(groups).flat()) {
     adjustColumn(namesColumn, namesWidths, namesStart, names?.slotIndent, names?.maxWidth);
     adjustColumn(paramColumn, paramWidths, paramStart, 0, param?.maxWidth);
-    adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth ?? NaN); // terminal width
+    adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth);
+    if (responsive === false) {
+      const str = hook(descrColumn, hook(paramColumn, hook(namesColumn, namesColumn[0], 1)));
+      str.hook = new AnsiString(); // tail of wrapping chain
+    }
   }
 }
 
@@ -777,13 +786,12 @@ function formatUsage(
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, exclude, required, inclusive, compact } = section;
-  const [incl, excl] = exclude === true ? [undefined, filter] : [filter, exclude];
+  const { include, exclude, required, inclusive, compact } = section;
   const requiredSet = new Set(required?.filter((key) => key in options));
   const selectedSet = new Set(keys);
   const filteredSet = setDifference(
-    incl ? setIntersection(new Set(incl), selectedSet) : selectedSet,
-    new Set(excl),
+    include ? setIntersection(new Set(include), selectedSet) : selectedSet,
+    new Set(exclude),
   ); // preserve filter order
   const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
@@ -930,10 +938,9 @@ function formatUsageOption(
   const count = result.count;
   const hasParam = hasTemplate(option, true);
   const hasStdin = option.stdin && stdinSymbol !== undefined;
-  const isPositional = option.positional !== undefined;
   const nameCount = formatUsageNames(option, flags, compact, result);
   let hasRequiredPart = !!nameCount;
-  if (isPositional) {
+  if (isPositional(option)) {
     if (nameCount && (hasParam || !isAlone)) {
       result.openAt(optionalOpen, count).close(optionalClose);
       hasRequiredPart = false; // names are optional

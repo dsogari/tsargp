@@ -173,12 +173,12 @@ export type HelpTextBlock = {
    * Whether to disable text splitting. Ignored if the text is a ANSI string.
    * @default false
    */
-  readonly noSplit?: true;
+  readonly noSplit?: boolean;
   /**
    * Whether to avoid line feeds at the beginning of the message.
    * @default false
    */
-  readonly noBreakFirst?: true;
+  readonly noBreakFirst?: boolean;
 };
 
 /**
@@ -204,15 +204,14 @@ export type WithSection<T extends HelpSectionType> = {
  */
 export type WithSectionFilter = {
   /**
-   * A list of option keys or group names to include or exclude. Matches exactly.
+   * A list of option keys or group names to include. Matches exactly.
    */
-  readonly filter?: ReadonlyArray<string>;
+  readonly include?: ReadonlyArray<string>;
   /**
-   * True if the filter should exclude, or what to exclude.
-   * Has precedence over {@link WithSectionFilter.filter}.
-   * @default false
+   * A list of option keys or group names to exclude. Matches exactly.
+   * Has precedence over {@link WithSectionFilter.include}.
    */
-  readonly exclude?: true | ReadonlyArray<string>;
+  readonly exclude?: ReadonlyArray<string>;
 };
 
 /**
@@ -274,7 +273,12 @@ export type WithSectionGroups = {
    * Whether option names should be replaced by environment variable names.
    * @default false
    */
-  readonly useEnv?: true;
+  readonly useEnv?: boolean;
+  /**
+   * Whether the layout is responsive (a.k.a, terminal-aware).
+   * @default true
+   */
+  readonly responsive?: boolean;
 };
 
 /**
@@ -537,7 +541,7 @@ export type WithMessageAttributes = {
    * Whether to save the message in the option value instead of throwing it.
    * @default false
    */
-  readonly saveMessage?: true;
+  readonly saveMessage?: boolean;
 };
 
 /**
@@ -553,7 +557,7 @@ export type WithValueAttributes<T> = {
    * True if the option is always required.
    * @default false
    */
-  readonly required?: true;
+  readonly required?: boolean;
   /**
    * The forward requirements.
    */
@@ -593,12 +597,12 @@ export type WithEnvironmentAttributes = {
    * terminal is interactive.
    * @default false
    */
-  readonly stdin?: true;
+  readonly stdin?: boolean;
   /**
    * True to break the parsing loop after parsing the option.
    * @default false
    */
-  readonly break?: true;
+  readonly break?: boolean;
 };
 
 /**
@@ -638,7 +642,7 @@ export type WithParameterAttributes = {
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false
    */
-  readonly positional?: true | string;
+  readonly positional?: boolean | string;
   /**
    * Whether inline parameters should be disallowed or required for this option.
    * Can be `false` to disallow or `'always'` to always require.
@@ -688,12 +692,12 @@ export type WithHelpAttributes = {
    * Has precedence over {@link WithHelpAttributes.useFilter}.
    * @default false
    */
-  readonly useCommand?: true;
+  readonly useCommand?: boolean;
   /**
    * Whether to use the remaining arguments as option filter.
    * @default false
    */
-  readonly useFilter?: true;
+  readonly useFilter?: boolean;
 };
 
 /**
@@ -750,12 +754,12 @@ export type WithArrayAttributes = {
    * True if duplicate elements should be removed.
    * @default false
    */
-  readonly unique?: true;
+  readonly unique?: boolean;
   /**
    * Allows appending elements if supplied multiple times.
    * @default false
    */
-  readonly append?: true;
+  readonly append?: boolean;
   /**
    * The maximum allowed number of elements.
    * @default Infinity

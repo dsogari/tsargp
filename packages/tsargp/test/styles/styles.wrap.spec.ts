@@ -26,7 +26,7 @@ describe('AnsiString', () => {
 
       it('omit styles', () => {
         const result: Array<string> = [];
-        new AnsiString().split(`abc${clr} def`).wrap(result);
+        new AnsiString().split('abc' + clr + ' def').wrap(result);
         expect(result).toEqual(['abc', ' def']);
       });
 
@@ -58,7 +58,7 @@ describe('AnsiString', () => {
 
           it('adjust the current line with a single space when spaces are required', () => {
             const result: Array<string> = [];
-            new AnsiString().split('abc def').wrap(result, 2, 0, true, true);
+            new AnsiString().split('abc def').wrap(result, 2, 0, true);
             expect(result).toEqual([' abc', ' def']);
           });
         });
@@ -126,20 +126,20 @@ describe('AnsiString', () => {
 
           it('adjust the current line with spaces', () => {
             const result: Array<string> = [];
-            new AnsiString(2).split('abc def').wrap(result, 0, 0, true, true);
+            new AnsiString(2).split('abc def').wrap(result, 0, 0, true);
             expect(result).toEqual(['  abc', ' def']);
           });
 
           it('keep indentation in new lines with spaces', () => {
             const result: Array<string> = [];
-            new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, true);
+            new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true);
             expect(result).toEqual(['  abc', '\n', '\n', '  def']);
           });
         });
       });
 
       describe('emitting styles', () => {
-        const str = new AnsiString().split(`abc${clr} def`);
+        const str = new AnsiString().split('abc' + clr + ' def');
 
         it('emit styles with move sequences', () => {
           const result: Array<string> = [];
@@ -149,7 +149,7 @@ describe('AnsiString', () => {
 
         it('emit styles with spaces', () => {
           const result: Array<string> = [];
-          str.wrap(result, 0, 0, true, true);
+          str.wrap(result, 0, 0, true);
           expect(result).toEqual(['abc' + clr, ' def']);
         });
       });
@@ -184,7 +184,7 @@ describe('AnsiString', () => {
 
       it('omit styles', () => {
         const result: Array<string> = [];
-        new AnsiString(0, 'left', 8).split(`abc${clr} largest`).wrap(result);
+        new AnsiString(0, 'left', 8).split('abc' + clr + ' largest').wrap(result);
         expect(result).toEqual(['abc', '\n', 'largest']);
       });
 
@@ -283,7 +283,7 @@ describe('AnsiString', () => {
 
           it('keep indentation in wrapped lines with spaces', () => {
             const result: Array<string> = [];
-            new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, true);
+            new AnsiString(1).split('abc largest').wrap(result, 0, 8, true);
             expect(result).toEqual([' abc', '\n', ' largest']);
           });
         });
@@ -329,15 +329,434 @@ describe('AnsiString', () => {
 
           it('align with spaces when breaking the line', () => {
             const result: Array<string> = [];
-            new AnsiString(0, 'right').word('abc').break().wrap(result, 0, 8, true, true);
+            new AnsiString(0, 'right').word('abc').break().wrap(result, 0, 8, true);
             expect(result).toEqual(['     ', 'abc', '\n']);
           });
 
           it('align with spaces when wrapping the line', () => {
             const result: Array<string> = [];
-            new AnsiString(0, 'right').split('type script').wrap(result, 0, 8, true, true);
+            new AnsiString(0, 'right').split('type script').wrap(result, 0, 8, true);
             expect(result).toEqual(['    ', 'type', '\n', '  ', 'script']);
           });
+        });
+      });
+    });
+
+    describe('with hooks', () => {
+      describe('left-aligned', () => {
+        describe('when the head is the only string', () => {
+          it('throw an error when the largest word does not fit the configured width', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 4).split('type script');
+            str.hook = new AnsiString(); // tail
+            expect(() => str.wrap(result)).toThrow('Cannot wrap word of length 6');
+          });
+
+          it('wrap multiple lines with indentation', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual(['  type', '\n', '  script', '\n', '  is', ' fun']);
+          });
+        });
+
+        describe('when the head has more lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'left', 6).split('type script').break(); // feed ignored
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '    type',
+              '\n',
+              '  script',
+              '  script',
+              '\n',
+              '  is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'left', 6).break().split('type script');
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '\n',
+              '  script',
+              '  type',
+              '\n',
+              '  is',
+              ' fun',
+              '  script',
+            ]);
+          });
+        });
+
+        describe('when the head has less lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script').break(); // feed ignored
+            str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '    type',
+              '\n',
+              '  script',
+              '  script',
+              '\n',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).break().split('type script');
+            str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '          type',
+              '\n',
+              '  type',
+              '    script',
+              '\n',
+              '  script',
+              '  is',
+              ' fun',
+            ]);
+          });
+        });
+
+        describe('when the middle has more lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script').break(); // feed ignored
+            str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(18, 'left', 6).split('type script').break(); // feed ignored
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '    type',
+              '    type',
+              '\n',
+              '  script',
+              '  script',
+              '  script',
+              '\n',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).break().split('type script');
+            str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(18, 'left', 6).break().split('type script');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '          type',
+              '\n',
+              '  type',
+              '    script',
+              '  type',
+              '\n',
+              '  script',
+              '  is',
+              ' fun',
+              '  script',
+            ]);
+          });
+        });
+
+        describe('when the middle has less lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'left', 6).split('type script').break(); // feed ignored
+            str.hook.hook = new AnsiString(18, 'left', 6).split('type script is fun');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '    type',
+              '    type',
+              '\n',
+              '  script',
+              '  script',
+              '  script',
+              '\n',
+              '  is',
+              ' fun',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'left', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'left', 6).break().split('type script');
+            str.hook.hook = new AnsiString(18, 'left', 6).split('type script is fun');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  type',
+              '            type',
+              '\n',
+              '  script',
+              '  type',
+              '    script',
+              '\n',
+              '  is',
+              ' fun',
+              '  script',
+              '  is',
+              ' fun',
+            ]);
+          });
+        });
+      });
+
+      describe('right-aligned', () => {
+        describe('when the head is the only string', () => {
+          it('wrap multiple lines with indentation', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual(['  ', '  type', '\n', '  script', '\n', '  is', ' fun']);
+          });
+        });
+
+        describe('when the head has more lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'right', 6).split('type script').break(); // feed ignored
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '  script',
+              '\n',
+              '  is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'right', 6).break().split('type script');
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '  ',
+              '  type',
+              '\n',
+              '  is',
+              ' fun',
+              '  script',
+            ]);
+          });
+        });
+
+        describe('when the head has less lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script').break(); // feed ignored
+            str.hook = new AnsiString(10, 'right', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '  script',
+              '\n',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).break().split('type script');
+            str.hook = new AnsiString(10, 'right', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '          type',
+              '\n',
+              '  ',
+              '  type',
+              '  script',
+              '\n',
+              '  script',
+              '  is',
+              ' fun',
+            ]);
+          });
+        });
+
+        describe('when the middle has more lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script').break(); // feed ignored
+            str.hook = new AnsiString(10, 'right', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script').break(); // feed ignored
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '  script',
+              '  script',
+              '\n',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).break().split('type script');
+            str.hook = new AnsiString(10, 'right', 6).split('type script is fun');
+            str.hook.hook = new AnsiString(18, 'right', 6).break().split('type script');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '          type',
+              '\n',
+              '  ',
+              '  type',
+              '  script',
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '  is',
+              ' fun',
+              '  script',
+            ]);
+          });
+        });
+
+        describe('when the middle has less lines than the rest', () => {
+          it('wrap a column that has the first line but not the second', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'right', 6).split('type script').break(); // feed ignored
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script is fun');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '  ',
+              '  type',
+              '\n',
+              '  script',
+              '  script',
+              '  script',
+              '\n',
+              '  is',
+              ' fun',
+              '          is',
+              ' fun',
+            ]);
+          });
+
+          it('wrap a column that has the second line but not the first', () => {
+            const result: Array<string> = [];
+            const str = new AnsiString(2, 'right', 6).split('type script is fun');
+            str.hook = new AnsiString(10, 'right', 6).break().split('type script');
+            str.hook.hook = new AnsiString(18, 'right', 6).split('type script is fun');
+            str.hook.hook.hook = new AnsiString(); // tail
+            str.wrap(result);
+            expect(result).toEqual([
+              '  ',
+              '  type',
+              '  ',
+              '          type',
+              '\n',
+              '  script',
+              '  ',
+              '  type',
+              '  script',
+              '\n',
+              '  is',
+              ' fun',
+              '  script',
+              '  is',
+              ' fun',
+            ]);
+          });
+        });
+      });
+
+      describe('emitting styles', () => {
+        it('wrap columns with styles', () => {
+          const bold = style(tf.bold);
+          const cancelBold = style(tf.notBoldOrFaint);
+          const clearAndBold = style(tf.clear, tf.bold);
+          const clearAndCancelBold = style(tf.clear, tf.notBoldOrFaint);
+          const result: Array<string> = [];
+          const str = new AnsiString(2, 'left', 6)
+            .pushSty(bold)
+            .split('type script')
+            .popSty()
+            .split('is fun');
+          str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+          str.hook.hook = new AnsiString(); // tail
+          str.wrap(result, 0, 1, true); // should ignore the terminal width
+          expect(result).toEqual([
+            '  ' + clr + bold + 'type', // bold style is "glued" to the first word
+            '    ' + clr + 'type',
+            '\n',
+            '  ' + clearAndBold + 'script' + cancelBold,
+            '  ' + clr + 'script',
+            '\n',
+            '  ' + clearAndCancelBold + 'is',
+            ' fun',
+            '  ' + clr + 'is',
+            ' fun',
+          ]);
         });
       });
     });

@@ -90,6 +90,20 @@ describe('validate', () => {
     });
   });
 
+  it('accept a positional option and another that is explicitly not positional', () => {
+    const options = {
+      single1: {
+        type: 'single',
+        positional: true,
+      },
+      single2: {
+        type: 'single',
+        positional: false,
+      },
+    } as const satisfies Options;
+    expect(validate(options)).resolves.toEqual({});
+  });
+
   it('throw an error on duplicate positional option', () => {
     const options = {
       single1: {

@@ -29,7 +29,7 @@ export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor a
 /**
  * A mapping of styling attribute to its cancelling attribute.
  */
-const cancellingAttribute: Readonly<Partial<Record<StylingAttribute, StylingAttribute>>> = {
+const cancellingAttribute: Readonly<Partial<Record<StandardAttribute, StandardAttribute>>> = {
   [tf.alternative1]: tf.primaryFont,
   [tf.alternative2]: tf.primaryFont,
   [tf.alternative3]: tf.primaryFont,
@@ -349,14 +349,19 @@ export type IndexedColor = [5, DecimalValue];
 export type RgbColor = [2, DecimalValue, DecimalValue, DecimalValue];
 
 /**
- * A text styling attribute.
+ * A standard styling attribute.
  */
-export type StylingAttribute = tf | fg | bg | ul;
+export type StandardAttribute = tf | fg | bg | ul;
 
 /**
  * An extended styling attribute.
  */
-export type ExtendedAttribute = StylingAttribute | IndexedColor | RgbColor;
+export type ExtendedAttribute = IndexedColor | RgbColor;
+
+/**
+ * A text styling attribute.
+ */
+export type StylingAttribute = StandardAttribute | ExtendedAttribute;
 
 /**
  * A text alignment setting.
@@ -401,6 +406,31 @@ type FormattingFunction = (value: any, result: AnsiString, flags: FormattingFlag
  */
 type FormattingFunctions = Readonly<Record<FormatSpecifier, FormattingFunction>>;
 
+/**
+ * A record that keeps track of styling attributes by their cancelling attribute.
+ */
+type StyleRecord = Partial<
+  Record<StandardAttribute, StandardAttribute | [StandardAttribute, ExtendedAttribute]>
+>;
+
+/**
+ * The context for line-wise wrapping.
+ */
+type WrappingContext = [
+  /**
+   * The index of the current string in the wrapping procedure.
+   */
+  index: number,
+  /**
+   * The accumulated style to restore at the start of a line.
+   */
+  style: StyleRecord,
+  /**
+   * Whether the wrapping is finished.
+   */
+  done?: boolean,
+];
+
 //--------------------------------------------------------------------------------------------------
 // Classes
 //--------------------------------------------------------------------------------------------------
@@ -419,14 +449,19 @@ export class AnsiString {
   public readonly styled: Array<string> = [];
 
   /**
-   * The stack of styles.
+   * The stack of styles used during building.
    */
-  private readonly styles: Array<Style> = [];
+  private readonly styleStack: Array<Style> = [];
 
   /**
-   * The opening style.
+   * The opening style used during building.
    */
   private readonly curStyle: Style = sgrSequence();
+
+  /**
+   * The line-wise wrapping context. The accumulated style always includes an SGR clear.
+   */
+  private readonly context: WrappingContext = [0, { [tf.clear]: tf.clear }];
 
   /**
    * Whether the first string should be merged with the previous string.
@@ -442,6 +477,11 @@ export class AnsiString {
    * The largest length among all strings.
    */
   public maxLength: number = 0;
+
+  /**
+   * The hooked string for line-wise wrapping.
+   */
+  public hook?: AnsiString;
 
   /**
    * @returns The number of internal strings
@@ -485,7 +525,7 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   other(other: AnsiString): this {
-    const { strings, styled, styles, curStyle, maxLength } = this;
+    const { strings, styled, styleStack, curStyle, maxLength } = this;
     const [firstString, ...restStrings] = other.strings;
     const [firstStyled, ...restStyled] = other.styled;
     if (firstString) {
@@ -497,7 +537,7 @@ export class AnsiString {
     }
     strings.push(...restStrings);
     styled.push(...restStyled);
-    styles.push(...other.styles);
+    styleStack.push(...other.styleStack);
     curStyle.push(...other.curStyle);
     this.maxLength = max(maxLength, other.maxLength);
     this.merge = other.merge;
@@ -529,7 +569,7 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   pushSty(sty: Style = noStyle): this {
-    this.styles.push(sty);
+    this.styleStack.push(sty);
     return this.openSty(sty);
   }
 
@@ -538,9 +578,9 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   popSty(): this {
-    const { styles } = this;
-    const close = styles.pop();
-    const open = styles.at(-1); // keep order of these calls
+    const { styleStack } = this;
+    const close = styleStack.pop();
+    const open = styleStack.at(-1); // keep order of these calls
     const sty = mergeStyles(close, open);
     return this.closeSty(sty);
   }
@@ -684,6 +724,7 @@ export class AnsiString {
    * @param terminalWidth The desired terminal width (or zero or `NaN` to avoid wrapping)
    * @param emitStyles Whether styles should be emitted
    * @param emitSpaces Whether spaces should be emitted instead of move sequences
+   * @param isHead Whether this string is the head of a chain for line-wise wrapping
    * @returns The updated terminal column
    */
   wrap(
@@ -692,6 +733,7 @@ export class AnsiString {
     terminalWidth: number = NaN,
     emitStyles: boolean = false,
     emitSpaces: boolean = true,
+    isHead: boolean = true,
   ): number {
     /** @ignore */
     function move(count: number): string {
@@ -705,13 +747,29 @@ export class AnsiString {
       }
     }
     /** @ignore */
+    function callHook(hook: AnsiString, index: number): number {
+      context[0] = index; // save index for next line
+      if (context[2] == undefined) {
+        context[2] = false;
+        hook.context[0] = 0;
+        hook.context[2] = undefined; // signal start of line-wise wrapping for child
+      }
+      return hook.wrap(result, column, NaN, emitStyles, emitSpaces, false);
+    }
+    /** @ignore */
     function feed() {
-      alignRight();
       column = 0;
       j = result.push('\n'); // save index for right-alignment
     }
-    const { strings, styled, count, maxLength, align } = this;
-    if (!count) {
+    const { strings, styled, count, maxLength, align, hook, context } = this;
+    if (hook) {
+      if (isHead) {
+        context[0] = 0;
+        context[2] = undefined; // start of line-wise wrapping
+      }
+      terminalWidth = NaN; // ignore terminal width in this case
+    } else if (!count) {
+      context[2] = true; // signal end of line-wise wrapping for parent
       return currentColumn;
     }
     // sanitize input
@@ -720,18 +778,27 @@ export class AnsiString {
     const width = min(indent + max(0, this.width || Infinity), max(0, terminalWidth || Infinity));
     let start = max(0, min(indent, width));
     let j = result.length; // save index for right-alignment
-    const needToAlign = isFinite(width) && align === 'right';
     if (width < start + maxLength) {
+      if (hook) {
+        throw Error(`Cannot wrap word of length ${maxLength}`); // developer mistake: see documentation
+      }
       start = 0; // wrap to the first column instead
       if (column && strings[0]) {
         feed(); // forcefully break the first line
       }
     }
+    const needToAlign = isFinite(width) && align === 'right';
     const pad = start ? move(start) : ''; // precomputed for efficiency
-    for (let i = 0; i < count; i++) {
-      const str = strings[i];
-      const len = str.length;
+    for (let i = context[0]; i < count; i++) {
+      const len = strings[i].length;
       if (!len) {
+        alignRight();
+        if (hook) {
+          const col = callHook(hook, i + 1); // resume from the next string
+          if (!isHead) {
+            return col; // return from child
+          }
+        }
         feed(); // keep line feeds separate from the rest
         continue;
       }
@@ -745,13 +812,38 @@ export class AnsiString {
           len2 = 1;
           pad2 = ' '; // single space separating words
         } else {
+          alignRight();
+          if (hook) {
+            const col = callHook(hook, i); // resume from the same string
+            if (!isHead) {
+              return col; // return from child
+            }
+          }
           feed(); // keep line feeds separate from the rest
         }
       }
+      if (hook && emitStyles && column <= start) {
+        pad2 += recordToStyle(context[1]); // restore SGR attributes
+      }
       column += len2 + len;
-      result.push(pad2 + (emitStyles ? styled[i] : str));
+      result.push(pad2 + (emitStyles ? styled[i] : strings[i]));
+      if (hook && emitStyles) {
+        const styles = styled[i].match(regex.sgr); // extract SGR attributes
+        if (styles) {
+          applyStyle(seqFromText(cs.sgr, styles.join('')), context[1]);
+        }
+      }
     }
     alignRight();
+    if (hook) {
+      do {
+        column = callHook(hook, count); // call once if not head
+        context[2] = hook.context[2]; // signal end of line-wise wrapping for parent
+        if (isHead && !context[2]) {
+          feed(); // head is driving the wrapping, so child line feeds are ignored
+        }
+      } while (isHead && !context[2]);
+    }
     return column;
   }
 
@@ -1024,6 +1116,7 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
 
 /**
  * Creates a control sequence.
+ * Do not call `concat` on the result.
  * @template T The type of the sequence command
  * @param cmd The sequence command
  * @param params The sequence parameters
@@ -1040,20 +1133,30 @@ function sequence<T extends cs>(cmd: T, ...params: Array<SequenceParameter>): Co
 
 /**
  * Creates an SGR sequence.
+ * Do not call `concat` on the result.
  * @param attrs The styling attributes
  * @returns The SGR sequence
  */
-function sgrSequence(...attrs: Array<ExtendedAttribute>): Style {
+function sgrSequence(...attrs: Array<StylingAttribute>): Style {
   return sequence(cs.sgr, ...attrs);
 }
 
 /**
- * Checks if a sequence parameter is a standard (i.e., non-extended) styling attribute.
+ * Checks if a sequence parameter is a standard styling attribute.
  * @param param The sequence parameter
  * @returns True if the parameter is a standard attribute
  */
-function isStandardAttr(param: SequenceParameter): param is StylingAttribute {
+function isStandard(param: SequenceParameter): param is StandardAttribute {
   return !isArray(param);
+}
+
+/**
+ * Converts a style record to a style.
+ * @param rec The style record
+ * @returns The style
+ */
+function recordToStyle(rec: StyleRecord): Style {
+  return sgrSequence(...getValues(rec).flat()); // keys are sorted in ascending order
 }
 
 /**
@@ -1066,41 +1169,58 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
   if (!close?.length) {
     return noStyle; // skip if there is nothing to cancel
   }
-  const params: Partial<Record<StylingAttribute, ExtendedAttribute>> = {};
+  const result: StyleRecord = {};
   for (const attr of close) {
     // skip extended attributes
-    if (isStandardAttr(attr)) {
+    if (isStandard(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (cancelAttr) {
-        params[cancelAttr] = cancelAttr; // cancel attribute
+        result[cancelAttr] = cancelAttr; // cancel attribute (if not tf.clear)
       }
     }
   }
-  for (const attr of open) {
-    // skip extended attributes
-    if (isStandardAttr(attr)) {
+  applyStyle(open, result, true);
+  return recordToStyle(result);
+}
+
+/**
+ * Applies a style to a style record.
+ * @param sty The style to apply
+ * @param result The resulting style
+ * @param onlyIfPresent Whether to apply a styling attribute only if it appears in the result
+ */
+function applyStyle(sty: Style, result: StyleRecord, onlyIfPresent: boolean = false) {
+  let prev: StandardAttribute | undefined;
+  for (const attr of sty) {
+    if (isStandard(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
-      if (cancelAttr in params) {
-        params[cancelAttr] = attr; // reapply only if it changed
+      if (!onlyIfPresent || cancelAttr in result) {
+        result[cancelAttr] = attr;
+        prev = cancelAttr;
+      } else {
+        prev = undefined; // for completeness, and may also work around developer mistakes
       }
+    } else if (prev) {
+      // handle extended attribute
+      result[prev] = [result[prev] as StandardAttribute, attr as ExtendedAttribute];
     }
   }
-  return sgrSequence(...getValues(params)); // keys are sorted in ascending order
 }
 
 /**
  * Creates a control sequence from a string.
+ * Assumes that there is no text between sequences.
+ * Any text before the first sequence is discarded.
+ * Assumes that the sequence specifier has unitary length.
+ * Empty parameters are converted to zero.
  * @template T The type of the sequence command
  * @param cmd The sequence command
  * @param text The string (must be a sequence of control sequences)
  * @returns The control sequence
  */
 function seqFromText<T extends cs>(cmd: T, text: string): ControlSequence<T> {
-  const params = text
-    .split('\x1b[') // assumes that there is no text between sequences
-    .slice(1) // discard text before the first sequence
-    .flatMap((str) => str.slice(0, -1).split(';')) // remove the sequence specifier and split params
-    .map(Number); // empty parameters get mapped to zero
+  const splitParams = (str: string) => str.slice(0, -1).split(';');
+  const params = text.split('\x1b[').slice(1).flatMap(splitParams).map(Number);
   return sequence(cmd, ...params);
 }
 
