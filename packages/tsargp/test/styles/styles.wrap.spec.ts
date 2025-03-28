@@ -348,7 +348,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString(2, 'left', 4).split('type script');
           str.hook = new AnsiString(); // tail
-          expect(() => str.wrap(result)).toThrow('Cannot wrap to width');
+          expect(() => str.wrap(result)).toThrow('Cannot wrap word of length 6');
         });
 
         it('wrap multiple lines with indentation', () => {

@@ -235,10 +235,17 @@ In addition to the [common properties] and [filter properties], this type of sec
 - `descr` -- the [layout settings] for the [description column]
 - `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
 - `useEnv` -- whether option names should be replaced with [environment variable] names (defaults to `false{:ts}`)
+- `responsive` -- whether the layout is responsive (a.k.a., terminal-aware) (defaults to `true{:ts}`)
 
 > [!TIP]
 >
 > The `useEnv` property can be used to create a dedicated section for environment variables.
+
+When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text wrapping enters into what we call "line-wise" wrapping. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. For this to work, the length of the longest word in a column must not exceed the column's `maxWidth` property, if set. Otherwise, an error will be raised to alert the developer of this issue.
+
+> [!NOTE]
+>
+> The reason why a non-responsive layout may raise an error is that we cannot split _words_, as they may have [inline styles], and those styles should not leak into subsequent columns.
 
 ## Layout settings
 

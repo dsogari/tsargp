@@ -275,7 +275,7 @@ export type WithSectionGroups = {
    */
   readonly useEnv?: boolean;
   /**
-   * Whether the layout is responsive (i.e., terminal-aware).
+   * Whether the layout is responsive (a.k.a, terminal-aware).
    * @default true
    */
   readonly responsive?: boolean;
