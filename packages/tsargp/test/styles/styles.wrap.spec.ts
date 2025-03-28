@@ -528,7 +528,7 @@ describe('AnsiString', () => {
             ]);
           });
 
-          it('wrap a column that has a difference of two lines to the next', () => {
+          it('wrap a column that has a difference of two lines from the next', () => {
             const result: Array<string> = [];
             const str = new AnsiString(2, 'left', 6).split('type script is fun');
             str.hook = new AnsiString(10, 'left', 6).word('type').break(); // feed ignored
@@ -772,7 +772,7 @@ describe('AnsiString', () => {
             ]);
           });
 
-          it('wrap a column that has a difference of two lines to the next', () => {
+          it('wrap a column that has a difference of two lines from the next', () => {
             const result: Array<string> = [];
             const str = new AnsiString(2, 'right', 6).split('type script is fun');
             str.hook = new AnsiString(10, 'right', 6).word('type').break(); // feed ignored

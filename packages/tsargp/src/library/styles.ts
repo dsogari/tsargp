@@ -220,7 +220,7 @@ const formatFunctions = {
    */
   o(value: object, result: AnsiString, flags: FormattingFlags) {
     if ('$phrase' in value && '$elements' in value) {
-      this['a'](value.$elements, result, flags, value.$phrase as string);
+      this.a(value.$elements, result, flags, value.$phrase as string);
       return; // special case of array with phrase
     }
     const { connectives } = config;
@@ -235,14 +235,14 @@ const formatFunctions = {
         if (regex.id.test(key)) {
           result.word(key);
         } else {
-          this['s'](key, result, flags);
+          this.s(key, result, flags);
         }
         result.close(valueSep);
-        this['v'](val, result, flags);
+        this.v(val, result, flags);
       },
     };
     const entries = getEntries(value as UnknownRecord);
-    this['a'](entries, result, arrayFlags);
+    this.a(entries, result, arrayFlags);
   },
   /**
    * The formatting function for unknown values.
