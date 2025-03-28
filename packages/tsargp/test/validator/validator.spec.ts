@@ -90,7 +90,7 @@ describe('validate', () => {
     });
   });
 
-  it('accept a positional option with another that is explicitly not positional', () => {
+  it('accept a positional option and another that is explicitly not positional', () => {
     const options = {
       single1: {
         type: 'single',

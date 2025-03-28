@@ -459,7 +459,7 @@ export class AnsiString {
   private readonly curStyle: Style = sgrSequence();
 
   /**
-   * The line-wise wrapping context. The style always includes an SGR clear.
+   * The line-wise wrapping context. The accumulated style always includes an SGR clear.
    */
   private readonly context: WrappingContext = [0, { [tf.clear]: tf.clear }];
 
@@ -748,7 +748,7 @@ export class AnsiString {
     }
     /** @ignore */
     function callHook(hook: AnsiString, index: number): number {
-      context[0] = index;
+      context[0] = index; // save index for next line
       if (context[2] == undefined) {
         context[2] = false;
         hook.context[0] = 0;
@@ -773,7 +773,7 @@ export class AnsiString {
       return currentColumn;
     }
     // sanitize input
-    let column = max(0, currentColumn || 0); // sanitize input
+    let column = max(0, currentColumn || 0);
     const indent = max(0, this.indent || 0);
     const width = min(indent + max(0, this.width || Infinity), max(0, terminalWidth || Infinity));
     let start = max(0, min(indent, width));
@@ -796,7 +796,7 @@ export class AnsiString {
         if (hook) {
           const col = callHook(hook, i + 1); // resume from the next string
           if (!isHead) {
-            return col;
+            return col; // return from child
           }
         }
         feed(); // keep line feeds separate from the rest
@@ -816,7 +816,7 @@ export class AnsiString {
           if (hook) {
             const col = callHook(hook, i); // resume from the same string
             if (!isHead) {
-              return col;
+              return col; // return from child
             }
           }
           feed(); // keep line feeds separate from the rest
@@ -828,7 +828,7 @@ export class AnsiString {
       column += len2 + len;
       result.push(pad2 + (emitStyles ? styled[i] : strings[i]));
       if (hook && emitStyles) {
-        const styles = styled[i].match(regex.sgr);
+        const styles = styled[i].match(regex.sgr); // extract SGR attributes
         if (styles) {
           applyStyle(seqFromText(cs.sgr, styles.join('')), context[1]);
         }
@@ -1116,7 +1116,7 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
 
 /**
  * Creates a control sequence.
- * Do not use `concat` on sequences.
+ * Do not call `concat` on the result.
  * @template T The type of the sequence command
  * @param cmd The sequence command
  * @param params The sequence parameters
@@ -1133,7 +1133,7 @@ function sequence<T extends cs>(cmd: T, ...params: Array<SequenceParameter>): Co
 
 /**
  * Creates an SGR sequence.
- * Do not use `concat` on styles.
+ * Do not call `concat` on the result.
  * @param attrs The styling attributes
  * @returns The SGR sequence
  */
@@ -1210,8 +1210,8 @@ function applyStyle(sty: Style, result: StyleRecord, onlyIfPresent: boolean = fa
 /**
  * Creates a control sequence from a string.
  * Assumes that there is no text between sequences.
- * Text before the first sequence is discarded.
- * Assumes the sequence specifier has unitary length.
+ * Any text before the first sequence is discarded.
+ * Assumes that the sequence specifier has unitary length.
  * Empty parameters are converted to zero.
  * @template T The type of the sequence command
  * @param cmd The sequence command

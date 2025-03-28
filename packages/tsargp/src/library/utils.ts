@@ -336,7 +336,7 @@ export function isCommand(type: OptionType): type is 'command' {
 /**
  * Tests if an option accepts positional arguments.
  * @param option The option definition
- * @returns True if the option type is positional
+ * @returns True if the option is positional
  */
 export function isPositional(option: OpaqueOption): boolean {
   return !!option.positional || option.positional === '';
