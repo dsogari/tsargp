@@ -126,7 +126,7 @@ export type ParserSuggestion = ICompletionSuggestion & {
 /**
  * The parsing context.
  */
-type ParseContext = [
+type ParsingContext = [
   /**
    * The option registry.
    */
@@ -196,7 +196,7 @@ type ParseEntry = [
  * @template T The type of the item
  */
 type RequireItemFn<T> = (
-  context: ParseContext,
+  context: ParsingContext,
   option: OpaqueOption,
   item: T,
   error: AnsiString,
@@ -296,7 +296,7 @@ function createContext(
   args: Array<string>,
   completing: boolean,
   flags: ParsingFlags,
-): ParseContext {
+): ParsingContext {
   if (flags.progName === undefined) {
     flags.progName = process?.argv[1]?.split(regex.pathSep).at(-1);
   }
@@ -322,7 +322,7 @@ function createContext(
  * @param index The argument index
  * @returns True if the argument was a cluster
  */
-function parseCluster(context: ParseContext, index: number): boolean {
+function parseCluster(context: ParsingContext, index: number): boolean {
   /** @ignore */
   function getOpt(letter: string): [string, OpaqueOption, string?] {
     const key = letters.get(letter) ?? '';
@@ -368,7 +368,7 @@ function parseCluster(context: ParseContext, index: number): boolean {
  * Parses the command-line arguments.
  * @param context The parsing context
  */
-async function parseArgs(context: ParseContext) {
+async function parseArgs(context: ParsingContext) {
   const [registry, values, args, supplied, completing] = context;
   let prev: ParseEntry = [-1];
   let min = 0; // param count
@@ -449,7 +449,7 @@ async function parseArgs(context: ParseContext) {
  * @param context The parsing context
  * @param info The option info
  */
-function addSupplied(context: ParseContext, info: OptionInfo) {
+function addSupplied(context: ParsingContext, info: OptionInfo) {
   const [key, option, name] = info;
   if (option.deprecated !== undefined) {
     context[5].add(ErrorItem.deprecatedOption, {}, getSymbol(name));
@@ -464,7 +464,7 @@ function addSupplied(context: ParseContext, info: OptionInfo) {
  * @param prev The previous parse entry
  * @returns The new parse entry
  */
-function findNext(context: ParseContext, prev: ParseEntry): ParseEntry {
+function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
   const [prevIndex, , prevVal, , prevMarker] = prev;
   let [, prevInfo] = prev;
@@ -566,7 +566,7 @@ function reportMissingParameter(min: number, max: number, name: string): never {
  * @param context The parsing context
  * @param name The unknown option name
  */
-function reportUnknownName(context: ParseContext, name: string): never {
+function reportUnknownName(context: ParsingContext, name: string): never {
   const similar = findSimilar(name, context[0].names.keys(), 0.6);
   const alt = similar.length ? 1 : 0;
   const sep = config.connectives.optionSep;
@@ -662,7 +662,7 @@ async function completeParameter(
  * @returns True if the parsing loop should be broken
  */
 async function tryParseParams(
-  context: ParseContext,
+  context: ParsingContext,
   info: OptionInfo,
   index: number,
   params: Array<string>,
@@ -688,7 +688,7 @@ async function tryParseParams(
  * @returns True if the parsing loop should be broken
  */
 async function parseParams(
-  context: ParseContext,
+  context: ParsingContext,
   info: OptionInfo,
   index: number,
   params: Array<string>,
@@ -777,7 +777,7 @@ async function parseParams(
  * @returns True if the parsing loop should be broken
  */
 async function handleNiladic(
-  context: ParseContext,
+  context: ParsingContext,
   info: OptionInfo,
   index: number,
   rest: Array<string>,
@@ -813,7 +813,7 @@ async function handleNiladic(
  * @returns The result of parsing the command arguments
  */
 async function handleCommand(
-  context: ParseContext,
+  context: ParsingContext,
   info: OptionInfo,
   index: number,
   rest: Array<string>,
@@ -845,7 +845,7 @@ async function handleCommand(
  * @param rest The remaining command-line arguments
  * @throws The help or version message
  */
-async function handleMessage(context: ParseContext, info: OptionInfo, rest: Array<string>) {
+async function handleMessage(context: ParsingContext, info: OptionInfo, rest: Array<string>) {
   const [, values] = context;
   const [key, option] = info;
   const message = await (option.type === 'help'
@@ -866,7 +866,7 @@ async function handleMessage(context: ParseContext, info: OptionInfo, rest: Arra
  * @returns The help message
  */
 async function handleHelp(
-  context: ParseContext,
+  context: ParsingContext,
   option: OpaqueOption,
   rest: Array<string>,
 ): Promise<AnsiMessage> {
@@ -918,7 +918,7 @@ async function handleVersion(option: OpaqueOption): Promise<AnsiMessage> {
  * @param context The parsing context
  * @param isEarly Whether the parsing loop was broken early
  */
-async function checkRequired(context: ParseContext, isEarly: boolean) {
+async function checkRequired(context: ParsingContext, isEarly: boolean) {
   const keys = getKeys(context[0].options);
   // FIXME: we may need to serialize the following calls to avoid data races in client code
   await Promise.all(keys.map((key) => checkDefaultValue(context, key, isEarly)));
@@ -932,7 +932,7 @@ async function checkRequired(context: ParseContext, isEarly: boolean) {
  * @param isEarly Whether the parsing loop was broken early
  * @returns A promise that must be awaited before continuing
  */
-async function checkDefaultValue(context: ParseContext, key: string, isEarly: boolean) {
+async function checkDefaultValue(context: ParsingContext, key: string, isEarly: boolean) {
   /** @ignore */
   async function parseData(data: string, name: string) {
     const info: OptionInfo = [key, option, name];
@@ -975,7 +975,7 @@ async function checkDefaultValue(context: ParseContext, key: string, isEarly: bo
  * @param context The parsing context
  * @param key The option key
  */
-async function checkRequiredOption(context: ParseContext, key: string) {
+async function checkRequiredOption(context: ParsingContext, key: string) {
   /** @ignore */
   function check(requires: Requires, negate: boolean, invert: boolean) {
     return checkRequires(context, option, requires, error, negate, invert);
@@ -1006,7 +1006,7 @@ async function checkRequiredOption(context: ParseContext, key: string) {
  * @returns True if the requirements were satisfied
  */
 function checkRequires(
-  context: ParseContext,
+  context: ParsingContext,
   option: OpaqueOption,
   requires: Requires,
   error: AnsiString,
@@ -1040,7 +1040,7 @@ function checkRequires(
  * @returns True if the requirement was satisfied
  */
 function checkRequiresEntry(
-  context: ParseContext,
+  context: ParsingContext,
   _option: OpaqueOption,
   entry: RequiresEntry,
   error: AnsiString,
@@ -1086,7 +1086,7 @@ function checkRequiresEntry(
  * @returns True if the requirement was satisfied
  */
 async function checkRequireItems<T>(
-  context: ParseContext,
+  context: ParsingContext,
   option: OpaqueOption,
   items: Array<T>,
   itemFn: RequireItemFn<T>,
@@ -1132,7 +1132,7 @@ async function checkRequireItems<T>(
  * @returns True if the requirements were satisfied
  */
 async function checkRequirementCallback(
-  context: ParseContext,
+  context: ParsingContext,
   option: OpaqueOption,
   callback: RequirementCallback,
   error: AnsiString,
