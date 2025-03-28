@@ -718,7 +718,7 @@ describe('format', () => {
     );
   });
 
-  it('force the width of all columns', () => {
+  it('force the width of all columns with left-alignment', () => {
     const options = {
       single: {
         type: 'single',
@@ -752,7 +752,41 @@ describe('format', () => {
     );
   });
 
-  it('force the width of all columns with non-responsive layout', () => {
+  it('force the width of all columns with right-alignment', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        names: { align: 'right', maxWidth: 8 },
+        param: { align: 'right', maxWidth: 12 },
+        descr: { align: 'right', maxWidth: 20 },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '       -s,\n' +
+        '  --single       <param>  A single option with\n' +
+        '                                 big synopsis.\n' +
+        '       -a,\n' +
+        '   --array      [<param>\n' +
+        '             <param>...]      Accepts multiple\n' +
+        '                                   parameters.\n',
+    );
+  });
+
+  it('force the width of all columns with left-alignment and non-responsive layout', () => {
     const options = {
       single: {
         type: 'single',
@@ -781,6 +815,38 @@ describe('format', () => {
         '  --single                big synopsis.\n' +
         '  -a,       [<param>      Accepts multiple\n' +
         '  --array   <param>...]   parameters.\n',
+    );
+  });
+
+  it('force the width of all columns with right-alignment and non-responsive layout', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        names: { align: 'right', maxWidth: 8 },
+        param: { align: 'right', maxWidth: 12 },
+        descr: { align: 'right', maxWidth: 20 },
+        responsive: false,
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '       -s,       <param>  A single option with\n' +
+        '  --single                       big synopsis.\n' +
+        '       -a,      [<param>      Accepts multiple\n' +
+        '   --array   <param>...]           parameters.\n',
     );
   });
 });
