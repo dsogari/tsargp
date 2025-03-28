@@ -407,7 +407,14 @@ type FormattingFunction = (value: any, result: AnsiString, flags: FormattingFlag
 type FormattingFunctions = Readonly<Record<FormatSpecifier, FormattingFunction>>;
 
 /**
- * The wrapping context.
+ * A record that keeps track of styling attributes by their cancelling attribute.
+ */
+type StyleRecord = Partial<
+  Record<StandardAttribute, StandardAttribute | [StandardAttribute, ExtendedAttribute]>
+>;
+
+/**
+ * The context for line-wise wrapping.
  */
 type WrappingContext = [
   /**
@@ -415,7 +422,11 @@ type WrappingContext = [
    */
   index: number,
   /**
-   * Whether the wrapping is finished for a string.
+   * The accumulated style to restore at the start of a line.
+   */
+  style: StyleRecord,
+  /**
+   * Whether the wrapping is finished.
    */
   done?: boolean,
 ];
@@ -438,19 +449,19 @@ export class AnsiString {
   public readonly styled: Array<string> = [];
 
   /**
-   * The stack of styles.
+   * The stack of styles used during building.
    */
   private readonly styleStack: Array<Style> = [];
 
   /**
-   * The opening style.
+   * The opening style used during building.
    */
   private readonly curStyle: Style = sgrSequence();
 
   /**
-   * The line-wise wrapping context.
+   * The line-wise wrapping context. The style always includes an SGR clear.
    */
-  private readonly context: WrappingContext = [0];
+  private readonly context: WrappingContext = [0, { [tf.clear]: tf.clear }];
 
   /**
    * Whether the first string should be merged with the previous string.
@@ -738,10 +749,10 @@ export class AnsiString {
     /** @ignore */
     function callHook(hook: AnsiString, index: number): number {
       context[0] = index;
-      if (context[1] == undefined) {
-        context[1] = false;
+      if (context[2] == undefined) {
+        context[2] = false;
         hook.context[0] = 0;
-        hook.context[1] = undefined; // signal start of line-wise wrapping for child
+        hook.context[2] = undefined; // signal start of line-wise wrapping for child
       }
       return hook.wrap(result, column, NaN, emitStyles, emitSpaces, false);
     }
@@ -754,11 +765,11 @@ export class AnsiString {
     if (hook) {
       if (isHead) {
         context[0] = 0;
-        context[1] = undefined; // start of line-wise wrapping
+        context[2] = undefined; // start of line-wise wrapping
       }
       terminalWidth = NaN; // ignore terminal width in this case
     } else if (!count) {
-      context[1] = true; // signal end of line-wise wrapping for parent
+      context[2] = true; // signal end of line-wise wrapping for parent
       return currentColumn;
     }
     // sanitize input
@@ -767,7 +778,6 @@ export class AnsiString {
     const width = min(indent + max(0, this.width || Infinity), max(0, terminalWidth || Infinity));
     let start = max(0, min(indent, width));
     let j = result.length; // save index for right-alignment
-    const needToAlign = isFinite(width) && align === 'right';
     if (width < start + maxLength) {
       if (hook) {
         throw Error(`Cannot wrap word of length ${maxLength}`); // developer mistake: see documentation
@@ -777,6 +787,7 @@ export class AnsiString {
         feed(); // forcefully break the first line
       }
     }
+    const needToAlign = isFinite(width) && align === 'right';
     const pad = start ? move(start) : ''; // precomputed for efficiency
     for (let i = context[0]; i < count; i++) {
       const str = strings[i];
@@ -812,18 +823,27 @@ export class AnsiString {
           feed(); // keep line feeds separate from the rest
         }
       }
+      if (hook && emitStyles && column <= start) {
+        pad2 += recordToStyle(context[1]); // restore SGR attributes
+      }
       column += len2 + len;
       result.push(pad2 + (emitStyles ? styled[i] : str));
+      if (hook && emitStyles) {
+        const styles = styled[i].match(regex.sgr);
+        if (styles) {
+          applyStyle(seqFromText(cs.sgr, styles.join('')), context[1]);
+        }
+      }
     }
     alignRight();
     if (hook) {
       do {
         column = callHook(hook, count); // call once if not head
-        context[1] = hook.context[1]; // signal end of line-wise wrapping for parent
-        if (isHead && !context[1]) {
+        context[2] = hook.context[2]; // signal end of line-wise wrapping for parent
+        if (isHead && !context[2]) {
           feed(); // head is driving the wrapping, so child line feeds are ignored
         }
-      } while (isHead && !context[1]);
+      } while (isHead && !context[2]);
     }
     return column;
   }
@@ -1132,6 +1152,15 @@ function isStandard(param: SequenceParameter): param is StandardAttribute {
 }
 
 /**
+ * Converts a style record to a style.
+ * @param rec The style record
+ * @returns The style
+ */
+function recordToStyle(rec: StyleRecord): Style {
+  return sgrSequence(...getValues(rec).flat()); // keys are sorted in ascending order
+}
+
+/**
  * Merges opening and closing styles.
  * @param close The closing style (to cancel from current level)
  * @param open The opening style (to reapply from parent level)
@@ -1141,31 +1170,42 @@ function mergeStyles(close?: Style, open: Style = noStyle): Style {
   if (!close?.length) {
     return noStyle; // skip if there is nothing to cancel
   }
-  type Param = StandardAttribute | [StandardAttribute, ExtendedAttribute];
-  const params: Partial<Record<StandardAttribute, Param>> = {};
+  const result: StyleRecord = {};
   for (const attr of close) {
     // skip extended attributes
     if (isStandard(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
       if (cancelAttr) {
-        params[cancelAttr] = cancelAttr; // cancel attribute (if not tf.clear)
+        result[cancelAttr] = cancelAttr; // cancel attribute (if not tf.clear)
       }
     }
   }
+  applyStyle(open, result, true);
+  return recordToStyle(result);
+}
+
+/**
+ * Applies a style to a style record.
+ * @param sty The style to apply
+ * @param result The resulting style
+ * @param onlyIfPresent Whether to apply a styling attribute only if it appears in the result
+ */
+function applyStyle(sty: Style, result: StyleRecord, onlyIfPresent: boolean = false) {
   let prev: StandardAttribute | undefined;
-  for (const attr of open) {
+  for (const attr of sty) {
     if (isStandard(attr)) {
       const cancelAttr = cancellingAttribute[attr] ?? attr;
-      if (cancelAttr in params) {
-        params[cancelAttr] = attr; // reapply only if it changed
+      if (!onlyIfPresent || cancelAttr in result) {
+        result[cancelAttr] = attr;
         prev = cancelAttr;
+      } else {
+        prev = undefined;
       }
     } else if (prev) {
       // handle extended attribute
-      params[prev] = [params[prev] as StandardAttribute, attr as ExtendedAttribute];
+      result[prev] = [result[prev] as StandardAttribute, attr as ExtendedAttribute];
     }
   }
-  return sgrSequence(...getValues(params).flat()); // keys are sorted in ascending order
 }
 
 /**

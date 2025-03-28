@@ -26,7 +26,7 @@ describe('AnsiString', () => {
 
       it('omit styles', () => {
         const result: Array<string> = [];
-        new AnsiString().split(`abc${clr} def`).wrap(result);
+        new AnsiString().split('abc' + clr + ' def').wrap(result);
         expect(result).toEqual(['abc', ' def']);
       });
 
@@ -58,7 +58,7 @@ describe('AnsiString', () => {
 
           it('adjust the current line with a single space when spaces are required', () => {
             const result: Array<string> = [];
-            new AnsiString().split('abc def').wrap(result, 2, 0, true, true);
+            new AnsiString().split('abc def').wrap(result, 2, 0, true);
             expect(result).toEqual([' abc', ' def']);
           });
         });
@@ -126,20 +126,20 @@ describe('AnsiString', () => {
 
           it('adjust the current line with spaces', () => {
             const result: Array<string> = [];
-            new AnsiString(2).split('abc def').wrap(result, 0, 0, true, true);
+            new AnsiString(2).split('abc def').wrap(result, 0, 0, true);
             expect(result).toEqual(['  abc', ' def']);
           });
 
           it('keep indentation in new lines with spaces', () => {
             const result: Array<string> = [];
-            new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true, true);
+            new AnsiString(2).split('abc\n\ndef').wrap(result, 0, 0, true);
             expect(result).toEqual(['  abc', '\n', '\n', '  def']);
           });
         });
       });
 
       describe('emitting styles', () => {
-        const str = new AnsiString().split(`abc${clr} def`);
+        const str = new AnsiString().split('abc' + clr + ' def');
 
         it('emit styles with move sequences', () => {
           const result: Array<string> = [];
@@ -149,7 +149,7 @@ describe('AnsiString', () => {
 
         it('emit styles with spaces', () => {
           const result: Array<string> = [];
-          str.wrap(result, 0, 0, true, true);
+          str.wrap(result, 0, 0, true);
           expect(result).toEqual(['abc' + clr, ' def']);
         });
       });
@@ -184,7 +184,7 @@ describe('AnsiString', () => {
 
       it('omit styles', () => {
         const result: Array<string> = [];
-        new AnsiString(0, 'left', 8).split(`abc${clr} largest`).wrap(result);
+        new AnsiString(0, 'left', 8).split('abc' + clr + ' largest').wrap(result);
         expect(result).toEqual(['abc', '\n', 'largest']);
       });
 
@@ -283,7 +283,7 @@ describe('AnsiString', () => {
 
           it('keep indentation in wrapped lines with spaces', () => {
             const result: Array<string> = [];
-            new AnsiString(1).split('abc largest').wrap(result, 0, 8, true, true);
+            new AnsiString(1).split('abc largest').wrap(result, 0, 8, true);
             expect(result).toEqual([' abc', '\n', ' largest']);
           });
         });
@@ -329,13 +329,13 @@ describe('AnsiString', () => {
 
           it('align with spaces when breaking the line', () => {
             const result: Array<string> = [];
-            new AnsiString(0, 'right').word('abc').break().wrap(result, 0, 8, true, true);
+            new AnsiString(0, 'right').word('abc').break().wrap(result, 0, 8, true);
             expect(result).toEqual(['     ', 'abc', '\n']);
           });
 
           it('align with spaces when wrapping the line', () => {
             const result: Array<string> = [];
-            new AnsiString(0, 'right').split('type script').wrap(result, 0, 8, true, true);
+            new AnsiString(0, 'right').split('type script').wrap(result, 0, 8, true);
             expect(result).toEqual(['    ', 'type', '\n', '  ', 'script']);
           });
         });
@@ -727,6 +727,36 @@ describe('AnsiString', () => {
               ' fun',
             ]);
           });
+        });
+      });
+
+      describe('emitting styles', () => {
+        it('wrap columns with styles', () => {
+          const bold = style(tf.bold);
+          const cancelBold = style(tf.notBoldOrFaint);
+          const clearAndBold = style(tf.clear, tf.bold);
+          const clearAndCancelBold = style(tf.clear, tf.notBoldOrFaint);
+          const result: Array<string> = [];
+          const str = new AnsiString(2, 'left', 6)
+            .pushSty(bold)
+            .split('type script')
+            .popSty()
+            .split('is fun');
+          str.hook = new AnsiString(10, 'left', 6).split('type script is fun');
+          str.hook.hook = new AnsiString(); // tail
+          str.wrap(result, 0, 1, true);
+          expect(result).toEqual([
+            '  ' + clr + bold + 'type', // bold style is "glued" to the first word
+            '    ' + clr + 'type',
+            '\n',
+            '  ' + clearAndBold + 'script' + cancelBold,
+            '  ' + clr + 'script',
+            '\n',
+            '  ' + clearAndCancelBold + 'is',
+            ' fun',
+            '  ' + clr + 'is',
+            ' fun',
+          ]);
         });
       });
     });
