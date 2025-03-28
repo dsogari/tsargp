@@ -274,6 +274,11 @@ export type WithSectionGroups = {
    * @default false
    */
   readonly useEnv?: boolean;
+  /**
+   * Whether the layout is responsive (i.e., terminal-aware).
+   * @default true
+   */
+  readonly responsive?: boolean;
 };
 
 /**

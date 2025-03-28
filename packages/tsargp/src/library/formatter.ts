@@ -519,7 +519,12 @@ function adjustEntries(
       ),
     ];
   }
-  const { names, param, descr } = section;
+  /** @ignore */
+  function hook(column: HelpColumn, prev: AnsiString, from: number = 0): AnsiString {
+    column.splice(from).forEach((str) => (prev = prev.hook = str));
+    return prev;
+  }
+  const { names, param, descr, responsive } = section;
   const [namesStart, namesWidth] = getStartAndWidth(names, namesWidths, 0, names?.slotIndent);
   const [paramStart, paramWidth] = getStartAndWidth(
     param,
@@ -539,6 +544,10 @@ function adjustEntries(
     adjustColumn(namesColumn, namesWidths, namesStart, names?.slotIndent, names?.maxWidth);
     adjustColumn(paramColumn, paramWidths, paramStart, 0, param?.maxWidth);
     adjustColumn(descrColumn, descrWidths, descrStart, 0, descr?.maxWidth);
+    if (responsive === false) {
+      const str = hook(descrColumn, hook(paramColumn, hook(namesColumn, namesColumn[0], 1)));
+      str.hook = new AnsiString(); // tail of wrapping chain
+    }
   }
 }
 

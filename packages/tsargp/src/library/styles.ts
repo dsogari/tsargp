@@ -429,6 +429,11 @@ export class AnsiString {
   private readonly curStyle: Style = sgrSequence();
 
   /**
+   * The current state for line-wise wrapping.
+   */
+  private readonly curState: [extra: number, done?: boolean] = [0];
+
+  /**
    * Whether the first string should be merged with the previous string.
    */
   private mergeLeft: boolean = false;
@@ -442,6 +447,11 @@ export class AnsiString {
    * The largest length among all strings.
    */
   public maxLength: number = 0;
+
+  /**
+   * The hooked string for line-wise wrapping.
+   */
+  public hook?: AnsiString;
 
   /**
    * @returns The number of internal strings
@@ -684,6 +694,7 @@ export class AnsiString {
    * @param terminalWidth The desired terminal width (or zero or `NaN` to avoid wrapping)
    * @param emitStyles Whether styles should be emitted
    * @param emitSpaces Whether spaces should be emitted instead of move sequences
+   * @param isHead Whether this string is the head of a chain for line-wise wrapping
    * @returns The updated terminal column
    */
   wrap(
@@ -692,6 +703,7 @@ export class AnsiString {
     terminalWidth: number = NaN,
     emitStyles: boolean = false,
     emitSpaces: boolean = true,
+    isHead: boolean = true,
   ): number {
     /** @ignore */
     function move(count: number): string {
@@ -705,33 +717,59 @@ export class AnsiString {
       }
     }
     /** @ignore */
+    function callHook(hook: AnsiString, index: number): number {
+      curState[0] = index;
+      if (curState[1] == undefined) {
+        curState[1] = false;
+        hook.curState[0] = 0;
+        hook.curState[1] = undefined; // signal start of line-wise wrapping for child
+      }
+      return hook.wrap(result, column, NaN, emitStyles, emitSpaces, false);
+    }
+    /** @ignore */
     function feed() {
-      alignRight();
       column = 0;
       j = result.push('\n'); // save index for right-alignment
     }
-    const { strings, styled, count, maxLength, align } = this;
-    if (!count) {
+    const { strings, styled, count, maxLength, align, hook, curState } = this;
+    if (hook) {
+      if (isHead) {
+        curState[0] = 0;
+        curState[1] = undefined; // start of line-wise wrapping
+      }
+      terminalWidth = NaN; // ignore terminal width in this case
+    } else if (!count) {
+      curState[1] = true; // signal end of line-wise wrapping for parent
       return currentColumn;
     }
     // sanitize input
-    let column = max(0, currentColumn || 0);
+    let column = max(0, currentColumn || 0); // sanitize input
     const indent = max(0, this.indent || 0);
     const width = min(indent + max(0, this.width || Infinity), max(0, terminalWidth || Infinity));
     let start = max(0, min(indent, width));
     let j = result.length; // save index for right-alignment
     const needToAlign = isFinite(width) && align === 'right';
     if (width < start + maxLength) {
+      if (hook) {
+        throw Error(`Cannot wrap to width ${this.width}: largest word has length ${maxLength}.`);
+      }
       start = 0; // wrap to the first column instead
       if (column && strings[0]) {
         feed(); // forcefully break the first line
       }
     }
     const pad = start ? move(start) : ''; // precomputed for efficiency
-    for (let i = 0; i < count; i++) {
+    for (let i = curState[0]; i < count; i++) {
       const str = strings[i];
       const len = str.length;
       if (!len) {
+        alignRight();
+        if (hook) {
+          const col = callHook(hook, i + 1); // resume from the next string
+          if (!isHead) {
+            return col;
+          }
+        }
         feed(); // keep line feeds separate from the rest
         continue;
       }
@@ -745,6 +783,13 @@ export class AnsiString {
           len2 = 1;
           pad2 = ' '; // single space separating words
         } else {
+          alignRight();
+          if (hook) {
+            const col = callHook(hook, i); // resume from the same string
+            if (!isHead) {
+              return col;
+            }
+          }
           feed(); // keep line feeds separate from the rest
         }
       }
@@ -752,6 +797,15 @@ export class AnsiString {
       result.push(pad2 + (emitStyles ? styled[i] : str));
     }
     alignRight();
+    if (hook) {
+      do {
+        column = callHook(hook, count); // call once if not head
+        curState[1] = hook.curState[1]; // signal end of line-wise wrapping for parent
+        if (isHead && !curState[1]) {
+          feed(); // head is driving the wrapping, so child line feeds are ignored
+        }
+      } while (isHead && !curState[1]);
+    }
     return column;
   }
 
