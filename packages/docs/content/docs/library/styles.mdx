@@ -133,7 +133,7 @@ During splitting, numeric placeholders prefixed with a hashtag `#` may be extrac
 >
 > This particular feature is only available in _phrases_, not in other text attributes.
 
-Placeholders are meant to be replaced with a value (or values, in case of arrays). Their format depends on the type of the value, which is denoted internally by a single character. The available ones are:
+Placeholders are meant to be replaced with a value. The number on the placeholder indicates the index of the argument that was passed to the formatting function. The resulting format depends on the type of the value, which is denoted internally by a single character. The available ones are:
 
 - `b` -- a `boolean{:ts}` value
 - `s` -- a `string{:ts}` value
@@ -142,11 +142,15 @@ Placeholders are meant to be replaced with a value (or values, in case of arrays
 - `m` -- a `symbol{:ts}` value (e.g., option name)
 - `t` -- another ANSI string
 - `u` -- a `URL{:ts}` value
-- `a` -- an array or tuple
-- `o` -- an `object{:ts}`
-- `v` -- an `unknown{:ts}` value (enclosed in angle brackets)
+- `a` -- an array or tuple (elements are enclosed by the values of the `arrayOpen` and `arrayClose` [connective words])
+- `o` -- an `object{:ts}` (entries are enclosed by the values of the `objectOpen` and `objectClose` [connective words])
+- `v` -- an `unknown{:ts}` value (enclosed by the values of the `valueOpen` and `valueClose` [connective words])
 
-When a phrase includes placeholders, they indicate where in the phrase to place the corresponding value. If a phrase has multiple alternatives (depending on the context), different pieces of text may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`.
+When a phrase includes placeholders, they indicate where in the phrase to place the corresponding value. The same placeholder may be repeated multiple times. If a phrase has multiple alternatives (depending on the context), different pieces of text may be specified separated by a vertical bar and grouped in parentheses, e.g. `'(...|...)'{:ts}`.
+
+> [!TIP]
+>
+> You can also apply a phrase to each element of an array through the `arrayWithPhrase` function.
 
 #### Inline styles
 
@@ -403,6 +407,7 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [text formatting]: #text-splitting
 [error phrases]: #error-phrases
 [help phrases]: #help-phrases
+[connective words]: #connective-words
 
 {/* options references */}
 

@@ -107,11 +107,6 @@ export type UsageStatement = Array<string | UsageStatement>;
  */
 export type UnknownRecord = Record<string, unknown>;
 
-/**
- * An array with a phrase to be applied to each element.
- */
-export type ArrayWithPhrase<T> = { $phrase: string; $elements: ReadonlyArray<T> };
-
 //--------------------------------------------------------------------------------------------------
 // Constants
 //--------------------------------------------------------------------------------------------------
@@ -1084,6 +1079,6 @@ export function setIntersection<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 export function arrayWithPhrase<T>(
   $phrase: string,
   $elements: ReadonlyArray<T>,
-): ArrayWithPhrase<T> {
+): { $phrase: string; $elements: ReadonlyArray<T> } {
   return { $phrase, $elements };
 }
