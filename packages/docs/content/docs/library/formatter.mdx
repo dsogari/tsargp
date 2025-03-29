@@ -243,7 +243,7 @@ In addition to the [common properties] and [filter properties], this type of sec
 >
 > The `useEnv` property can be used to create a dedicated section for environment variables.
 
-When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text wrapping enters into what we call [line-wise wrapping]. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns.
+When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text is wrapped using [line-wise wrapping]. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. In this case, the `maxWidth` property should be set on the column's [layout settings].
 
 ## Layout settings
 

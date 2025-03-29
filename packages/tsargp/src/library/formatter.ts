@@ -161,11 +161,6 @@ export const envHelpItems: HelpItems = [
 ];
 
 /**
- * The default help sections.
- */
-const defaultSections: HelpSections = [{ type: 'groups' }];
-
-/**
  * The formatting flags for arrays and objects with no brackets.
  */
 const openArrayFlags: FormattingFlags = { open: '', close: '' };
@@ -330,13 +325,13 @@ const helpFunctions: HelpFunctions = {
  * Formats a help message with sections.
  * Options are rendered in the order specified in their definitions.
  * @param options The option definitions (should be validated first)
- * @param sections The help sections
+ * @param sections The help sections (defaults to a single groups section)
  * @param flags The formatter flags, if any
  * @returns The formatted help message
  */
 export function format(
   options: OpaqueOptions,
-  sections: HelpSections = defaultSections,
+  sections: HelpSections = [{ type: 'groups' }],
   flags: FormatterFlags = {},
 ): AnsiMessage {
   const keys = filterOptions(options, flags.optionFilter);
