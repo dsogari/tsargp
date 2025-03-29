@@ -413,12 +413,12 @@ function buildEntries(
 }
 
 /**
- * Filters options and groups using a section filter.
+ * Refilters options and groups according to a section filter.
  * @param keys The filtered option keys
  * @param filter The section filter
- * @returns The filtered option keys
+ * @returns The refiltered option keys
  */
-function filterKeys(
+function refilterKeys(
   keys: ReadonlyArray<OptionKey>,
   filter: HelpSectionFilter = {},
 ): Array<OptionKey> {
@@ -482,7 +482,7 @@ function formatGroups(
   const paramWidths: Array<number> = [];
   const descrWidths: Array<number> = [];
   const { filter, items, useEnv, names, param, descr } = section;
-  const groups = buildEntries(options, filterKeys(keys, filter), build);
+  const groups = buildEntries(options, refilterKeys(keys, filter), build);
   adjustEntries(section, groups, namesWidths, paramWidths, descrWidths);
   return groups;
 }
@@ -803,7 +803,7 @@ function formatUsage(
 ) {
   const { filter, required, inclusive, compact } = section;
   const requiredSet = new Set(required?.filter((key) => key in options));
-  const deps = normalizeDependencies(filterKeys(keys, filter), requiredSet, options, inclusive);
+  const deps = normalizeDependencies(refilterKeys(keys, filter), requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {

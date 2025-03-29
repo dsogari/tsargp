@@ -528,7 +528,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case3, flags).wrap()).toEqual('-f1\n');
       expect(format(options, case4, flags).wrap()).toEqual('[-f1] [-f2]\n'); // definition order
       expect(format(options, case5, flags).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, case6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
+      expect(format(options, case6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n'); // default group
       expect(format(options, case7, flags).wrap()).toEqual('');
       expect(format(options, case8, flags).wrap()).toEqual('');
       expect(format(options, case9, flags).wrap()).toEqual('[-f1] [-f2]\n');
@@ -657,8 +657,8 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] }, // preserve definition order
-          inclusive: { flag1: 'flag2', flag2: 'flag3' },
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
+          inclusive: { flag1: 'flag2', flag2: 'flag3' }, // preserve dependency order
         },
       ];
       const case12: HelpSections = [
@@ -731,14 +731,14 @@ describe('rendering a usage section', () => {
         {
           type: 'usage',
           filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
-          inclusive: { flag1: 'flag2', flag2: 'flag3' },
+          inclusive: { flag1: 'flag2', flag2: 'flag3' }, // preserve dependency order
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
           filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
-          inclusive: { flag1: 'flag2', flag3: 'flag1' },
+          inclusive: { flag1: 'flag2', flag3: 'flag1' }, // preserve dependency order
         },
       ];
       const case13: HelpSections = [{ type: 'usage', inclusive: { flag1: ['flag2', 'flag3'] } }];
