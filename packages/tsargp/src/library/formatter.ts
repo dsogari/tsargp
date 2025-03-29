@@ -5,6 +5,7 @@ import type {
   HelpGroupsSection,
   HelpItems,
   HelpSection,
+  HelpSectionFilter,
   HelpSections,
   HelpTextBlock,
   HelpUsageSection,
@@ -40,8 +41,6 @@ import {
   isString,
   max,
   min,
-  setDifference,
-  setIntersection,
   stronglyConnected,
   visitRequirements,
 } from './utils.js';
@@ -129,6 +128,11 @@ type EntriesByGroup = Readonly<Record<string, ReadonlyArray<HelpEntry>>>;
  * The common layout settings for a help column.
  */
 type ColumnLayout = WithBasicLayout | null | WithMergedLayout;
+
+/**
+ * The key of an option and its corresponding group.
+ */
+type OptionKey = readonly [key: string, group: string];
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -324,7 +328,7 @@ const helpFunctions: HelpFunctions = {
 //--------------------------------------------------------------------------------------------------
 /**
  * Formats a help message with sections.
- * Options are rendered in the order specified in the definitions or in the section filter.
+ * Options are rendered in the order specified in their definitions.
  * @param options The option definitions (should be validated first)
  * @param sections The help sections
  * @param flags The formatter flags, if any
@@ -344,12 +348,15 @@ export function format(
 }
 
 /**
- * Filter the options, preserving the order specified in the definitions.
+ * Filter the options, preserving the order specified in their definitions.
  * @param options The option definitions
  * @param filter The option filter
  * @returns The filtered option keys
  */
-function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string> = []): Array<string> {
+function filterOptions(
+  options: OpaqueOptions,
+  filter: ReadonlyArray<string> = [],
+): Array<OptionKey> {
   /** @ignore */
   function matches(str: string): boolean {
     str = str.toLowerCase();
@@ -366,13 +373,13 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string> = [
     );
   }
   filter = filter.map((pattern) => pattern.toLowerCase());
-  const keys: Array<string> = [];
+  const result: Array<OptionKey> = [];
   for (const [key, option] of getEntries(options)) {
     if (option.group !== null && !exclude(option)) {
-      keys.push(key);
+      result.push([key, option.group ?? '']);
     }
   }
-  return keys;
+  return result;
 }
 
 /**
@@ -380,42 +387,53 @@ function filterOptions(options: OpaqueOptions, filter: ReadonlyArray<string> = [
  * @param options The option definitions
  * @param keys The filtered option keys
  * @param buildFn The building function
- * @param include The group inclusion filter
- * @param exclude The group exclusion filter
  * @returns The option groups
  */
 function buildEntries(
   options: OpaqueOptions,
-  keys: ReadonlyArray<string>,
+  keys: ReadonlyArray<OptionKey>,
   buildFn: (option: OpaqueOption) => HelpEntry | undefined,
-  include?: ReadonlyArray<string>,
-  exclude?: ReadonlyArray<string>,
 ): EntriesByGroup {
   const groups: Record<string, Array<HelpEntry>> = {};
-  const selectedSet = new Set(keys.map((key) => options[key].group ?? ''));
-  const filteredSet = setDifference(
-    include ? setIntersection(new Set(include), selectedSet) : selectedSet,
-    new Set(exclude),
-  );
-  filteredSet.forEach((name) => (groups[name] = [])); // preserve filter order
-  for (const key of keys) {
+  for (const [key, group] of keys) {
     const option = options[key];
-    const name = option.group ?? '';
-    if (name in groups) {
-      const { styles } = config;
-      const saved = styles.symbol;
-      try {
-        styles.symbol = option.styles?.names ?? saved; // use configured style, if any
-        const entry = buildFn(option);
-        if (entry) {
-          groups[name].push(entry);
-        }
-      } finally {
-        styles.symbol = saved;
+    const { styles } = config;
+    const saved = styles.symbol;
+    try {
+      styles.symbol = option.styles?.names ?? saved; // use configured style, if any
+      const entry = buildFn(option);
+      if (entry) {
+        (groups[group] ??= []).push(entry);
       }
+    } finally {
+      styles.symbol = saved;
     }
   }
   return groups;
+}
+
+/**
+ * Refilters options and groups according to a section filter.
+ * @param keys The filtered option keys
+ * @param filter The section filter
+ * @returns The refiltered option keys
+ */
+function refilterKeys(
+  keys: ReadonlyArray<OptionKey>,
+  filter: HelpSectionFilter = {},
+): Array<OptionKey> {
+  const { includeOptions, includeGroups, excludeOptions, excludeGroups } = filter;
+  const includeOptionsSet = new Set(includeOptions);
+  const includeGroupsSet = new Set(includeGroups);
+  const excludeOptionsSet = new Set(excludeOptions);
+  const excludeGroupsSet = new Set(excludeGroups);
+  return keys.filter(
+    ([key, group]) =>
+      (!(includeOptions || includeGroups) ||
+        includeOptionsSet.has(key) ||
+        includeGroupsSet.has(group)) &&
+      !(excludeOptionsSet.has(key) || excludeGroupsSet.has(group)),
+  );
 }
 
 /**
@@ -429,7 +447,7 @@ function buildEntries(
 function formatGroups(
   options: OpaqueOptions,
   section: HelpGroupsSection,
-  keys: ReadonlyArray<string>,
+  keys: ReadonlyArray<OptionKey>,
   flags: FormatterFlags,
 ): EntriesByGroup {
   /** @ignore */
@@ -463,8 +481,8 @@ function formatGroups(
   const namesWidths: Array<number> = [];
   const paramWidths: Array<number> = [];
   const descrWidths: Array<number> = [];
-  const { include, exclude, items, useEnv, names, param, descr } = section;
-  const groups = buildEntries(options, keys, build, include, exclude);
+  const { filter, items, useEnv, names, param, descr } = section;
+  const groups = buildEntries(options, refilterKeys(keys, filter), build);
   adjustEntries(section, groups, namesWidths, paramWidths, descrWidths);
   return groups;
 }
@@ -665,7 +683,6 @@ function formatDescription(
 
 /**
  * Formats a help section to be included in the help message.
- * Options are rendered in the order specified in the definitions or in the section filter.
  * @param options The option definitions
  * @param section The help section
  * @param keys The filtered option keys
@@ -675,7 +692,7 @@ function formatDescription(
 function formatHelpSection(
   options: OpaqueOptions,
   section: HelpSection,
-  keys: ReadonlyArray<string>,
+  keys: ReadonlyArray<OptionKey>,
   flags: FormatterFlags,
   result: AnsiMessage,
 ) {
@@ -706,7 +723,6 @@ function formatHelpSection(
 
 /**
  * Formats a usage section to be included in the help message.
- * Options are rendered in the order specified in the definitions or in the section filter.
  * @param options The option definitions
  * @param section The help section
  * @param keys The filtered option keys
@@ -716,7 +732,7 @@ function formatHelpSection(
 function formatUsageSection(
   options: OpaqueOptions,
   section: HelpUsageSection,
-  keys: ReadonlyArray<string>,
+  keys: ReadonlyArray<OptionKey>,
   flags: FormatterFlags,
   result: AnsiMessage,
 ) {
@@ -772,7 +788,6 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
 
 /**
  * Formats a usage statement to be included in a usage section.
- * Options are rendered in the order specified in the definitions or in the section filter.
  * @param keys The filtered option keys
  * @param options The option definitions
  * @param section The usage section
@@ -780,20 +795,15 @@ function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter:
  * @param result The resulting string
  */
 function formatUsage(
-  keys: ReadonlyArray<string>,
+  keys: ReadonlyArray<OptionKey>,
   options: OpaqueOptions,
   section: HelpUsageSection,
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { include, exclude, required, inclusive, compact } = section;
+  const { filter, required, inclusive, compact } = section;
   const requiredSet = new Set(required?.filter((key) => key in options));
-  const selectedSet = new Set(keys);
-  const filteredSet = setDifference(
-    include ? setIntersection(new Set(include), selectedSet) : selectedSet,
-    new Set(exclude),
-  ); // preserve filter order
-  const deps = normalizeDependencies(filteredSet, requiredSet, options, inclusive);
+  const deps = normalizeDependencies(refilterKeys(keys, filter), requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {
@@ -810,28 +820,29 @@ function formatUsage(
 
 /**
  * Normalizes the option dependencies for a usage statement.
- * @param keys The filtered option keys (may be updated)
+ * @param keys The filtered option keys
  * @param requiredKeys The set of options to consider always required (may be updated)
  * @param options The option definitions
  * @param dependencies The option dependencies
  * @returns The normalized dependencies
  */
 function normalizeDependencies(
-  keys: Set<string>,
+  keys: ReadonlyArray<OptionKey>,
   requiredKeys: Set<string>,
   options: OpaqueOptions,
   dependencies: OptionDependencies = {},
 ): RecordKeyMap {
   const result: RecordKeyMap = {};
-  for (const key of keys) {
+  const filteredSet = new Set(keys.map(([key]) => key));
+  for (const key of filteredSet) {
     if (options[key].required) {
       requiredKeys.add(key);
     }
     const deps = dependencies[key] ?? [];
     result[key] = (isString(deps) ? [deps] : deps).filter((dep) => dep in options);
-    result[key].forEach((key) => keys.add(key)); // update with extra options
+    result[key].forEach((key) => filteredSet.add(key)); // update with extra options
   }
-  for (const key of keys) {
+  for (const key of filteredSet) {
     result[key].push(...requiredKeys); // options depended upon by all other options
   }
   return result;

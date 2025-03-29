@@ -161,7 +161,7 @@ describe('rendering a groups section', () => {
     });
   });
 
-  it('combine a group filter with an option filter', () => {
+  it('combine a section filter with an option filter', () => {
     const options = {
       flag1: {
         type: 'flag',
@@ -183,25 +183,53 @@ describe('rendering a groups section', () => {
         names: ['-s2'],
       },
     } as const satisfies Options;
-    const sections0: HelpSections = [{ type: 'groups', include: [] }]; // empty filter
-    const sections1: HelpSections = [{ type: 'groups', include: ['group1'] }];
-    const sections2: HelpSections = [{ type: 'groups', exclude: ['group1', ''] }];
-    const sections3: HelpSections = [{ type: 'groups', include: ['group2', 'group1'] }];
-    const sections4: HelpSections = [{ type: 'groups', include: [''] }]; // default group
-    const sections5: HelpSections = [{ type: 'groups', include: [], exclude: ['group1', ''] }];
-    const sections6: HelpSections = [{ type: 'groups', include: ['group1', ''], exclude: [''] }];
-    const sections7: HelpSections = [{ type: 'groups', exclude: [] }];
-    const sections8: HelpSections = [{ type: 'groups', include: ['group3'], heading: {} }];
+    const case0: HelpSections = [{ type: 'groups', filter: { includeGroups: [] } }];
+    const case1: HelpSections = [{ type: 'groups', filter: { includeGroups: ['group1'] } }];
+    const case2: HelpSections = [{ type: 'groups', filter: { excludeGroups: ['group1', ''] } }];
+    const case3: HelpSections = [
+      { type: 'groups', filter: { includeGroups: ['group2', 'group1'] } },
+    ];
+    const case4: HelpSections = [{ type: 'groups', filter: { includeGroups: [''] } }];
+    const case5: HelpSections = [
+      { type: 'groups', filter: { includeGroups: [], excludeGroups: ['group1', ''] } },
+    ];
+    const case6: HelpSections = [
+      { type: 'groups', filter: { includeGroups: ['group1', ''], excludeGroups: [''] } },
+    ];
+    const case7: HelpSections = [{ type: 'groups', filter: { excludeGroups: [] } }];
+    const case8: HelpSections = [
+      { type: 'groups', filter: { includeOptions: ['single1'] }, heading: {} },
+    ];
+    const case9: HelpSections = [
+      { type: 'groups', filter: { includeOptions: ['flag2'], includeGroups: ['group1'] } },
+    ];
+    const case10: HelpSections = [
+      { type: 'groups', filter: { excludeOptions: ['flag2'], excludeGroups: ['group1'] } },
+    ];
+    const case11: HelpSections = [
+      {
+        type: 'groups',
+        filter: {
+          includeOptions: ['flag2'],
+          includeGroups: ['group1'],
+          excludeOptions: ['flag2'],
+          excludeGroups: ['group1'],
+        },
+      },
+    ];
     const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s2'] };
-    expect(format(options, sections0, flags).wrap()).toEqual('');
-    expect(format(options, sections1, flags).wrap()).toEqual('  -f1\n');
-    expect(format(options, sections2, flags).wrap()).toEqual('  -f2\n');
-    expect(format(options, sections3, flags).wrap()).toEqual('  -f2\n  -f1\n');
-    expect(format(options, sections4, flags).wrap()).toEqual('  -s2\n');
-    expect(format(options, sections5, flags).wrap()).toEqual('');
-    expect(format(options, sections6, flags).wrap()).toEqual('  -f1\n');
-    expect(format(options, sections7, flags).wrap()).toEqual('  -f1\n  -f2\n  -s2\n');
-    expect(format(options, sections8, flags).wrap()).toEqual('');
+    expect(format(options, case0, flags).wrap()).toEqual('');
+    expect(format(options, case1, flags).wrap()).toEqual('  -f1\n');
+    expect(format(options, case2, flags).wrap()).toEqual('  -f2\n');
+    expect(format(options, case3, flags).wrap()).toEqual('  -f1\n  -f2\n'); // definition order
+    expect(format(options, case4, flags).wrap()).toEqual('  -s2\n'); // default group
+    expect(format(options, case5, flags).wrap()).toEqual('');
+    expect(format(options, case6, flags).wrap()).toEqual('  -f1\n');
+    expect(format(options, case7, flags).wrap()).toEqual('  -f1\n  -f2\n  -s2\n');
+    expect(format(options, case8, flags).wrap()).toEqual('');
+    expect(format(options, case9, flags).wrap()).toEqual('  -f1\n  -f2\n');
+    expect(format(options, case10, flags).wrap()).toEqual('  -s2\n');
+    expect(format(options, case11, flags).wrap()).toEqual('');
   });
 
   it('use environment variable names instead of option names', () => {

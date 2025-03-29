@@ -1059,17 +1059,6 @@ export function setDifference<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 }
 
 /**
- * Removes elements from a set that do not appear in another set.
- * @template T The type of set element
- * @param lhs The left-hand side of the operation (may be updated)
- * @param rhs The right-hand side of the operation
- * @returns The set intersection
- */
-export function setIntersection<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
-  return setDifference(new Set(lhs), setDifference(lhs, rhs));
-}
-
-/**
  * Creates an array with a phrase to be applied to each element.
  * To be used as argument in formatting functions.
  * @param $phrase The custom phrase

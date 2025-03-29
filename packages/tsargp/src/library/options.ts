@@ -202,16 +202,25 @@ export type WithSection<T extends HelpSectionType> = {
 /**
  * Defines attributes for a help section with filter.
  */
-export type WithSectionFilter = {
+export type HelpSectionFilter = {
   /**
-   * A list of option keys or group names to include. Matches exactly.
+   * A list of option keys to include. Matches are exact.
    */
-  readonly include?: ReadonlyArray<string>;
+  readonly includeOptions?: ReadonlyArray<string>;
   /**
-   * A list of option keys or group names to exclude. Matches exactly.
-   * Has precedence over {@link WithSectionFilter.include}.
+   * A list of group names to include. Matches are exact.
    */
-  readonly exclude?: ReadonlyArray<string>;
+  readonly includeGroups?: ReadonlyArray<string>;
+  /**
+   * A list of option keys to exclude. Matches are exact.
+   * Has precedence over {@link HelpSectionFilter.includeOptions}.
+   */
+  readonly excludeOptions?: ReadonlyArray<string>;
+  /**
+   * A list of group names to exclude. Matches are exact.
+   * Has precedence over {@link HelpSectionFilter.includeGroups}.
+   */
+  readonly excludeGroups?: ReadonlyArray<string>;
 };
 
 /**
@@ -223,6 +232,10 @@ export type OptionDependencies = Readonly<Record<string, string | ReadonlyArray<
  * Defines additional attributes for the usage section.
  */
 export type WithSectionUsage = {
+  /**
+   * The section filter.
+   */
+  readonly filter?: HelpSectionFilter;
   /**
    * A list of option keys that should be considered always required.
    */
@@ -250,6 +263,10 @@ export type WithSectionUsage = {
  * Defines additional attributes for the groups section.
  */
 export type WithSectionGroups = {
+  /**
+   * The section filter.
+   */
+  readonly filter?: HelpSectionFilter;
   /**
    * The layout settings for the names column.
    * Use the value `null` to hide it from the help message.
@@ -294,12 +311,12 @@ export type HelpTextSection = WithSection<'text'>;
 /**
  * A help usage section.
  */
-export type HelpUsageSection = WithSection<'usage'> & WithSectionFilter & WithSectionUsage;
+export type HelpUsageSection = WithSection<'usage'> & WithSectionUsage;
 
 /**
  * A help groups section.
  */
-export type HelpGroupsSection = WithSection<'groups'> & WithSectionFilter & WithSectionGroups;
+export type HelpGroupsSection = WithSection<'groups'> & WithSectionGroups;
 
 /**
  * A help section.
