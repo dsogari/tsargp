@@ -461,19 +461,22 @@ describe('rendering a usage section', () => {
       expect(format(options, case3, flags).wrap()).toEqual('[(<arg1>|-) ([-a] [<arg>...]|-)]\n');
     });
 
-    it('filter, include and exclude options', () => {
+    it('combine a section filter with an option filter', () => {
       const options = {
         flag1: {
           type: 'flag',
           names: ['-f1'],
+          group: 'group1',
         },
         flag2: {
           type: 'flag',
           names: ['-f2'],
+          group: 'group2',
         },
         flag3: {
           type: 'flag',
           names: ['-f3'],
+          group: 'group3',
         },
         single: {
           type: 'single',
@@ -491,22 +494,46 @@ describe('rendering a usage section', () => {
         { type: 'usage', filter: { includeOptions: ['flag1'] }, required: ['flag1'] },
       ];
       const case4: HelpSections = [
-        { type: 'usage', filter: { includeOptions: ['flag2', 'flag1'] } }, // preserve definition order
+        { type: 'usage', filter: { includeOptions: ['flag2', 'flag1'] } },
       ];
       const case5: HelpSections = [{ type: 'usage', filter: { includeOptions: ['flag3'] } }];
       const case6: HelpSections = [
-        { type: 'usage', filter: { includeOptions: ['single', 'flag1'] } },
+        { type: 'usage', filter: { includeOptions: ['flag1'], includeGroups: [''] } },
       ];
       const case7: HelpSections = [{ type: 'usage', filter: { includeOptions: ['flag3'] } }];
+      const case8: HelpSections = [
+        { type: 'usage', filter: { includeGroups: ['group3'] }, heading: {} },
+      ];
+      const case9: HelpSections = [
+        { type: 'usage', filter: { includeOptions: ['flag2'], includeGroups: ['group1'] } },
+      ];
+      const case10: HelpSections = [
+        { type: 'usage', filter: { excludeOptions: ['flag2'], excludeGroups: ['group1'] } },
+      ];
+      const case11: HelpSections = [
+        {
+          type: 'usage',
+          filter: {
+            includeOptions: ['flag2'],
+            includeGroups: ['group1'],
+            excludeOptions: ['flag2'],
+            excludeGroups: ['group1'],
+          },
+        },
+      ];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s'] };
       expect(format(options, case0, flags).wrap()).toEqual('');
       expect(format(options, case1, flags).wrap()).toEqual('[-f1]\n');
       expect(format(options, case2, flags).wrap()).toEqual('[-f2]\n');
       expect(format(options, case3, flags).wrap()).toEqual('-f1\n');
-      expect(format(options, case4, flags).wrap()).toEqual('[-f1] [-f2]\n');
+      expect(format(options, case4, flags).wrap()).toEqual('[-f1] [-f2]\n'); // definition order
       expect(format(options, case5, flags).wrap()).toEqual(''); // usage was skipped
       expect(format(options, case6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
       expect(format(options, case7, flags).wrap()).toEqual('');
+      expect(format(options, case8, flags).wrap()).toEqual('');
+      expect(format(options, case9, flags).wrap()).toEqual('[-f1] [-f2]\n');
+      expect(format(options, case10, flags).wrap()).toEqual('[[-s|--] <param>]\n');
+      expect(format(options, case11, flags).wrap()).toEqual('');
     });
   });
 
