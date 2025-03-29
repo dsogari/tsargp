@@ -187,17 +187,13 @@ Another paragraph
 
 ### Text wrapping
 
-Splitted text is always wrapped according to a configured _width_, i.e., the number of terminal columns by which to limit each line of text.
-
-When a width of zero or `undefined{:ts}` is provided (which may happen if the output is being redirected), the ANSI string instance will by default avoid wrapping and instead suppress control sequences that would otherwise be used to render the text in a terminal.
+Splitted text is always wrapped according to a configured _width_, i.e., the number of terminal columns by which to limit each line of text. When a width of zero or `NaN{:ts}` is provided, the ANSI string instance will by default avoid wrapping and instead suppress control sequences that would otherwise be used to render the text in a terminal.
 
 The following features are supported in text wrapping.
 
 #### Indentation level
 
-The ANSI string has an optional indentation level, i.e., the starting terminal column of each _new_ line of text.
-
-When wrapping text to the desired width, the instance will attempt to respect this setting, but if the desired width does not accommodate the length of the _largest_ word, it will disregard the indentation level.
+The ANSI string has an optional indentation level, i.e., the starting terminal column of each _new_ line of text. When wrapping text to the desired width, the instance will attempt to respect this setting, but if the desired width does not accommodate the length of the _largest_ word, it will disregard the indentation level.
 
 > [!NOTE]
 >
@@ -205,7 +201,7 @@ When wrapping text to the desired width, the instance will attempt to respect th
 
 #### Text alignment
 
-The ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary. This feature is used by the [formatter] in the [description column] of help messages.
+The ANSI string has an optional flag that indicates whether the text should be aligned to the terminal's right boundary (or according to the instance's `width` property). This feature is used by the [formatter] in help messages.
 
 #### Line-wise wrapping
 
@@ -306,7 +302,7 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 
 > [!TIP]
 >
-> To preserve previous styles for a particular element, you can assign it an empty `Style{:ts}`. Or, to disable styling for your application as a whole (regardless of environment configuration), do the same for all elements.
+> To preserve previous styles for a particular element, you can assign it an empty `Style{:ts}`. Or, to completely disable styling for your application (regardless of environment configuration), do the same for all elements.
 
 #### Connective words
 
