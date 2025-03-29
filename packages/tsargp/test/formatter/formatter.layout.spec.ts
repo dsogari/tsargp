@@ -232,11 +232,11 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        include: ['group', ''], // change the group order
+        filter: { includeGroups: ['group', ''] }, // preserve definition order
         names: { align: 'right' },
       },
     ];
-    expect(format(options, sections).wrap()).toEqual('     --flag2\n  -f, --flag\n');
+    expect(format(options, sections).wrap()).toEqual('  -f, --flag\n     --flag2\n');
   });
 
   it('align option names within slots without separator', () => {

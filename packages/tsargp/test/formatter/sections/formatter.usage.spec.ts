@@ -174,8 +174,10 @@ describe('rendering a usage section', () => {
           required: true,
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', include: ['optional'] }];
-      const case1: HelpSections = [{ type: 'usage', include: ['alwaysRequired'] }];
+      const case0: HelpSections = [{ type: 'usage', filter: { includeOptions: ['optional'] } }];
+      const case1: HelpSections = [
+        { type: 'usage', filter: { includeOptions: ['alwaysRequired'] } },
+      ];
       expect(format(options, case0).wrap()).toEqual('[-s1]\n');
       expect(format(options, case1).wrap()).toEqual('-s2\n');
     });
@@ -438,11 +440,17 @@ describe('rendering a usage section', () => {
           stdin: true,
         },
       } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage', exclude: ['array'] }];
-      const case1: HelpSections = [{ type: 'usage', include: ['array'] }];
-      const case2: HelpSections = [{ type: 'usage', include: ['requiredWithoutTemplate'] }];
+      const case0: HelpSections = [{ type: 'usage', filter: { excludeOptions: ['array'] } }];
+      const case1: HelpSections = [{ type: 'usage', filter: { includeOptions: ['array'] } }];
+      const case2: HelpSections = [
+        { type: 'usage', filter: { includeOptions: ['requiredWithoutTemplate'] } },
+      ];
       const case3: HelpSections = [
-        { type: 'usage', include: ['array'], inclusive: { array: 'optionalUnnamedWithTemplate' } },
+        {
+          type: 'usage',
+          filter: { includeOptions: ['array'] },
+          inclusive: { array: 'optionalUnnamedWithTemplate' },
+        },
       ];
       const flags: FormatterFlags = { stdinSymbol: '-' };
       expect(format(options, case0, flags).wrap()).toEqual(
@@ -474,23 +482,31 @@ describe('rendering a usage section', () => {
           paramName: '<param>',
         },
       } as const satisfies Options;
-      const sections0: HelpSections = [{ type: 'usage', include: [] }]; // empty filter
-      const sections1: HelpSections = [{ type: 'usage', include: ['flag1'] }];
-      const sections2: HelpSections = [{ type: 'usage', exclude: ['flag1', 'single'] }];
-      const sections3: HelpSections = [{ type: 'usage', include: ['flag1'], required: ['flag1'] }];
-      const sections4: HelpSections = [{ type: 'usage', include: ['flag2', 'flag1'] }];
-      const sections5: HelpSections = [{ type: 'usage', include: ['flag3'] }];
-      const sections6: HelpSections = [{ type: 'usage', include: ['single', 'flag1'] }];
-      const sections7: HelpSections = [{ type: 'usage', include: ['flag3'] }];
+      const case0: HelpSections = [{ type: 'usage', filter: { includeOptions: [] } }];
+      const case1: HelpSections = [{ type: 'usage', filter: { includeOptions: ['flag1'] } }];
+      const case2: HelpSections = [
+        { type: 'usage', filter: { excludeOptions: ['flag1', 'single'] } },
+      ];
+      const case3: HelpSections = [
+        { type: 'usage', filter: { includeOptions: ['flag1'] }, required: ['flag1'] },
+      ];
+      const case4: HelpSections = [
+        { type: 'usage', filter: { includeOptions: ['flag2', 'flag1'] } }, // preserve definition order
+      ];
+      const case5: HelpSections = [{ type: 'usage', filter: { includeOptions: ['flag3'] } }];
+      const case6: HelpSections = [
+        { type: 'usage', filter: { includeOptions: ['single', 'flag1'] } },
+      ];
+      const case7: HelpSections = [{ type: 'usage', filter: { includeOptions: ['flag3'] } }];
       const flags: FormatterFlags = { optionFilter: ['-f1', '-f2', '-s'] };
-      expect(format(options, sections0, flags).wrap()).toEqual('');
-      expect(format(options, sections1, flags).wrap()).toEqual('[-f1]\n');
-      expect(format(options, sections2, flags).wrap()).toEqual('[-f2]\n');
-      expect(format(options, sections3, flags).wrap()).toEqual('-f1\n');
-      expect(format(options, sections4, flags).wrap()).toEqual('[-f2] [-f1]\n');
-      expect(format(options, sections5, flags).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, sections6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
-      expect(format(options, sections7, flags).wrap()).toEqual('');
+      expect(format(options, case0, flags).wrap()).toEqual('');
+      expect(format(options, case1, flags).wrap()).toEqual('[-f1]\n');
+      expect(format(options, case2, flags).wrap()).toEqual('[-f2]\n');
+      expect(format(options, case3, flags).wrap()).toEqual('-f1\n');
+      expect(format(options, case4, flags).wrap()).toEqual('[-f1] [-f2]\n');
+      expect(format(options, case5, flags).wrap()).toEqual(''); // usage was skipped
+      expect(format(options, case6, flags).wrap()).toEqual('[-f1] [[-s|--] <param>]\n');
+      expect(format(options, case7, flags).wrap()).toEqual('');
     });
   });
 
@@ -540,14 +556,14 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          include: ['flag3', 'flag2', 'flag1'],
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
           inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
-          include: ['flag3', 'flag2', 'flag1'],
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
@@ -614,14 +630,14 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          include: ['flag3', 'flag2', 'flag1'],
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] }, // preserve definition order
           inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
-          include: ['flag3', 'flag2', 'flag1'],
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] }, // preserve definition order
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
@@ -638,7 +654,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case9).wrap()).toEqual('-f3 -f2 [-f1]\n');
       expect(format(options, case10).wrap()).toEqual('-f1 -f2 -f3\n');
       expect(format(options, case11).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
-      expect(format(options, case12).wrap()).toEqual('-f3 -f1 -f2\n');
+      expect(format(options, case12).wrap()).toEqual('-f1 -f2 -f3\n');
       expect(format(options, case13).wrap()).toEqual('-f3 [-f2 [-f1]]\n');
     });
 
@@ -687,14 +703,14 @@ describe('rendering a usage section', () => {
       const case11: HelpSections = [
         {
           type: 'usage',
-          include: ['flag3', 'flag2', 'flag1'],
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
           inclusive: { flag1: 'flag2', flag2: 'flag3' },
         },
       ];
       const case12: HelpSections = [
         {
           type: 'usage',
-          include: ['flag3', 'flag2', 'flag1'],
+          filter: { includeOptions: ['flag3', 'flag2', 'flag1'] },
           inclusive: { flag1: 'flag2', flag3: 'flag1' },
         },
       ];
@@ -730,8 +746,8 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage', inclusive: { flag: 'array', array: 'flag' } }];
-      const case1: HelpSections = [{ type: 'usage', include: ['flag'] }];
-      const case2: HelpSections = [{ type: 'usage', include: ['array'] }];
+      const case1: HelpSections = [{ type: 'usage', filter: { includeOptions: ['flag'] } }];
+      const case2: HelpSections = [{ type: 'usage', filter: { includeOptions: ['array'] } }];
       expect(format(options, case0).wrap()).toEqual('[(-f1|-f2) [-a] [...]]\n');
       expect(format(options, case1).wrap()).toEqual('[-f1|-f2]\n');
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
