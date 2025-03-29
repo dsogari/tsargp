@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@tsconfig/bun": "^1.0.7",
-    "@types/bun": "^1.2.5",
+    "@types/bun": "^1.2.8",
     "@withfig/autocomplete-types": "^1.31.0",
     "typescript": "^5.8.2"
   },

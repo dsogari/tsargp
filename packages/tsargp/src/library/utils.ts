@@ -1061,6 +1061,7 @@ export function setDifference<T>(lhs: Set<T>, rhs: ReadonlySet<T>): Set<T> {
 /**
  * Creates an array with a phrase to be applied to each element.
  * To be used as argument in formatting functions.
+ * @template T The type of array element
  * @param $phrase The custom phrase
  * @param $elements The array elements
  * @returns The array with a phrase

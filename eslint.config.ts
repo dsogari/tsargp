@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import json from '@eslint/json';
 import ts from 'typescript-eslint';
 import md from '@eslint/markdown';
-import mdx from 'eslint-plugin-mdx';
+import * as mdx from 'eslint-plugin-mdx';
 import jsdoc from 'eslint-plugin-jsdoc';
 import cspell from '@cspell/eslint-plugin/configs';
 
