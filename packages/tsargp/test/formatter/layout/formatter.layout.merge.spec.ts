@@ -330,7 +330,7 @@ describe('format', () => {
 
   it('merge option parameters with option names for one option and not for another', () => {
     const options = {
-      single: {
+      single1: {
         type: 'single',
         names: ['-s1'],
         synopsis: 'A string option.',
