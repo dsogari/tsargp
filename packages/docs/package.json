@@ -1,6 +1,6 @@
 {
   "name": "@tsargp/docs",
-  "version": "1.15.1",
+  "version": "1.16.0",
   "description": "Documentation for tsargp",
   "homepage": "https://dsogari.github.io/tsargp/docs",
   "license": "MIT",
@@ -9,7 +9,8 @@
   ],
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "repository": {
     "url": "git+https://github.com/dsogari/tsargp.git",

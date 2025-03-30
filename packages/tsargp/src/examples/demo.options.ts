@@ -37,8 +37,10 @@ export default {
           noBreakFirst: true,
         },
         content: { breaks: 2 },
-        items: allHelpItems.filter((item) => item !== HelpItem.sources),
-        names: { align: 'right' },
+        layout: {
+          names: { align: 'right' },
+          items: allHelpItems.filter((item) => item !== HelpItem.sources),
+        },
       },
       {
         type: 'usage',
@@ -81,8 +83,7 @@ export default {
           noBreakFirst: true,
         },
         content: { breaks: 2 },
-        param: null,
-        items: envHelpItems,
+        layout: { param: null, items: envHelpItems },
         useEnv: true,
       },
     ],

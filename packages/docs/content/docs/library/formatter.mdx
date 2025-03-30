@@ -72,7 +72,7 @@ The first column contains the option names separated by the value of the `option
 
 #### Name slots
 
-Depending on the column [alignment setting], each option name may reserve a "slot" in the respective position in this column. The width of a slot will be the length of the _longest_ name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
+Depending on the column's [common settings], each option name may reserve a "slot" in the respective position in this column. The width of a slot will be the length of the _longest_ name in that slot, among all options. A `null{:ts}` value can be specified in order to skip the corresponding slot.
 
 For example, if the option names are `'-f'{:ts}`, `null{:ts}` and `'--flag'{:ts}`, the resulting entry might be formatted as shown below. Note how the absent name produces whitespace between its neighbors:
 
@@ -117,9 +117,13 @@ The `items` property of a [groups section] specifies the kinds of help items tha
 
 ## Help sections
 
-Sections are a convenient way to organize the help content. There are three types of section: **text**, **usage** and **groups**. They are explained below.
+Sections are a convenient way to organize the help content. There are three types of section: **text**, **usage** and **groups**. They are explained in the next subsections.
 
-### Common properties
+### Shared properties
+
+Before describing the section types themselves, it should be noted that some sections may share sets of common properties, as listed below.
+
+#### Basic properties
 
 All section types share a set of properties:
 
@@ -133,7 +137,7 @@ All section types share a set of properties:
 
 #### Text block
 
-A text block contains the following optional properties:
+A `HelpTextBlock` object contains the following optional properties:
 
 - `text` -- the plain or styled text (defaults to none)
 - `style` -- the fallback style (defaults to none)
@@ -148,9 +152,9 @@ The `noBreakFirst` is useful in two cases:
 - in a **groups** section with many groups, to ensure that the first group heading will have no leading line feed; or
 - when it is not known whether previous sections will have content (e.g., if the help can be invoked with an [option filter])
 
-### Filter properties
+#### Section filter
 
-Both the **usage** and **groups** sections have a `filter` property with these optional properties:
+A `HelpSectionFilter` object contains the following optional properties:
 
 - `includeOptions` -- a list of option keys to include (defaults to including all)
 - `includeGroups` -- a list of group names to include (defaults to including all)
@@ -167,7 +171,7 @@ Both the **usage** and **groups** sections have a `filter` property with these o
 
 ### Text section
 
-A **text** section can be used to write various kinds of content, such as introduction, instructions, afterword, copyright notice or external references. It contains only the [common properties].
+A **text** section can be used to write various kinds of content, such as introduction, instructions, afterword, copyright notice or external references. It contains only the [basic properties].
 
 > [!TIP]
 >
@@ -195,8 +199,9 @@ The [usage statement] is a concise representation of the command-line structure.
 
 Option parameters are rendered similarly to the [parameter column], except that [parameter name] attributes are given priority over [example value]. Also, the `content.text` property can be used to override the [program name].
 
-In addition to the [common properties] and [filter properties], a **usage** section has the following optional properties:
+In addition to the [basic properties], a **usage** section has the following optional properties:
 
+- `filter` -- the [section filter]
 - `required` -- a list of options that should be considered always required (defaults to none)
 - `inclusive` -- a record that specifies inclusive [option dependencies] (defaults to none)
 - `exclusive` -- reserved for mutually exclusive [option dependencies] (not yet implemented)
@@ -230,30 +235,41 @@ The `exclusive` property of a **usage** section is reserved for mutual exclusivi
 
 A **groups** section is a collection of option groups and their help entries. The [option group] attribute is used as a heading for each group, except for the _default_ group, which borrows the `heading.text` property, if present. The default group also includes the value of `content.text`, if present, as a preface before listing its entries.
 
-In addition to the [common properties] and [filter properties], this type of section has the following optional properties:
+In addition to the [basic properties], this type of section has the following optional properties:
 
-- `names` -- the [layout settings] for the [names column]
-- `param` -- the [layout settings] for the [parameter column]
-- `descr` -- the [layout settings] for the [description column]
-- `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
+- `filter` -- the [section filter]
+- `layout` -- the section [help layout]
 - `useEnv` -- whether option names should be replaced with [environment variable] names (defaults to `false{:ts}`)
-- `responsive` -- whether the overall layout is responsive (a.k.a., terminal-aware) (defaults to `true{:ts}`)
 
 > [!TIP]
 >
 > The `useEnv` property can be used to create a dedicated section for environment variables.
 
-When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text is wrapped using [line-wise wrapping]. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. In this case, the `maxWidth` property should be set on the column's [layout settings].
+## Help layout
 
-## Layout settings
+The layout of a **groups** section can be configured via a `HelpLayout` object with the following optional properties:
 
-The layout of a [help column] applies to all help entries within the containing section. It can be configured via the settings described below.
+- `names` -- the [column layout] of the [names column]
+- `param` -- the [column layout] of the [parameter column]
+- `descr` -- the [column layout] of the [description column]
+- `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
+- `responsive` -- whether the layout is responsive (a.k.a., terminal-aware) (defaults to `true{:ts}`)
+
+When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text is wrapped in [line-wise] mode. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. In this case, the `maxWidth` property should be set on the column's [common settings].
+
+> [!TIP]
+>
+> These settings can also be overridden for each help entry. See the option's [layout] attribute.
+
+### Column layout
+
+The layout of a [help column] applies to all help entries within the containing section. The available settings are described below.
 
 > [!TIP]
 >
 > To hide a column from the help message, set its layout to `null{:ts}`.
 
-### Common settings
+#### Common settings
 
 All help columns share a set of optional layout settings:
 
@@ -262,7 +278,7 @@ All help columns share a set of optional layout settings:
 - `breaks` -- the number of line feeds to insert before each entry at the start of the column (defaults to `0{:ts}`)
 - `maxWidth` -- the maximum column or slot width (defaults to `Infinity{:ts}`)
 
-### Specific settings
+#### Specific settings
 
 Some help columns may have additional layout settings:
 
@@ -382,12 +398,13 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [help sections]: #help-sections
 [help column]: #help-columns
 [custom phrases]: #custom-phrases
-[layout settings]: #layout-settings
-[alignment setting]: #common-settings
+[help layout]: #help-layout
+[column layout]: #column-layout
+[common settings]: #common-settings
 [help items]: #help-items
 [name slots]: #name-slots
-[common properties]: #common-properties
-[filter properties]: #filter-properties
+[basic properties]: #basic-properties
+[section filter]: #section-filter
 [text block]: #text-block
 [formatter flags]: #formatter-flags
 [option dependencies]: #option-dependencies
@@ -411,6 +428,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [standard input]: options#standard-input
 [cluster letters]: options#cluster-letters
 [function]: options#function-option
+[layout]: options#layout-settings
 
 {/* parser references */}
 
@@ -425,7 +443,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [ANSI message]: styles#ansi-message
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration
-[line-wise wrapping]: styles#line-wise-wrapping
+[line-wise]: styles#line-wise-wrapping
 [connective word]: styles#connective-words
 [text splitting]: styles#text-splitting
 

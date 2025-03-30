@@ -19,7 +19,7 @@ describe('format', () => {
           names: ['-s'],
         },
       } as const satisfies Options;
-      const sections: HelpSections = [{ type: 'groups', descr: { absolute: true } }];
+      const sections: HelpSections = [{ type: 'groups', layout: { descr: { absolute: true } } }];
       const flags: FormatterFlags = { optionFilter: ['flag'] };
       expect(format(options, sections, flags).wrap()).toEqual(`  -f, --flag\n  A flag option\n`);
     });
@@ -39,7 +39,7 @@ describe('format', () => {
           sources: ['SINGLE'],
         },
       } as const satisfies Options;
-      const sections: HelpSections = [{ type: 'groups', items: [] }];
+      const sections: HelpSections = [{ type: 'groups', layout: { items: [] } }];
       const flags: FormatterFlags = { optionFilter: ['-f', 'sing'] };
       expect(format(options, sections, flags).wrap()).toEqual(`  -f\n  -s\n`);
     });

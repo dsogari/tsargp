@@ -15,9 +15,11 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { breaks: 0 },
-        param: { breaks: -1 },
-        descr: { breaks: NaN },
+        layout: {
+          names: { breaks: 0 },
+          param: { breaks: -1 },
+          descr: { breaks: NaN },
+        },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  <param>  A string option\n');
@@ -40,9 +42,11 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { breaks: 1 },
-        param: { breaks: 1 },
-        descr: { breaks: 1 },
+        layout: {
+          names: { breaks: 1 },
+          param: { breaks: 1 },
+          descr: { breaks: 1 },
+        },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -66,9 +70,11 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { breaks: 1 },
-        param: { breaks: 1, absolute: true },
-        descr: { breaks: 1, absolute: true },
+        layout: {
+          names: { breaks: 1 },
+          param: { breaks: 1, absolute: true },
+          descr: { breaks: 1, absolute: true },
+        },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(`\n  -s\n  <param>\n  A string option\n`);
@@ -86,9 +92,11 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { breaks: 1, indent: 0 },
-        param: { breaks: 1, indent: -1 },
-        descr: { breaks: 1, indent: NaN },
+        layout: {
+          names: { breaks: 1, indent: 0 },
+          param: { breaks: 1, indent: -1 },
+          descr: { breaks: 1, indent: NaN },
+        },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('\n-s\n <param>\n        A string option\n');
@@ -106,7 +114,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: null,
+        layout: { names: null },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  <param>  A string option\n');
@@ -124,7 +132,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        param: null,
+        layout: { param: null },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  A string option\n');
@@ -142,7 +150,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        descr: null,
+        layout: { descr: null },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -s  <param>\n');
@@ -164,7 +172,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { align: 'left' },
+        layout: { names: { align: 'left' } },
       },
     ];
     config.connectives.optionSep = '';
@@ -191,7 +199,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { align: 'left' },
+        layout: { names: { align: 'left' } },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f, --flag\n  --flag2\n');
@@ -211,7 +219,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { slotIndent: 2 },
+        layout: { names: { slotIndent: 2 } },
       },
     ];
     config.connectives.optionSep = '';
@@ -236,7 +244,7 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { slotIndent: 1 },
+        layout: { names: { slotIndent: 1 } },
       },
     ];
     expect(format(options, sections).wrap()).toEqual('  -f,         --flag\n      --flag2\n');
@@ -259,9 +267,11 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { maxWidth: 8 },
-        param: { maxWidth: 12 },
-        descr: { maxWidth: 20 },
+        layout: {
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
+        },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
@@ -293,16 +303,59 @@ describe('format', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
-        names: { maxWidth: 8 },
-        param: { maxWidth: 12 },
-        descr: { maxWidth: 20 },
-        responsive: false,
+        layout: {
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
+          responsive: false,
+        },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(
       '' +
         '  -s,       <param>       A single option with\n' +
         '  --single                big synopsis.\n' +
+        '  -a,       [<param>      Accepts multiple\n' +
+        '  --array   <param>...]   parameters.\n',
+    );
+  });
+
+  it('use option-specific layout settings', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+        layout: {
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
+          responsive: true, // override the section-level setting
+        },
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+        layout: {
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
+        },
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: { responsive: false },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s,\n' +
+        '  --single  <param>       A single option with\n' +
+        '                          big synopsis.\n' +
         '  -a,       [<param>      Accepts multiple\n' +
         '  --array   <param>...]   parameters.\n',
     );

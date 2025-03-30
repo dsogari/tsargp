@@ -31,8 +31,10 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          param: { merge: true },
-          items: [],
+          layout: {
+            param: { merge: true },
+            items: [],
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -71,9 +73,11 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { slotIndent: 1 }, // ignored by the formatter
-          param: { merge: true },
-          items: [],
+          layout: {
+            names: { slotIndent: 1 }, // ignored by the formatter
+            param: { merge: true },
+            items: [],
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -112,8 +116,10 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          param: { merge: true, breaks: 1 },
-          items: [],
+          layout: {
+            param: { merge: true, breaks: 1 },
+            items: [],
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -145,7 +151,7 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          descr: { merge: true },
+          layout: { descr: { merge: true } },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -170,7 +176,7 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          descr: { merge: true, breaks: 1 },
+          layout: { descr: { merge: true, breaks: 1 } },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -194,9 +200,11 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { slotIndent: 1 }, // ignored by the formatter
-          param: null,
-          descr: { merge: true },
+          layout: {
+            names: { slotIndent: 1 }, // ignored by the formatter
+            param: null,
+            descr: { merge: true },
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(`  -s A string option\n  A flag option\n`);
@@ -224,8 +232,10 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          param: { merge: true },
-          descr: { merge: true },
+          layout: {
+            param: { merge: true },
+            descr: { merge: true },
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -258,8 +268,10 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          param: { merge: true, breaks: 1 },
-          descr: { merge: true, breaks: 1 },
+          layout: {
+            param: { merge: true, breaks: 1 },
+            descr: { merge: true, breaks: 1 },
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -273,5 +285,46 @@ describe('format', () => {
           '  A flag option\n',
       );
     });
+  });
+
+  it('use option-specific layout settings', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', null],
+        synopsis: 'A string option',
+        paramName: '<param>',
+        layout: {
+          names: { slotIndent: 1 }, // ignored by the formatter
+          param: null,
+          descr: { merge: true },
+        },
+      },
+      single2: {
+        type: 'single',
+        synopsis: 'A string option',
+        paramName: '<param>',
+        layout: {
+          param: { merge: true },
+          descr: { merge: true },
+        },
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+        layout: {
+          param: { merge: true, breaks: 1 },
+          descr: { merge: true, breaks: 1 },
+        },
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      '' +
+        '  -s A string option\n' +
+        '  <param> A string option\n' +
+        '  -f\n' +
+        '  A flag option\n',
+    );
   });
 });

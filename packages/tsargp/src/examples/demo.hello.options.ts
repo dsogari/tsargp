@@ -33,8 +33,10 @@ const options = {
         type: 'groups',
         heading: { text: 'Options:', style: style(tf.bold), breaks: 1 },
         content: { breaks: 2 },
-        param: { merge: true },
-        items: allHelpItems.filter((item) => item !== HelpItem.positional),
+        layout: {
+          param: { merge: true },
+          items: allHelpItems.filter((item) => item !== HelpItem.positional),
+        },
       },
     ],
     useFilter: true,

@@ -1,6 +1,6 @@
 {
   "name": "tsargp",
-  "version": "1.15.1",
+  "version": "1.16.0",
   "author": {
     "name": "Diego Sogari",
     "email": "diego.sogari@gmail.com",
@@ -41,7 +41,8 @@
   "description": "Argument parser for TypeScript",
   "files": [
     "dist/**/*.{js,ts,map}",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "CHANGELOG.md"
   ],
   "homepage": "https://dsogari.github.io/tsargp",
   "keywords": [
