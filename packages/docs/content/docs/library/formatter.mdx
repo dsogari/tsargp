@@ -225,11 +225,17 @@ The `inclusive` property of a **usage** section is equivalent to an adjacency li
 >
 > The order of options is unspecified when there are dependencies, although a dependent option will usually appear _after_ the one it depends on.
 
-The `exclusive` property of a **usage** section is reserved for mutual exclusivity. This feature is _not_ supported at the time. For that purpose, you have to create different usages.
+The `exclusive` property of a **usage** section is reserved for mutual exclusivity. This feature is _not_ supported at the time. For that purpose, you have to create different usages -- we sincerely apologize.
 
-> [!NOTE]
->
-> The reason is that there are many corner cases and it is tricky to implement. We sincerely apologize.
+The kinds of dependencies that cannot currently be expressed are:
+
+| Dependencies                        | Usage                          | If C is always required |
+| ----------------------------------- | ------------------------------ | ----------------------- |
+| A requires B _or_ C (or both)       | `[B [A]] [C [A]] [B C [A]]`    | `C [A] [B]`             |
+| A requires B _or_ C, _but not_ both | `[B [A] \| C [A] \| B C]`      | `C [A \| B]`            |
+| A requires _not_ B                  | `[A \| B] [C]`                 | `C [A \| B]`            |
+| A requires _not_ B _and not_ C      | `[A \| [B] [C]]`               | `C [B]`                 |
+| A requires _not_ B _or not_ C       | `[A \| A B \| A C \| [B] [C]]` | `C [A \| B]`            |
 
 ### Groups section
 

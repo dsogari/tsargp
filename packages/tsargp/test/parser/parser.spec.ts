@@ -42,6 +42,17 @@ describe('parse', () => {
     expect(parse(options, [])).rejects.toThrow(`Option preferred is required.`);
   });
 
+  it('throw an error on nameless required option not specified', () => {
+    const options = {
+      single: {
+        type: 'single',
+        required: true,
+        positional: true,
+      },
+    } as const satisfies Options;
+    expect(parse(options, [])).rejects.toThrow(`Option is required.`);
+  });
+
   it('throw an error on unknown option when an option prefix is specified', () => {
     const options = {
       single: {
