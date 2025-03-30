@@ -255,15 +255,11 @@ The layout of a **groups** section can be configured via a `HelpLayout` object w
 - `items` -- the (order of) [help items] to display in option descriptions (defaults to all items)
 - `responsive` -- whether the layout is responsive (a.k.a., terminal-aware) (defaults to `true{:ts}`)
 
-When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text is wrapped using [line-wise wrapping]. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. In this case, the `maxWidth` property should be set on the column's [common settings].
+When the `responsive` property is set to `false{:ts}`, the terminal width is ignored and text is wrapped in [line-wise] mode. In this mode, lines are continued from one column to the next, allowing a column to "break" its lines independently of other columns. In this case, the `maxWidth` property should be set on the column's [common settings].
 
 > [!TIP]
 >
 > These settings can also be overridden for each help entry. See the option's [layout] attribute.
-
-> [!WARNING]
->
-> Beware that if the section layout is not configured, using entry-specific settings may not have the desired effect. This is because the formatter does not _aggregate_ the layout settings of all help entries. Rather, it simply ensures that, if an option declares specific settings, they will override the section settings.
 
 ### Column layout
 
@@ -447,7 +443,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [ANSI message]: styles#ansi-message
 [text formatting]: styles#text-splitting
 [message configuration]: styles#message-configuration
-[line-wise wrapping]: styles#line-wise-wrapping
+[line-wise]: styles#line-wise-wrapping
 [connective word]: styles#connective-words
 [text splitting]: styles#text-splitting
 

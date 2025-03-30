@@ -305,11 +305,6 @@ describe('format', () => {
         type: 'array',
         names: ['-a', '--array'],
         paramName: '<param> <param>',
-      },
-    } as const satisfies Options;
-    const sections: HelpSections = [
-      {
-        type: 'groups',
         layout: {
           names: { align: 'right', maxWidth: 8 },
           param: { align: 'right', maxWidth: 12 },
@@ -317,8 +312,8 @@ describe('format', () => {
           responsive: false,
         },
       },
-    ];
-    expect(format(options, sections).wrap()).toEqual(
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
       '' +
         '  -s,\n' +
         '  --single  <param>       A single option with\n' +

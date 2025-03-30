@@ -331,24 +331,24 @@ describe('format', () => {
           names: { maxWidth: 8 },
           param: { maxWidth: 12 },
           descr: { maxWidth: 20 },
-          responsive: true,
+          responsive: true, // override the section-level setting
         },
       },
       array: {
         type: 'array',
         names: ['-a', '--array'],
         paramName: '<param> <param>',
+        layout: {
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
+        },
       },
     } as const satisfies Options;
     const sections: HelpSections = [
       {
         type: 'groups',
-        layout: {
-          names: { maxWidth: 8 },
-          param: { maxWidth: 12 },
-          descr: { maxWidth: 20 },
-          responsive: false,
-        },
+        layout: { responsive: false },
       },
     ];
     expect(format(options, sections).wrap()).toEqual(

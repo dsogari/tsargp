@@ -102,7 +102,7 @@ type HelpEntry = [
   /**
    * The layout settings for this entry.
    */
-  layout?: HelpLayout,
+  layout: HelpLayout,
 ];
 
 /**
@@ -456,12 +456,12 @@ function formatGroups(
     into.splice(1).forEach((str) => into[0].other(str));
   }
   /** @ignore */
-  function compute(column: HelpColumn, widths: Array<number>) {
-    column.forEach((str, i) => (widths[i] = max(widths[i] ?? 0, str.lineWidth)));
+  function compute(column: HelpColumn, widths: Array<number>, maxWidth: number = Infinity) {
+    column.forEach((str, i) => (widths[i] = max(widths[i] ?? 0, min(str.lineWidth, maxWidth))));
   }
   /** @ignore */
   function build(option: OpaqueOption): HelpEntry | undefined {
-    const entryLayout = option.layout ?? layout;
+    const entryLayout = Object.assign({}, layout, option.layout); // single-level merging
     const namesColumn = formatNames(option, entryLayout, useEnv);
     if (useEnv && namesColumn.length === 1 && !namesColumn[0].maxLength) {
       return; // skip options without environment variable names, in this case
@@ -474,9 +474,9 @@ function formatGroups(
     if (entryLayout?.param === null || entryLayout?.param?.merge) {
       merge(namesColumn, paramColumn);
     }
-    compute(namesColumn, namesWidths);
-    compute(paramColumn, paramWidths);
-    compute(descrColumn, descrWidths);
+    compute(namesColumn, namesWidths, entryLayout?.names?.maxWidth);
+    compute(paramColumn, paramWidths, entryLayout?.param?.maxWidth);
+    compute(descrColumn, descrWidths, entryLayout?.descr?.maxWidth);
     return [namesColumn, paramColumn, descrColumn, entryLayout];
   }
   const namesWidths: Array<number> = [];
@@ -509,11 +509,10 @@ function adjustEntries(
     widths: Array<number>,
     start: number,
     slotIndent?: number,
-    maxWidth: number = Infinity,
   ) {
     column.forEach((str, i) => {
       str.indent = start;
-      str.width = min(widths[i], maxWidth);
+      str.width = widths[i];
       start += str.width + (slotIndent || 0);
     });
   }
@@ -529,13 +528,9 @@ function adjustEntries(
       return [prevEnd, 0];
     }
     const indent = (column.indent ?? 2) || 0;
-    const maxWidth = column.maxWidth || Infinity;
     return [
       absolute ? max(0, indent) : prevEnd + indent,
-      widths.reduce(
-        (acc, width) => acc + min(width, maxWidth),
-        ((widths.length || 1) - 1) * (slotIndent || 0),
-      ),
+      widths.reduce((acc, width) => acc + width, ((widths.length || 1) - 1) * (slotIndent || 0)),
     ];
   }
   /** @ignore */
@@ -565,16 +560,10 @@ function adjustEntries(
     descr?.absolute,
   );
   for (const [namesColumn, paramColumn, descrColumn, layout] of getValues(groups).flat()) {
-    adjustColumn(
-      namesColumn,
-      namesWidths,
-      namesStart,
-      layout?.names?.slotIndent,
-      layout?.names?.maxWidth,
-    );
-    adjustColumn(paramColumn, paramWidths, paramStart, 0, layout?.param?.maxWidth);
-    adjustColumn(descrColumn, descrWidths, descrStart, 0, layout?.descr?.maxWidth);
-    if (layout?.responsive === false) {
+    adjustColumn(namesColumn, namesWidths, namesStart, layout.names?.slotIndent);
+    adjustColumn(paramColumn, paramWidths, paramStart);
+    adjustColumn(descrColumn, descrWidths, descrStart);
+    if (layout.responsive === false) {
       const str = hook(descrColumn, hook(paramColumn, hook(namesColumn, namesColumn[0], 1)));
       str.hook = new AnsiString(); // tail of wrapping chain
     }
