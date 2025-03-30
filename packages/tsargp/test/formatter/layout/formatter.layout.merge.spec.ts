@@ -31,7 +31,10 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          layout: { param: { merge: true }, items: [] },
+          layout: {
+            param: { merge: true },
+            items: [],
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(

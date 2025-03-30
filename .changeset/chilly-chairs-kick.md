@@ -1,6 +1,5 @@
 ---
 'tsargp': minor
-'@tsargp/docs': minor
 ---
 
 Add support for option-specific layout settings.
@@ -25,7 +24,7 @@ const options = {
       names: { align: 'right' },
       param: { maxWidth: 12 },
       descr: { merge: true },
-      // ...other layout attributes
+      // ...other layout settings
     },
     // ...other option attributes
   },

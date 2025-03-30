@@ -41,7 +41,8 @@
   "description": "Argument parser for TypeScript",
   "files": [
     "dist/**/*.{js,ts,map}",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "CHANGELOG.md"
   ],
   "homepage": "https://dsogari.github.io/tsargp",
   "keywords": [

@@ -461,22 +461,22 @@ function formatGroups(
   }
   /** @ignore */
   function build(option: OpaqueOption): HelpEntry | undefined {
-    const entryLayout = Object.assign({}, layout, option.layout); // single-level merging
+    const entryLayout = Object.assign({}, layout, option.layout); // top-level merging
     const namesColumn = formatNames(option, entryLayout, useEnv);
     if (useEnv && namesColumn.length === 1 && !namesColumn[0].maxLength) {
       return; // skip options without environment variable names, in this case
     }
     const paramColumn = formatParams(option, entryLayout);
     const descrColumn = formatDescription(options, option, flags, entryLayout);
-    if (entryLayout?.descr === null || entryLayout?.descr?.merge) {
+    if (entryLayout.descr === null || entryLayout.descr?.merge) {
       merge(paramColumn, descrColumn);
     }
-    if (entryLayout?.param === null || entryLayout?.param?.merge) {
+    if (entryLayout.param === null || entryLayout.param?.merge) {
       merge(namesColumn, paramColumn);
     }
-    compute(namesColumn, namesWidths, entryLayout?.names?.maxWidth);
-    compute(paramColumn, paramWidths, entryLayout?.param?.maxWidth);
-    compute(descrColumn, descrWidths, entryLayout?.descr?.maxWidth);
+    compute(namesColumn, namesWidths, entryLayout.names?.maxWidth);
+    compute(paramColumn, paramWidths, entryLayout.param?.maxWidth);
+    compute(descrColumn, descrWidths, entryLayout.descr?.maxWidth);
     return [namesColumn, paramColumn, descrColumn, entryLayout];
   }
   const namesWidths: Array<number> = [];
@@ -593,7 +593,7 @@ function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks
  */
 function formatNames(
   option: OpaqueOption,
-  layout: HelpLayout = {},
+  layout: HelpLayout,
   useEnv: boolean = false,
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.names);
@@ -640,7 +640,7 @@ function formatNames(
  * @param layout The layout settings
  * @returns The help column
  */
-function formatParams(option: OpaqueOption, layout: HelpLayout = {}): HelpColumn {
+function formatParams(option: OpaqueOption, layout: HelpLayout): HelpColumn {
   const [align, breaks] = getAlignment(layout.param);
   const result = new AnsiString(0, align);
   if (breaks !== undefined && hasTemplate(option, false)) {
@@ -664,13 +664,13 @@ function formatDescription(
   options: OpaqueOptions,
   option: OpaqueOption,
   flags: FormatterFlags,
-  layout: HelpLayout = {},
+  layout: HelpLayout,
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.descr);
   const result = new AnsiString(0, align);
   if (breaks !== undefined) {
     result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
-    for (const item of layout?.items ?? allHelpItems) {
+    for (const item of layout.items ?? allHelpItems) {
       if (item !== HelpItem.cluster || flags.clusterPrefix !== undefined) {
         helpFunctions[item](option, config.helpPhrases[item], options, result);
       }
