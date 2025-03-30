@@ -719,7 +719,7 @@ function formatHelpSection(
       }
       result.push(
         ...entries
-          .map(([names, param, descr]) => [names, param, descr])
+          .map(([names, param, descr]) => [names, param, descr]) // remove layout
           .flat()
           .flat(),
       );
