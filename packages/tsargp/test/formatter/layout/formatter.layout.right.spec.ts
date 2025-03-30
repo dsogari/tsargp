@@ -18,7 +18,7 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { align: 'right' },
+          layout: { names: { align: 'right' } },
         },
       ];
       expect(format(options, sections).wrap()).toEqual('  -f, --flag\n     --flag2\n');
@@ -40,7 +40,7 @@ describe('format', () => {
         {
           type: 'groups',
           filter: { includeGroups: ['group', ''] }, // preserve definition order
-          names: { align: 'right' },
+          layout: { names: { align: 'right' } },
         },
       ];
       expect(format(options, sections).wrap()).toEqual('  -f, --flag\n     --flag2\n');
@@ -60,7 +60,7 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { align: 'right', slotIndent: 1 },
+          layout: { names: { align: 'right', slotIndent: 1 } },
         },
       ];
       expect(format(options, sections).wrap()).toEqual('      -f1, --flag1\n  --flag2,     -f2\n');
@@ -82,8 +82,7 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          param: { align: 'right' },
-          items: [],
+          layout: { param: { align: 'right' }, items: [] },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(`  -s1  'abcde'\n  -s2     'ab'\n`);
@@ -100,7 +99,7 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          descr: { align: 'right' },
+          layout: { descr: { align: 'right' } },
         },
       ];
       expect(format(options, sections).wrap(14, false, true)).toEqual(
@@ -135,9 +134,11 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { align: 'right' },
-          param: { merge: true },
-          items: [],
+          layout: {
+            names: { align: 'right' },
+            param: { merge: true },
+            items: [],
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -166,8 +167,10 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          param: { align: 'right' },
-          descr: { merge: true },
+          layout: {
+            param: { align: 'right' },
+            descr: { merge: true },
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -197,9 +200,11 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { align: 'right' },
-          param: { merge: true },
-          descr: { merge: true },
+          layout: {
+            names: { align: 'right' },
+            param: { merge: true },
+            descr: { merge: true },
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -227,9 +232,11 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { align: 'right', maxWidth: 8 },
-          param: { align: 'right', maxWidth: 12 },
-          descr: { align: 'right', maxWidth: 20 },
+          layout: {
+            names: { align: 'right', maxWidth: 8 },
+            param: { align: 'right', maxWidth: 12 },
+            descr: { align: 'right', maxWidth: 20 },
+          },
         },
       ];
       expect(format(options, sections).wrap()).toEqual(
@@ -261,10 +268,12 @@ describe('format', () => {
       const sections: HelpSections = [
         {
           type: 'groups',
-          names: { align: 'right', maxWidth: 8 },
-          param: { align: 'right', maxWidth: 12 },
-          descr: { align: 'right', maxWidth: 20 },
-          responsive: false,
+          layout: {
+            names: { align: 'right', maxWidth: 8 },
+            param: { align: 'right', maxWidth: 12 },
+            descr: { align: 'right', maxWidth: 20 },
+            responsive: false,
+          },
         },
       ];
       // should ignore the terminal width

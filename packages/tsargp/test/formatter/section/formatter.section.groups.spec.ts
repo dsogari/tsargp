@@ -250,8 +250,8 @@ describe('rendering a groups section', () => {
     const sections: HelpSections = [
       {
         type: 'groups',
+        layout: { items: [HelpItem.synopsis] },
         useEnv: true,
-        items: [HelpItem.synopsis],
       },
     ];
     expect(format(options, sections).wrap()).toEqual(`  FLAG, THE_FLAG    A flag option\n`);

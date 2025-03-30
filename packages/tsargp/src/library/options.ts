@@ -260,13 +260,9 @@ export type WithSectionUsage = {
 };
 
 /**
- * Defines additional attributes for the groups section.
+ * The layout settings of a groups section.
  */
-export type WithSectionGroups = {
-  /**
-   * The section filter.
-   */
-  readonly filter?: HelpSectionFilter;
+export type HelpLayout = {
   /**
    * The layout settings for the names column.
    * Use the value `null` to hide it from the help message.
@@ -287,15 +283,29 @@ export type WithSectionGroups = {
    */
   readonly items?: HelpItems;
   /**
-   * Whether option names should be replaced by environment variable names.
-   * @default false
-   */
-  readonly useEnv?: boolean;
-  /**
    * Whether the layout is responsive (a.k.a, terminal-aware).
    * @default true
    */
   readonly responsive?: boolean;
+};
+
+/**
+ * Defines additional attributes for the groups section.
+ */
+export type WithSectionGroups = {
+  /**
+   * The section filter.
+   */
+  readonly filter?: HelpSectionFilter;
+  /**
+   * The section layout settings.
+   */
+  readonly layout?: HelpLayout;
+  /**
+   * Whether option names should be replaced by environment variable names.
+   * @default false
+   */
+  readonly useEnv?: boolean;
 };
 
 /**
@@ -544,6 +554,10 @@ export type WithBasicAttributes = {
    * The option display styles.
    */
   readonly styles?: OptionStyles;
+  /**
+   * The option-specific layout settings.
+   */
+  readonly layout?: HelpLayout;
   /**
    * A hyperlink to an external resource.
    */
