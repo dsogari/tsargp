@@ -283,4 +283,45 @@ describe('format', () => {
       );
     });
   });
+
+  it('use option-specific layout settings', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', null],
+        synopsis: 'A string option',
+        paramName: '<param>',
+        layout: {
+          names: { slotIndent: 1 }, // ignored by the formatter
+          param: null,
+          descr: { merge: true },
+        },
+      },
+      single2: {
+        type: 'single',
+        synopsis: 'A string option',
+        paramName: '<param>',
+        layout: {
+          param: { merge: true },
+          descr: { merge: true },
+        },
+      },
+      flag: {
+        type: 'flag',
+        names: ['-f'],
+        synopsis: 'A flag option',
+        layout: {
+          param: { merge: true, breaks: 1 },
+          descr: { merge: true, breaks: 1 },
+        },
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      '' +
+        '  -s A string option\n' +
+        '  <param> A string option\n' +
+        '  -f\n' +
+        '  A flag option\n',
+    );
+  });
 });

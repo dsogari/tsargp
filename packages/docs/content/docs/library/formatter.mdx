@@ -259,7 +259,11 @@ When the `responsive` property is set to `false{:ts}`, the terminal width is ign
 
 > [!TIP]
 >
-> These settings can also be overridden for each option. See the [layout] attribute.
+> These settings can also be overridden for each help entry. See the option's [layout] attribute.
+
+> [!WARNING]
+>
+> Beware that if the section layout is not configured, using entry-specific settings may not have the desired effect. This is because the formatter does not _aggregate_ the layout settings of all help entries. Rather, it simply ensures that, if an option declares specific settings, they will override the section settings.
 
 ### Column layout
 

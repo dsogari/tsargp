@@ -286,4 +286,45 @@ describe('format', () => {
       );
     });
   });
+
+  it('use option-specific layout settings', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s', '--single'],
+        synopsis: 'A single option with big synopsis.',
+        paramName: '<param>',
+        layout: {
+          names: { maxWidth: 8 },
+          param: { maxWidth: 12 },
+          descr: { maxWidth: 20 },
+          responsive: true,
+        },
+      },
+      array: {
+        type: 'array',
+        names: ['-a', '--array'],
+        paramName: '<param> <param>',
+      },
+    } as const satisfies Options;
+    const sections: HelpSections = [
+      {
+        type: 'groups',
+        layout: {
+          names: { align: 'right', maxWidth: 8 },
+          param: { align: 'right', maxWidth: 12 },
+          descr: { align: 'right', maxWidth: 20 },
+          responsive: false,
+        },
+      },
+    ];
+    expect(format(options, sections).wrap()).toEqual(
+      '' +
+        '  -s,\n' +
+        '  --single  <param>       A single option with\n' +
+        '                          big synopsis.\n' +
+        '       -a,      [<param>      Accepts multiple\n' +
+        '   --array   <param>...]           parameters.\n',
+    );
+  });
 });

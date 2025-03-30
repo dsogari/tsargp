@@ -461,22 +461,23 @@ function formatGroups(
   }
   /** @ignore */
   function build(option: OpaqueOption): HelpEntry | undefined {
-    const namesColumn = formatNames(option, layout, useEnv);
+    const entryLayout = option.layout ?? layout;
+    const namesColumn = formatNames(option, entryLayout, useEnv);
     if (useEnv && namesColumn.length === 1 && !namesColumn[0].maxLength) {
       return; // skip options without environment variable names, in this case
     }
-    const paramColumn = formatParams(option, layout);
-    const descrColumn = formatDescription(options, option, flags, layout);
-    if (layout?.descr === null || layout?.descr?.merge) {
+    const paramColumn = formatParams(option, entryLayout);
+    const descrColumn = formatDescription(options, option, flags, entryLayout);
+    if (entryLayout?.descr === null || entryLayout?.descr?.merge) {
       merge(paramColumn, descrColumn);
     }
-    if (layout?.param === null || layout?.param?.merge) {
+    if (entryLayout?.param === null || entryLayout?.param?.merge) {
       merge(namesColumn, paramColumn);
     }
     compute(namesColumn, namesWidths);
     compute(paramColumn, paramWidths);
     compute(descrColumn, descrWidths);
-    return [namesColumn, paramColumn, descrColumn, option.layout ?? layout];
+    return [namesColumn, paramColumn, descrColumn, entryLayout];
   }
   const namesWidths: Array<number> = [];
   const paramWidths: Array<number> = [];
@@ -542,7 +543,7 @@ function adjustEntries(
     column.splice(from).forEach((str) => (prev = prev.hook = str));
     return prev;
   }
-  const { names, param, descr, responsive } = section.layout ?? {};
+  const { names, param, descr } = section.layout ?? {};
   const [namesStart, namesWidth] = getStartAndWidth(
     names,
     namesWidths,
@@ -568,12 +569,12 @@ function adjustEntries(
       namesColumn,
       namesWidths,
       namesStart,
-      (layout?.names ?? names)?.slotIndent,
-      (layout?.names ?? names)?.maxWidth,
+      layout?.names?.slotIndent,
+      layout?.names?.maxWidth,
     );
-    adjustColumn(paramColumn, paramWidths, paramStart, 0, (layout?.param ?? param)?.maxWidth);
-    adjustColumn(descrColumn, descrWidths, descrStart, 0, (layout?.descr ?? descr)?.maxWidth);
-    if ((layout?.responsive ?? responsive) === false) {
+    adjustColumn(paramColumn, paramWidths, paramStart, 0, layout?.param?.maxWidth);
+    adjustColumn(descrColumn, descrWidths, descrStart, 0, layout?.descr?.maxWidth);
+    if (layout?.responsive === false) {
       const str = hook(descrColumn, hook(paramColumn, hook(namesColumn, namesColumn[0], 1)));
       str.hook = new AnsiString(); // tail of wrapping chain
     }
@@ -597,13 +598,13 @@ function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks
  * Formats an option's names to be printed in a groups section.
  * This does not include the positional marker.
  * @param option The option definition
- * @param layout The column layout settings
+ * @param layout The layout settings
  * @param useEnv Whether option names should be replaced by environment variable names
  * @returns The help column
  */
 function formatNames(
   option: OpaqueOption,
-  layout: HelpLayout = option.layout ?? {},
+  layout: HelpLayout = {},
   useEnv: boolean = false,
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.names);
@@ -647,10 +648,10 @@ function formatNames(
 /**
  * Formats an option's parameter to be printed in a groups section.
  * @param option The option definition
- * @param layout The column layout settings
+ * @param layout The layout settings
  * @returns The help column
  */
-function formatParams(option: OpaqueOption, layout: HelpLayout = option.layout ?? {}): HelpColumn {
+function formatParams(option: OpaqueOption, layout: HelpLayout = {}): HelpColumn {
   const [align, breaks] = getAlignment(layout.param);
   const result = new AnsiString(0, align);
   if (breaks !== undefined && hasTemplate(option, false)) {
@@ -667,14 +668,14 @@ function formatParams(option: OpaqueOption, layout: HelpLayout = option.layout ?
  * @param options The option definitions
  * @param option The option definition
  * @param flags The formatter flags
- * @param layout The column layout settings
+ * @param layout The layout settings
  * @returns The help column
  */
 function formatDescription(
   options: OpaqueOptions,
   option: OpaqueOption,
   flags: FormatterFlags,
-  layout: HelpLayout = option.layout ?? {},
+  layout: HelpLayout = {},
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.descr);
   const result = new AnsiString(0, align);
