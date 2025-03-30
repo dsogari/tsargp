@@ -327,4 +327,28 @@ describe('format', () => {
         '  A flag option\n',
     );
   });
+
+  it('merge option parameters with option names for one option and not for another', () => {
+    const options = {
+      single1: {
+        type: 'single',
+        names: ['-s1'],
+        synopsis: 'A string option.',
+        paramName: '<param>',
+      },
+      single2: {
+        type: 'single',
+        names: ['-s2'],
+        synopsis: 'A string option.',
+        paramName: '<param>',
+        inline: 'always',
+        layout: { param: { merge: true } },
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      '' +
+        '  -s1          <param>  A string option.\n' +
+        '  -s2=<param>           A string option. Requires inline parameters.\n',
+    );
+  });
 });
