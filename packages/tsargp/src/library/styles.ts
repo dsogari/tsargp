@@ -976,14 +976,14 @@ export class AnsiMessage extends Array<AnsiString> {
  */
 export class WarnMessage extends AnsiMessage {
   /**
-   * Appends a ANSI string formatted from an error kind or custom phrase.
-   * @param kindOrPhrase The error kind or custom phrase
+   * Appends a ANSI string formatted from an error item or custom phrase.
+   * @param itemOrPhrase The error item or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
    * @returns The new length of the message
    */
-  add(kindOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
-    const phrase = isString(kindOrPhrase) ? kindOrPhrase : config.errorPhrases[kindOrPhrase];
+  add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
+    const phrase = isString(itemOrPhrase) ? itemOrPhrase : config.errorPhrases[itemOrPhrase];
     const str = new AnsiString()
       .pushSty(config.styles.base)
       .format(phrase, flags, ...args)
@@ -1005,14 +1005,14 @@ export class WarnMessage extends AnsiMessage {
  */
 export class ErrorMessage extends WarnMessage {
   /**
-   * Creates an error message formatted from an error kind or custom phrase.
-   * @param kindOrPhrase The error kind or custom phrase
+   * Creates an error message formatted from an error item or custom phrase.
+   * @param itemOrPhrase The error item or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
    */
-  constructor(kindOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args) {
+  constructor(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args) {
     super();
-    this.add(kindOrPhrase, flags, ...args);
+    this.add(itemOrPhrase, flags, ...args);
   }
 }
 

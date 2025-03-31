@@ -2,4 +2,6 @@
 '@tsargp/docs': minor
 ---
 
-Update **Styles** page to document the new behavior of the error message class.
+Document the new behavior of the `ErrorMessage` class.
+
+- **Styles** page has been updated to reflect the changes made to the `ErrorMessage` class.
