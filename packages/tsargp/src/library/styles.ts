@@ -21,7 +21,13 @@ import {
   streamWidth,
 } from './utils.js';
 
-export { sequence as seq, sgrSequence as style, indexedColor as ext8, rgbColor as rgb };
+export {
+  sequence as seq,
+  sgrSequence as style,
+  indexedColor as ext8,
+  rgbColor as rgb,
+  taggedTemplate as ansi,
+};
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -1264,4 +1270,15 @@ function indexedColor(index: DecimalValue): IndexedColor {
  */
 function rgbColor(r: DecimalValue, g: DecimalValue, b: DecimalValue): RgbColor {
   return [2, r, g, b];
+}
+
+/**
+ * Creates a ANSI string from a tagged template literal.
+ * @param parts The template parts
+ * @param args The template arguments
+ * @returns The ANSI string
+ */
+function taggedTemplate(parts: TemplateStringsArray, ...args: Args): AnsiString {
+  const phrase = parts.map((str, i) => (i < parts.length - 1 ? `${str}#${i}` : str)).join('');
+  return new AnsiString().format(phrase, {}, ...args);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { AnsiString } from '../../src/library';
+import { ansi, AnsiString } from '../../src/library';
 import { arrayWithPhrase } from '../../src/library/utils';
 
 describe('AnsiString', () => {
@@ -23,6 +23,11 @@ describe('AnsiString', () => {
     it('apply a phrase to each array element', () => {
       const str = new AnsiString().format('#0', {}, arrayWithPhrase('<#0>', [1, 'a', true]));
       expect(str.strings).toEqual(['[<1>,', "<'a'>,", '<true>]']);
+    });
+
+    it('format a string created from a tagged template literal with arguments', () => {
+      const str = ansi`type ${true} ${'script'} is ${123} ${undefined}`;
+      expect(str.strings).toEqual(['type', 'true', "'script'", 'is', '123', '<undefined>']);
     });
 
     it('format single-valued arguments out of order', () => {
