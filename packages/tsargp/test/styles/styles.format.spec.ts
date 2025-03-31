@@ -175,7 +175,10 @@ describe('AnsiString', () => {
     it('format a string created from a tagged template literal with arguments', () => {
       const clr = style(tf.clear);
       const noColor = style(fg.default);
-      const str = ansi`${clr} type ${clr} ${true} ${'script'} ${123} ${/is/} ${Symbol.for('fun')} ${undefined} ${new URL('https://abc')}`;
+      const symbol = Symbol.for('fun');
+      const url = new URL('https://abc');
+      const object = { $cmd: [1] };
+      const str = ansi`${clr} type ${clr} ${true} ${'script'} ${123} ${/is/} ${symbol} ${undefined} ${url} ${object}`;
       expect(str.strings).toEqual([
         'type',
         'true',
@@ -185,6 +188,8 @@ describe('AnsiString', () => {
         'fun',
         '<undefined>',
         'https://abc/',
+        "{'$cmd':",
+        '[1]}',
       ]);
       expect(str.styled).toEqual([
         clr + 'type' + clr,
@@ -195,6 +200,8 @@ describe('AnsiString', () => {
         config.styles.symbol + 'fun' + noColor,
         config.styles.value + '<undefined>' + noColor,
         config.styles.url + 'https://abc/' + noColor,
+        '{' + config.styles.string + "'$cmd'" + noColor + ':',
+        '[' + config.styles.number + '1' + noColor + ']}',
       ]);
     });
   });
