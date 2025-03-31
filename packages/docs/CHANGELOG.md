@@ -1,5 +1,17 @@
 # @tsargp/docs
 
+## 1.18.0
+
+### Minor Changes
+
+- 18c6b63: Document the new behavior of the `ErrorMessage` class.
+
+  - **Styles** page has been updated to reflect the changes made to the `ErrorMessage` class.
+
+### Patch Changes
+
+- 859c583: Update **Introduction** and **Formatter** pages to reflect changes in the **demo** example.
+
 ## 1.17.0
 
 ### Minor Changes
