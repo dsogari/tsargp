@@ -65,8 +65,9 @@ try {
   const values = await parse(options);
   // do something with the option values...
 } catch (err) {
+  // do your own handling here, if necessary, or...
+  // handle expected/internal error or help/version/completion message
   handleError(err);
-  // expected/internal error or help/version/completion message
 }
 ```
 

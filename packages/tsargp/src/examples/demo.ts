@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import type { HelpTextSection } from 'tsargp';
-import { parseInto, valuesFor, getVersion, handleError, sectionFooter } from 'tsargp';
+import { getVersion, handleError, parseInto, sectionFooter, valuesFor } from 'tsargp';
 import options from './demo.options.js';
 
 // cannot be used in the browser
