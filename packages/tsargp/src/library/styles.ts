@@ -1281,7 +1281,7 @@ function rgbColor(r: DecimalValue, g: DecimalValue, b: DecimalValue): RgbColor {
 }
 
 /**
- * Creates a ANSI string from a tagged template literal.
+ * Creates a ANSI string from a template literal.
  * @param parts The template parts
  * @param args The template arguments
  * @returns The ANSI string
