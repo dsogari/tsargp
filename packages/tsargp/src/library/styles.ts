@@ -976,29 +976,19 @@ export class AnsiMessage extends Array<AnsiString> {
  */
 export class WarnMessage extends AnsiMessage {
   /**
-   * Appends a ANSI string formatted from an error phrase.
-   * @param kind The error kind
+   * Appends a ANSI string formatted from an error kind or custom phrase.
+   * @param kindOrPhrase The error kind or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
    * @returns The new length of the message
    */
-  add(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): number {
-    return this.addCustom(config.errorPhrases[kind], flags, ...args);
-  }
-
-  /**
-   * Appends a ANSI string formatted from a custom phrase.
-   * @param phrase The phrase
-   * @param flags The formatting flags
-   * @param args The phrase arguments
-   * @returns The new length of the message
-   */
-  addCustom(phrase: string, flags?: FormattingFlags, ...args: Args): number {
+  add(kindOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
+    const phrase = isString(kindOrPhrase) ? kindOrPhrase : config.errorPhrases[kindOrPhrase];
     const str = new AnsiString()
       .pushSty(config.styles.base)
       .format(phrase, flags, ...args)
       .popSty()
-      .break();
+      .break(); // include trailing line feed
     return this.push(str);
   }
 
@@ -1015,18 +1005,14 @@ export class WarnMessage extends AnsiMessage {
  */
 export class ErrorMessage extends WarnMessage {
   /**
-   * Creates an error message formatted with an error phrase.
+   * Creates an error message formatted from an error kind or custom phrase.
    * @param kindOrPhrase The error kind or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
    */
   constructor(kindOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args) {
     super();
-    if (isString(kindOrPhrase)) {
-      this.addCustom(kindOrPhrase, flags, ...args);
-    } else {
-      this.add(kindOrPhrase, flags, ...args);
-    }
+    this.add(kindOrPhrase, flags, ...args);
   }
 }
 

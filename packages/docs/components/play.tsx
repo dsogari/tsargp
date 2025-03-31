@@ -65,9 +65,7 @@ class PlayCommand extends Command<PlayProps> {
         this.println(`Please call ${tsargp.style(1)}init${tsargp.style(0)} first.`);
       }
     } catch (err) {
-      if (err instanceof tsargp.ErrorMessage) {
-        throw err.msg.wrap(this.state.width);
-      } else if (err instanceof tsargp.AnsiMessage) {
+      if (err instanceof tsargp.AnsiMessage) {
         throw err.wrap(this.state.width);
       }
       throw err;

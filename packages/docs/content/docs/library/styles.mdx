@@ -271,12 +271,7 @@ It also offers two methods that are used by the library:
 
 ### Error message
 
-The `ErrorMessage` class is a specialization of the standard `Error` class, used for errors. It has the same semantics as the warning message, so it should be printed with `console.error{:ts}` or equivalent.
-
-Similarly to the warning message, it offers two static methods that are used by the library:
-
-- `create` -- creates an error message formatted from one of the [error phrases]
-- `createCustom` -- creates an error message formatted from a _custom_ phrase
+The `ErrorMessage` class is a specialization of the warning message, used for errors. It should be printed with `console.error{:ts}` or equivalent. It can be instantiated with one of the [error phrases] or a _custom_ phrase.
 
 ### Text message
 

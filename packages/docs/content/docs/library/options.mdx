@@ -327,7 +327,7 @@ The `param` will be of a different kind for each option:
 - **string** value -- for the [single] and [array] options
 - string **array** -- for the [function] option
 
-The callback should return the parsed value (or a promise thereof). If you need to throw an error from within, we recommend using the `createCustom` static method of the [error message] class. It accepts a custom phrase that is formatted analogously to [error phrases].
+The callback should return the parsed value (or a promise thereof). To throw an error from within it, we recommend instantiating the [error message] class: it accepts a custom phrase that will be formatted exactly like [error phrases].
 
 > [!TIP]
 >
