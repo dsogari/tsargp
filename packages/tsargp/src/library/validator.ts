@@ -152,7 +152,7 @@ async function validateOptions(context: ValidationContext) {
     await validateOption(context, prefixedKey, key, option);
     if (isPositional(option)) {
       if (positional) {
-        throw ErrorMessage.create(
+        throw new ErrorMessage(
           ErrorItem.duplicatePositionalOption,
           {},
           prefixedKey,
@@ -183,10 +183,10 @@ function validateNames(
 ) {
   for (const name of names) {
     if (name.includes('=')) {
-      throw ErrorMessage.create(ErrorItem.invalidOptionName, {}, prefixedKey, name);
+      throw new ErrorMessage(ErrorItem.invalidOptionName, {}, prefixedKey, name);
     }
     if (nameToKey.has(name)) {
-      throw ErrorMessage.create(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
+      throw new ErrorMessage(ErrorItem.duplicateOptionName, {}, prefixedKey, name);
     }
     nameToKey.set(name, key);
   }
@@ -268,7 +268,7 @@ async function validateOption(
     await validateOptions([cmdOptions, flags, warning, visited, prefix + key + '.']);
   }
   if (isEnvironmentOnly(option) && !stdin && !sources?.length) {
-    throw ErrorMessage.create(ErrorItem.invalidOption, {}, prefixedKey);
+    throw new ErrorMessage(ErrorItem.invalidOption, {}, prefixedKey);
   }
 }
 
@@ -311,7 +311,7 @@ function validateRequirement(
 ) {
   /** @ignore */
   function error(item: ErrorItem): never {
-    throw ErrorMessage.create(item, {}, prefixedKey);
+    throw new ErrorMessage(item, {}, prefixedKey);
   }
   const [options, , , , prefix] = context;
   const prefixedKey = getSymbol(prefix + requiredKey);
@@ -350,7 +350,7 @@ function validateConstraints(
     if (set.size !== choices.length) {
       const dup = choices.find((val) => !set.delete(val));
       if (dup !== undefined) {
-        throw ErrorMessage.create(ErrorItem.duplicateParameterChoice, {}, prefixedKey, dup);
+        throw new ErrorMessage(ErrorItem.duplicateParameterChoice, {}, prefixedKey, dup);
       }
     }
   }
@@ -360,7 +360,7 @@ function validateConstraints(
       ? !(paramCount[0] >= 0) || !(paramCount[0] < paramCount[1])
       : !(paramCount >= 0)) // handle NaN
   ) {
-    throw ErrorMessage.create(ErrorItem.invalidParamCount, {}, prefixedKey, paramCount);
+    throw new ErrorMessage(ErrorItem.invalidParamCount, {}, prefixedKey, paramCount);
   }
   const [min, max] = getParamCount(option);
   if (
@@ -370,7 +370,7 @@ function validateConstraints(
         ? (!max || max > 1) && !separator && !append
         : inline && getKeys(inline).findIndex((key) => !names?.includes(key)) >= 0))
   ) {
-    throw ErrorMessage.create(ErrorItem.invalidInlineConstraint, {}, prefixedKey);
+    throw new ErrorMessage(ErrorItem.invalidInlineConstraint, {}, prefixedKey);
   }
   if (!flags.noWarn && min < max && cluster) {
     warning.add(ErrorItem.variadicWithClusterLetter, {}, prefixedKey);

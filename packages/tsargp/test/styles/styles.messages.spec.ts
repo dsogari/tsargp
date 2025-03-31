@@ -75,18 +75,14 @@ describe('WarnMessage', () => {
 });
 
 describe('ErrorMessage', () => {
-  describe('create', () => {
-    it('format a string message with an error phrase', () => {
-      const msg = ErrorMessage.create(ErrorItem.missingRequiredOption, {}, 'abc');
-      expect(msg.message).toEqual(`Option 'abc' is required.\n`);
-    });
+  it('format an error message with an error phrase', () => {
+    const msg = new ErrorMessage(ErrorItem.missingRequiredOption, {}, 'abc');
+    expect(msg.message).toEqual(`Option 'abc' is required.\n`);
   });
 
-  describe('createCustom', () => {
-    it('format a string message with a custom phrase', () => {
-      const msg = ErrorMessage.createCustom('#0 #1 #2', {}, 0, 'abc', false);
-      expect(msg.message).toEqual(`0 'abc' false\n`);
-    });
+  it('format an error message with a custom phrase', () => {
+    const msg = new ErrorMessage('#0 #1 #2', {}, 0, 'abc', false);
+    expect(msg.message).toEqual(`0 'abc' false\n`);
   });
 });
 
