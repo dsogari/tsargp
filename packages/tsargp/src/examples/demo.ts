@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-import { parseInto, valuesFor, getVersion, sectionFooter, type HelpTextSection } from 'tsargp';
+import type { HelpTextSection } from 'tsargp';
+import { getVersion, handleError, parseInto, sectionFooter, valuesFor } from 'tsargp';
 import options from './demo.options.js';
 
 // cannot be used in the browser
@@ -35,10 +36,5 @@ try {
     console.log(values);
   }
 } catch (err) {
-  if (err instanceof Error) {
-    console.error('' + err);
-    process.exitCode = 1;
-  } else {
-    console.log('' + err); // help, version or completion
-  }
+  handleError(err);
 }

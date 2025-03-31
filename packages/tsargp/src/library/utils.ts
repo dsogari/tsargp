@@ -536,6 +536,22 @@ export async function sectionFooter(
 }
 
 /**
+ * Handles an error caught in a try/catch block.
+ * For use in non-browser environments only.
+ * @param err The caught error
+ */
+export function handleError(err: unknown): never {
+  if (err instanceof ErrorMessage) {
+    console.error('' + err); // expected error
+    process.exit(1);
+  } else if (!(err instanceof Error)) {
+    console.log('' + err); // help, version or completion message
+    process.exit();
+  }
+  throw err; // internal error: should print stack trace
+}
+
+/**
  * Gets a list of arguments from a raw command line.
  * @param line The command line, including the command name
  * @param compIndex The completion index, if any (should be non-negative)

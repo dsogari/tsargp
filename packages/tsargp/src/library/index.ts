@@ -9,6 +9,7 @@ export {
   allOf,
   arrayWithPhrase,
   getVersion,
+  handleError,
   not,
   numberInRange,
   oneOf,
