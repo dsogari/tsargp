@@ -4,9 +4,9 @@
 
 ### Minor Changes
 
-- f773ba4: Document the new `ansi` tag function.
+- f773ba4: Document usage of the new `ansi` tag function.
 
-  - **Styles** page has been updated to document how ANSI string instances can be created via the `ansi` function for tagged template literals.
+  - **Styles** page has been updated to document how ANSI string instances can be created via the new function for tagged template literals.
 
 - 26c7ab7: Document usage of the new `handleError` utility function.
 
