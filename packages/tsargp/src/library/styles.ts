@@ -178,6 +178,14 @@ const formatFunctions = {
     result.other(str);
   },
   /**
+   * The formatting function for inline styles.
+   * @param sty The style value
+   * @param result The resulting string
+   */
+  i(sty: Style, result: AnsiString) {
+    result.closeSty(sty);
+  },
+  /**
    * The formatting function for custom format callbacks.
    * For internal use only.
    * @param arg The format argument
@@ -257,7 +265,7 @@ const formatFunctions = {
    * @param flags The formatting flags
    */
   v(value: unknown, result: AnsiString, flags: FormattingFlags) {
-    const spec =
+    const spec: FormatSpecifier =
       value instanceof URL
         ? 'u'
         : value instanceof RegExp
@@ -265,7 +273,9 @@ const formatFunctions = {
           : value instanceof AnsiString
             ? 't'
             : isArray(value)
-              ? 'a'
+              ? '$cmd' in value
+                ? 'i'
+                : 'a'
               : typeMapping[typeof value];
     if (spec && value !== null) {
       this[spec](value, result, flags);
@@ -343,7 +353,7 @@ export type SequenceParameter = number | Array<number>;
  * A control sequence.
  * @template T The type of the sequence command
  */
-export type ControlSequence<T extends cs> = Array<SequenceParameter> & { cmd: T };
+export type ControlSequence<T extends cs> = Array<SequenceParameter> & { $cmd: T };
 
 /**
  * A select graphics rendition sequence.
@@ -405,6 +415,7 @@ type FormatSpecifier =
   | 'v' // unknown
   | 'u' // url
   | 't' // ANSI string
+  | 'i' // inline style
   | 'o' // object
   | 'm' // symbol
   | 'c'; // custom
@@ -619,18 +630,15 @@ export class AnsiString {
 
   /**
    * Closes with a style.
-   * TODO: test this method.
    * @param sty The style
    * @returns The ANSI string instance
    */
-  private closeSty(sty: Style): this {
-    const { styled, count, curStyle, maxLength } = this;
-    if (curStyle.length) {
-      curStyle.length = 0; // reset opening style because it was not applied
-    } else if (maxLength) {
+  closeSty(sty: Style): this {
+    const { styled, count } = this;
+    if (styled[count - 1]) {
       styled[count - 1] += sty; // close with style
     } else {
-      this.openSty(sty); // fallback to opening if no strings
+      this.openSty(sty); // open with style if no strings or if the last string is a line feed
     }
     return this;
   }
@@ -1147,9 +1155,9 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
 function sequence<T extends cs>(cmd: T, ...params: Array<SequenceParameter>): ControlSequence<T> {
   const seq = params as ControlSequence<T>;
   seq.toString = function () {
-    return this.length ? `\x1b[${this.flat().join(';')}${this.cmd}` : '';
+    return this.length ? `\x1b[${this.flat().join(';')}${this.$cmd}` : '';
   };
-  seq.cmd = cmd;
+  seq.$cmd = cmd;
   return seq;
 }
 
@@ -1279,6 +1287,6 @@ function rgbColor(r: DecimalValue, g: DecimalValue, b: DecimalValue): RgbColor {
  * @returns The ANSI string
  */
 function taggedTemplate(parts: TemplateStringsArray, ...args: Args): AnsiString {
-  const phrase = parts.map((str, i) => (i < parts.length - 1 ? `${str}#${i}` : str)).join('');
+  const phrase = parts.map((str, i) => (i < parts.length - 1 ? str + '#' + i : str)).join('');
   return new AnsiString().format(phrase, {}, ...args);
 }
