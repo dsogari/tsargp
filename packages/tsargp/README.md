@@ -63,15 +63,16 @@ import options from './cli.options.js';
 
 try {
   const values = await parse(options);
-  // do something with the options' values...
+  // do something with the option values...
 } catch (err) {
-  handleError(err); // expected error, internal error, help, version or completion message
+  handleError(err);
+  // expected/internal error or help/version/completion message
 }
 ```
 
-Notice how we include the option definitions from the sibling file. We also capture any errors raised by the library and choose what to do based on their type. Usually, they will be either a help message, a version message or a completion message.
+Notice how we include the option definitions from the sibling file. We also capture any error raised by the library and handle it based on its type. Usually, it will be either a help, version or completion message.
 
-The documentation also shows how to _return_ (not throw) the help or version messages, how to parse arguments into an existing object, specify parsing flags, emit warnings, and much more.
+The documentation also shows how to _return_ (not throw) the help and version messages, how to parse arguments into an existing object, specify parsing flags, emit warnings, and much more.
 
 ### Validate options in test script
 
