@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { AnsiString } from '../../src/library';
+import { ansi, AnsiString, config, fg, style, tf } from '../../src/library';
 import { arrayWithPhrase } from '../../src/library/utils';
 
 describe('AnsiString', () => {
@@ -169,6 +169,39 @@ describe('AnsiString', () => {
         ',',
         'v2:',
         '<undefined>}',
+      ]);
+    });
+
+    it('format a string created from a tagged template literal with arguments', () => {
+      const clr = style(tf.clear);
+      const noColor = style(fg.default);
+      const symbol = Symbol.for('fun');
+      const url = new URL('https://abc');
+      const object = { $cmd: [1] };
+      const str = ansi`${clr} type ${clr} ${true} ${'script'} ${123} ${/is/} ${symbol} ${undefined} ${url} ${object}`;
+      expect(str.strings).toEqual([
+        'type',
+        'true',
+        "'script'",
+        '123',
+        '/is/',
+        'fun',
+        '<undefined>',
+        'https://abc/',
+        "{'$cmd':",
+        '[1]}',
+      ]);
+      expect(str.styled).toEqual([
+        clr + 'type' + clr,
+        config.styles.boolean + 'true' + noColor,
+        config.styles.string + "'script'" + noColor,
+        config.styles.number + '123' + noColor,
+        config.styles.regex + '/is/' + noColor,
+        config.styles.symbol + 'fun' + noColor,
+        config.styles.value + '<undefined>' + noColor,
+        config.styles.url + 'https://abc/' + noColor,
+        '{' + config.styles.string + "'$cmd'" + noColor + ':',
+        '[' + config.styles.number + '1' + noColor + ']}',
       ]);
     });
   });

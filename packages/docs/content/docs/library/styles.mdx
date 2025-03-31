@@ -118,6 +118,10 @@ style(ul.extended, rgb(255, 165, 0));
 
 The `AnsiString` component handles the construction of strings that can be printed in a terminal. It has methods for splitting, appending, and wrapping strings with or without control sequences. The main logic implemented in this class is divided into _splitting_ and _wrapping_, as is explained in the next subsections.
 
+> [!TIP]
+>
+> You can easily create ANSI string instances with the `ansi` tag function for tagged [template literals]. Just be aware that arguments inside the template will be treated as [placeholder] arguments.
+
 ### Text splitting
 
 Text is split into paragraphs, list items and words using a combination of simple regular expressions. The features supported in text splitting are described below.
@@ -141,6 +145,7 @@ Placeholders are meant to be replaced with a value. The number on the placeholde
 - `r` -- a `RegExp{:ts}` value
 - `m` -- a `symbol{:ts}` value (e.g., option name)
 - `t` -- another ANSI string instance
+- `i` -- an inline [style]
 - `u` -- a `URL{:ts}` value
 - `a` -- an array or tuple (elements are enclosed by the values of the `arrayOpen` and `arrayClose` [connective words])
 - `o` -- an `object{:ts}` (entries are enclosed by the values of the `objectOpen` and `objectClose` [connective words])
@@ -154,7 +159,7 @@ When a phrase includes placeholders, they indicate where in the phrase to place 
 
 #### Inline styles
 
-Text can contain inline styles. This applies not only to phrases, but to text attributes as well (which the [formatter] splits into words before including in a [help message]).
+Text can contain inline [styles]. This applies not only to phrases, but to text attributes as well (which the [formatter] splits into words before including in a [help message]).
 
 When splitting text, the ANSI string instance will try its best to preserve inline styles. However, if you find some corner case that is not currently covered by our unit tests, please submit a [bug report].
 
@@ -410,12 +415,15 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 
 [^1]: The subcommand prefix is a series of option keys interspersed with periods, denoting the current level in a hierarchical definition. It begins as the empty string and is appended with a [subcommand]'s key whenever one is encountered. It also appears in other validation errors, prefixing the option's key (e.g.: `cmd1.cmd2.flag`).
 
+[style]: #style
+[styles]: #style
 [styling attributes]: #styling-attribute
 [inline styles]: #inline-styles
 [text formatting]: #text-splitting
 [error phrases]: #error-phrases
 [help phrases]: #help-phrases
 [connective words]: #connective-words
+[placeholder]: #placeholders
 
 {/* options references */}
 
@@ -465,3 +473,4 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [escape sequences]: https://en.wikipedia.org/wiki/ANSI_escape_code
 [Markdown]: https://daringfireball.net/projects/markdown/
 [chalk]: https://www.npmjs.com/package/chalk
+[template literals]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
