@@ -4,7 +4,7 @@
 // Imports
 //--------------------------------------------------------------------------------------------------
 import React, { type JSX } from 'react';
-import { parseInto, ErrorMessage, AnsiMessage, valuesFor, type ParsingFlags } from 'tsargp';
+import { parseInto, AnsiMessage, valuesFor, type ParsingFlags } from 'tsargp';
 import { type Props, Command } from './classes/command';
 import { demo as options } from 'tsargp/examples';
 
@@ -37,9 +37,7 @@ class DemoCommand extends Command {
         this.println(JSON.stringify(values, null, 2));
       }
     } catch (err) {
-      if (err instanceof ErrorMessage) {
-        throw err.msg.wrap(this.state.width);
-      } else if (err instanceof AnsiMessage) {
+      if (err instanceof AnsiMessage) {
         throw err.wrap(this.state.width);
       }
       throw err;

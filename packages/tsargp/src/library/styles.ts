@@ -976,28 +976,20 @@ export class AnsiMessage extends Array<AnsiString> {
  */
 export class WarnMessage extends AnsiMessage {
   /**
-   * Appends a ANSI message formatted from an error phrase.
-   * @param kind The error kind
+   * Appends a ANSI string formatted from an error item or custom phrase.
+   * @param itemOrPhrase The error item or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
+   * @returns The new length of the message
    */
-  add(kind: ErrorItem, flags?: FormattingFlags, ...args: Args) {
-    this.addCustom(config.errorPhrases[kind], flags, ...args);
-  }
-
-  /**
-   * Appends a ANSI string formatted from a custom phrase.
-   * @param phrase The phrase
-   * @param flags The formatting flags
-   * @param args The phrase arguments
-   */
-  addCustom(phrase: string, flags?: FormattingFlags, ...args: Args) {
+  add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
+    const phrase = isString(itemOrPhrase) ? itemOrPhrase : config.errorPhrases[itemOrPhrase];
     const str = new AnsiString()
       .pushSty(config.styles.base)
       .format(phrase, flags, ...args)
       .popSty()
-      .break();
-    this.push(str);
+      .break(); // include trailing line feed
+    return this.push(str);
   }
 
   /**
@@ -1011,51 +1003,16 @@ export class WarnMessage extends AnsiMessage {
 /**
  * An error message.
  */
-export class ErrorMessage extends Error {
+export class ErrorMessage extends WarnMessage {
   /**
-   * The warning message.
-   */
-  readonly msg: WarnMessage = new WarnMessage();
-
-  /**
-   * We have to override this, since the message cannot be transformed after being wrapped.
-   * @returns The wrapped message
-   */
-  override toString(): string {
-    return '' + this.msg;
-  }
-
-  /**
-   * @returns The wrapped message
-   */
-  override get message(): string {
-    return '' + this;
-  }
-
-  /**
-   * Creates an error message formatted with an error phrase.
-   * @param kind The error kind
+   * Creates an error message formatted from an error item or custom phrase.
+   * @param itemOrPhrase The error item or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
-   * @returns The newly created message
    */
-  static create(kind: ErrorItem, flags?: FormattingFlags, ...args: Args): ErrorMessage {
-    const err = new ErrorMessage();
-    err.msg.add(kind, flags, ...args);
-    return err;
-  }
-
-  /**
-   * Creates an error message formatted with a custom phrase.
-   * @param phrase The phrase
-   * @param flags The formatting flags
-   * @param args The phrase arguments
-   * @returns The newly created message
-   */
-  static createCustom(phrase: string, flags?: FormattingFlags, ...args: Args): ErrorMessage {
-    const err = new ErrorMessage();
-    err.msg.addCustom(phrase, flags, ...args);
-    return err;
+  constructor(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args) {
+    super();
+    this.add(itemOrPhrase, flags, ...args);
   }
 }
 

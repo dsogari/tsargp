@@ -354,7 +354,7 @@ function parseCluster(context: ParsingContext, index: number): boolean {
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
     if (j < rest.length - 1 && (isCommand(option.type) || min < max)) {
-      throw ErrorMessage.create(ErrorItem.invalidClusterOption, {}, getSymbol(letter));
+      throw new ErrorMessage(ErrorItem.invalidClusterOption, {}, getSymbol(letter));
     }
     if (name !== undefined) {
       args.splice(i++, 0, name);
@@ -402,7 +402,7 @@ async function parseArgs(context: ParsingContext) {
             continue;
           }
           const [alt, name2] = isMarker ? [1, '' + option.positional] : [0, name];
-          throw ErrorMessage.create(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
+          throw new ErrorMessage(ErrorItem.disallowedInlineParameter, { alt }, getSymbol(name2));
         }
       }
       if (!completing && !supplied.has(key)) {
@@ -533,7 +533,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         if (checkInline(option, name) === 'always') {
           if (!completing) {
             // ignore required inline parameters while completing
-            throw ErrorMessage.create(ErrorItem.missingInlineParameter, {}, getSymbol(name));
+            throw new ErrorMessage(ErrorItem.missingInlineParameter, {}, getSymbol(name));
           }
           prevInfo = undefined;
           i--; // reprocess the current argument
@@ -559,7 +559,7 @@ function reportMissingParameter(min: number, max: number, name: string): never {
   const [alt, val] = min === max ? [0, min] : isFinite(max) ? [2, [min, max]] : [1, min];
   const sep = config.connectives.and;
   const flags = { alt, sep, open: '', close: '', mergePrev: false };
-  throw ErrorMessage.create(ErrorItem.missingParameter, flags, getSymbol(name), val);
+  throw new ErrorMessage(ErrorItem.missingParameter, flags, getSymbol(name), val);
 }
 
 /**
@@ -571,7 +571,7 @@ function reportUnknownName(context: ParsingContext, name: string): never {
   const similar = findSimilar(name, context[0].names.keys(), 0.6);
   const alt = similar.length ? 1 : 0;
   const sep = config.connectives.optionSep;
-  throw ErrorMessage.create(
+  throw new ErrorMessage(
     ErrorItem.unknownOption,
     { alt, sep, open: '', close: '' },
     getSymbol(name),
@@ -696,7 +696,7 @@ async function parseParams(
 ): Promise<boolean> {
   /** @ignore */
   function error(kind: ErrorItem, flags: FormattingFlags, ...args: Args) {
-    return ErrorMessage.create(kind, flags, getSymbol(name), ...args);
+    return new ErrorMessage(kind, flags, getSymbol(name), ...args);
   }
   /** @ignore */
   function parse1(param: unknown, def = param): unknown {
@@ -961,7 +961,7 @@ async function checkDefaultValue(context: ParsingContext, key: string, isEarly: 
   }
   const name = preferredName ?? '';
   if (required) {
-    throw ErrorMessage.create(ErrorItem.missingRequiredOption, {}, getSymbol(name));
+    throw new ErrorMessage(ErrorItem.missingRequiredOption, {}, getSymbol(name));
   }
   if ('default' in option) {
     // avoid destructuring, because the callback might need to use `this`
@@ -992,7 +992,7 @@ async function checkRequiredOption(context: ParsingContext, key: string) {
   ) {
     const name = preferredName ?? '';
     const kind = present ? ErrorItem.unsatisfiedRequirement : ErrorItem.unsatisfiedCondRequirement;
-    throw ErrorMessage.create(kind, {}, getSymbol(name), error);
+    throw new ErrorMessage(kind, {}, getSymbol(name), error);
   }
 }
 
