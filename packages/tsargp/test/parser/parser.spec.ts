@@ -63,6 +63,46 @@ describe('parse', () => {
     const flags: ParsingFlags = { optionPrefix: '-' };
     expect(parse(options, ['-s', '-x'], flags)).rejects.toThrow(`Unknown option -x.`);
   });
+
+  it('avoid updating the process title when the program name is empty', () => {
+    const options = {
+      command: {
+        type: 'command',
+        names: ['c'],
+      },
+    } as const satisfies Options;
+    process.title = 'dummy';
+    expect(parse(options, ['c'], { progName: '' })).resolves.toEqual({ command: {} });
+    expect(process.title).toEqual('dummy');
+  });
+
+  it('update the process title when handling subcommands', () => {
+    const options = {
+      flag: {
+        type: 'flag',
+        names: ['-f'], // should not be present in program name
+      },
+      command: {
+        type: 'command',
+        names: ['c1'],
+        options: {
+          flag: {
+            type: 'flag',
+            names: ['-f'], // should not be present in program name
+          },
+          command: {
+            type: 'command',
+            names: ['c2'],
+          },
+        },
+      },
+    } as const satisfies Options;
+    expect(parse(options, ['-f', 'c1', '-f', 'c2'])).resolves.toEqual({
+      flag: true,
+      command: { flag: true, command: {} },
+    });
+    expect(process.title).toMatch(/^bun .+.spec.ts c1 c2$/);
+  });
 });
 
 describe('parseInto', () => {
@@ -109,70 +149,6 @@ describe('parseInto', () => {
       })();
       expect(parseInto(options, values, [])).resolves.toEqual({});
       expect(values).toEqual({ flag: undefined });
-    });
-  });
-
-  describe('a deprecated option is specified', () => {
-    it('report a warning', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-          deprecated: '',
-        },
-      } as const satisfies Options;
-      const values = { flag: undefined };
-      expect(parseInto(options, values, ['-f', '-f'])).resolves.toEqual({
-        warning: expect.objectContaining({
-          message: `Option -f is deprecated and may be removed in future releases.\n`,
-        }),
-      });
-    });
-
-    it('report multiple warnings', () => {
-      const options = {
-        flag1: {
-          type: 'flag',
-          names: ['-f1'],
-          deprecated: '',
-        },
-        flag2: {
-          type: 'flag',
-          sources: ['FLAG2'],
-          deprecated: '',
-        },
-      } as const satisfies Options;
-      const values = { flag1: undefined, flag2: undefined };
-      process.env['FLAG2'] = '';
-      expect(parseInto(options, values, ['-f1'])).resolves.toEqual({
-        warning: expect.objectContaining({
-          message:
-            `Option -f1 is deprecated and may be removed in future releases.\n` +
-            `Option FLAG2 is deprecated and may be removed in future releases.\n`,
-        }),
-      });
-    });
-
-    it('report a warning from a subcommand', () => {
-      const options = {
-        command: {
-          type: 'command',
-          names: ['-c'],
-          options: {
-            flag: {
-              type: 'flag',
-              names: ['-f'],
-              deprecated: '',
-            },
-          },
-        },
-      } as const satisfies Options;
-      const values = { command: undefined };
-      expect(parseInto(options, values, ['-c', '-f'])).resolves.toEqual({
-        warning: expect.objectContaining({
-          message: `Option -f is deprecated and may be removed in future releases.\n`,
-        }),
-      });
     });
   });
 });

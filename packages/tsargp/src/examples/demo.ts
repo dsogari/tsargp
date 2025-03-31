@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import type { HelpTextSection } from 'tsargp';
+import type { HelpTextSection, ParsingFlags } from 'tsargp';
 import { getVersion, handleError, parseInto, sectionFooter, valuesFor } from 'tsargp';
 import options from './demo.options.js';
 
@@ -22,13 +22,16 @@ options.help.sections.push(footerSection);
 // @ts-expect-error inject footer section
 options.helpEnv.sections.push(footerSection);
 
+const flags: ParsingFlags = {
+  progName: 'tsargp',
+  clusterPrefix: '-',
+  optionPrefix: '-',
+  stdinSymbol: '-',
+};
+
 try {
   const values = valuesFor(options);
-  const { warning } = await parseInto(options, values, undefined, {
-    clusterPrefix: '-',
-    optionPrefix: '-',
-    stdinSymbol: '-',
-  });
+  const { warning } = await parseInto(options, values, undefined, flags);
   if (warning) {
     console.error('' + warning);
   }

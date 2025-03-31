@@ -33,6 +33,7 @@ import {
   findSimilar,
   findValue,
   getArgs,
+  getBaseName,
   getCmdLine,
   getCompIndex,
   getEntries,
@@ -297,11 +298,11 @@ function createContext(
   completing: boolean,
   flags: ParsingFlags,
 ): ParsingContext {
-  if (flags.progName === undefined) {
-    flags.progName = process?.argv[1]?.split(regex.pathSep).at(-1);
-  }
-  if (!completing && flags.progName && process?.title) {
-    process.title += ' ' + flags.progName;
+  if (process) {
+    flags.progName ??= process.argv.slice(0, 2).map(getBaseName).join(' ');
+    if (!completing && flags.progName) {
+      process.title = flags.progName;
+    }
   }
   for (const [key, option] of getEntries(registry.options)) {
     if (!(key in values) && (!isMessage(option.type) || option.saveMessage)) {
