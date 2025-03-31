@@ -2,4 +2,4 @@
 '@tsargp/docs': patch
 ---
 
-Update Introduction to reflect changes in the demo.
+Update **Introduction** and **Formatter** pages to reflect changes in the **demo** example.

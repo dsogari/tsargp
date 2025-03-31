@@ -80,7 +80,7 @@ describe('parse', () => {
     const options = {
       flag: {
         type: 'flag',
-        names: ['-f'],
+        names: ['-f'], // should not be present in program name
       },
       command: {
         type: 'command',
@@ -88,7 +88,7 @@ describe('parse', () => {
         options: {
           flag: {
             type: 'flag',
-            names: ['-f'],
+            names: ['-f'], // should not be present in program name
           },
           command: {
             type: 'command',
