@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { findValue, readFile, makeUnique, setUnion, setDifference } from '../../src/library/utils';
+import {
+  findValue,
+  readFile,
+  makeUnique,
+  setUnion,
+  setDifference,
+  handleError,
+} from '../../src/library/utils';
 
 describe('findValue', () => {
   it('return undefined on no match', () => {
@@ -51,5 +58,11 @@ describe('setDifference', () => {
   it('remove elements while preserving order', () => {
     const set = setDifference(new Set([2, 3, 4]), new Set([1, 3]));
     expect([...set]).toEqual([2, 4]);
+  });
+});
+
+describe('handleError', () => {
+  it('throw an instance of Error', () => {
+    expect(() => handleError(Error('abc'))).toThrow(/^abc$/);
   });
 });
