@@ -25,6 +25,7 @@ options.helpEnv.sections.push(footerSection);
 try {
   const values = valuesFor(options);
   const { warning } = await parseInto(options, values, undefined, {
+    progName: 'tsargp',
     clusterPrefix: '-',
     optionPrefix: '-',
     stdinSymbol: '-',
