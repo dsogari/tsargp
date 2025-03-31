@@ -1,5 +1,19 @@
 # tsargp
 
+## 1.18.0
+
+### Minor Changes
+
+- 18c6b63: Refactor the `ErrorMessage` class to use `WarnMessage` as base.
+
+  **Breaking changes**:
+
+  - Due to the introduction of the `handleError` function, inheriting from `Error` is no longer needed.
+
+### Patch Changes
+
+- 859c583: Update the **demo** example to use the `progName` parsing flag.
+
 ## 1.17.0
 
 ### Minor Changes
