@@ -1088,3 +1088,12 @@ export function arrayWithPhrase<T>(
 ): { $phrase: string; $elements: ReadonlyArray<T> } {
   return { $phrase, $elements };
 }
+
+/**
+ * Gets the base name of a file path (i.e., the file name with extension).
+ * @param path The file path
+ * @returns The base name
+ */
+export function getBaseName(path: string): string {
+  return path.split(regex.pathSep).at(-1)!;
+}
