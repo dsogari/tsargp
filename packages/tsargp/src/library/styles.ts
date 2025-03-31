@@ -635,7 +635,7 @@ export class AnsiString {
    */
   closeSty(sty: Style): this {
     const { styled, count } = this;
-    if (styled[count - 1]) {
+    if (count && styled[count - 1]) {
       styled[count - 1] += sty; // close with style
     } else {
       this.openSty(sty); // open with style if no strings or if the last string is a line feed
