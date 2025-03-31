@@ -222,19 +222,19 @@ describe('AnsiString', () => {
   });
 
   describe('closeSty', () => {
-    it('open with style when there are no strings', () => {
+    it('open with style when there are no previous strings', () => {
       const str = new AnsiString().closeSty(clr).word('type');
       expect(str.strings).toEqual(['type']);
       expect(str.styled).toEqual([clr + 'type']);
     });
 
-    it('close with style when there is a string', () => {
+    it('close with style when there is a previous string', () => {
       const str = new AnsiString().word('type').closeSty(clr);
       expect(str.strings).toEqual(['type']);
       expect(str.styled).toEqual(['type' + clr]);
     });
 
-    it('do not close with style when the last string is a line feed', () => {
+    it('avoid closing with style when the previous string is a line feed', () => {
       const str = new AnsiString().word('type').break().closeSty(clr).word('script');
       expect(str.strings).toEqual(['type', '', 'script']);
       expect(str.styled).toEqual(['type', '', clr + 'script']);
