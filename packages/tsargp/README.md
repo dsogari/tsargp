@@ -58,19 +58,14 @@ There are multiple ways to parse the command-line arguments. Below is an example
 
 ```ts
 #!/usr/bin/env node
-import { parse } from 'tsargp';
+import { parse, handleError } from 'tsargp';
 import options from './cli.options.js';
 
 try {
   const values = await parse(options);
   // do something with the options' values...
 } catch (err) {
-  if (err instanceof Error) {
-    console.error(`${err}`); // genuine errors
-    process.exitCode = 1;
-  } else {
-    console.log(`${err}`); // help, version or completion
-  }
+  handleError(err); // expected error, internal error, help, version or completion message
 }
 ```
 
