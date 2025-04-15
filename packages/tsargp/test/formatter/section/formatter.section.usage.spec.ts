@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, HelpSections, FormatterFlags } from '../../../src/library';
-import { AnsiString, format, style, tf } from '../../../src/library';
+import { ansi, AnsiString, format } from '../../../src/library';
+
+const boldStr = '\x1b[1m';
 
 describe('rendering a usage section', () => {
   const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-', stdinSymbol: '-' };
@@ -57,7 +59,7 @@ describe('rendering a usage section', () => {
 
     it('avoid splitting the heading with text', () => {
       const sections: HelpSections = [
-        { type: 'usage', heading: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
+        { type: 'usage', heading: { text: `text ${boldStr} spaces`, noSplit: true } },
       ];
       expect(format({}, sections).wrap()).toEqual('text  spaces');
     });
@@ -149,7 +151,7 @@ describe('rendering a usage section', () => {
           type: 'single',
           names: ['-s'],
           paramName: 'this will be overridden',
-          usageParamName: new AnsiString().split('my  param'),
+          usageParamName: ansi`my  param`,
         },
       } as const satisfies Options;
       const sections0: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];

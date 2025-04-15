@@ -1,18 +1,17 @@
 import {
   type Options,
   fg,
-  style,
   allOf,
   oneOf,
   not,
   tf,
   ext8,
   rgb,
-  config,
   allHelpItems,
   HelpItem,
   envHelpItems,
   numberInRange,
+  ansi,
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 
@@ -32,7 +31,7 @@ export default {
         type: 'groups',
         heading: {
           text: 'Argument parser for TypeScript.',
-          style: style(tf.bold),
+          style: [tf.bold],
           breaks: 1,
           noBreakFirst: true,
         },
@@ -44,16 +43,16 @@ export default {
       },
       {
         type: 'usage',
-        heading: { text: 'Usage:', style: style(tf.bold), breaks: 1 },
+        heading: { text: 'Usage:', style: [tf.bold], breaks: 1 },
         content: { indent: 2, breaks: 2 },
         filter: { includeOptions: ['help', 'version', 'helpEnv'] },
-        comment: `${style(fg.green)}# get help${style(fg.default)}`,
+        comment: ansi.style(fg.green)`# get help`,
       },
       {
         type: 'usage',
         content: { indent: 2 },
         filter: { includeOptions: ['hello'] },
-        comment: `${style(fg.green)}# execute the hello command${style(fg.default)}`,
+        comment: ansi.style(fg.green)`# execute the hello command`,
         required: ['hello'],
       },
       {
@@ -78,7 +77,7 @@ export default {
         type: 'groups',
         heading: {
           text: 'Argument parser for TypeScript.',
-          style: style(tf.bold),
+          style: [tf.bold],
           breaks: 1,
           noBreakFirst: true,
         },
@@ -111,8 +110,8 @@ export default {
       return name !== this.names?.[1] && name !== this.sources?.[1];
     },
     styles: {
-      names: style(fg.extended, rgb(160, 100, 64)),
-      descr: style(tf.italic, tf.crossedOut),
+      names: [fg.extended, rgb(160, 100, 64)],
+      descr: [tf.italic, tf.crossedOut],
     },
   },
   /**
@@ -126,10 +125,10 @@ export default {
     type: 'single',
     names: ['-b', '--boolean'],
     sources: ['BOOLEAN'],
-    synopsis: `A boolean option
+    synopsis: ansi`A boolean option
     with:
     * a paragraph
-    - ${style(tf.underlined, fg.extended, ext8(223))}inline styles${style(fg.default, tf.notUnderlined)}
+    - ${ansi.style(tf.underlined, fg.extended, ext8(223))`inline styles`}
     1. and a list
     
     `,
@@ -153,7 +152,7 @@ export default {
     default: '123456789',
     paramName: 'my str',
     cluster: 's',
-    styles: { param: style(fg.brightBlack, tf.underlined) },
+    styles: { param: [fg.brightBlack, tf.underlined] },
   },
   /**
    * A number option that has a range constraint.
@@ -162,7 +161,7 @@ export default {
     type: 'single',
     names: ['-nr', '--numRange'],
     sources: ['NUM_RANGE'],
-    synopsis: `A number option. The minimum accepted value is ${config.styles.number}-2${style(fg.default)}.`,
+    synopsis: ansi`A number option. The minimum accepted value is ${-2}.`,
     group: 'Number options:',
     parse: numberInRange(
       [-2, Infinity],
@@ -171,7 +170,7 @@ export default {
     default: -1.23,
     paramName: 'my num',
     cluster: 'n',
-    styles: { param: style(fg.brightBlack, tf.underlined) },
+    styles: { param: [fg.brightBlack, tf.underlined] },
   },
   /**
    * A string option that has a choices constraint and disallows inline parameters.

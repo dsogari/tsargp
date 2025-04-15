@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSection, HelpSections, Options } from '../../src/library';
-import { format, tf, style } from '../../src/library';
+import { ansi, format, tf } from '../../src/library';
+
+const boldStr = '\x1b[1m';
+const italicStr = '\x1b[3m';
+const notBoldStr = '\x1b[22m';
+const notItalicStr = '\x1b[23m';
+const yellowStr = '\x1b[33m';
+const magentaStr = '\x1b[35m';
+const noColorStr = '\x1b[39m';
 
 describe('format', () => {
   it('handle zero options', () => {
@@ -102,32 +110,32 @@ describe('format', () => {
         synopsis: 'A flag option.',
         default: 1,
         styles: {
-          names: style(tf.bold),
-          descr: style(tf.italic),
+          names: [tf.bold],
+          descr: [tf.italic],
         },
       },
     } as const satisfies Options;
     expect(format(options).wrap(0, true)).toEqual(
-      '  \x1b[1m' + // activate bold style
+      '  ' +
+        boldStr + // activate bold style
         '-f' +
-        '\x1b[22m' + // cancel bold style
+        notBoldStr + // cancel bold style
         ', ' +
-        '\x1b[1m' + // each name has its own ANSI string
+        boldStr + // each name has its own ANSI string
         '--flag' +
-        '\x1b[22m' +
+        notBoldStr +
         ', ' +
-        '\x1b[1m' +
+        boldStr +
         '--flag1' +
-        '\x1b[22m' +
+        notBoldStr +
         '    ' +
-        '\x1b[3m' + // activate italic style
+        italicStr + // activate italic style
         'A flag option. Defaults to ' +
-        '\x1b[33m' +
+        yellowStr +
         '1' +
-        '\x1b[39m' + // italic remains active
-        '.' +
-        '\x1b[23m' + // cancel italic style
-        '\n',
+        noColorStr + // italic remains active
+        '.\n' +
+        notItalicStr, // cancel italic style
     );
   });
 
@@ -136,11 +144,19 @@ describe('format', () => {
       flag: {
         type: 'flag',
         names: ['-f'],
-        synopsis: `A ${style(tf.bold)}flag${style(tf.clear)} option`,
+        synopsis: ansi`A ${ansi.style(tf.bold)`flag`} option`,
       },
     } as const satisfies Options;
     expect(format(options).wrap(0, true)).toEqual(
-      '  \x1b[35m' + '-f' + '\x1b[39m' + '    A ' + '\x1b[1m' + 'flag' + '\x1b[0m' + ' option\n',
+      '  ' +
+        magentaStr +
+        '-f' +
+        noColorStr +
+        '    A ' +
+        boldStr +
+        'flag' +
+        notBoldStr +
+        ' option\n',
     );
   });
 
@@ -189,8 +205,8 @@ describe('format', () => {
     } as const satisfies Options;
     const section: HelpSection = {
       type: 'text',
-      heading: { text: `section ${style(tf.clear)} heading`, noSplit: true },
-      content: { text: `section ${style(tf.clear)} content`, noSplit: true },
+      heading: { text: `section ${boldStr} heading`, noSplit: true },
+      content: { text: `section ${boldStr} content`, noSplit: true },
     };
     const sections: HelpSections = [
       { ...section, type: 'text' },

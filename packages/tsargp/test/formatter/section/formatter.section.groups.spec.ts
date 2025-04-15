@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options, FormatterFlags, HelpSections } from '../../../src/library';
-import { format, HelpItem, tf, style } from '../../../src/library';
+import { format, HelpItem } from '../../../src/library';
+
+const boldStr = '\x1b[1m';
 
 describe('rendering a groups section', () => {
   const options = {
@@ -78,7 +80,7 @@ describe('rendering a groups section', () => {
 
     it('avoid splitting the heading with text', () => {
       const sections: HelpSections = [
-        { type: 'groups', heading: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
+        { type: 'groups', heading: { text: `text ${boldStr} spaces`, noSplit: true } },
       ];
       expect(format(options, sections).wrap()).toEqual('text  spaces\n  -f\n');
     });
@@ -93,7 +95,7 @@ describe('rendering a groups section', () => {
         flag: {
           type: 'flag',
           names: ['-f'],
-          group: `text ${style(tf.clear)} spaces`,
+          group: `text ${boldStr} spaces`,
         },
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'groups', heading: { noSplit: true } }];
@@ -150,7 +152,7 @@ describe('rendering a groups section', () => {
 
     it('avoid splitting the content with text', () => {
       const sections: HelpSections = [
-        { type: 'groups', content: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
+        { type: 'groups', content: { text: `text ${boldStr} spaces`, noSplit: true } },
       ];
       expect(format(options, sections).wrap()).toEqual('text  spaces\n\n  -f\n');
     });

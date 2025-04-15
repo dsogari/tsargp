@@ -3,6 +3,9 @@ import type { Options } from '../../src/library';
 import { AnsiMessage, AnsiString, parse } from '../../src/library';
 import { getVersion, numberInRange, sectionFooter } from '../../src/library/utils';
 
+const cyanStr = '\x1b[36m';
+const noColorStr = '\x1b[39m';
+
 describe('numberInRange', () => {
   beforeAll(() => {
     process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -97,7 +100,7 @@ describe('sectionFooter', () => {
       const url = import.meta.resolve('../data/with-repository.json');
       const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
       expect(msg.wrap(0, true, true)).toEqual(
-        '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
+        cyanStr + 'https://github.com/dsogari/tsargp' + noColorStr,
       );
     });
 
@@ -105,7 +108,7 @@ describe('sectionFooter', () => {
       const url = import.meta.resolve('../data/with-repository.json');
       const msg = new AnsiMessage((await sectionFooter(url, '#0', '/issues')) ?? new AnsiString());
       expect(msg.wrap(0, true, true)).toEqual(
-        '\x1b[36m' + 'https://github.com/dsogari/tsargp/issues' + '\x1b[39m',
+        cyanStr + 'https://github.com/dsogari/tsargp/issues' + noColorStr,
       );
     });
 
@@ -113,7 +116,7 @@ describe('sectionFooter', () => {
       const url = import.meta.resolve('../data/with-repository-url.json');
       const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
       expect(msg.wrap(0, true, true)).toEqual(
-        '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
+        cyanStr + 'https://github.com/dsogari/tsargp' + noColorStr,
       );
     });
 
@@ -121,7 +124,7 @@ describe('sectionFooter', () => {
       const url = import.meta.resolve('../data/with-repository-github.json');
       const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
       expect(msg.wrap(0, true, true)).toEqual(
-        '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
+        cyanStr + 'https://github.com/dsogari/tsargp' + noColorStr,
       );
     });
 
@@ -129,7 +132,7 @@ describe('sectionFooter', () => {
       const url = import.meta.resolve('../data/with-repository-default.json');
       const msg = new AnsiMessage((await sectionFooter(url)) ?? new AnsiString());
       expect(msg.wrap(0, true, true)).toEqual(
-        '\x1b[36m' + 'https://github.com/dsogari/tsargp' + '\x1b[39m',
+        cyanStr + 'https://github.com/dsogari/tsargp' + noColorStr,
       );
     });
   });

@@ -453,7 +453,7 @@ function formatGroups(
   /** @ignore */
   function merge(into: HelpColumn, from: HelpColumn) {
     into.push(...from.splice(0)); // extract strings
-    into.splice(1).forEach((str) => into[0].other(str));
+    into.splice(1).forEach((str) => into[0].append(str));
   }
   /** @ignore */
   function compute(column: HelpColumn, widths: Array<number>, maxWidth: number = Infinity) {
@@ -596,17 +596,17 @@ function formatNames(
   layout: HelpLayout,
   useEnv: boolean = false,
 ): HelpColumn {
+  const { styles, connectives } = config;
   const [align, breaks] = getAlignment(layout.names);
-  let str = new AnsiString(0, align);
+  let str = new AnsiString(styles.base, 0, align);
   const result: HelpColumn = [str];
   if (breaks !== undefined) {
     const names = useEnv ? getOptionEnvVars(option) : option.names;
     if (names?.length) {
-      const { styles, connectives } = config;
       const sty = option.styles?.names ?? styles.symbol;
       const slotted = !!layout.names?.slotIndent;
       let sep: string | undefined; // no separator before first name
-      str.break(breaks).pushSty(styles.base);
+      str.break(breaks);
       if (slotted) {
         result.pop(); // will be re-added within the loop
       }
@@ -615,8 +615,7 @@ function formatNames(
           if (sep !== undefined) {
             str.close(sep);
             if (slotted) {
-              str.popSty(); // pop style of the last string
-              str = new AnsiString(0, align).pushSty(styles.base);
+              str = new AnsiString(styles.base, 0, align);
             }
           }
           if (slotted) {
@@ -628,7 +627,6 @@ function formatNames(
           result.push(new AnsiString()); // skip a slot
         }
       }
-      str.popSty(); // pop style of the last string
     }
   }
   return result;
@@ -642,11 +640,9 @@ function formatNames(
  */
 function formatParams(option: OpaqueOption, layout: HelpLayout): HelpColumn {
   const [align, breaks] = getAlignment(layout.param);
-  const result = new AnsiString(0, align);
+  const result = new AnsiString(config.styles.base, 0, align);
   if (breaks !== undefined && hasTemplate(option, false)) {
-    result.break(breaks).pushSty(config.styles.base);
-    formatParam(option, false, result);
-    result.popSty();
+    formatParam(option, false, result.break(breaks));
   }
   return [result];
 }
@@ -667,15 +663,15 @@ function formatDescription(
   layout: HelpLayout,
 ): HelpColumn {
   const [align, breaks] = getAlignment(layout.descr);
-  const result = new AnsiString(0, align);
+  const sty = config.styles.base.concat(option.styles?.descr ?? []);
+  const result = new AnsiString(sty, 0, align);
   if (breaks !== undefined) {
-    result.break(breaks).pushSty(config.styles.base).pushSty(option.styles?.descr);
+    result.break(breaks);
     for (const item of layout.items ?? allHelpItems) {
       if (item !== HelpItem.cluster || flags.clusterPrefix !== undefined) {
         helpFunctions[item](option, config.helpPhrases[item], options, result);
       }
     }
-    result.popSty().popSty();
   }
   return [result.break()]; // include trailing line feed
 }
@@ -747,24 +743,19 @@ function formatUsageSection(
   let indent = section.content?.indent ?? 0;
   let breaks = noBreakFirst && !result.length ? 0 : (section.content?.breaks ?? 0);
   if (progName) {
-    const str = new AnsiString(indent)
-      .break(breaks)
-      .pushSty(baseSty)
-      .pushSty(style)
-      .append(progName, !noSplit)
-      .popSty()
-      .popSty();
+    const sty = baseSty.concat(style ?? []);
+    const str = new AnsiString(sty, indent).break(breaks).append(progName, !noSplit);
     prev.push(str);
     indent += str.lineWidth + 1; // get last column with indentation
     breaks = 0; // avoid breaking between program name and usage
   }
-  const str = new AnsiString(indent, align).break(breaks).pushSty(baseSty);
+  const str = new AnsiString(baseSty, indent, align).break(breaks);
   formatUsage(keys, options, section, flags, str);
   if (str.maxLength) {
     if (section.comment) {
       str.append(section.comment, !noSplit);
     }
-    result.push(...prev, str.popSty().break()); // include trailing line feed
+    result.push(...prev, str.break()); // include trailing line feed
   }
 }
 
@@ -777,15 +768,10 @@ function formatUsageSection(
 function formatTextBlock(block: HelpTextBlock, result: AnsiMessage, breaksAfter: number = 0) {
   const { text, style, align, indent, breaks, noSplit, noBreakFirst } = block;
   const breaksBefore = noBreakFirst && !result.length ? 0 : (breaks ?? 0);
-  const str = new AnsiString(indent, align).break(breaksBefore);
+  const sty = config.styles.base.concat(style ?? []);
+  const str = new AnsiString(sty, indent, align).break(breaksBefore);
   if (text) {
-    str
-      .pushSty(config.styles.base)
-      .pushSty(style)
-      .append(text, !noSplit)
-      .popSty()
-      .popSty()
-      .break(breaksAfter);
+    str.append(text, !noSplit).break(breaksAfter);
   }
   result.push(str);
 }
@@ -894,7 +880,7 @@ function formatUsageStatement(
 ) {
   let alwaysRequired = false;
   let renderBrackets = false;
-  const count = result.count;
+  const count = result.wordCount;
   for (const element of usage) {
     if (isArray(element)) {
       formatUsageStatement(requiredKeys, options, flags, result, components, element, compact);
@@ -950,7 +936,7 @@ function formatUsageOption(
 ): boolean {
   const { exprOpen, exprClose, optionAlt, optionalOpen, optionalClose } = config.connectives;
   const { stdinSymbol } = flags;
-  const count = result.count;
+  const count = result.wordCount;
   const hasParam = hasTemplate(option, true);
   const hasStdin = option.stdin && stdinSymbol !== undefined;
   const nameCount = formatUsageNames(option, flags, compact, result);
@@ -968,9 +954,9 @@ function formatUsageOption(
   }
   if (hasStdin) {
     let enclose = false;
-    if (result.count > count) {
+    if (result.wordCount > count) {
       if (compact) {
-        result.close(optionAlt).merge = true;
+        result.close(optionAlt).mergeLast = true;
       } else {
         result.word(optionAlt);
       }
@@ -1035,31 +1021,27 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
   const optional = !min && !!max;
   const ellipsis = !inline && (!max || !isFinite(max)) ? '...' : '';
   const [openBracket, closeBracket] = optional ? [optionalOpen, optionalClose] : ['', ''];
-  const sty = option.styles?.param ?? config.styles.value;
-  const count = result.count;
+  const str = new AnsiString(option.styles?.param ?? config.styles.value);
   if (inline) {
-    result.merge = true; // to merge with names column, if required
+    str.mergeLast = true; // to merge with names column, if required
   }
-  result
-    .pushSty(sty)
-    .open(openBracket)
-    .open(inline ? '=' : '');
+  str.open(openBracket).open(inline ? '=' : '');
   if (name === undefined) {
     let param = example;
     if (separator && isArray(param)) {
       const sep = isString(separator) ? separator : separator.source;
       param = param.join(sep);
     }
-    result.value(param, { sep: '', ...openArrayNoMergeFlags });
+    str.value(param, { sep: '', ...openArrayNoMergeFlags });
   } else {
-    result.append(name); // split parameter name, if necessary
+    str.append(name); // split parameter name, if necessary
   }
-  if (result.count > count) {
-    result.close(ellipsis);
+  if (str.wordCount) {
+    str.close(ellipsis);
   } else {
-    result.word(ellipsis);
+    str.word(ellipsis);
   }
-  result.close(closeBracket).popSty();
+  result.append(str.close(closeBracket));
   return !optional;
 }
 

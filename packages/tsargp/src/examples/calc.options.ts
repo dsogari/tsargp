@@ -1,5 +1,5 @@
 import type { Options, OptionValues } from 'tsargp';
-import { allHelpItems, HelpItem, style, tf } from 'tsargp';
+import { allHelpItems, HelpItem, tf } from 'tsargp';
 
 /**
  * The option definitions for a multi-argument operation.
@@ -131,7 +131,7 @@ const mainOpts = {
     sections: [
       {
         type: 'groups',
-        heading: { text: 'Options:', style: style(tf.bold), breaks: 1, noBreakFirst: true },
+        heading: { text: 'Options:', style: [tf.bold], breaks: 1, noBreakFirst: true },
         content: { breaks: 2 },
         layout: {
           param: { merge: true },
