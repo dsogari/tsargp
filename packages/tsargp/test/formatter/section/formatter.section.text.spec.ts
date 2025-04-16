@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSections } from '../../../src/library';
-import { AnsiString, format, style, tf } from '../../../src/library';
+import { AnsiString, format } from '../../../src/library';
+
+const boldStr = '\x1b[1m';
 
 describe('rendering a text section', () => {
   it('skip a section with no heading and no content', () => {
@@ -48,7 +50,7 @@ describe('rendering a text section', () => {
 
     it('avoid splitting the heading with text', () => {
       const sections: HelpSections = [
-        { type: 'text', heading: { text: `text ${style(tf.clear)} spaces`, noSplit: true } },
+        { type: 'text', heading: { text: `text ${boldStr} spaces`, noSplit: true } },
       ];
       expect(format({}, sections).wrap()).toEqual('text  spaces');
     });
@@ -99,7 +101,7 @@ describe('rendering a text section', () => {
 
     it('avoid splitting the content with text', () => {
       const sections: HelpSections = [
-        { type: 'text', content: { text: `section ${style(tf.clear)} content`, noSplit: true } },
+        { type: 'text', content: { text: `section ${boldStr} content`, noSplit: true } },
       ];
       expect(format({}, sections).wrap()).toEqual('section  content\n');
     });

@@ -3,7 +3,6 @@
 //--------------------------------------------------------------------------------------------------
 import type { Style } from './styles.js';
 
-import { style } from './styles.js';
 import { fg, ErrorItem, HelpItem } from './enums.js';
 
 //--------------------------------------------------------------------------------------------------
@@ -14,14 +13,14 @@ import { fg, ErrorItem, HelpItem } from './enums.js';
  */
 export const config: MessageConfig = {
   styles: {
-    boolean: style(fg.blue),
-    string: style(fg.green),
-    number: style(fg.yellow),
-    regex: style(fg.red),
-    symbol: style(fg.magenta),
-    value: style(fg.brightBlack),
-    url: style(fg.cyan),
-    base: style(),
+    boolean: [fg.blue],
+    string: [fg.green],
+    number: [fg.yellow],
+    regex: [fg.red],
+    symbol: [fg.magenta],
+    value: [fg.brightBlack],
+    url: [fg.cyan],
+    base: [],
   },
   connectives: {
     and: 'and',

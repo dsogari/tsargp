@@ -1061,7 +1061,7 @@ function checkRequiresEntry(
       return true;
     }
     if (present !== invert) {
-      error.word(connectives.no);
+      error.append(connectives.no);
     }
     error.value(Symbol.for(name));
     return false;
@@ -1070,7 +1070,7 @@ function checkRequiresEntry(
     return true;
   }
   const connective = negate !== invert ? connectives.notEquals : connectives.equals;
-  error.value(Symbol.for(name)).word(connective).value(expected);
+  error.value(Symbol.for(name)).append(connective).value(expected);
   return false;
 }
 
@@ -1106,7 +1106,7 @@ async function checkRequireItems<T>(
     if (and || first) {
       first = false;
     } else {
-      error.word(connective);
+      error.append(connective);
     }
     const success = await itemFn(context, option, item, error, negate, invert);
     if (success !== and) {
@@ -1144,7 +1144,7 @@ async function checkRequirementCallback(
   const result = await callback.bind(option)(values);
   if (result === negate) {
     if (negate !== invert) {
-      error.word(config.connectives.not);
+      error.append(config.connectives.not);
     }
     error.value(callback);
     return false;

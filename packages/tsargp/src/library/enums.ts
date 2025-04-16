@@ -3,6 +3,7 @@
 //--------------------------------------------------------------------------------------------------
 export {
   ControlSequence as cs,
+  ResetStyle as rs,
   TypeFace as tf,
   ForegroundColor as fg,
   BackgroundColor as bg,
@@ -364,17 +365,87 @@ const enum ControlSequence {
 }
 
 /**
- * A predefined text typeface.
+ * A resetting attribute.
  */
-const enum TypeFace {
+const enum ResetStyle {
   /**
    * Reset or normal. Resets any other preceding attribute.
    */
   clear,
   /**
+   * Primary or default font.
+   */
+  primaryFont = 10,
+  /**
+   * Normal intensity (neither bold nor faint).
+   */
+  notBoldOrFaint = 22,
+  /**
+   * Regular type (neither italic nor black-letter).
+   */
+  notItalicOrFraktur,
+  /**
+   * Not underlined (nor doubly underlined).
+   */
+  notUnderlined,
+  /**
+   * Steady (not blinking).
+   */
+  notBlinking,
+  /**
+   * Positive (not inverse).
+   */
+  notInverse = 27,
+  /**
+   * Visible (reveal, or not hidden).
+   */
+  notInvisible,
+  /**
+   * Not crossed out (no strikethrough).
+   */
+  notCrossedOut,
+  /**
+   * Default foreground color.
+   */
+  defaultForeground = 39,
+  /**
+   * Default background color.
+   */
+  defaultBackground = 49,
+  /**
+   * Disable proportional spacing.
+   */
+  notProportionallySpaced = 50,
+  /**
+   * Neither framed nor encircled
+   */
+  notFramedOrEncircled = 54,
+  /**
+   * Not overlined.
+   */
+  notOverlined,
+  /**
+   * Default underline color.
+   */
+  defaultUnderline = 59,
+  /**
+   * No ideogram attributes.
+   */
+  noIdeogram = 65,
+  /**
+   * Neither superscript nor subscript.
+   */
+  notSuperscriptOrSubscript = 75,
+}
+
+/**
+ * A predefined text typeface.
+ */
+const enum TypeFace {
+  /**
    * Bold or increased intensity.
    */
-  bold,
+  bold = 1,
   /**
    * Faint, decreased intensity, or dim (lower opacity).
    */
@@ -408,13 +479,9 @@ const enum TypeFace {
    */
   crossedOut,
   /**
-   * Primary or default font.
-   */
-  primaryFont,
-  /**
    * Alternative font 1.
    */
-  alternative1,
+  alternative1 = 11,
   /**
    * Alternative font 2.
    */
@@ -456,45 +523,13 @@ const enum TypeFace {
    */
   doublyUnderlined,
   /**
-   * Normal intensity (neither bold nor faint).
-   */
-  notBoldOrFaint,
-  /**
-   * Regular type (neither italic nor black-letter).
-   */
-  notItalicOrFraktur,
-  /**
-   * Not underlined (nor doubly underlined).
-   */
-  notUnderlined,
-  /**
-   * Steady (not blinking).
-   */
-  notBlinking,
-  /**
    * Enable proportional spacing.
    */
-  proportionallySpaced,
-  /**
-   * Positive (not inverse).
-   */
-  notInverse,
-  /**
-   * Visible (reveal, or not hidden).
-   */
-  notInvisible,
-  /**
-   * Not crossed out (no strikethrough).
-   */
-  notCrossedOut,
-  /**
-   * Disable proportional spacing.
-   */
-  notProportionallySpaced = 50,
+  proportionallySpaced = 26,
   /**
    * Framed.
    */
-  framed,
+  framed = 51,
   /**
    * Encircled.
    */
@@ -503,14 +538,6 @@ const enum TypeFace {
    * Overlined
    */
   overlined,
-  /**
-   * Neither framed nor encircled
-   */
-  notFramedOrEncircled,
-  /**
-   * Not overlined.
-   */
-  notOverlined,
   /**
    * Ideogram underline or right side line.
    */
@@ -532,10 +559,6 @@ const enum TypeFace {
    */
   ideogramStressMarking,
   /**
-   * No ideogram attributes.
-   */
-  noIdeogram,
-  /**
    * Superscript.
    */
   superscript = 73,
@@ -543,10 +566,6 @@ const enum TypeFace {
    * Subscript.
    */
   subscript,
-  /**
-   * Neither superscript nor subscript.
-   */
-  notSuperscriptOrSubscript,
 }
 
 /**
@@ -565,10 +584,6 @@ const enum ForegroundColor {
    * An extended foreground color. To be used with indexed or RGB colors.
    */
   extended,
-  /**
-   * The default foreground color.
-   */
-  default,
   brightBlack = 90,
   brightRed,
   brightGreen,
@@ -595,10 +610,6 @@ const enum BackgroundColor {
    * An extended background color. To be used with indexed or RGB colors.
    */
   extended,
-  /**
-   * The default background color.
-   */
-  default,
   brightBlack = 100,
   brightRed,
   brightGreen,
@@ -617,8 +628,4 @@ const enum UnderlineColor {
    * An extended underline color. To be used with indexed or RGB colors.
    */
   extended = 58,
-  /**
-   * The default underline color.
-   */
-  default,
 }

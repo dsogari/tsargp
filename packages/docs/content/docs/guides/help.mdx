@@ -25,7 +25,7 @@ export default {
 You can enhance it with an introduction, usage and footer:
 
 ```ts twoslash
-import { type Options, style, tf, fg } from 'tsargp';
+import { type Options, ansi, tf, fg } from 'tsargp';
 // ---cut---
 export default {
   help: {
@@ -41,7 +41,7 @@ export default {
         type: 'groups',
         heading: {
           text: 'Options:', // heading for the default option group
-          style: style(tf.underlined), // underlined group headings
+          style: [tf.underlined], // underlined group headings
           breaks: 1, // line feeds from previous section (+1)
         },
         content: { breaks: 2 }, // line feeds from heading
@@ -49,7 +49,7 @@ export default {
       {
         type: 'text',
         content: {
-          text: `Refer to ${style(fg.brightBlack)}<website>${style(fg.default)} for support.`,
+          text: ansi`Refer to ${new URL('https://example.com')} for support.`,
           breaks: 1, // line feeds from previous section (+1)
         },
       },
@@ -61,7 +61,7 @@ export default {
 You can also customize the layout of the [groups section], e.g.:
 
 ```ts twoslash
-import { type Options, HelpItem, style, tf, config } from 'tsargp';
+import { type Options, HelpItem, tf, config } from 'tsargp';
 // ---cut---
 config.helpPhrases[HelpItem.synopsis] = '💡 #0'; // option synopsis with emoji
 
@@ -74,15 +74,17 @@ export default {
       {
         type: 'groups',
         // ...
-        names: { indent: 4 }, // indent option names by 4 spaces
-        descr: { breaks: 1 }, // line feed before option descriptions
-        param: null, // hide option parameter/examples
-        items: [HelpItem.synopsis, HelpItem.deprecated],
+        layout: {
+          names: { indent: 4 }, // indent option names by 4 spaces
+          descr: { breaks: 1 }, // line feed before option descriptions
+          param: null, // hide option parameter/examples
+          items: [HelpItem.synopsis, HelpItem.deprecated],
+        },
       },
       // ...
     ],
     styles: {
-      descr: style(tf.italic), // italic description for this option
+      descr: [tf.italic], // italic description for this option
     },
   },
 } as const satisfies Options;
@@ -102,7 +104,7 @@ cli [[95m--help[0m]
     [95m--help[0m
               [3m💡 Prints this help message.[0m
 
-Refer to [90m<website>[39m for support.
+Refer to [90mhttps://example.com/[39m for support.
 ```
 
 {/* cSpell:enable */}
