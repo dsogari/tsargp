@@ -30,14 +30,14 @@ describe('AnsiString', () => {
         describe('when other is another ANSI string', () => {
           it('do not change the merge flag', () => {
             const str = new AnsiString();
-            const str2 = new AnsiString();
-            str2.mergeLast = true;
-            str.append(str2);
+            const str1 = new AnsiString();
+            str1.mergeLast = true;
+            str.append(str1);
             expect(str.mergeFirst).toBeFalse();
             expect(str.mergeLast).toBeFalse();
             str.mergeLast = true;
-            str2.mergeLast = false;
-            str.append(str2);
+            str1.mergeLast = false;
+            str.append(str1);
             expect(str.words).toEqual([]);
             expect(str.mergeFirst).toBeFalse();
             expect(str.mergeLast).toBeTrue();
@@ -54,14 +54,14 @@ describe('AnsiString', () => {
           it('reset the merge flag and remove inline styles', () => {
             const str = new AnsiString();
             str.mergeLast = true;
-            str.append(boldStr + 'abc' + boldStr);
-            expect(str.words).toEqual([['abc']]);
+            str.append(boldStr + 'type  script' + boldStr);
+            expect(str.words).toEqual([['type  script']]);
             expect(str.mergeFirst).toBeTrue();
             expect(str.mergeLast).toBeFalse();
             expect(str.wordCount).toEqual(1);
-            expect(str.wordWidth).toEqual(3);
+            expect(str.wordWidth).toEqual(12);
             expect(str.lineCount).toEqual(1);
-            expect(str.lineWidth).toEqual(3);
+            expect(str.lineWidth).toEqual(12);
           });
 
           it('split the text and remove inline styles', () => {
@@ -75,7 +75,7 @@ describe('AnsiString', () => {
             expect(str.lineWidth).toEqual(11);
           });
 
-          it('update line count', () => {
+          it('reset the merge flag and update line count', () => {
             const str = new AnsiString();
             str.mergeLast = true;
             str.break().append('script');
@@ -87,18 +87,14 @@ describe('AnsiString', () => {
             expect(str.lineCount).toEqual(2);
             expect(str.lineWidth).toEqual(6);
           });
-
-          it('avoid splitting, but remove remove inline styles', () => {
-            const str = new AnsiString().append('type  script').append(`type ${boldStr} script`);
-            expect(str.words).toEqual([['type  script'], ['type  script']]);
-          });
         });
 
         describe('when other is another ANSI string', () => {
           it('reset the merge flag', () => {
+            const str1 = new AnsiString().append('abc');
             const str = new AnsiString();
             str.mergeLast = true;
-            str.append(new AnsiString().append('abc'));
+            str.append(str1);
             expect(str.words).toEqual([['abc']]);
             expect(str.mergeFirst).toBeTrue();
             expect(str.mergeLast).toBeFalse();
@@ -135,34 +131,36 @@ describe('AnsiString', () => {
             expect(str.lineWidth).toEqual(6);
           });
 
-          it('reapply the base style from the self string', () => {
-            const str1 = new AnsiString(bold).append('type');
-            const str = new AnsiString(faint).append(str1);
-            expect(str.words).toEqual([[bold, 'type', faint]]);
-          });
+          describe('when other has a style', () => {
+            it('reapply style from the self string', () => {
+              const str1 = new AnsiString(bold).append('type');
+              const str = new AnsiString(faint).append(str1);
+              expect(str.words).toEqual([[bold, 'type', faint]]);
+            });
 
-          it('cancel the base style from the other string', () => {
-            const str1 = new AnsiString(bold).append('type');
-            const str = new AnsiString().append(str1);
-            expect(str.words).toEqual([[bold, 'type', notBold]]);
-          });
+            it('cancel style from the other string', () => {
+              const str1 = new AnsiString(bold).append('type');
+              const str = new AnsiString().append(str1);
+              expect(str.words).toEqual([[bold, 'type', notBold]]);
+            });
 
-          it('reapply style from the middle string and cancel it', () => {
-            const str2 = new AnsiString(bold).append('type');
-            const str1 = new AnsiString(faint).append(str2);
-            const str = new AnsiString().append(str1);
-            expect(str.words).toEqual([[faint, bold, 'type', faint, notBold]]);
-          });
+            it('reapply style from the middle string and cancel it', () => {
+              const str2 = new AnsiString(bold).append('type');
+              const str1 = new AnsiString(faint).append(str2);
+              const str = new AnsiString().append(str1);
+              expect(str.words).toEqual([[faint, bold, 'type', faint, notBold]]);
+            });
 
-          it('reapply style from the middle string when it is not empty', () => {
-            const str2 = new AnsiString(bold).append('type');
-            const str1 = new AnsiString(faint).append('abc').append(str2).append('def');
-            const str = new AnsiString().append(str1);
-            expect(str.words).toEqual([
-              [faint, 'abc'],
-              [bold, 'type', faint],
-              ['def', notBold],
-            ]);
+            it('reapply style from the middle string when it is not empty', () => {
+              const str2 = new AnsiString(bold).append('type');
+              const str1 = new AnsiString(faint).append('abc').append(str2).append('def');
+              const str = new AnsiString().append(str1);
+              expect(str.words).toEqual([
+                [faint, 'abc'],
+                [bold, 'type', faint],
+                ['def', notBold],
+              ]);
+            });
           });
         });
       });
@@ -188,14 +186,14 @@ describe('AnsiString', () => {
         describe('when other is another ANSI string', () => {
           it('do not change the merge flag', () => {
             const str = new AnsiString().append('abc');
-            const str2 = new AnsiString();
-            str2.mergeLast = true;
-            str.append(str2);
+            const str1 = new AnsiString();
+            str1.mergeLast = true;
+            str.append(str1);
             expect(str.mergeFirst).toBeFalse();
             expect(str.mergeLast).toBeFalse();
             str.mergeLast = true;
-            str2.mergeLast = false;
-            str.append(str2);
+            str1.mergeLast = false;
+            str.append(str1);
             expect(str.words).toEqual([['abc']]);
             expect(str.mergeFirst).toBeFalse();
             expect(str.mergeLast).toBeTrue();
@@ -210,16 +208,16 @@ describe('AnsiString', () => {
       describe('when other is not empty', () => {
         describe('when other is a normal string', () => {
           it('reset the merge flag and remove inline styles', () => {
-            const str = new AnsiString().append('abc');
+            const str = new AnsiString().append('type');
             str.mergeLast = true;
-            str.append(boldStr + 'abc' + boldStr);
-            expect(str.words).toEqual([['abc', 'abc']]);
+            str.append(boldStr + 'script' + boldStr);
+            expect(str.words).toEqual([['type', 'script']]);
             expect(str.mergeFirst).toBeFalse();
             expect(str.mergeLast).toBeFalse();
             expect(str.wordCount).toEqual(1);
-            expect(str.wordWidth).toEqual(6);
+            expect(str.wordWidth).toEqual(10);
             expect(str.lineCount).toEqual(1);
-            expect(str.lineWidth).toEqual(6);
+            expect(str.lineWidth).toEqual(10);
           });
 
           it('split the text and remove inline styles', () => {
@@ -249,16 +247,17 @@ describe('AnsiString', () => {
 
         describe('when other is another ANSI string', () => {
           it('reset the merge flag', () => {
-            const str = new AnsiString().append('abc');
+            const str1 = new AnsiString().append('script');
+            const str = new AnsiString().append('type');
             str.mergeLast = true;
-            str.append(new AnsiString().append('abc'));
-            expect(str.words).toEqual([['abc', 'abc']]);
+            str.append(str1);
+            expect(str.words).toEqual([['type', 'script']]);
             expect(str.mergeFirst).toBeFalse();
             expect(str.mergeLast).toBeFalse();
             expect(str.wordCount).toEqual(1);
-            expect(str.wordWidth).toEqual(6);
+            expect(str.wordWidth).toEqual(10);
             expect(str.lineCount).toEqual(1);
-            expect(str.lineWidth).toEqual(6);
+            expect(str.lineWidth).toEqual(10);
           });
 
           it('update the merge flag', () => {

@@ -155,9 +155,7 @@ describe('rendering a usage section', () => {
         },
       } as const satisfies Options;
       const sections0: HelpSections = [{ type: 'usage', comment: 'this is a  comment' }];
-      const sections1: HelpSections = [
-        { type: 'usage', comment: new AnsiString().split('this is a  comment') },
-      ];
+      const sections1: HelpSections = [{ type: 'usage', comment: ansi`this is a  comment` }];
       expect(format(options, sections0).wrap()).toEqual('[-s my param] this is a comment\n');
       expect(format(options, sections1).wrap()).toEqual('[-s my param] this is a comment\n');
     });

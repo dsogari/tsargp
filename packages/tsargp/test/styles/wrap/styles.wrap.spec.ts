@@ -74,7 +74,7 @@ describe('AnsiString', () => {
       describe('the starting column is not zero', () => {
         it('adjust the current line with indentation', () => {
           const result: Array<string> = [];
-          new AnsiString([], 2).word('abc').wrap(result);
+          new AnsiString([], 2).append('abc').wrap(result);
           expect(result).toEqual(['  abc']);
         });
 
@@ -162,7 +162,7 @@ describe('AnsiString', () => {
       describe('right-aligned', () => {
         it('do not align when breaking the line', () => {
           const result: Array<string> = [];
-          new AnsiString([], 0, 'right').word('abc').break().wrap(result);
+          new AnsiString([], 0, 'right').append('abc').break().wrap(result);
           expect(result).toEqual(['abc', '\n']);
         });
       });
@@ -220,20 +220,20 @@ describe('AnsiString', () => {
 
         it('add a line break when a merged word does not fit the width', () => {
           const result: Array<string> = [];
-          const str = new AnsiString().word('gest');
-          new AnsiString([], 0, 'left', 5).word('abc').open('lar').append(str).wrap(result, 2);
+          const str = new AnsiString().append('gest');
+          new AnsiString([], 0, 'left', 5).append('abc').open('lar').append(str).wrap(result, 2);
           expect(result).toEqual(['\n', 'abc', '\n', 'largest']);
         });
 
         it('add a line break when a word does not fit the width', () => {
           const result: Array<string> = [];
-          new AnsiString([], 0, 'left', 5).word('word').wrap(result, 2);
+          new AnsiString([], 0, 'left', 5).append('word').wrap(result, 2);
           expect(result).toEqual(['\n', 'word']);
         });
 
         it('avoid adding a line break when a word fits the width', () => {
           const result: Array<string> = [];
-          new AnsiString([], 0, 'left', 8).word('word').wrap(result, 2);
+          new AnsiString([], 0, 'left', 8).append('word').wrap(result, 2);
           expect(result).toEqual([' word']);
         });
       });
@@ -266,13 +266,13 @@ describe('AnsiString', () => {
         describe('the current column is not zero', () => {
           it('add a line break when a word does not fit the width', () => {
             const result: Array<string> = [];
-            new AnsiString([], 2, 'left', 6).word('word').wrap(result, 4);
+            new AnsiString([], 2, 'left', 6).append('word').wrap(result, 4);
             expect(result).toEqual(['\n', '  word']);
           });
 
           it('avoid adding a line break when a word fits the width', () => {
             const result: Array<string> = [];
-            new AnsiString([], 2, 'left', 6).word('word').wrap(result, 3);
+            new AnsiString([], 2, 'left', 6).append('word').wrap(result, 3);
             expect(result).toEqual([' word']);
           });
         });
@@ -295,7 +295,7 @@ describe('AnsiString', () => {
       describe('right-aligned', () => {
         it('align with spaces when breaking the line', () => {
           const result: Array<string> = [];
-          new AnsiString([], 0, 'right', 8).word('abc').break().wrap(result);
+          new AnsiString([], 0, 'right', 8).append('abc').break().wrap(result);
           expect(result).toEqual(['     ', 'abc', '\n']);
         });
 
@@ -316,7 +316,7 @@ describe('AnsiString', () => {
         describe('emitting styles', () => {
           it('align with a move sequence when breaking the line', () => {
             const result: Array<string> = [];
-            new AnsiString([], 0, 'right').word('abc').break().wrap(result, 0, 8, true, false);
+            new AnsiString([], 0, 'right').append('abc').break().wrap(result, 0, 8, true, false);
             expect(result).toEqual(['' + moveFwd5, 'abc', '\n']);
           });
 
@@ -328,7 +328,7 @@ describe('AnsiString', () => {
 
           it('align with spaces when breaking the line', () => {
             const result: Array<string> = [];
-            new AnsiString([], 0, 'right').word('abc').break().wrap(result, 0, 8, true);
+            new AnsiString([], 0, 'right').append('abc').break().wrap(result, 0, 8, true);
             expect(result).toEqual(['     ', 'abc', '\n']);
           });
 

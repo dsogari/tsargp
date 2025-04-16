@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import { AnsiString, tf } from '../../../src/library';
 
+const bold = [tf.bold];
+
 const clearStr = '\x1b[0m';
 const boldStr = '\x1b[1m';
 const clearAndBoldStr = '\x1b[0;1m';
-const cancelBoldStr = '\x1b[22m';
+const notBoldStr = '\x1b[22m';
 
 describe('AnsiString', () => {
   describe('wrap', () => {
@@ -13,14 +15,14 @@ describe('AnsiString', () => {
         it('throw an error when the largest word does not fit the configured width', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 4).split('type script');
-          str.hook = new AnsiString([]); // tail
+          str.hook = new AnsiString(); // tail
           expect(() => str.wrap(result)).toThrow('Cannot wrap word of length 6');
         });
 
         it('wrap multiple lines with indentation', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
-          str.hook = new AnsiString([]); // tail
+          str.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual(['  type', '\n', '  script', '\n', '  is', ' fun']);
         });
@@ -31,7 +33,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'left', 6).split('type script').break(); // feed ignored
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -49,7 +51,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'left', 6).break().split('type script');
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -69,7 +71,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).split('type script').break(); // feed ignored
           str.hook = new AnsiString([], 10, 'left', 6).split('type script is fun');
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -87,7 +89,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).break().split('type script');
           str.hook = new AnsiString([], 10, 'left', 6).split('type script is fun');
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '          type',
@@ -108,7 +110,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'left', 6).split('type script').break(); // feed ignored
           str.hook = new AnsiString([], 10, 'left', 6).split('type script is fun');
           str.hook.hook = new AnsiString([], 18, 'left', 6).split('type script').break(); // feed ignored
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -129,7 +131,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'left', 6).break().split('type script');
           str.hook = new AnsiString([], 10, 'left', 6).split('type script is fun');
           str.hook.hook = new AnsiString([], 18, 'left', 6).break().split('type script');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '          type',
@@ -152,7 +154,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'left', 6).split('type script').break(); // feed ignored
           str.hook.hook = new AnsiString([], 18, 'left', 6).split('type script is fun');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -175,7 +177,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'left', 6).break().split('type script');
           str.hook.hook = new AnsiString([], 18, 'left', 6).split('type script is fun');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -196,9 +198,9 @@ describe('AnsiString', () => {
         it('wrap a column that has a difference of two lines from the next', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
-          str.hook = new AnsiString([], 10, 'left', 6).word('type').break(); // feed ignored
+          str.hook = new AnsiString([], 10, 'left', 6).append('type').break(); // feed ignored
           str.hook.hook = new AnsiString([], 18, 'left', 6).split('type script is fun');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -218,9 +220,9 @@ describe('AnsiString', () => {
         it('wrap a column that has a missing line in the middle', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'left', 6).split('type script is fun');
-          str.hook = new AnsiString([], 10, 'left', 6).break().word('type').break(); // feed ignored
+          str.hook = new AnsiString([], 10, 'left', 6).break().append('type').break(); // feed ignored
           str.hook.hook = new AnsiString([], 18, 'left', 6).split('type script is fun');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  type',
@@ -244,7 +246,7 @@ describe('AnsiString', () => {
         it('wrap multiple lines with indentation', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
-          str.hook = new AnsiString([]); // tail
+          str.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual(['  ', '  type', '\n', '  script', '\n', '  is', ' fun']);
         });
@@ -255,7 +257,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'right', 6).split('type script').break(); // feed ignored
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -275,7 +277,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'right', 6).break().split('type script');
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -297,7 +299,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).split('type script').break(); // feed ignored
           str.hook = new AnsiString([], 10, 'right', 6).split('type script is fun');
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -317,7 +319,7 @@ describe('AnsiString', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).break().split('type script');
           str.hook = new AnsiString([], 10, 'right', 6).split('type script is fun');
-          str.hook.hook = new AnsiString([]); // tail
+          str.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -340,7 +342,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'right', 6).split('type script').break(); // feed ignored
           str.hook = new AnsiString([], 10, 'right', 6).split('type script is fun');
           str.hook.hook = new AnsiString([], 18, 'right', 6).split('type script').break(); // feed ignored
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -364,7 +366,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'right', 6).break().split('type script');
           str.hook = new AnsiString([], 10, 'right', 6).split('type script is fun');
           str.hook.hook = new AnsiString([], 18, 'right', 6).break().split('type script');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -390,7 +392,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'right', 6).split('type script').break(); // feed ignored
           str.hook.hook = new AnsiString([], 18, 'right', 6).split('type script sucks');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -416,7 +418,7 @@ describe('AnsiString', () => {
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
           str.hook = new AnsiString([], 10, 'right', 6).break().split('type script');
           str.hook.hook = new AnsiString([], 18, 'right', 6).split('type script sucks');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -440,9 +442,9 @@ describe('AnsiString', () => {
         it('wrap a column that has a difference of two lines from the next', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
-          str.hook = new AnsiString([], 10, 'right', 6).word('type').break(); // feed ignored
+          str.hook = new AnsiString([], 10, 'right', 6).append('type').break(); // feed ignored
           str.hook.hook = new AnsiString([], 18, 'right', 6).split('type script sucks');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -465,9 +467,9 @@ describe('AnsiString', () => {
         it('wrap a column that has a missing line in the middle', () => {
           const result: Array<string> = [];
           const str = new AnsiString([], 2, 'right', 6).split('type script is fun');
-          str.hook = new AnsiString([], 10, 'right', 6).break().word('type').break(); // feed ignored
+          str.hook = new AnsiString([], 10, 'right', 6).break().append('type').break(); // feed ignored
           str.hook.hook = new AnsiString([], 18, 'right', 6).split('type script sucks');
-          str.hook.hook.hook = new AnsiString([]); // tail
+          str.hook.hook.hook = new AnsiString(); // tail
           str.wrap(result);
           expect(result).toEqual([
             '  ',
@@ -491,18 +493,17 @@ describe('AnsiString', () => {
 
     describe('emitting styles', () => {
       it('wrap columns with styles', () => {
-        const bold = [tf.bold];
         const result: Array<string> = [];
         const str1 = new AnsiString(bold).split('type script');
         const str = new AnsiString([], 2, 'left', 6).append(str1).split('is fun');
         str.hook = new AnsiString([], 10, 'left', 6).split('type script is fun');
-        str.hook.hook = new AnsiString([]); // tail
+        str.hook.hook = new AnsiString(); // tail
         str.wrap(result, 0, 1, true); // should ignore the terminal width
         expect(result).toEqual([
           '  ' + clearStr + boldStr + 'type', // bold style is "glued" to the first word
           '    ' + clearStr + 'type',
           '\n',
-          '  ' + clearAndBoldStr + 'script' + cancelBoldStr,
+          '  ' + clearAndBoldStr + 'script' + notBoldStr,
           '  ' + clearStr + 'script',
           '\n',
           '  ' + clearStr + 'is',

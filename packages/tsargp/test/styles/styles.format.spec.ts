@@ -9,14 +9,14 @@ describe('AnsiString', () => {
   describe('format', () => {
     it('preserve a merge flag set before formatting when the argument is not empty', () => {
       const str1 = new AnsiString().split('type script');
-      const str2 = new AnsiString().open('[').format('#0', {}, str1);
-      expect(str2.words).toEqual([['[', 'type'], ['script']]);
+      const str = new AnsiString().open('[').format('#0', {}, str1);
+      expect(str.words).toEqual([['[', 'type'], ['script']]);
     });
 
     it('preserve a merge flag set before formatting when the argument is empty', () => {
       const str1 = new AnsiString();
-      const str2 = new AnsiString().open('[').format('#0', {}, str1).append('abc');
-      expect(str2.words).toEqual([['[', 'abc']]);
+      const str = new AnsiString().open('[').format('#0', {}, str1).append('abc');
+      expect(str.words).toEqual([['[', 'abc']]);
     });
 
     it('add closing word to a formatted generic value', () => {
@@ -109,7 +109,7 @@ describe('AnsiString', () => {
         undefined,
         new URL('https://abc'),
         str1,
-        str1, // spliced
+        str1,
       ]);
       expect(str2.words).toEqual([
         ['[', config.styles.boolean, 'true', noColor, ';'],

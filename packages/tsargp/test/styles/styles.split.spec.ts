@@ -11,7 +11,7 @@ describe('AnsiString', () => {
     });
 
     it('split text with inline styles', () => {
-      const str = new AnsiString().split(boldStr + 'type ' + boldStr + ' script' + boldStr);
+      const str = new AnsiString().split(`${boldStr}type ${boldStr} script${boldStr}`);
       expect(str.words).toEqual([['type'], ['script']]);
     });
 
@@ -56,11 +56,11 @@ describe('AnsiString', () => {
       });
     });
 
-    it('avoid preserving styles that are glued to the placeholder', () => {
+    it('remove inline styles', () => {
       const format = jest.fn(function (this: AnsiString) {
         this.append('abc');
       });
-      const str = new AnsiString().split(boldStr + '#0 is #1' + boldStr, format);
+      const str = new AnsiString().split(`${boldStr}#0 is #1${boldStr}`, format);
       expect(str.words).toEqual([['abc'], ['is'], ['abc']]);
       expect(format).toHaveBeenCalledTimes(2);
       expect(format).toHaveBeenCalledWith('#0');

@@ -1036,12 +1036,8 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
   } else {
     str.append(name, true); // split parameter name, if necessary
   }
-  if (str.wordCount) {
-    str.close(ellipsis);
-  } else {
-    str.append(ellipsis);
-  }
-  result.append(str.close(closeBracket));
+  str.mergeLast ||= !!ellipsis && !!str.wordCount;
+  result.append(str.append(ellipsis).close(closeBracket));
   return !optional;
 }
 

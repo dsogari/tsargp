@@ -1,17 +1,17 @@
+import type { Options } from 'tsargp';
 import {
-  type Options,
-  fg,
-  allOf,
-  oneOf,
-  not,
-  tf,
-  ext8,
-  rgb,
   allHelpItems,
-  HelpItem,
-  envHelpItems,
-  numberInRange,
+  allOf,
   ansi,
+  envHelpItems,
+  ext8,
+  fg,
+  HelpItem,
+  not,
+  numberInRange,
+  oneOf,
+  rgb,
+  tf,
 } from 'tsargp';
 import helloOpts from './demo.hello.options.js';
 

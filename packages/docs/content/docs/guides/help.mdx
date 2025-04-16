@@ -49,7 +49,7 @@ export default {
       {
         type: 'text',
         content: {
-          text: ansi`Refer to ${ansi.style(fg.brightBlack)`<website>`} for support.`,
+          text: ansi`Refer to ${new URL('https://example.com')} for support.`,
           breaks: 1, // line feeds from previous section (+1)
         },
       },
@@ -104,7 +104,7 @@ cli [[95m--help[0m]
     [95m--help[0m
               [3m💡 Prints this help message.[0m
 
-Refer to [90m<website>[39m for support.
+Refer to [90mhttps://example.com/[39m for support.
 ```
 
 {/* cSpell:enable */}

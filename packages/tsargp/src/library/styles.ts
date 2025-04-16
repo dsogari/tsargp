@@ -527,9 +527,9 @@ export class AnsiString {
   /**
    * Creates a ANSI string.
    * @param sty The base style
-   * @param indent Whether the string should be left- or right-aligned when wrapped
-   * @param align The wrapping width relative to the indentation level
-   * @param width The starting column for text wrapping
+   * @param indent The starting column for text wrapping
+   * @param align Whether the string should be left- or right-aligned
+   * @param width The wrapping width relative to the indentation level
    */
   constructor(
     sty: Style = [],
@@ -600,7 +600,7 @@ export class AnsiString {
 
   /**
    * Appends text with a style.
-   * @param text The text to insert (should contain no styles)
+   * @param text The text to insert
    * @param sty The style to be applied
    * @returns The ANSI string instance
    */
@@ -617,7 +617,6 @@ export class AnsiString {
     const isStr = isString(text);
     if (isStr ? text.length : text.wordCount) {
       const { words, mergeLast, wordLength, lineLength, lineCount, baseStyle } = this;
-      const lastWord = words.at(-1);
       let wordsToAdd;
       if (isStr) {
         wordsToAdd = [[text]];
@@ -632,12 +631,13 @@ export class AnsiString {
           word.filter(isArray<Style>).forEach((sty) => applyStyle(baseStyle, sty)),
         );
       }
+      const lastWord = words.at(-1);
       const length = isStr ? text.length : 0;
       const lengths = [length, length, length];
       const [a, b, c] = isStr ? lengths : text.wordLength;
       const [d, e, f] = isStr ? lengths : text.lineLength;
       const close = (mergeLast && !!d) || (!isStr && text.mergeFirst);
-      if (lastWord?.length && close) {
+      if (close && lastWord?.length) {
         lastWord.push(...wordsToAdd.shift()!);
         wordLength[1] += a;
         lineLength[1] += d;
@@ -727,7 +727,7 @@ export class AnsiString {
       column = 0;
       j = result.push('\n'); // save index for right-alignment
     }
-    const { words, wordCount, wordWidth, align, hook, context, baseStyle: base } = this;
+    const { words, wordCount, wordWidth, align, hook, context, baseStyle } = this;
     if (hook) {
       if (isHead) {
         context[2] = undefined; // start of line-wise wrapping
@@ -760,7 +760,7 @@ export class AnsiString {
     const needToAlign = isFinite(width) && align === 'right';
     const pad = start ? move(start) : ''; // precomputed for efficiency
     if (emitStyles && !context[0]) {
-      context[1] = { ...base };
+      context[1] = { ...baseStyle };
     }
     for (let i = context[0], applied = false; i < wordCount; i++) {
       const word = words[i];
@@ -806,8 +806,11 @@ export class AnsiString {
           pad2 += seqToString(cs.sgr, ...sty); // restore SGR attributes
           applied = true;
         }
-        word.filter(isArray<Style>).forEach((sty) => saveStyle(sty, context[1])); // save SGR attributes
-        str = word.map((part) => (isString(part) ? part : seqToString(cs.sgr, ...part))).join('');
+        str = word
+          .map((part) =>
+            isString(part) ? part : (saveStyle(part, context[1]), seqToString(cs.sgr, ...part)),
+          ) // save SGR attributes
+          .join('');
       }
       column += len2 + len;
       result.push(pad2 + str);
@@ -815,7 +818,7 @@ export class AnsiString {
     if (emitStyles && wordWidth) {
       const sty = cancelStyle(context[1]);
       if (sty.length) {
-        result.push(seqToString(cs.sgr, ...sty));
+        result.push(seqToString(cs.sgr, ...sty)); // cancel remaining style
       }
     }
     alignRight();
@@ -1051,12 +1054,21 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
 
 /**
  * Converts a control sequence to string.
- * @param cmd The sequence specifier
+ * @param spec The sequence specifier
  * @param params The sequence parameters
  * @returns The resulting string
  */
-function seqToString(cmd: cs, ...params: ReadonlyArray<number | ReadonlyArray<number>>): string {
-  return params.length ? `\x1b[${params.flat().join(';')}${cmd}` : '';
+function seqToString(spec: cs, ...params: ReadonlyArray<number | ReadonlyArray<number>>): string {
+  return params.length ? `\x1b[${params.flat().join(';')}${spec}` : '';
+}
+
+/**
+ * Cancels a style from a style record.
+ * @param rec The style record
+ * @returns The cancelling style
+ */
+function cancelStyle(rec: StyleRecord): Style {
+  return getKeys(rec).map(Number); // keys are sorted in ascending order
 }
 
 /**
@@ -1069,12 +1081,23 @@ function restoreStyle(rec: StyleRecord): Style {
 }
 
 /**
- * Cancels a style from a style record.
- * @param rec The style record
- * @returns The cancelling style
+ * Applies a style from a style record.
+ * @param from The style to be applied
+ * @param result The resulting style
  */
-function cancelStyle(rec: StyleRecord): Style {
-  return getKeys(rec).map(Number); // keys are sorted in ascending order
+function applyStyle(from: StyleRecord, result: Style) {
+  for (let i = 0; i < result.length; i++) {
+    const attr = result[i];
+    if (isNumber(attr)) {
+      const cancel = cancellingAttribute[attr as StandardAttribute];
+      if (!cancel) {
+        const fromAttr = from[attr as rs];
+        if (fromAttr) {
+          result.splice(i, 1, ...fromAttr);
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -1105,26 +1128,6 @@ function saveStyle(from: Style, result: StyleRecord) {
 }
 
 /**
- * Applies a style from a style record.
- * @param from The style to be applied
- * @param result The resulting style
- */
-function applyStyle(from: StyleRecord, result: Style) {
-  for (let i = 0; i < result.length; i++) {
-    const attr = result[i];
-    if (isNumber(attr)) {
-      const cancel = cancellingAttribute[attr as StandardAttribute];
-      if (!cancel) {
-        const fromAttr = from[attr as rs];
-        if (fromAttr) {
-          result.splice(i, 1, ...fromAttr);
-        }
-      }
-    }
-  }
-}
-
-/**
  * Creates an 8-bit indexed color.
  * @param index The color index
  * @returns The color attribute
@@ -1146,7 +1149,7 @@ function rgbColor(r: DecimalValue, g: DecimalValue, b: DecimalValue): RgbColor {
 
 /**
  * Creates a ANSI string from a template literal.
- * @param this The styling attributes, if any
+ * @param this The style, if any
  * @param parts The template string parts
  * @param args The template arguments
  * @returns The ANSI string

@@ -365,7 +365,7 @@ const enum ControlSequence {
 }
 
 /**
- * A predefined resetting attribute.
+ * A resetting attribute.
  */
 const enum ResetStyle {
   /**
@@ -413,10 +413,6 @@ const enum ResetStyle {
    */
   defaultBackground = 49,
   /**
-   * Default underline color.
-   */
-  defaultUnderline = 59,
-  /**
    * Disable proportional spacing.
    */
   notProportionallySpaced = 50,
@@ -428,6 +424,10 @@ const enum ResetStyle {
    * Not overlined.
    */
   notOverlined,
+  /**
+   * Default underline color.
+   */
+  defaultUnderline = 59,
   /**
    * No ideogram attributes.
    */

@@ -981,7 +981,7 @@ export function isString(value: unknown): value is string {
 /**
  * Checks if a value is a number.
  * @param value The value
- * @returns True if the value is a string
+ * @returns True if the value is a number
  */
 export function isNumber(value: unknown): value is number {
   return typeof value === 'number';
