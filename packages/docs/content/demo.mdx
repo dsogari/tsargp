@@ -110,7 +110,7 @@ export const Demo = dynamic(() => import('@components/demo'), { ssr: false });
 {/* cSpell:disable */}
 
 ```ansi
-Option letter [35mS[39m must be the last in a cluster.
+[91mOption letter [35mS[91m must be the last in a cluster.[39m
 ```
 
 {/* cSpell:enable */}
@@ -146,7 +146,7 @@ Option letter [35mS[39m must be the last in a cluster.
 {/* cSpell:disable */}
 
 ```ansi
-Invalid parameter to [35m-sr[39m: [32m'A'[39m. Value must match the regex [31m/^\d+$/[39m.
+[91mInvalid parameter to [35m-sr[91m: [32m'A'[91m. Value must match the regex [31m/^\d+$/[91m.[39m
 ```
 
 {/* cSpell:enable */}
@@ -157,7 +157,7 @@ Invalid parameter to [35m-sr[39m: [32m'A'[39m. Value must match the regex [
 {/* cSpell:disable */}
 
 ```ansi
-Invalid parameter to [35m-sc[39m: [32m'A'[39m. Value must be one of: [32m'one'[39m, [32m'two'[39m.
+[91mInvalid parameter to [35m-sc[91m: [32m'A'[91m. Value must be one of: [32m'one'[91m, [32m'two'[91m.[39m
 ```
 
 {/* cSpell:enable */}
@@ -168,7 +168,7 @@ Invalid parameter to [35m-sc[39m: [32m'A'[39m. Value must be one of: [32m'o
 {/* cSpell:disable */}
 
 ```ansi
-Invalid parameter to [35m-nr[39m: [32m'-3'[39m. Value must be within the range [[33m-2[39m, [33mInfinity[39m].
+[91mInvalid parameter to [35m-nr[91m: [32m'-3'[91m. Value must be within the range [[33m-2[91m, [33mInfinity[91m].[39m
 ```
 
 {/* cSpell:enable */}
@@ -179,7 +179,7 @@ Invalid parameter to [35m-nr[39m: [32m'-3'[39m. Value must be within the ran
 {/* cSpell:disable */}
 
 ```ansi
-Invalid parameter to [35m-nc[39m: [32m'0'[39m. Value must be one of: [32m'1'[39m, [32m'2'[39m.
+[91mInvalid parameter to [35m-nc[91m: [32m'0'[91m. Value must be one of: [32m'1'[91m, [32m'2'[91m.[39m
 ```
 
 {/* cSpell:enable */}
@@ -211,7 +211,7 @@ Invalid parameter to [35m-nc[39m: [32m'0'[39m. Value must be one of: [32m'1
 {/* cSpell:disable */}
 
 ```ansi
-Option [35m--strArrayLimit[39m has too many values: [33m4[39m. Should have at most [33m3[39m.
+[91mOption [35m--strArrayLimit[91m has too many values: [33m4[91m. Should have at most [33m3[91m.[39m
 ```
 
 {/* cSpell:enable */}
@@ -292,8 +292,8 @@ When an option is specified more than once, the retained value is usually the la
 
 1. check if parameters can be inlined with option names (e.g., `-sa=abc`)
 2. check if inline parameters can contain equal signs (e.g., `-sa==a=b`)
-3. check if inline parameters are disallowed for an option (e.g., `-sc=one`)
-4. check if inline parameters are required for an option (e.g., `-nc 1`)
+3. check if inline parameters are disallowed for an option (e.g., try `-sc=one` and see that it fails)
+4. check if inline parameters are required for an option (e.g., try `-nc 1` and see that it fails)
 
 <details>
   <summary>Expected output (1)</summary>
@@ -330,7 +330,7 @@ When an option is specified more than once, the retained value is usually the la
 {/* cSpell:disable */}
 
 ```ansi
-Option [35m-sc[39m does not accept inline parameters.
+[91mOption [35m-sc[91m does not accept inline parameters.[39m
 ```
 
 {/* cSpell:enable */}
@@ -341,7 +341,7 @@ Option [35m-sc[39m does not accept inline parameters.
 {/* cSpell:disable */}
 
 ```ansi
-Option [35m-nc[39m requires an inline parameter.
+[91mOption [35m-nc[91m requires an inline parameter.[39m
 ```
 
 {/* cSpell:enable */}
@@ -420,7 +420,7 @@ Option [35m-nc[39m requires an inline parameter.
 {/* cSpell:disable */}
 
 ```ansi
-Option [35m-b[39m requires ([35m-sc[39m or [35m-sa[39m == [[32m'a'[39m, [32m'b'[39m]).
+[91mOption [35m-b[91m requires ([35m-sc[91m or [35m-sa[91m == [[32m'a'[91m, [32m'b'[91m]).[39m
 ```
 
 {/* cSpell:enable */}
@@ -456,7 +456,8 @@ Option [35m-b[39m requires ([35m-sc[39m or [35m-sa[39m == [[32m'a'[39m, 
 {/* cSpell:disable */}
 
 ```ansi
-Option [35m-f[39m is deprecated and may be removed in future releases.
+[91mOption [35m-f[91m is deprecated and may be removed in future releases.[39m
+
 {
   [0mflag[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
   [90m...[0m
@@ -471,7 +472,8 @@ Option [35m-f[39m is deprecated and may be removed in future releases.
 {/* cSpell:disable */}
 
 ```ansi
-Option [35m--no-flag[39m is deprecated and may be removed in future releases.
+[91mOption [35m--no-flag[91m is deprecated and may be removed in future releases.[39m
+
 {
   [0mflag[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
   [90m...[0m
@@ -486,7 +488,8 @@ Option [35m--no-flag[39m is deprecated and may be removed in future releases.
 {/* cSpell:disable */}
 
 ```ansi
-Option [35mFLAG[39m is deprecated and may be removed in future releases.
+[91mOption [35mFLAG[91m is deprecated and may be removed in future releases.[39m
+
 {
   [0mflag[2m:[0m [0m[33mtrue[0m[0m[2m,[0m
   [90m...[0m
@@ -501,7 +504,8 @@ Option [35mFLAG[39m is deprecated and may be removed in future releases.
 {/* cSpell:disable */}
 
 ```ansi
-Option [35mNO_FLAG[39m is deprecated and may be removed in future releases.
+[91mOption [35mNO_FLAG[91m is deprecated and may be removed in future releases.[39m
+
 {
   [0mflag[2m:[0m [0m[33mfalse[0m[0m[2m,[0m
   [90m...[0m
@@ -516,7 +520,7 @@ Option [35mNO_FLAG[39m is deprecated and may be removed in future releases.
 {/* cSpell:disable */}
 
 ```ansi
-Unknown option [35m-s[39m. Similar names are: [35m-sr[39m, [35m-sc[39m, [35m-sa[39m.
+[91mUnknown option [35m-s[91m. Similar names are: [35m-sr[91m, [35m-sc[91m, [35m-sa[91m.[39m
 ```
 
 {/* cSpell:enable */}
