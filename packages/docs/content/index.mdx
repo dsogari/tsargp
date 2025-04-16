@@ -15,11 +15,11 @@ title: Home
              [35m--env[39m              A help option. Prints the available environment variables. Uses the
                                 remaining arguments as option filter.
      [35m-v[39m, [35m--version[39m              A version option. Prints the package version.
-     [38;2;160;100;64m-f[39m, [38;2;160;100;64m--no-flag[39m              [3;9mA flag option. Deprecated for some reason.[23;29m
-             [35mhello[39m  [90m...[39m         A subcommand. Logs the arguments passed after it.
+     [38;2;160;100;64m-f[39m, [38;2;160;100;64m--no-flag[39m              [3;9mA flag option. Deprecated for some reason.
+[23;29m             [35mhello[39m  [90m...[39m         A subcommand. Logs the arguments passed after it.
      [35m-b[39m, [35m--boolean[39m  [90m<param>[39m     A boolean option with:
                                 * a paragraph
-                                - [4;38;5;223minline styles[39;24m
+                                - [4;38;5;223minline styles[24;39m
                                 1. and a list
 
                                 Values must be one of {[32m'yes'[39m, [32m'no'[39m}. Requires ([35m-sc[39m or ([35m-sa[39m == [[32m'a'[39m,
@@ -27,9 +27,9 @@ title: Home
 
 [1mString options:[22m
 
-   [35m-sr[39m, [35m--strRegex[39m  [90;4mmy str[24;39m      A string option. Can be clustered with [35ms[39m. Values must match the
+   [35m-sr[39m, [35m--strRegex[39m  [4;90mmy str[24;39m      A string option. Can be clustered with [35ms[39m. Values must match the
                                 regex [31m/^\d+$/[39m. Defaults to [32m'123456789'[39m.
-  [35m-sc[39m, [35m--strChoice[39m  [90;32m'one'[90m[39m       A string option. Disallows inline parameters. Values must be one of
+  [35m-sc[39m, [35m--strChoice[39m  [90m[32m'one'[90m[39m       A string option. Disallows inline parameters. Values must be one of
                                 {[32m'one'[39m, [32m'two'[39m}.
    [35m-sa[39m, [35m--strArray[39m  [90m[<str>...][39m  A string array option. Can be clustered with [35mS[39m. Accepts multiple
                                 parameters. Values can be delimited with [32m','[39m. If not supplied, will
@@ -40,7 +40,7 @@ title: Home
 
 [1mNumber options:[22m
 
-   [35m-nr[39m, [35m--numRange[39m  [90;4mmy num[24;39m      A number option. The minimum accepted value is [33m-2[39m. Can be clustered
+   [35m-nr[39m, [35m--numRange[39m  [4;90mmy num[24;39m      A number option. The minimum accepted value is [33m-2[39m. Can be clustered
                                 with [35mn[39m. Defaults to [33m-1.23[39m.
   [35m-nc[39m, [35m--numChoice[39m  [90m=[33m1[90m[39m          A number option. Requires inline parameters. Values must be one of
                                 {[32m'1'[39m, [32m'2'[39m}.
@@ -54,8 +54,8 @@ title: Home
 
   tsargp [[35m-h[39m|[35m--help[39m] [[35m--env[39m] [[35m-v[39m|[35m--version[39m] [32m# get help[39m
   tsargp [35mhello[39m [90m...[39m [32m# execute the hello command[39m
-  tsargp [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m] [([35m-sc[39m|[35m--strChoice[39m) [90;32m'one'[90m[39m [([35m-b[39m|[35m--boolean[39m) [90m<param>[39m]] [([35m-sr[39m|[35m--strRegex[39m|[35m-s[39m) [90;4mmy
-         str[24;39m] [([35m-nr[39m|[35m--numRange[39m|[35m-n[39m) [90;4mmy num[24;39m] [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m] [([35m-sa[39m|[35m--strArray[39m|[35m-S[39m) [90m[<str>...][39m|[35m-[39m]
+  tsargp [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m] [([35m-sc[39m|[35m--strChoice[39m) [90m[32m'one'[90m[39m [([35m-b[39m|[35m--boolean[39m) [90m<param>[39m]] [([35m-sr[39m|[35m--strRegex[39m|[35m-s[39m) [4;90mmy
+         str[24;39m] [([35m-nr[39m|[35m--numRange[39m|[35m-n[39m) [4;90mmy num[24;39m] [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m] [([35m-sa[39m|[35m--strArray[39m|[35m-S[39m) [90m[<str>...][39m|[35m-[39m]
          [([35m-na[39m|[35m--numArray[39m|[35m-N[39m) [90m[<num>...][39m] [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m] [[35m--strArrayLimit[39m|[35m--[39m]
          [90m[[32m'one'[90m...][39m
 

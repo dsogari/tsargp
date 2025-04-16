@@ -62,7 +62,7 @@ class PlayCommand extends Command<PlayProps> {
         }
         this.println(JSON.stringify(values, null, 2));
       } else {
-        this.println(`Please call ${tsargp.style(1)}init${tsargp.style(0)} first.`);
+        this.println(`Please call ${tsargp.ansi.style(1)`init`} first.`);
       }
     } catch (err) {
       if (err instanceof tsargp.AnsiMessage) {

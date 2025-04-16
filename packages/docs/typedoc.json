@@ -9,15 +9,16 @@
   "treatWarningsAsErrors": true,
   "intentionallyNotExported": [
     "Alias",
-    "Enumerate",
-    "Resolve",
     "Args",
-    "Promissory",
-    "OptionKeyType",
+    "Enumerate",
     "OptionDataType",
-    "WithRequired",
-    "WithDefault",
+    "OptionKeyType",
+    "Promissory",
+    "ResetStyle",
+    "Resolve",
     "WithChoices",
-    "WithRegex"
+    "WithDefault",
+    "WithRegex",
+    "WithRequired"
   ]
 }

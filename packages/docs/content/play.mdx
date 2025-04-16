@@ -7,7 +7,7 @@ export const callbacks = {}; // will hold the editor callbacks
 {/* prettier-ignore-start */}
 
 export const initialDoc = `// extract anything else you might need from tsargp
-const { config, allOf, oneOf, not, style, ext8, rgb } = tsargp;
+const { config, allOf, oneOf, not, ansi, ext8, rgb } = tsargp;
 const { ErrorItem, HelpItem, tf, fg, bg, ul } = enums;
 
 return {
@@ -15,7 +15,7 @@ return {
   help: {
     type: 'help',
     names: ['-h', '--help'],
-    synopsis: \`Prints this \${style(tf.italic)}help\${style(tf.clear)} message.\`,
+    synopsis: ansi\`Prints this \${ansi.style(tf.italic)\`help\`} message.\`,
   },
 };`;
 

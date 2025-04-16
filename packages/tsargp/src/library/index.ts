@@ -1,5 +1,5 @@
 export * from './config.js';
-export { tf, fg, bg, ul, HelpItem, ErrorItem } from './enums.js';
+export { ErrorItem, HelpItem, tf, fg, bg, ul } from './enums.js';
 export * from './formatter.js';
 export * from './options.js';
 export * from './parser.js';
