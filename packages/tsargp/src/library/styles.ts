@@ -1038,13 +1038,9 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
       const parts = word.split(regex.spec);
       result.append(parts[0]);
       for (let i = 1; i < parts.length; i += 2) {
-        if (parts[i - 1]) {
-          result.mergeLast = true;
-        }
+        result.mergeLast ||= !!parts[i - 1];
         boundFormat?.(parts[i]);
-        if (parts[i + 1]) {
-          result.mergeLast = true;
-        }
+        result.mergeLast ||= !!parts[i + 1];
         result.append(parts[i + 1]);
       }
     }

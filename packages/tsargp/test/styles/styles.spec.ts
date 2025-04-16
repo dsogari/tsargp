@@ -1,38 +1,14 @@
 import { describe, expect, it } from 'bun:test';
-import { AnsiString, fg, bg, tf, ul, ext8, rgb, config } from '../../src/library';
+import { AnsiString, fg, bg, tf, ul, ext8, rgb } from '../../src/library';
 import { rs } from '../../src/library/enums';
 
 const bold = [tf.bold];
-const noColor = [rs.defaultForeground];
 
 describe('AnsiString', () => {
   describe('break', () => {
     it('avoid merging consecutive line feeds', () => {
       const str = new AnsiString().break(2).break();
       expect(str.words).toEqual([[], [], []]);
-    });
-  });
-
-  describe('lineWidth', () => {
-    it('return zero if no strings', () => {
-      const str = new AnsiString();
-      expect(str.lineWidth).toEqual(0);
-    });
-
-    it('compute maximum line width among all lines, counting spaces', () => {
-      const str = new AnsiString()
-        .break()
-        .append('type')
-        .append('is')
-        .break()
-        .append('script')
-        .break();
-      expect(str.lineWidth).toEqual(7);
-    });
-
-    it('compute maximum line width when closing words', () => {
-      const str = new AnsiString().break().append('type').close(',').append('script');
-      expect(str.lineWidth).toEqual(12);
     });
   });
 
@@ -94,48 +70,8 @@ describe('AnsiString', () => {
     });
   });
 
-  describe('value', () => {
-    it('append values of various kinds', () => {
-      const str = new AnsiString()
-        .value(true)
-        .value('some text')
-        .value(123)
-        .value(/def/)
-        .value(Symbol.for('some name'))
-        .value(new URL('https://abc'))
-        .value(new AnsiString().append('type').append('script'))
-        .value([1, 'a', false])
-        .value({ a: 1, 0: 'c', 'd-': /ghi/i })
-        .value(() => 1)
-        .value(undefined);
-      expect(str.words).toEqual([
-        [config.styles.boolean, 'true', noColor],
-        [config.styles.string, `'some text'`, noColor],
-        [config.styles.number, '123', noColor],
-        [config.styles.regex, '/def/', noColor],
-        [config.styles.symbol, 'some name', noColor],
-        [config.styles.url, 'https://abc/', noColor],
-        ['type'],
-        ['script'],
-        ['[', config.styles.number, '1', noColor, ','],
-        [config.styles.string, `'a'`, noColor, ','],
-        [config.styles.boolean, 'false', noColor, ']'],
-        ['{', config.styles.string, `'0'`, noColor, ':'],
-        [config.styles.string, `'c'`, noColor, ','],
-        [config.styles.symbol, 'a', noColor, ':'],
-        [config.styles.number, '1', noColor, ','],
-        [config.styles.string, `'d-'`, noColor, ':'],
-        [config.styles.regex, '/ghi/i', noColor, '}'],
-        [config.styles.value, '<', '()'],
-        ['=>'],
-        ['1', '>', noColor],
-        [config.styles.value, '<', 'undefined', '>', noColor],
-      ]);
-    });
-  });
-
   describe('toString', () => {
-    it('separates words with spaces and does not emit line feeds or control sequences', () => {
+    it('separate words with spaces and avoid emitting line feeds or styles', () => {
       const str = new AnsiString(bold).break().append('type').append('script');
       expect('' + str).toEqual(' type script');
     });

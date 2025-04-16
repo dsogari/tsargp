@@ -7,10 +7,16 @@ const noColor = [rs.defaultForeground];
 
 describe('AnsiString', () => {
   describe('format', () => {
-    it('preserve a merge flag set before formatting', () => {
+    it('preserve a merge flag set before formatting when the argument is not empty', () => {
       const str1 = new AnsiString().split('type script');
       const str2 = new AnsiString().open('[').format('#0', {}, str1);
       expect(str2.words).toEqual([['[', 'type'], ['script']]);
+    });
+
+    it('preserve a merge flag set before formatting when the argument is empty', () => {
+      const str1 = new AnsiString();
+      const str2 = new AnsiString().open('[').format('#0', {}, str1).append('abc');
+      expect(str2.words).toEqual([['[', 'abc']]);
     });
 
     it('add closing word to a formatted generic value', () => {
@@ -36,6 +42,15 @@ describe('AnsiString', () => {
         ['[', '<', config.styles.number, '1', noColor, '>', ','],
         ['<', config.styles.string, "'a'", noColor, '>', ','],
         ['<', config.styles.boolean, 'true', noColor, '>', ']'],
+      ]);
+    });
+
+    it('format array-valued arguments with empty separator', () => {
+      const str = new AnsiString().format('#0', { sep: '' }, [1, 'a', true]);
+      expect(str.words).toEqual([
+        ['[', config.styles.number, '1', noColor],
+        [config.styles.string, "'a'", noColor],
+        [config.styles.boolean, 'true', noColor, ']'],
       ]);
     });
 
@@ -200,6 +215,46 @@ describe('AnsiString', () => {
         [config.styles.url, 'https://abc/', noColor],
         ['{', config.styles.string, "'$cmd'", noColor, ':'],
         ['[', config.styles.number, '1', noColor, ']', '}'],
+      ]);
+    });
+  });
+
+  describe('value', () => {
+    it('append values of various kinds', () => {
+      const str = new AnsiString()
+        .value(true)
+        .value('some text')
+        .value(123)
+        .value(/def/)
+        .value(Symbol.for('some name'))
+        .value(new URL('https://abc'))
+        .value(new AnsiString().append('type').append('script'))
+        .value([1, 'a', false])
+        .value({ a: 1, 0: 'c', 'd-': /ghi/i })
+        .value(() => 1)
+        .value(undefined);
+      expect(str.words).toEqual([
+        [config.styles.boolean, 'true', noColor],
+        [config.styles.string, `'some text'`, noColor],
+        [config.styles.number, '123', noColor],
+        [config.styles.regex, '/def/', noColor],
+        [config.styles.symbol, 'some name', noColor],
+        [config.styles.url, 'https://abc/', noColor],
+        ['type'],
+        ['script'],
+        ['[', config.styles.number, '1', noColor, ','],
+        [config.styles.string, `'a'`, noColor, ','],
+        [config.styles.boolean, 'false', noColor, ']'],
+        ['{', config.styles.string, `'0'`, noColor, ':'],
+        [config.styles.string, `'c'`, noColor, ','],
+        [config.styles.symbol, 'a', noColor, ':'],
+        [config.styles.number, '1', noColor, ','],
+        [config.styles.string, `'d-'`, noColor, ':'],
+        [config.styles.regex, '/ghi/i', noColor, '}'],
+        [config.styles.value, '<', '()'],
+        ['=>'],
+        ['1', '>', noColor],
+        [config.styles.value, '<', 'undefined', '>', noColor],
       ]);
     });
   });
