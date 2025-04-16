@@ -287,6 +287,20 @@ describe('AnsiString', () => {
             expect(str.lineCount).toEqual(2);
             expect(str.lineWidth).toEqual(8);
           });
+
+          it('avoid merging when other starts with line feed', () => {
+            const str1 = new AnsiString().break().append('script');
+            const str = new AnsiString().append('type');
+            str.mergeLast = true;
+            str.append(str1);
+            expect(str.words).toEqual([['type'], [], ['script']]);
+            expect(str.mergeFirst).toBeFalse();
+            expect(str.mergeLast).toBeFalse();
+            expect(str.wordCount).toEqual(3);
+            expect(str.wordWidth).toEqual(6);
+            expect(str.lineCount).toEqual(2);
+            expect(str.lineWidth).toEqual(6);
+          });
         });
       });
     });

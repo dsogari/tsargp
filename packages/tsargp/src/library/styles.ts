@@ -636,7 +636,7 @@ export class AnsiString {
       const lengths = [length, length, length];
       const [a, b, c] = isStr ? lengths : text.wordLength;
       const [d, e, f] = isStr ? lengths : text.lineLength;
-      const close = (mergeLast || (!isStr && text.mergeFirst)) && !!d;
+      const close = (mergeLast && !!d) || (!isStr && text.mergeFirst);
       if (lastWord?.length && close) {
         lastWord.push(...wordsToAdd.shift()!);
         wordLength[1] += a;
@@ -864,8 +864,8 @@ export class AnsiString {
 
   /**
    * Appends text that may contain styles.
-   * @param text The text to be appended (may be a normal string or another ANSI string)
-   * @param split Whether to split the text if it is a normal string (defaults to `false`)
+   * @param text The text to be appended (may be a plain string or another ANSI string)
+   * @param split Whether to split the text if it is a plain string (defaults to `false`)
    * @returns The ANSI string instance
    */
   append(text: StyledString, split: boolean = false): this {
