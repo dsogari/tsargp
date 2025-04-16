@@ -657,12 +657,14 @@ export class AnsiString {
       }
       wordLength[2] = max(wordLength[2], wordLength[1], c);
       lineLength[2] = max(lineLength[2], lineLength[1], f);
-      if (!isStr && text.wordCount > 1) {
-        wordLength[1] = b;
-      }
-      if (!isStr && text.lineCount > 1) {
-        lineLength[1] = e;
-        this.lineCount += text.lineCount - 1;
+      if (!isStr) {
+        if (text.wordCount > 1) {
+          wordLength[1] = b;
+        }
+        if (text.lineCount > 1) {
+          lineLength[1] = e;
+          this.lineCount += text.lineCount - 1;
+        }
       }
       this.mergeLast = !isStr && text.mergeLast;
     }
@@ -725,7 +727,7 @@ export class AnsiString {
       column = 0;
       j = result.push('\n'); // save index for right-alignment
     }
-    const { words, wordCount, wordWidth: maxLength, align, hook, context, baseStyle: base } = this;
+    const { words, wordCount, wordWidth, align, hook, context, baseStyle: base } = this;
     if (hook) {
       if (isHead) {
         context[2] = undefined; // start of line-wise wrapping
@@ -746,9 +748,9 @@ export class AnsiString {
     const width = min(indent + max(0, this.width || Infinity), max(0, terminalWidth || Infinity));
     let start = max(0, min(indent, width));
     let j = result.length; // save index for right-alignment
-    if (width < start + maxLength) {
+    if (width < start + wordWidth) {
       if (hook) {
-        throw Error(`Cannot wrap word of length ${maxLength}`); // developer mistake: see documentation
+        throw Error(`Cannot wrap word of length ${wordWidth}`); // developer mistake: see documentation
       }
       start = 0; // wrap to the first column instead
       if (column && words[0].length) {
@@ -810,7 +812,7 @@ export class AnsiString {
       column += len2 + len;
       result.push(pad2 + str);
     }
-    if (emitStyles && maxLength) {
+    if (emitStyles && wordWidth) {
       const sty = cancelStyle(context[1]);
       if (sty.length) {
         result.push(seqToString(cs.sgr, ...sty));

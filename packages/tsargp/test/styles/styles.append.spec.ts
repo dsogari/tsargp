@@ -146,6 +146,24 @@ describe('AnsiString', () => {
             const str = new AnsiString().append(str1);
             expect(str.words).toEqual([[bold, 'type', notBold]]);
           });
+
+          it('reapply style from the middle string and cancel it', () => {
+            const str2 = new AnsiString(bold).append('type');
+            const str1 = new AnsiString(faint).append(str2);
+            const str = new AnsiString().append(str1);
+            expect(str.words).toEqual([[faint, bold, 'type', faint, notBold]]);
+          });
+
+          it('reapply style from the middle string when it is not empty', () => {
+            const str2 = new AnsiString(bold).append('type');
+            const str1 = new AnsiString(faint).append('abc').append(str2).append('def');
+            const str = new AnsiString().append(str1);
+            expect(str.words).toEqual([
+              [faint, 'abc'],
+              [bold, 'type', faint],
+              ['def', notBold],
+            ]);
+          });
         });
       });
     });
