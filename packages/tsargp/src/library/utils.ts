@@ -470,7 +470,13 @@ export function normalizeArray(option: OpaqueOption, name: symbol, value: unknow
   const { unique, limit } = option;
   const result = unique ? makeUnique(value) : value.slice(); // the input may be read-only
   if (limit && limit > 0 && limit < result.length) {
-    throw new ErrorMessage(ErrorItem.limitConstraintViolation, {}, name, result.length, limit);
+    throw new ErrorMessage().add(
+      ErrorItem.limitConstraintViolation,
+      {},
+      name,
+      result.length,
+      limit,
+    );
   }
   return result;
 }
@@ -491,7 +497,7 @@ export function numberInRange(
     if (info.comp || (min <= num && num <= max)) {
       return num; // handle NaN; avoid throwing errors when completion is in effect
     }
-    throw new ErrorMessage(phrase, {}, getSymbol(info.name), param, range);
+    throw new ErrorMessage().add(phrase, {}, getSymbol(info.name), param, range);
   };
 }
 

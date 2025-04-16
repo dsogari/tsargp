@@ -927,22 +927,23 @@ export class AnsiMessage extends Array<AnsiString> {
 }
 
 /**
- * A warning message.
+ * An error message.
  */
-export class WarnMessage extends AnsiMessage {
+export class ErrorMessage extends AnsiMessage {
   /**
    * Appends a ANSI string formatted from an error item or custom phrase.
    * Always includes a trailing line feed.
    * @param itemOrPhrase The error item or custom phrase
    * @param flags The formatting flags
    * @param args The error arguments
-   * @returns The new length of the message
+   * @returns The ANSI message instance
    */
-  add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
-    const { base, warn } = config.styles;
+  add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): this {
+    const { base, error } = config.styles;
     const phrase = isString(itemOrPhrase) ? itemOrPhrase : config.errorPhrases[itemOrPhrase];
-    const str = new AnsiString(base.concat(warn)).format(phrase, flags, ...args).break();
-    return this.push(str);
+    const str = new AnsiString(base.concat(error)).format(phrase, flags, ...args).break();
+    this.push(str);
+    return this;
   }
 
   /**
@@ -950,22 +951,6 @@ export class WarnMessage extends AnsiMessage {
    */
   override toString(): string {
     return this.wrap(streamWidth('stderr'));
-  }
-}
-
-/**
- * An error message.
- */
-export class ErrorMessage extends WarnMessage {
-  /**
-   * Creates an error message formatted from an error item or custom phrase.
-   * @param itemOrPhrase The error item or custom phrase
-   * @param flags The formatting flags
-   * @param args The error arguments
-   */
-  constructor(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args) {
-    super();
-    this.add(itemOrPhrase, flags, ...args);
   }
 }
 
