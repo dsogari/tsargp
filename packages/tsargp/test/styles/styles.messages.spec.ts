@@ -11,6 +11,9 @@ import {
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
+const brightRedStr = '\x1b[91m';
+const noColorStr = '\x1b[39m';
+
 describe('AnsiMessage', () => {
   afterEach(() => {
     ['NO_COLOR', 'FORCE_COLOR'].forEach((key) => delete process.env[key]);
@@ -68,6 +71,13 @@ describe('WarnMessage', () => {
       const msg = new WarnMessage();
       msg.add('#0 #1 #2', {}, 0, 'abc', false);
       expect(msg.message).toEqual(`0 'abc' false\n`);
+    });
+
+    it('emit styles', () => {
+      const msg = new WarnMessage();
+      msg.add('type  script');
+      process.env['FORCE_WIDTH'] = '100';
+      expect(msg.message).toEqual(brightRedStr + 'type script\n' + noColorStr);
     });
   });
 });

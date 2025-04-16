@@ -20,6 +20,7 @@ export const config: MessageConfig = {
     symbol: [fg.magenta],
     value: [fg.brightBlack],
     url: [fg.cyan],
+    warn: [fg.brightRed],
     base: [],
   },
   connectives: {
@@ -141,6 +142,10 @@ export type MessageStyles = {
    * The style of URLs.
    */
   url: Style;
+  /**
+   * The base style for warning and error messages.
+   */
+  warn: Style;
   /**
    * The base style for all text.
    */

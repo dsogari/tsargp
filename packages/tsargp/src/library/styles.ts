@@ -939,8 +939,9 @@ export class WarnMessage extends AnsiMessage {
    * @returns The new length of the message
    */
   add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
+    const { base, warn } = config.styles;
     const phrase = isString(itemOrPhrase) ? itemOrPhrase : config.errorPhrases[itemOrPhrase];
-    const str = new AnsiString(config.styles.base).format(phrase, flags, ...args).break();
+    const str = new AnsiString(base.concat(warn)).format(phrase, flags, ...args).break();
     return this.push(str);
   }
 
