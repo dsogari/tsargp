@@ -28,7 +28,7 @@ describe('AnsiString', () => {
     describe('using placeholders', () => {
       it('insert text at the placeholder location', () => {
         const format = jest.fn(function (this: AnsiString) {
-          this.word('abc');
+          this.append('abc');
         });
         const str = new AnsiString().split('[#0 script is #1]', format);
         expect(str.words).toEqual([['[', 'abc'], ['script'], ['is'], ['abc', ']']]);
@@ -49,7 +49,7 @@ describe('AnsiString', () => {
 
       it('avoid merging the last word with the next word when not inserting text', () => {
         const format = jest.fn();
-        const str = new AnsiString().word('type').split('#0#0', format).word('script');
+        const str = new AnsiString().append('type').split('#0#0', format).append('script');
         expect(str.words).toEqual([['type'], ['script']]);
         expect(format).toHaveBeenCalledTimes(2);
         expect(format).toHaveBeenCalledWith('#0');
@@ -58,7 +58,7 @@ describe('AnsiString', () => {
 
     it('avoid preserving styles that are glued to the placeholder', () => {
       const format = jest.fn(function (this: AnsiString) {
-        this.word('abc');
+        this.append('abc');
       });
       const str = new AnsiString().split(boldStr + '#0 is #1' + boldStr, format);
       expect(str.words).toEqual([['abc'], ['is'], ['abc']]);

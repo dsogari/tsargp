@@ -459,7 +459,7 @@ type AggregateLength = [
  */
 export class AnsiString {
   /**
-   * The list of words.
+   * The list of words (including line feeds).
    */
   public readonly words: Array<Array<string | Style>> = [];
 
@@ -486,7 +486,7 @@ export class AnsiString {
   /**
    * Whether the first word should be merged with the previous word.
    */
-  private mergeFirst: boolean = false;
+  public mergeFirst: boolean = false;
 
   /**
    * Whether the last word should be merged with the next word.
@@ -504,7 +504,7 @@ export class AnsiString {
   public hook?: AnsiString;
 
   /**
-   * @returns The number of words in the string
+   * @returns The number of words in the string (including line feeds)
    */
   get wordCount(): number {
     return this.words.length;
@@ -513,12 +513,12 @@ export class AnsiString {
   /**
    * @returns The length of the longest word in the string
    */
-  get maxLength(): number {
+  get wordWidth(): number {
     return this.wordLength[2];
   }
 
   /**
-   * @returns The width of the longest line in the string
+   * @returns The length of the longest line in the string
    */
   get lineWidth(): number {
     return this.lineLength[2];
@@ -575,7 +575,11 @@ export class AnsiString {
    * @returns The ANSI string instance
    */
   close(text: string): this {
-    return this.add(text, true);
+    if (text) {
+      this.mergeLast = true;
+      this.add(text);
+    }
+    return this;
   }
 
   /**
@@ -607,14 +611,13 @@ export class AnsiString {
   /**
    * Appends text.
    * @param text The text to append
-   * @param close True if the text should be merged with the previous word, if any
    * @returns The ANSI string instance
    */
-  private add(text: StyledString, close: boolean = false): this {
-    if (text) {
+  private add(text: StyledString): this {
+    const isStr = isString(text);
+    if (isStr ? text.length : text.wordCount) {
       const { words, mergeLast, wordLength, lineLength, lineCount, baseStyle } = this;
       const lastWord = words.at(-1);
-      const isStr = isString(text);
       let wordsToAdd;
       if (isStr) {
         wordsToAdd = [[text]];
@@ -633,7 +636,7 @@ export class AnsiString {
       const lengths = [length, length, length];
       const [a, b, c] = isStr ? lengths : text.wordLength;
       const [d, e, f] = isStr ? lengths : text.lineLength;
-      close ||= (mergeLast || (!isStr && text.mergeFirst)) && !!d;
+      const close = (mergeLast || (!isStr && text.mergeFirst)) && !!d;
       if (lastWord?.length && close) {
         lastWord.push(...wordsToAdd.shift()!);
         wordLength[1] += a;
@@ -659,6 +662,7 @@ export class AnsiString {
       }
       if (!isStr && text.lineCount > 1) {
         lineLength[1] = e;
+        this.lineCount += text.lineCount - 1;
       }
       this.mergeLast = !isStr && text.mergeLast;
     }
@@ -721,7 +725,7 @@ export class AnsiString {
       column = 0;
       j = result.push('\n'); // save index for right-alignment
     }
-    const { words, wordCount, maxLength, align, hook, context, baseStyle: base } = this;
+    const { words, wordCount, wordWidth: maxLength, align, hook, context, baseStyle: base } = this;
     if (hook) {
       if (isHead) {
         context[2] = undefined; // start of line-wise wrapping
@@ -860,16 +864,14 @@ export class AnsiString {
    * Appends text that may contain styles.
    * @param text The text to be appended (may be a normal string or another ANSI string)
    * @param split Whether to split the text if it is a normal string (defaults to `false`)
-   * @param close Whether the text should be merged with the previous word, if it is not split
-   * (defaults to `false`)
    * @returns The ANSI string instance
    */
-  append(text: StyledString, split: boolean = false, close: boolean = false): this {
+  append(text: StyledString, split: boolean = false): this {
     return !isString(text)
-      ? this.add(text, close)
+      ? this.add(text)
       : split
         ? this.split(text)
-        : this.add(text.replace(regex.sgr, ''), close); // ignore inline styles
+        : this.add(text.replace(regex.sgr, '')); // ignore inline styles
   }
 
   /**
@@ -1034,13 +1036,16 @@ function splitItem(result: AnsiString, item: string, format?: FormattingCallback
   for (const word of words) {
     if (word) {
       const parts = word.split(regex.spec);
-      result.append(parts[0], false);
+      result.append(parts[0]);
       for (let i = 1; i < parts.length; i += 2) {
         if (parts[i - 1]) {
           result.mergeLast = true;
         }
         boundFormat?.(parts[i]);
-        result.append(parts[i + 1], false, true);
+        if (parts[i + 1]) {
+          result.mergeLast = true;
+        }
+        result.append(parts[i + 1]);
       }
     }
   }

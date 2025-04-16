@@ -463,7 +463,7 @@ function formatGroups(
   function build(option: OpaqueOption): HelpEntry | undefined {
     const entryLayout = Object.assign({}, layout, option.layout); // top-level merging
     const namesColumn = formatNames(option, entryLayout, useEnv);
-    if (useEnv && namesColumn.length === 1 && !namesColumn[0].maxLength) {
+    if (useEnv && namesColumn.length === 1 && !namesColumn[0].wordWidth) {
       return; // skip options without environment variable names, in this case
     }
     const paramColumn = formatParams(option, entryLayout);
@@ -751,7 +751,7 @@ function formatUsageSection(
   }
   const str = new AnsiString(baseSty, indent, align).break(breaks);
   formatUsage(keys, options, section, flags, str);
-  if (str.maxLength) {
+  if (str.wordWidth) {
     if (section.comment) {
       str.append(section.comment, !noSplit);
     }
