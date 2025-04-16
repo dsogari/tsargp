@@ -405,15 +405,15 @@ const enum ResetStyle {
    */
   notCrossedOut,
   /**
-   * The default foreground color.
+   * Default foreground color.
    */
   defaultForeground = 39,
   /**
-   * The default background color.
+   * Default background color.
    */
   defaultBackground = 49,
   /**
-   * The default underline color.
+   * Default underline color.
    */
   defaultUnderline = 59,
   /**
