@@ -208,7 +208,7 @@ const formatFunctions = {
       }
       if (sep && i < value.length - 1) {
         result.mergeLast = flags.mergePrev ?? true;
-        result.word(sep);
+        result.append(sep);
         result.mergeLast = flags.mergeNext ?? false;
       }
     });
@@ -600,8 +600,8 @@ export class AnsiString {
    * @param sty The style to be applied
    * @returns The ANSI string instance
    */
-  word(text: string, sty?: Style): this {
-    return text ? this.add(sty ? new AnsiString(sty).word(text) : text) : this;
+  word(text: string, sty: Style): this {
+    return this.add(new AnsiString(sty).append(text));
   }
 
   /**
@@ -859,12 +859,12 @@ export class AnsiString {
   /**
    * Appends text that may contain styles.
    * @param text The text to be appended (may be a normal string or another ANSI string)
-   * @param split Whether to split the text if it is a normal string (defaults to `true`)
+   * @param split Whether to split the text if it is a normal string (defaults to `false`)
    * @param close Whether the text should be merged with the previous word, if it is not split
    * (defaults to `false`)
    * @returns The ANSI string instance
    */
-  append(text: StyledString, split: boolean = true, close: boolean = false): this {
+  append(text: StyledString, split: boolean = false, close: boolean = false): this {
     return !isString(text)
       ? this.add(text, close)
       : split
@@ -1017,7 +1017,7 @@ function splitParagraph(result: AnsiString, para: string, format?: FormattingCal
       if (result.wordCount > count) {
         result.break(); // break before list item if does not start the paragraph
       }
-      result.word(item); // list item prefix
+      result.append(item); // list item prefix
     }
   });
 }

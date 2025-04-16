@@ -958,7 +958,7 @@ function formatUsageOption(
       if (compact) {
         result.close(optionAlt).mergeLast = true;
       } else {
-        result.word(optionAlt);
+        result.append(optionAlt);
       }
       enclose = !isAlone || !hasRequiredPart || isRequired;
     } else {
@@ -1034,12 +1034,12 @@ function formatParam(option: OpaqueOption, isUsage: boolean, result: AnsiString)
     }
     str.value(param, { sep: '', ...openArrayNoMergeFlags });
   } else {
-    str.append(name); // split parameter name, if necessary
+    str.append(name, true); // split parameter name, if necessary
   }
   if (str.wordCount) {
     str.close(ellipsis);
   } else {
-    str.word(ellipsis);
+    str.append(ellipsis);
   }
   result.append(str.close(closeBracket));
   return !optional;
@@ -1093,7 +1093,7 @@ function formatRequiredKey(
   negate: boolean,
 ) {
   if (negate) {
-    result.word(config.connectives.no);
+    result.append(config.connectives.no);
   }
   const name = options[requiredKey].preferredName ?? '';
   result.value(getSymbol(name));
@@ -1144,13 +1144,13 @@ function formatRequiredValue(
   const requireAbsent = value === null;
   const requirePresent = value === undefined;
   if ((requireAbsent && !negate) || (requirePresent && negate)) {
-    result.word(connectives.no);
+    result.append(connectives.no);
   }
   const name = option.preferredName ?? '';
   result.value(getSymbol(name));
   if (!requireAbsent && !requirePresent) {
     const connective = negate ? connectives.notEquals : connectives.equals;
-    result.word(connective).value(value);
+    result.append(connective).value(value);
   }
 }
 
@@ -1167,7 +1167,7 @@ function formatRequirementCallback(
   negate: boolean,
 ) {
   if (negate) {
-    result.word(config.connectives.not);
+    result.append(config.connectives.not);
   }
   result.value(callback);
 }
