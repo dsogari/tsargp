@@ -38,8 +38,8 @@ import {
   isFunction,
   isMessage,
   isString,
-  max as max2,
-  min as min2,
+  max,
+  min,
   normalizeArray,
   OptionRegistry,
   readFile,
@@ -369,8 +369,8 @@ function parseCluster(context: ParsingContext, index: number): boolean {
 async function parseArgs(context: ParsingContext) {
   const [registry, values, args, supplied, completing] = context;
   let prev: ParseEntry = [-1, 0];
-  let min = 0; // param count
-  let max = 0; // param count
+  let minParams = 0;
+  let maxParams = 0;
   let suggestNames = false;
   for (let i = 0, k = 0; i < args.length; i = prev[0]) {
     const next = findNext(context, prev);
@@ -385,9 +385,9 @@ async function parseArgs(context: ParsingContext) {
       }
       prev = next;
       const [key, option, name] = info;
-      [min, max] = getParamCount(option);
+      [minParams, maxParams] = getParamCount(option);
       const hasValue = value !== undefined;
-      if (!max || (!isPositional && (isMarker || checkInline(option, name) === false))) {
+      if (!maxParams || (!isPositional && (isMarker || checkInline(option, name) === false))) {
         if (comp) {
           reportCompletion();
         }
@@ -405,12 +405,12 @@ async function parseArgs(context: ParsingContext) {
       if (!completing && !supplied.has(key)) {
         addSupplied(context, info);
       }
-      if (!max) {
+      if (!maxParams) {
         // comp === false
         if (await handleNiladic(context, info, j, args.slice(j + 1))) {
           return; // skip requirements
         }
-        prev[0] += max2(0, option.skipCount ?? 0);
+        prev[0] += max(0, option.skipCount ?? 0);
         prev[2] = undefined;
         continue; // fetch more
       }
@@ -434,7 +434,7 @@ async function parseArgs(context: ParsingContext) {
     }
     // comp === true
     const suggestions = await completeParameter(values, info, i, args.slice(k, j), value);
-    if (suggestNames || (j > i && j - k >= min)) {
+    if (suggestNames || (j > i && j - k >= minParams)) {
       suggestions.push(...completeName(registry, value));
     }
     reportCompletion(suggestions);
@@ -470,17 +470,17 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const { names, positional, options } = registry;
   const inc = prevVal !== undefined ? 1 : 0;
   const prefix = flags.optionPrefix;
-  const [min, max] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
+  const [minParams, maxParams] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
     const comp = completing && i + 1 === args.length;
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
     const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
-    const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= min);
+    const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= minParams);
     const argType = isParam
       ? !isForcedName || prevMarker
-        ? prevMarker && i - prevIndex + inc > max
+        ? prevMarker && i - prevIndex + inc > maxParams
           ? ArgType.afterMarker
           : ArgType.parameter
         : !optionKey
@@ -492,7 +492,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         ? ArgType.optionName
         : parseCluster(context, i)
           ? ArgType.cluster
-          : prevInfo && i - prevIndex + inc <= max
+          : prevInfo && i - prevIndex + inc <= maxParams
             ? ArgType.parameter
             : positional.length && !isForcedName
               ? ArgType.positional
@@ -524,7 +524,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         }
         break; // ignore unknown options during completion
       case ArgType.positional: {
-        const newInfo: OptionInfo = positional[min2(prevPos, positional.length - 1)];
+        const newInfo: OptionInfo = positional[min(prevPos, positional.length - 1)];
         return [i, prevPos + 1, newInfo, arg, comp, false, true, true];
       }
       case ArgType.afterMarker:
@@ -544,7 +544,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         break; // continue looking for parameters or option names
       }
       case ArgType.missingParameter:
-        reportMissingParameter(min, max, prevInfo![2]);
+        reportMissingParameter(minParams, maxParams, prevInfo![2]);
     }
   }
   return [args.length, prevPos];
