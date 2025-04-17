@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@codemirror/lang-javascript": "^6.2.3",
-    "@next/third-parties": "^15.2.4",
+    "@next/third-parties": "^15.3.0",
     "@svgr/webpack": "^8.1.0",
     "@tsconfig/bun": "^1.0.7",
     "@xterm/addon-fit": "^0.10.0",
@@ -27,13 +27,13 @@
     "codemirror": "^6.0.1",
     "local-web-server": "^5.4.0",
     "lz-string": "^1.5.0",
-    "next": "^15.2.4",
+    "next": "^15.3.0",
     "nextra": "^4.2.17",
     "nextra-theme-docs": "^4.2.17",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsargp": "workspace:*",
-    "typedoc": "^0.28.1",
+    "typedoc": "^0.28.2",
     "xterm-readline": "^1.1.2"
   },
   "scripts": {
