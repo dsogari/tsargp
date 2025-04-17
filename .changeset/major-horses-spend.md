@@ -25,5 +25,5 @@ throw new ErrorMessage(ansi`Error with arguments: ${'abc'}: ${123}`);
 Alternatively, the `add` method can be called to append new strings, e.g.:
 
 ```ts
-throw new ErrorMessage().add('Error with arguments: #0: #1', 'abc', 123);
+throw new ErrorMessage().add('Error with arguments: #0: #1', {}, 'abc', 123);
 ```
