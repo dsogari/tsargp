@@ -1,5 +1,18 @@
 # @tsargp/docs
 
+## 1.19.0
+
+### Minor Changes
+
+- e499465: Document the new behavior of ANSI strings.
+
+  - **Styles** page has been updated to reflect the changes made to the `ansi` tag function for template literals.
+
+- 61c2fc7: Document the new behavior of error messages.
+
+  - **Styles** page has been updated to reflect the changes made to the `ErrorMessage` class and the `config`
+  - other pages have been updated to point to the section about error messages in the above page
+
 ## 1.18.0
 
 ### Minor Changes
