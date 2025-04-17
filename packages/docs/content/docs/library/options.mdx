@@ -143,7 +143,7 @@ The `group` attribute, if present, specifies the name of a group under which the
 
 > [!TIP]
 >
-> If there is a [positional] option, you can assign it a unique group and place it _first_ in the option [definitions], in order to highlight it in the help message.
+> You can assign a unique group to [positional] options and place them _first_ in the option [definitions], in order to highlight them in the help message.
 
 #### Display styles
 
@@ -415,9 +415,12 @@ All [non-niladic] options share a set of attributes, which are described below.
 
 #### Positional | marker
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. There may be _at most one_ option with this setting in the same [definition] level.
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. The following values may be used:
 
-If set to `true{:ts}`, then any argument not recognized as an option name will be considered positional. If set to a `string{:ts}`, then it is a positional _marker_, and all arguments that appear beyond the marker will be considered positional.
+- `true{:ts}` -- any argument not recognized as an option name will be considered positional
+- `string{:ts}` -- all arguments beyond the positional marker will be considered positional
+
+If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments (up to the positional marker, if any).
 
 > [!TIP]
 >
@@ -425,7 +428,7 @@ If set to `true{:ts}`, then any argument not recognized as an option name will b
 
 > [!NOTE]
 >
-> The positional marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
+> There may be _at most one_ option with a positional marker in the same [definition] level. Also, the marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
 
 #### Inline constraint
 
