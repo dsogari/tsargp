@@ -135,7 +135,7 @@ Note that the library does not provide a deprecation mechanism for specific valu
 
 > [!TIP]
 >
-> When a deprecated option is [supplied] it generates a [warning message], which you may want to print in the terminal. It can be obtained by destructuring the result of the [`parseInto`] function.
+> When a deprecated option is [supplied] it generates a [warning], which you may want to print in the terminal. It can be obtained by destructuring the result of the [`parseInto`] function.
 
 #### Group | hide
 
@@ -327,7 +327,7 @@ The `param` will be of a different kind for each option:
 - **string** value -- for the [single] and [array] options
 - string **array** -- for the [function] option
 
-The callback should return the parsed value (or a promise thereof). To throw an error from within it, we recommend instantiating the [error message] class: it accepts a custom phrase that will be formatted exactly like [error phrases].
+The callback should return the parsed value (or a promise thereof). To throw an error from within it, we recommend instantiating the [error message] class.
 
 > [!TIP]
 >
@@ -838,9 +838,8 @@ Here is an example of how it might be used inside the callback:
 [messages]: styles#messages
 [styling attributes]: styles#styling-attribute
 [text formatting]: styles#text-splitting
-[warning message]: styles#warning-message
+[warning]: styles#error-message
 [error message]: styles#error-message
-[error phrases]: styles#error-phrases
 [completion message]: styles#text-message
 [inline styles]: styles#inline-styles
 

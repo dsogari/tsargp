@@ -4,7 +4,7 @@ title: Validator - Library - Docs
 
 # Validator
 
-The `validator` module handles validation of option [definitions]. It provides a function that accepts a set of definitions and performs the validation. It may also produce error and warning messages, which can be customized via [message configuration].
+The `validator` module handles validation of option [definitions]. It provides a function that accepts a set of definitions and performs the validation. It may also produce error messages, which can be customized via [message configuration].
 
 ## Option validation
 
@@ -19,7 +19,7 @@ To validate a set of definitions, you must call the `validate` function. It acce
 
 It returns a promise that resolves to a `ValidationResult` object containing the following property:
 
-- `warning` -- a [warning message] consisting of warnings encountered in the validation procedure, if any
+- `warning` -- a list of [warnings] encountered in the validation procedure, if any
 
 ## Validation flags
 
@@ -110,7 +110,7 @@ The following restrictions will produce a warning that is returned by the valida
 {/* styles references */}
 
 [message configuration]: styles#message-configuration
-[warning message]: styles#warning-message
+[warnings]: styles#error-message
 
 {/* formatter references */}
 

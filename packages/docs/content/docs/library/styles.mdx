@@ -125,14 +125,12 @@ Text is split into paragraphs, list items and words using a combination of simpl
 
 #### Placeholders
 
-During splitting, numeric placeholders prefixed with a hashtag `#` may be extracted from the text and processed by a formatting callback. This is used by the library in different places:
+Both the `split` and `format` methods of a ANSI string accept a _phrase_ to be split. During splitting, numeric placeholders prefixed with a hashtag `#` may be extracted from the text and processed by a formatting callback.
 
-- by both the [parser] and [validator], to produce error and warning messages based on configured [error phrases]
-- by the [formatter], to assemble help items from configured [help phrases]
+This is used by the library in different places:
 
-> [!NOTE]
->
-> This particular feature is only available in _phrases_, not in other text attributes.
+- by both the [parser] and [validator], to produce [error messages] based on configured [error phrases]
+- by the [formatter], to assemble [help items] from configured [help phrases]
 
 Placeholders are meant to be replaced with a value. The number on the placeholder indicates the index of the argument that was passed to the formatting function. The resulting format depends on the type of the value, which is denoted internally by a single character. The available ones are:
 
@@ -152,6 +150,18 @@ When a phrase includes placeholders, they indicate where in the phrase to place 
 > [!TIP]
 >
 > You can also apply a phrase to each element of an array through the `arrayWithPhrase` function.
+
+#### Formatting flags
+
+The `format` method accepts an optional parameter of type `FormattingFlags` with the following optional properties:
+
+- `alt` -- the phrase alternative, if any
+- `sep` -- the element delimiter for array and object values (overrides [connective words])
+- `open` -- the opening delimiter for array and object values (overrides [connective words])
+- `close` -- the closing delimiter for array and object values (overrides [connective words])
+- `mergePrev` -- whether the separator should be merged with the previous element (defaults to `true{:ts}`)
+- `mergeNext` -- whether the separator should be merged with the next element (defaults to `false{:ts}`)
+- `custom` -- a custom callback to format the arguments
 
 #### Paragraphs and lists
 
@@ -187,6 +197,10 @@ ansi`A text with ${ansi.style(ul.extended, rgb(255, 165, 0))`orange underline`}.
 ```
 
 You can freely nest template literals with or without style. Just be aware that arguments inside the template will be treated as [placeholders]. So, for example, a traditional (non-ANSI) template literal will be treated as plain string and thus subject to the formatting of a `string{:ts}` placeholder.
+
+> [!NOTE]
+>
+> The [formatting flags] for template literals have default values and cannot be changed.
 
 ### Text wrapping
 
@@ -256,20 +270,11 @@ Generally, you should refrain from altering the returned string after being wrap
 >
 > Alternatively, you can retrieve the underlying strings and manipulate them before calling the `wrap` method.
 
-### Warning message
-
-The `WarnMessage` class is a specialization of the ANSI message, used for warnings.
-
-When `FORCE_WIDTH` is not set, the default width used by this class is the `columns` property of the _standard error_ stream (i.e., `process.stderr{:ts}`). Therefore, this kind of message should be printed with `console.error{:ts}` or equivalent.
-
-It also offers two methods that are used by the library:
-
-- `add` -- appends a ANSI string formatted from one of the [error phrases]
-- `addCustom` -- appends a ANSI string formatted from a _custom_ phrase
-
 ### Error message
 
-The `ErrorMessage` class is a specialization of the warning message, used for errors. It can be instantiated with one of the [error phrases] or with a _custom_ phrase, and should be printed with `console.error{:ts}` or equivalent.
+The `ErrorMessage` class is a specialization of the ANSI message, used for errors and warnings. It also has a utility method `add`, which appends a ANSI string formatted from either one of the [error phrases] or a custom phrase.
+
+When `FORCE_WIDTH` is not set, the default width used by this class is the `columns` property of the _standard error_ stream (i.e., `process.stderr{:ts}`). Therefore, this kind of message should be printed with `console.error{:ts}` or equivalent.
 
 ### Text message
 
@@ -296,6 +301,7 @@ The `styles` property specifies the styles of text elements in ANSI messages. It
 | `symbol`  | Symbols (e.g., names) | `fg.magenta{:ts}`     |
 | `value`   | Unknown values        | `fg.brightBlack{:ts}` |
 | `url`     | URLs                  | `fg.cyan{:ts}`        |
+| `error`   | Error messages        | `fg.brightRed{:ts}`   |
 | `base`    | Base style            | none                  |
 
 > [!TIP]
@@ -337,7 +343,7 @@ The `connectives` property specifies words used to format some text elements tha
 
 #### Error phrases
 
-The `errorPhrases` property specifies custom phrases to use for error and warning messages. It has the following settings, whose keys are enumerators from `ErrorItem`:
+The `errorPhrases` property specifies the phrases to use for [error messages]. It has the following settings, whose keys are enumerators from `ErrorItem`:
 
 | Error item                   | Raised when                                                                     | Default phrase                                                                                   | Placeholders                                                                                  |
 | ---------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
@@ -374,7 +380,7 @@ The `errorPhrases` property specifies custom phrases to use for error and warnin
 
 #### Help phrases
 
-The `helpPhrases` property specifies custom phrases to use for each kind of [help item] that may appear in a [help message]. It has the following settings, whose keys are enumerators from `HelpItem`:
+The `helpPhrases` property specifies the phrases to use for [help items]. It has the following settings, whose keys are enumerators from `HelpItem`:
 
 | Help item    | Description                                                              | Default phrase                                                                   | Placeholders                     |
 | ------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------- |
@@ -412,11 +418,13 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 [styling attributes]: #styling-attribute
 [inline styles]: #inline-styles
 [text formatting]: #text-splitting
+[error messages]: #error-message
 [error phrases]: #error-phrases
 [help phrases]: #help-phrases
 [connective word]: #connective-words
 [connective words]: #connective-words
 [placeholders]: #placeholders
+[formatting flags]: #formatting-flags
 
 {/* options references */}
 
@@ -450,14 +458,13 @@ The `helpPhrases` property specifies custom phrases to use for each kind of [hel
 {/* formatter references */}
 
 [formatter]: formatter
-[help message]: formatter#help-message
 [help messages]: formatter#help-message
 [text block]: formatter#text-block
 [groups section]: formatter#groups-section
 [description column]: formatter#description-column
 [parameter column]: formatter#parameter-column
 [name slot]: formatter#name-slots
-[help item]: formatter#help-items
+[help items]: formatter#help-items
 
 {/* external references */}
 

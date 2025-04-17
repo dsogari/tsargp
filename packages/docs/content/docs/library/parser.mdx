@@ -4,7 +4,7 @@ title: Parser - Library - Docs
 
 # Parser
 
-The `parser` module handles parsing of command-line arguments. It provides functions that accept a set of option [definitions] and parse arguments into option values. They may also produce error and warning messages, which can be customized via [message configuration].
+The `parser` module handles parsing of command-line arguments. It provides functions that accept a set of option [definitions] and parse arguments into option values. They may also produce error messages, which can be customized via [message configuration].
 
 ## Option values
 
@@ -36,7 +36,7 @@ Existing values are preserved until they get overridden by the parsing procedure
 
 This function returns a promise that resolves to a `ParsingResult` object containing the following property:
 
-- `warning` -- a [warning message] consisting of warnings encountered in the parsing procedure, if any
+- `warning` -- a list of [warnings] encountered in the parsing procedure, if any
 
 ## Parsing flags
 
@@ -284,7 +284,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 {/* styles references */}
 
 [message configuration]: styles#message-configuration
-[warning message]: styles#warning-message
+[warnings]: styles#error-message
 [ANSI strings]: styles#ansi-string
 [text message]: styles#text-message
 [JSON message]: styles#json-message

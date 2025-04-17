@@ -14,7 +14,7 @@ export {
 // Constants
 //--------------------------------------------------------------------------------------------------
 /**
- * The kind of error/warning raised by the parser or validator.
+ * The kind of error/warning produced by the parser or validator.
  */
 export const enum ErrorItem {
   /**

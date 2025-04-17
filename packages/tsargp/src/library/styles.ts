@@ -672,13 +672,13 @@ export class AnsiString {
   }
 
   /**
-   * Splits text into words and appends them.
-   * @param text The text to be split
+   * Splits a phrase into words and appends them.
+   * @param phrase The phrase text
    * @param format An optional callback to process placeholders
    * @returns The ANSI string instance
    */
-  split(text: string, format?: FormattingCallback): this {
-    const paragraphs = text.split(regex.para);
+  split(phrase: string, format?: FormattingCallback): this {
+    const paragraphs = phrase.split(regex.para);
     paragraphs.forEach((paragraph, i) => {
       splitParagraph(this, paragraph, format);
       if (i < paragraphs.length - 1) {
@@ -835,10 +835,10 @@ export class AnsiString {
   }
 
   /**
-   * Formats text from a custom phrase with a set of arguments.
-   * @param phrase The message phrase
+   * Formats a phrase with a set of arguments.
+   * @param phrase The phrase text
    * @param flags The formatting flags
-   * @param args The message arguments
+   * @param args The phrase arguments
    * @returns The ANSI string instance
    */
   format(phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
@@ -912,6 +912,19 @@ export class AnsiMessage extends Array<AnsiString> {
   }
 
   /**
+   * Appends a ANSI string formatted from a phrase, with a trailing line feed.
+   * @param phrase The phrase text
+   * @param flags The formatting flags
+   * @param sty The style, if any
+   * @param args The phrase arguments
+   * @returns The ANSI message instance
+   */
+  add(phrase: string, flags?: FormattingFlags, sty?: Style, ...args: Args): this {
+    this.push(new AnsiString(sty).format(phrase, flags, ...args).break());
+    return this;
+  }
+
+  /**
    * @returns The wrapped message
    */
   override toString(): string {
@@ -927,21 +940,20 @@ export class AnsiMessage extends Array<AnsiString> {
 }
 
 /**
- * A warning message.
+ * An error message.
  */
-export class WarnMessage extends AnsiMessage {
+export class ErrorMessage extends AnsiMessage {
   /**
-   * Appends a ANSI string formatted from an error item or custom phrase.
-   * Always includes a trailing line feed.
-   * @param itemOrPhrase The error item or custom phrase
+   * Appends a ANSI string formatted from an error item or custom phrase, with a trailing line feed.
+   * @param itemOrPhrase The error item or phrase
    * @param flags The formatting flags
    * @param args The error arguments
-   * @returns The new length of the message
+   * @returns The error message instance
    */
-  add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): number {
+  add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): this {
+    const { base, error } = config.styles;
     const phrase = isString(itemOrPhrase) ? itemOrPhrase : config.errorPhrases[itemOrPhrase];
-    const str = new AnsiString(config.styles.base).format(phrase, flags, ...args).break();
-    return this.push(str);
+    return super.add(phrase, flags, base.concat(error), ...args);
   }
 
   /**
@@ -949,22 +961,6 @@ export class WarnMessage extends AnsiMessage {
    */
   override toString(): string {
     return this.wrap(streamWidth('stderr'));
-  }
-}
-
-/**
- * An error message.
- */
-export class ErrorMessage extends WarnMessage {
-  /**
-   * Creates an error message formatted from an error item or custom phrase.
-   * @param itemOrPhrase The error item or custom phrase
-   * @param flags The formatting flags
-   * @param args The error arguments
-   */
-  constructor(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args) {
-    super();
-    this.add(itemOrPhrase, flags, ...args);
   }
 }
 
