@@ -119,7 +119,7 @@ export default {
    */
   hello: helloOpts.hello,
   /**
-   * A boolean option that has inline styles and requirements.
+   * A boolean option that has styles and requirements.
    */
   boolean: {
     type: 'single',
@@ -127,9 +127,9 @@ export default {
     sources: ['BOOLEAN'],
     synopsis: ansi`A boolean option
     with:
-    * a paragraph
-    - ${ansi.style(tf.underlined, fg.extended, ext8(223))`inline styles`}
-    1. and a list
+    * a paragraph;
+    - ${ansi.style(tf.underlined, fg.extended, ext8(223))`a style`}; and
+    1. a list
     
     `,
     paramName: '<param>',

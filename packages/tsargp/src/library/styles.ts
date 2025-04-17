@@ -366,7 +366,7 @@ export type StylingAttribute = rs | StandardAttribute | ExtendedAttribute;
 export type TextAlignment = 'left' | 'right';
 
 /**
- * A string that may contain inline styles.
+ * A string that may contain styles.
  */
 export type StyledString = string | AnsiString;
 
@@ -876,7 +876,7 @@ export class AnsiString {
       ? this.add(text)
       : split
         ? this.split(text)
-        : this.add(text.replace(regex.sgr, '')); // ignore inline styles
+        : this.add(text.replace(regex.sgr, '')); // remove inline styles
   }
 
   /**

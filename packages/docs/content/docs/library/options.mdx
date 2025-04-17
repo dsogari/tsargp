@@ -108,7 +108,7 @@ All options share a set of attributes in addition to their type. They are descri
 The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
 
 - A name must _not_ contain the equals sign `'='{:ts}`, since the latter is used as option-parameter separator.
-- A name should not contain [inline styles], but may contain any other Unicode character (including whitespace) or even be the empty string.
+- A name should not contain [styles], but may contain any other Unicode character (including whitespace) or even be the empty string.
 - A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 > [!TIP]
@@ -841,7 +841,7 @@ Here is an example of how it might be used inside the callback:
 [warning]: styles#error-message
 [error message]: styles#error-message
 [completion message]: styles#text-message
-[inline styles]: styles#inline-styles
+[styles]: styles#style
 
 {/* validator references */}
 

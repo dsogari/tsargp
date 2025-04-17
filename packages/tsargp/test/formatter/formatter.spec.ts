@@ -139,7 +139,7 @@ describe('format', () => {
     );
   });
 
-  it('handle an option with inline styles in the description', () => {
+  it('handle an option with styles in the description', () => {
     const options = {
       flag: {
         type: 'flag',

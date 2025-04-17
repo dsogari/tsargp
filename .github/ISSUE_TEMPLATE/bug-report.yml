@@ -11,7 +11,7 @@ body:
     attributes:
       label: Search terms
       description: Which terms did you use when trying to find an existing report?
-      placeholder: e.g., "text wrapped incorrectly", "inline style suppressed in help"
+      placeholder: e.g., "text wrapped incorrectly", "style suppressed in help"
   - type: input
     id: version
     attributes:
