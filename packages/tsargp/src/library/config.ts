@@ -111,7 +111,7 @@ export const config: MessageConfig = {
 // Public types
 //--------------------------------------------------------------------------------------------------
 /**
- * A set of styles for error/warning/help messages.
+ * A set of styles for ANSI messages.
  */
 export type MessageStyles = {
   /**
@@ -154,7 +154,7 @@ export type MessageStyles = {
 
 /**
  * The connective words used in option requirements and other places.
- * Inline styles and line breaks are not supported.
+ * Line breaks are not supported.
  */
 export type ConnectiveWords = {
   /**

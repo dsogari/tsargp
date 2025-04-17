@@ -936,7 +936,7 @@ export class ErrorMessage extends AnsiMessage {
    * @param itemOrPhrase The error item or phrase
    * @param flags The formatting flags
    * @param args The error arguments
-   * @returns The ANSI message instance
+   * @returns The error message instance
    */
   add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): this {
     const { base, error } = config.styles;

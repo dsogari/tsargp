@@ -304,25 +304,20 @@ function validateRequirement(
   requiredKey: string,
   requiredValue?: RequiresVal[string],
 ) {
-  /** @ignore */
-  function error(item: ErrorItem): never {
-    throw new ErrorMessage().add(item, {}, prefixedKey);
-  }
   const [options, , , , prefix] = context;
-  const prefixedKey = getSymbol(prefix + requiredKey);
   if (requiredKey === key) {
-    throw error(ErrorItem.invalidSelfRequirement);
+    throw error(ErrorItem.invalidSelfRequirement, prefix + requiredKey);
   }
   if (!(requiredKey in options)) {
-    throw error(ErrorItem.unknownRequiredOption);
+    throw error(ErrorItem.unknownRequiredOption, prefix + requiredKey);
   }
   const option = options[requiredKey];
   if (isMessage(option.type)) {
-    throw error(ErrorItem.invalidRequiredOption);
+    throw error(ErrorItem.invalidRequiredOption, prefix + requiredKey);
   }
   const noValue = {};
   if ((requiredValue ?? noValue) === noValue && (option.required || option.default !== undefined)) {
-    throw error(ErrorItem.invalidRequiredValue);
+    throw error(ErrorItem.invalidRequiredValue, prefix + requiredKey);
   }
 }
 
