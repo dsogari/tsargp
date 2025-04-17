@@ -672,13 +672,13 @@ export class AnsiString {
   }
 
   /**
-   * Splits text into words and appends them.
-   * @param text The text to be split
+   * Splits a phrase into words and appends them.
+   * @param phrase The phrase text
    * @param format An optional callback to process placeholders
    * @returns The ANSI string instance
    */
-  split(text: string, format?: FormattingCallback): this {
-    const paragraphs = text.split(regex.para);
+  split(phrase: string, format?: FormattingCallback): this {
+    const paragraphs = phrase.split(regex.para);
     paragraphs.forEach((paragraph, i) => {
       splitParagraph(this, paragraph, format);
       if (i < paragraphs.length - 1) {
@@ -835,10 +835,10 @@ export class AnsiString {
   }
 
   /**
-   * Formats text from a custom phrase with a set of arguments.
-   * @param phrase The message phrase
+   * Formats a phrase with a set of arguments.
+   * @param phrase The phrase text
    * @param flags The formatting flags
-   * @param args The message arguments
+   * @param args The phrase arguments
    * @returns The ANSI string instance
    */
   format(phrase: string, flags: FormattingFlags = {}, ...args: Args): this {
@@ -912,11 +912,11 @@ export class AnsiMessage extends Array<AnsiString> {
   }
 
   /**
-   * Appends a ANSI string formatted from a custom phrase, with a trailing line feed.
-   * @param phrase The custom phrase
+   * Appends a ANSI string formatted from a phrase, with a trailing line feed.
+   * @param phrase The phrase text
    * @param flags The formatting flags
    * @param sty The style, if any
-   * @param args The error arguments
+   * @param args The phrase arguments
    * @returns The ANSI message instance
    */
   add(phrase: string, flags?: FormattingFlags, sty?: Style, ...args: Args): this {
