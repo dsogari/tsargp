@@ -91,9 +91,9 @@ export const enum ErrorItem {
    */
   duplicateOptionName,
   /**
-   * Error raised when there are two or more positional options.
+   * Error raised when there are two or more options with a positional marker.
    */
-  duplicatePositionalOption,
+  duplicatePositionalMarker,
   /**
    * Error raised when a choices constraint has a duplicate value.
    */

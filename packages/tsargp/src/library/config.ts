@@ -71,7 +71,8 @@ export const config: MessageConfig = {
     [ErrorItem.invalidRequiredValue]:
       'Invalid required value for option #0. Option is always required or has a default value.',
     [ErrorItem.duplicateOptionName]: 'Option #0 has duplicate name #1.',
-    [ErrorItem.duplicatePositionalOption]: 'Duplicate positional option #0: previous was #1.',
+    [ErrorItem.duplicatePositionalMarker]:
+      'Duplicate option with positional marker: #0: previous was #1.',
     [ErrorItem.duplicateParameterChoice]: 'Option #0 has duplicate choice #1.',
     [ErrorItem.tooSimilarOptionNames]: '#0: Option name #1 has too similar names: #2.',
     [ErrorItem.mixedNamingConvention]: '#0: Name slot #1 has mixed naming conventions: #2.',

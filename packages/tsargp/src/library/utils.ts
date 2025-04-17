@@ -199,9 +199,9 @@ export class OptionRegistry {
   readonly letters: Map<string, string> = new Map<string, string>();
 
   /**
-   * Information regarding the positional option, if any.
+   * Information regarding the positional options, if any.
    */
-  readonly positional: OptionInfo | undefined;
+  readonly positional: Array<OptionInfo> = [];
 
   /**
    * Creates an option registry based on a set of option definitions.
@@ -211,7 +211,7 @@ export class OptionRegistry {
     for (const [key, option] of getEntries(this.options)) {
       registerNames(this.names, this.letters, key, option);
       if (isPositional(option)) {
-        this.positional = [key, option, option.preferredName ?? ''];
+        this.positional.push([key, option, option.preferredName ?? '']);
       }
     }
   }
@@ -295,7 +295,7 @@ export function hasSuppliableName(option: OpaqueOption): boolean {
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !hasSuppliableName(option) && option.positional === undefined;
+  return !hasSuppliableName(option) && !isPositional(option);
 }
 
 /**

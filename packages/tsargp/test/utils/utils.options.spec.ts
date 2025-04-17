@@ -40,16 +40,23 @@ describe('OptionRegistry', () => {
 
       it('include the positional marker', () => {
         const options = {
-          single: {
+          single1: {
+            type: 'single',
+            positional: true,
+          },
+          single2: {
             type: 'single',
             positional: 'marker',
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
         expect(registry.names).toHaveLength(1);
-        expect(registry.names.get('marker')).toEqual('single');
-        expect(options.single).toHaveProperty('preferredName', 'marker');
-        expect(registry.positional).toEqual(['single', options.single, 'marker']);
+        expect(registry.names.get('marker')).toEqual('single2');
+        expect(options.single2).toHaveProperty('preferredName', 'marker');
+        expect(registry.positional).toEqual([
+          ['single1', options.single1, ''],
+          ['single2', options.single2, 'marker'],
+        ]);
       });
     });
 

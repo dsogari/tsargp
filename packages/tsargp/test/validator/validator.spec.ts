@@ -90,7 +90,7 @@ describe('validate', () => {
     });
   });
 
-  it('accept a positional option and another that is explicitly not positional', () => {
+  it('accept multiple positional options', () => {
     const options = {
       single1: {
         type: 'single',
@@ -98,25 +98,25 @@ describe('validate', () => {
       },
       single2: {
         type: 'single',
-        positional: false,
+        positional: true,
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});
   });
 
-  it('throw an error on duplicate positional option', () => {
+  it('throw an error on duplicate positional marker', () => {
     const options = {
       single1: {
         type: 'single',
-        positional: true,
+        positional: 'abc',
       },
       single2: {
         type: 'single',
-        positional: '',
+        positional: 'def',
       },
     } as const satisfies Options;
     expect(validate(options)).rejects.toThrow(
-      `Duplicate positional option single2: previous was single1.`,
+      `Duplicate option with positional marker: single2: previous was single1.`,
     );
   });
 
