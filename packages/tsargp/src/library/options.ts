@@ -669,8 +669,8 @@ export type WithParameterAttributes = {
    * - `string` - all arguments beyond the positional marker will be considered positional
    *
    * If there are multiple positional options, their declaration order determines their relative
-   * position in the command line. Variadic options will take up all remaining positional arguments.
-   * At most one option may have a positional marker.
+   * position in the command line. Variadic options will take up all remaining positional arguments
+   * (up to the positional marker, if any). At most one option can have a positional marker.
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false

@@ -200,4 +200,122 @@ describe('parse', () => {
       });
     });
   });
+
+  describe('multiple positional options are declared', () => {
+    it('handle single-valued options', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+        },
+        single1: {
+          type: 'single',
+          positional: true,
+        },
+        single2: {
+          type: 'single',
+          positional: true,
+        },
+        single3: {
+          type: 'single',
+          positional: '--',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-f', '1'])).resolves.toEqual({
+        flag: true,
+        single1: '1',
+        single2: undefined,
+        single3: undefined,
+      });
+      expect(parse(options, ['1', '-f', '2'])).resolves.toEqual({
+        flag: true,
+        single1: '1',
+        single2: '2',
+        single3: undefined,
+      });
+      expect(parse(options, ['1', '2', '-f', '3'])).resolves.toEqual({
+        flag: true,
+        single1: '1',
+        single2: '2',
+        single3: '3',
+      });
+      expect(parse(options, ['1', '2', '--', '3'])).resolves.toEqual({
+        flag: undefined,
+        single1: '1',
+        single2: '2',
+        single3: '3',
+      });
+      expect(parse(options, ['1', '--', '3'])).resolves.toEqual({
+        flag: undefined,
+        single1: '1',
+        single2: undefined,
+        single3: '3',
+      });
+      expect(parse(options, ['--', '3'])).resolves.toEqual({
+        flag: undefined,
+        single1: undefined,
+        single2: undefined,
+        single3: '3',
+      });
+    });
+
+    it('handle polyadic and variadic options', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+        },
+        function: {
+          type: 'function',
+          positional: true,
+          paramCount: 2,
+          preferredName: 'preferred',
+        },
+        array: {
+          type: 'array',
+          positional: true,
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-f', '1'])).rejects.toThrow(
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
+      );
+      expect(parse(options, ['-f', '1', '2'])).resolves.toEqual({
+        flag: true,
+        function: ['1', '2'],
+        array: undefined,
+      });
+      expect(parse(options, ['-f', '1', '2', '-f', '3'])).resolves.toEqual({
+        flag: true,
+        function: ['1', '2'],
+        array: ['3'],
+      });
+      expect(parse(options, ['1', '2', '-f', '3', '4'])).resolves.toEqual({
+        flag: true,
+        function: ['1', '2'],
+        array: ['3', '4'],
+      });
+      expect(parse(options, ['1', '2', '3', '-f', '4'])).resolves.toEqual({
+        flag: true,
+        function: ['1', '2'],
+        array: ['4'],
+      });
+    });
+
+    it('handle a variadic option and another with positional marker', () => {
+      const options = {
+        array: {
+          type: 'array',
+          positional: true,
+        },
+        single: {
+          type: 'single',
+          positional: '--',
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['1', '2', '--', '3'])).resolves.toEqual({
+        array: ['1', '2'],
+        single: '3',
+      });
+    });
+  });
 });
