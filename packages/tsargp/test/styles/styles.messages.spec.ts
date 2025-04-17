@@ -6,10 +6,15 @@ import {
   ErrorMessage,
   TextMessage,
   JsonMessage,
+  fg,
 } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
+const red = [fg.red];
+
+const redStr = '\x1b[31m';
+const yellowStr = '\x1b[33m';
 const brightRedStr = '\x1b[91m';
 const noColorStr = '\x1b[39m';
 
@@ -38,6 +43,19 @@ describe('AnsiMessage', () => {
     const str = new AnsiString().split('type script');
     const msg = new AnsiMessage(str);
     expect(msg.message).toEqual('type script');
+  });
+
+  describe('add', () => {
+    it('append a ANSI string from a custom phrase', () => {
+      const msg = new AnsiMessage().add('#0 #1 #2', {}, undefined, 0, 'abc', false);
+      expect(msg.message).toEqual(`0 'abc' false\n`);
+    });
+
+    it('emit styles', () => {
+      const msg = new AnsiMessage().add('A #0 number', {}, red, 123);
+      process.env['FORCE_WIDTH'] = '100';
+      expect(msg.message).toEqual(`${redStr}A ${yellowStr}123${redStr} number\n${noColorStr}`);
+    });
   });
 });
 

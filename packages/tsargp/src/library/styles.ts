@@ -912,6 +912,19 @@ export class AnsiMessage extends Array<AnsiString> {
   }
 
   /**
+   * Appends a ANSI string formatted from a custom phrase, with a trailing line feed.
+   * @param phrase The custom phrase
+   * @param flags The formatting flags
+   * @param sty The style, if any
+   * @param args The error arguments
+   * @returns The ANSI message instance
+   */
+  add(phrase: string, flags?: FormattingFlags, sty?: Style, ...args: Args): this {
+    this.push(new AnsiString(sty).format(phrase, flags, ...args).break());
+    return this;
+  }
+
+  /**
    * @returns The wrapped message
    */
   override toString(): string {
@@ -931,8 +944,7 @@ export class AnsiMessage extends Array<AnsiString> {
  */
 export class ErrorMessage extends AnsiMessage {
   /**
-   * Appends a ANSI string formatted from an error item or custom phrase.
-   * Always includes a trailing line feed.
+   * Appends a ANSI string formatted from an error item or custom phrase, with a trailing line feed.
    * @param itemOrPhrase The error item or phrase
    * @param flags The formatting flags
    * @param args The error arguments
@@ -941,9 +953,7 @@ export class ErrorMessage extends AnsiMessage {
   add(itemOrPhrase: ErrorItem | string, flags?: FormattingFlags, ...args: Args): this {
     const { base, error } = config.styles;
     const phrase = isString(itemOrPhrase) ? itemOrPhrase : config.errorPhrases[itemOrPhrase];
-    const str = new AnsiString(base.concat(error)).format(phrase, flags, ...args).break();
-    this.push(str);
-    return this;
+    return super.add(phrase, flags, base.concat(error), ...args);
   }
 
   /**
