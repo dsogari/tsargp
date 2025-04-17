@@ -933,7 +933,7 @@ export class ErrorMessage extends AnsiMessage {
   /**
    * Appends a ANSI string formatted from an error item or custom phrase.
    * Always includes a trailing line feed.
-   * @param itemOrPhrase The error item or custom phrase
+   * @param itemOrPhrase The error item or phrase
    * @param flags The formatting flags
    * @param args The error arguments
    * @returns The ANSI message instance

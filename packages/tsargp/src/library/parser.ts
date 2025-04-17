@@ -13,8 +13,6 @@ import type {
   Requires,
   RequiresEntry,
 } from './options.js';
-import type { FormattingFlags } from './styles.js';
-import type { Args } from './utils.js';
 
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
@@ -23,6 +21,7 @@ import { AnsiMessage, AnsiString, ErrorMessage, JsonMessage, TextMessage } from 
 import {
   areEqual,
   checkInline,
+  error,
   findSimilar,
   findValue,
   getArgs,
@@ -347,7 +346,7 @@ function parseCluster(context: ParsingContext, index: number): boolean {
     const [, option, name] = getOpt(letter);
     const [min, max] = getParamCount(option);
     if (j < rest.length - 1 && (isCommand(option.type) || min < max)) {
-      throw new ErrorMessage().add(ErrorItem.invalidClusterOption, {}, getSymbol(letter));
+      throw error(ErrorItem.invalidClusterOption, letter);
     }
     if (name !== undefined) {
       args.splice(i++, 0, name);
@@ -395,11 +394,7 @@ async function parseArgs(context: ParsingContext) {
             continue;
           }
           const [alt, name2] = isMarker ? [1, '' + option.positional] : [0, name];
-          throw new ErrorMessage().add(
-            ErrorItem.disallowedInlineParameter,
-            { alt },
-            getSymbol(name2),
-          );
+          throw error(ErrorItem.disallowedInlineParameter, name2, { alt });
         }
       }
       if (!completing && !supplied.has(key)) {
@@ -530,7 +525,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         if (checkInline(option, name) === 'always') {
           if (!completing) {
             // ignore required inline parameters while completing
-            throw new ErrorMessage().add(ErrorItem.missingInlineParameter, {}, getSymbol(name));
+            throw error(ErrorItem.missingInlineParameter, name);
           }
           prevInfo = undefined;
           i--; // reprocess the current argument
@@ -554,9 +549,8 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
  */
 function reportMissingParameter(min: number, max: number, name: string): never {
   const [alt, val] = min === max ? [0, min] : isFinite(max) ? [2, [min, max]] : [1, min];
-  const sep = config.connectives.and;
-  const flags = { alt, sep, open: '', close: '', mergePrev: false };
-  throw new ErrorMessage().add(ErrorItem.missingParameter, flags, getSymbol(name), val);
+  const flags = { alt, sep: config.connectives.and, open: '', close: '', mergePrev: false };
+  throw error(ErrorItem.missingParameter, name, flags, val);
 }
 
 /**
@@ -566,14 +560,13 @@ function reportMissingParameter(min: number, max: number, name: string): never {
  */
 function reportUnknownName(context: ParsingContext, name: string): never {
   const similar = findSimilar(name, context[0].names.keys(), 0.6);
-  const alt = similar.length ? 1 : 0;
-  const sep = config.connectives.optionSep;
-  throw new ErrorMessage().add(
-    ErrorItem.unknownOption,
-    { alt, sep, open: '', close: '' },
-    getSymbol(name),
-    similar.map(getSymbol),
-  );
+  const flags = {
+    alt: similar.length ? 1 : 0,
+    sep: config.connectives.optionSep,
+    open: '',
+    close: '',
+  };
+  throw error(ErrorItem.unknownOption, name, flags, similar.map(getSymbol));
 }
 
 /**
@@ -692,10 +685,6 @@ async function parseParams(
   params: Array<string>,
 ): Promise<boolean> {
   /** @ignore */
-  function error(kind: ErrorItem, flags: FormattingFlags, ...args: Args) {
-    return new ErrorMessage().add(kind, flags, getSymbol(name), ...args);
-  }
-  /** @ignore */
   function parse1(param: unknown, def = param): unknown {
     // avoid destructuring, because the callback might need to use `this`
     return option.parse ? option.parse(param, seq) : def;
@@ -741,13 +730,19 @@ async function parseParams(
   if (regex) {
     const mismatch = params.find((param) => !regex.test(param));
     if (mismatch) {
-      throw error(ErrorItem.regexConstraintViolation, {}, mismatch, regex);
+      throw error(ErrorItem.regexConstraintViolation, name, {}, mismatch, regex);
     }
   }
   if (choices) {
     const mismatch = params.find((param) => !choices.includes(param));
     if (mismatch) {
-      throw error(ErrorItem.choiceConstraintViolation, { open: '', close: '' }, mismatch, choices);
+      throw error(
+        ErrorItem.choiceConstraintViolation,
+        name,
+        { open: '', close: '' },
+        mismatch,
+        choices,
+      );
     }
   }
   if (type === 'single') {
@@ -758,7 +753,7 @@ async function parseParams(
     for (const param of params) {
       prev.push(await parse2(param));
     }
-    values[key] = normalizeArray(option, getSymbol(name), prev);
+    values[key] = normalizeArray(option, name, prev);
   }
   return breakLoop;
 }
@@ -958,13 +953,13 @@ async function checkDefaultValue(context: ParsingContext, key: string, isEarly: 
   }
   const name = preferredName ?? '';
   if (required) {
-    throw new ErrorMessage().add(ErrorItem.missingRequiredOption, {}, getSymbol(name));
+    throw error(ErrorItem.missingRequiredOption, name);
   }
   if ('default' in option) {
     // avoid destructuring, because the callback might need to use `this`
     const value = await (isFunction(option.default) ? option.default(values) : option.default);
     // be careful to not modify the returned value, as it may be read-only
-    values[key] = type === 'array' ? normalizeArray(option, getSymbol(name), value) : value;
+    values[key] = type === 'array' ? normalizeArray(option, name, value) : value;
   }
 }
 
@@ -976,20 +971,20 @@ async function checkDefaultValue(context: ParsingContext, key: string, isEarly: 
 async function checkRequiredOption(context: ParsingContext, key: string) {
   /** @ignore */
   function check(requires: Requires, negate: boolean, invert: boolean) {
-    return checkRequires(context, option, requires, error, negate, invert);
+    return checkRequires(context, option, requires, str, negate, invert);
   }
   const [registry, , , supplied] = context;
   const option = registry.options[key];
   const { preferredName, requires, requiredIf } = option;
   const present = supplied.has(key);
-  const error = new AnsiString();
+  const str = new AnsiString();
   if (
     (present && requires && !(await check(requires, false, false))) ||
     (!present && requiredIf && !(await check(requiredIf, true, true)))
   ) {
     const name = preferredName ?? '';
     const kind = present ? ErrorItem.unsatisfiedRequirement : ErrorItem.unsatisfiedCondRequirement;
-    throw new ErrorMessage().add(kind, {}, getSymbol(name), error);
+    throw error(kind, name, {}, str);
   }
 }
 

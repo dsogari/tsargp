@@ -16,6 +16,7 @@ import type {
   Requires,
   RequiresVal,
 } from './options.js';
+import type { FormattingFlags } from './styles.js';
 
 import { ErrorItem } from './enums.js';
 import { RequiresAll, RequiresNot, RequiresOne } from './options.js';
@@ -456,6 +457,23 @@ export function checkInline(option: OpaqueOption, name: string): boolean | 'alwa
 }
 
 /**
+ * Creates an error message associated with an option.
+ * @param itemOrPhrase The error item or phrase
+ * @param name The option name (or key)
+ * @param flags The formatting flags
+ * @param args The message arguments
+ * @returns The error message
+ */
+export function error(
+  itemOrPhrase: ErrorItem | string,
+  name: string,
+  flags: FormattingFlags = {},
+  ...args: Args
+): ErrorMessage {
+  return new ErrorMessage().add(itemOrPhrase, flags, getSymbol(name), ...args);
+}
+
+/**
  * Normalizes the value of an array-valued option and checks the validity of its element count.
  * @param option The option definition
  * @param name The option name (or key)
@@ -463,20 +481,14 @@ export function checkInline(option: OpaqueOption, name: string): boolean | 'alwa
  * @returns The normalized array
  * @throws On value not satisfying the limit constraint
  */
-export function normalizeArray(option: OpaqueOption, name: symbol, value: unknown): Array<unknown> {
+export function normalizeArray(option: OpaqueOption, name: string, value: unknown): Array<unknown> {
   if (!isArray(value)) {
     return [value]; // convert to a single-element tuple
   }
   const { unique, limit } = option;
   const result = unique ? makeUnique(value) : value.slice(); // the input may be read-only
   if (limit && limit > 0 && limit < result.length) {
-    throw new ErrorMessage().add(
-      ErrorItem.limitConstraintViolation,
-      {},
-      name,
-      result.length,
-      limit,
-    );
+    throw error(ErrorItem.limitConstraintViolation, name, {}, result.length, limit);
   }
   return result;
 }
@@ -497,7 +509,7 @@ export function numberInRange(
     if (info.comp || (min <= num && num <= max)) {
       return num; // handle NaN; avoid throwing errors when completion is in effect
     }
-    throw new ErrorMessage().add(phrase, {}, getSymbol(info.name), param, range);
+    throw error(phrase, info.name, {}, param, range);
   };
 }
 
