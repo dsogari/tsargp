@@ -1,4 +1,4 @@
-name: Deploy site to GitHub Pages
+name: GitHub Pages
 
 on:
   # Allows you to run this workflow manually from the Actions tab

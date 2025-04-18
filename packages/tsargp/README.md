@@ -1,5 +1,8 @@
 # tsargp
 
+[![CodeQL]](https://github.com/dsogari/tsargp/actions/workflows/github-code-scanning/codeql)
+[![codecov]](https://codecov.io/gh/dsogari/tsargp)
+
 **tsargp** is a command-line argument parsing library that helps you write clean code.
 
 Get started with the [documentation].
@@ -116,3 +119,5 @@ bun publish   # publish to npm registry
 [online demo]: https://dsogari.github.io/tsargp/demo
 [demo source]: src/examples/demo.options.ts
 [shim]: https://en.wikipedia.org/wiki/Shim_(computing)
+[CodeQL]: https://github.com/dsogari/tsargp/actions/workflows/github-code-scanning/codeql/badge.svg
+[codecov]: https://codecov.io/gh/dsogari/tsargp/graph/badge.svg?token=W2AA8M1L87

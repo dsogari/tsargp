@@ -1,0 +1,22 @@
+name: Coverage Report
+
+on:
+  push:
+    branches: main
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run tests
+        run: bun test --coverage --coverage-reporter=lcov
+      - name: Upload report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+          disable_search: true
