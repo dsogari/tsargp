@@ -1,5 +1,24 @@
 # @tsargp/docs
 
+## 1.20.0
+
+### Minor Changes
+
+- c119461: Document the new behavior of positional options.
+
+  - **Options** page has been updated to document the new behavior of the `positional` and `marker` attributes
+  - **Parser** page has been updated to document the new `position` field in the argument sequence information
+  - **Validator** page has been updated to remove the validation rule about duplicate positional options
+  - **Formatter** page has been updated to document the new behavior of trailing markers in usage sections
+  - **Styles** page has been updated to remove the `duplicatePositionalOption` error item and document the new `marker` help item
+
+### Patch Changes
+
+- 3d2275e: Update dependencies.
+
+  - `next` - 15.3.0
+  - `typedoc` - 0.28.2
+
 ## 1.19.0
 
 ### Minor Changes

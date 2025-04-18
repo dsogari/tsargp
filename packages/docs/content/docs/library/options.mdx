@@ -413,7 +413,7 @@ All [non-niladic] options share a set of attributes, which are described below.
 
 The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. If set, then any argument not recognized as an option name will be considered positional.
 
-If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments (up to a [trailing marker]).
+If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments (up to a [trailing marker]). If there are more positional arguments than positional options, the last such option will take up the excess.
 
 > [!TIP]
 >
@@ -421,7 +421,7 @@ If there are multiple positional options, their declaration order determines the
 
 > [!TIP]
 >
-> You can assign a unique [group] to positional options and place them _first_ in the option [definitions], in order to highlight them in the help message.
+> You can assign a unique [group] to positional options and declare them first in the [definitions], so as to highlight them in the help message.
 
 #### Trailing marker
 

@@ -678,7 +678,8 @@ export type WithParameterAttributes = {
    *
    * If there are multiple positional options, their declaration order determines their relative
    * position in the command line. Variadic options will take up all remaining positional arguments
-   * (up to a trailing marker).
+   * (up to a trailing marker). If there are more positional arguments than positional options, the
+   * last such option will take up the excess.
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false
