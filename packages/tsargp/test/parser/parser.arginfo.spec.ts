@@ -99,7 +99,7 @@ describe('parse', () => {
       const options = {
         single: {
           type: 'single',
-          positional: '--',
+          marker: '--',
           preferredName: 'preferred',
           parse: jest.fn((param) => param),
         },

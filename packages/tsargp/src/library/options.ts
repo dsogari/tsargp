@@ -669,19 +669,24 @@ export type WithTemplateAttributes = {
  */
 export type WithParameterAttributes = {
   /**
-   * Whether the option accepts positional arguments. The following values may be used:
+   * Whether the option accepts positional arguments.
    *
-   * - `true` - any argument not recognized as an option name will be considered positional
-   * - `string` - all arguments beyond the positional marker will be considered positional
+   * If `true`, then any argument not recognized as an option name will be considered positional.
    *
    * If there are multiple positional options, their declaration order determines their relative
    * position in the command line. Variadic options will take up all remaining positional arguments
-   * (up to the positional marker, if any). At most one option can have a positional marker.
+   * (up to a positional marker, if any).
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false
    */
-  readonly positional?: boolean | string;
+  readonly positional?: boolean;
+  /**
+   * The positional marker.
+   *
+   * If set, then all arguments beyond the positional marker will be considered positional.
+   */
+  readonly marker?: string;
   /**
    * Whether inline parameters should be disallowed or required for this option.
    * Can be `false` to disallow or `'always'` to always require.

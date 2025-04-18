@@ -238,7 +238,8 @@ export default {
     synopsis: 'A string array option.',
     group: 'String options:',
     example: ['one'],
-    positional: '--',
+    positional: true,
+    marker: '--',
     limit: 3,
   },
   /**

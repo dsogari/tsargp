@@ -38,7 +38,6 @@ import {
   hasTemplate,
   isArray,
   isEnvironmentOnly,
-  isPositional,
   isString,
   max,
   min,
@@ -212,10 +211,14 @@ const helpFunctions: HelpFunctions = {
     }
   },
   [HelpItem.positional]: (option, phrase, _options, result) => {
-    const { positional } = option;
-    const [alt, name] = isString(positional) ? [1, getSymbol(positional)] : positional ? [0] : [-1];
-    if (alt >= 0) {
-      result.format(phrase, { alt }, name);
+    if (option.positional) {
+      result.split(phrase);
+    }
+  },
+  [HelpItem.marker]: (option, phrase, _options, result) => {
+    const { marker } = option;
+    if (isString(marker)) {
+      result.format(phrase, {}, getSymbol(marker));
     }
   },
   [HelpItem.append]: (option, phrase, _options, result) => {
@@ -795,13 +798,19 @@ function formatUsage(
   const requiredSet = new Set(required?.filter((key) => key in options));
   const deps = normalizeDependencies(refilterKeys(keys, filter), requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
+  const markerSet = new Set<string>(); // set of positional markers
   const withMarkerSet = new Set<string>(); // set of components that include a positional marker
   for (const [comp, keys] of getEntries(components)) {
-    const index = keys.findIndex((key) => isString(options[key].positional));
+    const index = keys.findIndex((key) => isString(options[key].marker));
     if (index >= 0) {
+      markerSet.add(options[keys[index]].marker!);
       keys.push(...keys.splice(index, 1)); // leave positional marker for last
       withMarkerSet.add(comp);
     }
+  }
+  if (markerSet.size > 1) {
+    // developer mistake: see documentation
+    throw Error(`Cannot render usage statement with multiple markers: ${[...markerSet]}`);
   }
   const usage = createUsage(adjacency);
   sortUsageStatement(withMarkerSet, usage);
@@ -941,7 +950,7 @@ function formatUsageOption(
   const hasStdin = option.stdin && stdinSymbol !== undefined;
   const nameCount = formatUsageNames(option, flags, compact, result);
   let hasRequiredPart = !!nameCount;
-  if (isPositional(option)) {
+  if (option.positional) {
     if (nameCount && (hasParam || !isAlone)) {
       result.openAt(optionalOpen, count).close(optionalClose);
       hasRequiredPart = false; // names are optional

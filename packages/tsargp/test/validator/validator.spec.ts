@@ -10,7 +10,7 @@ describe('validate', () => {
       const options = {
         single: {
           type: 'single',
-          positional: '',
+          marker: '',
         },
       } as const satisfies Options;
       expect(validate(options)).resolves.toEqual({});
@@ -104,20 +104,18 @@ describe('validate', () => {
     expect(validate(options)).resolves.toEqual({});
   });
 
-  it('throw an error on duplicate positional marker', () => {
+  it('accept multiple positional markers', () => {
     const options = {
       single1: {
         type: 'single',
-        positional: 'abc',
+        marker: 'abc',
       },
       single2: {
         type: 'single',
-        positional: 'def',
+        marker: 'def',
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(
-      `Duplicate option with positional marker: single2: previous was single1.`,
-    );
+    expect(validate(options)).resolves.toEqual({});
   });
 
   describe('when an option is not suppliable', () => {

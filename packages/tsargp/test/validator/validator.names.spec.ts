@@ -10,7 +10,7 @@ describe('validate', () => {
       single: {
         type: 'single',
         names: [null, '', ' '],
-        positional: '  ',
+        marker: '  ',
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});
@@ -41,7 +41,7 @@ describe('validate', () => {
     const options = {
       single: {
         type: 'single',
-        positional: '=',
+        marker: '=',
       },
     } as const satisfies Options;
     expect(validate(options)).rejects.toThrow(`Option single has invalid name '='.`);
@@ -86,7 +86,7 @@ describe('validate', () => {
       single: {
         type: 'single',
         names: ['dup'],
-        positional: 'dup',
+        marker: 'dup',
       },
     } as const satisfies Options;
     expect(validate(options)).rejects.toThrow(`Option single has duplicate name 'dup'.`);

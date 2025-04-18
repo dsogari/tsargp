@@ -210,7 +210,7 @@ export class OptionRegistry {
   constructor(readonly options: OpaqueOptions) {
     for (const [key, option] of getEntries(this.options)) {
       registerNames(this.names, this.letters, key, option);
-      if (isPositional(option)) {
+      if (option.positional) {
         this.positional.push([key, option, option.preferredName!]);
       }
     }
@@ -252,8 +252,8 @@ function registerNames(
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
   const names = option.names?.slice().filter(isString) ?? [];
-  if (isString(option.positional)) {
-    names.push(option.positional);
+  if (isString(option.marker)) {
+    names.push(option.marker);
   }
   return names;
 }
@@ -295,7 +295,7 @@ export function hasSuppliableName(option: OpaqueOption): boolean {
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !hasSuppliableName(option) && !isPositional(option);
+  return !hasSuppliableName(option) && !option.positional && !isString(option.marker);
 }
 
 /**
@@ -332,15 +332,6 @@ export function isNiladic(type: OptionType): type is NiladicOptionType {
  */
 export function isCommand(type: OptionType): type is 'command' {
   return type === 'command';
-}
-
-/**
- * Tests if an option accepts positional arguments.
- * @param option The option definition
- * @returns True if the option is positional
- */
-export function isPositional(option: OpaqueOption): boolean {
-  return !!option.positional || option.positional === '';
 }
 
 /**

@@ -510,7 +510,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
           const { type, synopsis } = option;
           reportCompletion([{ type, name, synopsis: synopsis && '' + synopsis }]);
         }
-        const isMarker = name === option.positional;
+        const isMarker = name === option.marker;
         const newInfo: OptionInfo = [optionKey!, option, name];
         return [i, prevPos, newInfo, value, comp, isMarker, true];
       }

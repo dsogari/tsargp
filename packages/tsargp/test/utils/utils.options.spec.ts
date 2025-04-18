@@ -46,17 +46,14 @@ describe('OptionRegistry', () => {
           },
           single2: {
             type: 'single',
-            positional: 'marker',
+            marker: 'marker',
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
         expect(registry.names).toHaveLength(1);
         expect(registry.names.get('marker')).toEqual('single2');
         expect(options.single2).toHaveProperty('preferredName', 'marker');
-        expect(registry.positional).toEqual([
-          ['single1', options.single1, ''],
-          ['single2', options.single2, 'marker'],
-        ]);
+        expect(registry.positional).toEqual([['single1', options.single1, '']]);
       });
     });
 
@@ -78,19 +75,15 @@ describe('OptionRegistry', () => {
 });
 
 describe('getOptionNames', () => {
-  it('handle null values and a positional option', () => {
+  it('handle null values and include the positional marker', () => {
     const options = {
-      flag: {
-        type: 'flag',
-        names: [null, '-f'],
-      },
       single: {
         type: 'single',
-        positional: 'marker',
+        names: [null, '-s'],
+        marker: 'marker',
       },
     } as const satisfies Options;
-    expect(getOptionNames(options.flag)).toEqual(['-f']);
-    expect(getOptionNames(options.single)).toEqual(['marker']);
+    expect(getOptionNames(options.single)).toEqual(['-s', 'marker']);
   });
 });
 

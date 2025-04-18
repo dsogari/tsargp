@@ -91,10 +91,6 @@ export const enum ErrorItem {
    */
   duplicateOptionName,
   /**
-   * Error raised when there are two or more options with a positional marker.
-   */
-  duplicatePositionalMarker,
-  /**
    * Error raised when a choices constraint has a duplicate value.
    */
   duplicateParameterChoice,
@@ -148,6 +144,10 @@ export const enum HelpItem {
    * Whether the option accepts positional arguments.
    */
   positional,
+  /**
+   * Whether the option accepts arguments after positional marker.
+   */
+  marker,
   /**
    * The option's treatment of inline parameters.
    */

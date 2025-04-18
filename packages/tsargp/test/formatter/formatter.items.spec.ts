@@ -158,7 +158,7 @@ describe('format', () => {
       single: {
         type: 'single',
         names: ['-s'],
-        positional: '--',
+        marker: '--',
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
@@ -183,7 +183,7 @@ describe('format', () => {
     const options = {
       single: {
         type: 'single',
-        positional: '', // test empty marker; should look strange in the description
+        marker: '', // test empty marker; should look strange in the description
         stdin: true,
       },
     } as const satisfies Options;

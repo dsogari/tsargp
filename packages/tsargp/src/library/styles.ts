@@ -750,7 +750,8 @@ export class AnsiString {
     let j = result.length; // save index for right-alignment
     if (width < start + wordWidth) {
       if (hook) {
-        throw Error(`Cannot wrap word of length ${wordWidth}`); // developer mistake: see documentation
+        // developer mistake: see documentation
+        throw Error(`Cannot wrap word of length ${wordWidth}`);
       }
       start = 0; // wrap to the first column instead
       if (column && words[0].length) {

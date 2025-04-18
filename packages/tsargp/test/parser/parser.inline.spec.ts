@@ -37,7 +37,7 @@ describe('parse', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          positional: '', // test empty marker
+          marker: '', // test empty marker
           cluster: 's',
           parse: jest.fn(),
         },

@@ -364,7 +364,7 @@ describe('parse', () => {
       const options = {
         single: {
           type: 'single',
-          positional: '--',
+          marker: '--',
         },
       } as const satisfies Options;
       expect(parse(options, 'cmd ', { compIndex: 4 })).rejects.toThrow(/^--$/);
@@ -398,16 +398,16 @@ describe('parse', () => {
           type: 'single',
           names: ['-s'],
           choices: ['one', 'two'],
-          positional: '--',
+          marker: '--',
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd ', { compIndex: 4 })).rejects.toThrow(/^one\ntwo\n-s\n--$/);
+      expect(parse(options, 'cmd ', { compIndex: 4 })).rejects.toThrow(/^-s\n--$/);
       expect(parse(options, 'cmd -', { compIndex: 5 })).rejects.toThrow(/^-s\n--$/);
       expect(parse(options, 'cmd --', { compIndex: 6 })).rejects.toThrow(/^--$/);
       expect(parse(options, 'cmd -- ', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
       expect(parse(options, 'cmd -- o', { compIndex: 8 })).rejects.toThrow(/^one$/);
       expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^one\ntwo\n-s\n--$/);
+      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^-s\n--$/);
     });
 
     it('handle a positional function option with parameter count', () => {

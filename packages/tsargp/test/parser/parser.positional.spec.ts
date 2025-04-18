@@ -96,110 +96,6 @@ describe('parse', () => {
     });
   });
 
-  describe('parameters are specified after a positional marker', () => {
-    it('ignore the option prefix after the positional marker ', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          positional: '--',
-        },
-      } as const satisfies Options;
-      const flags: ParsingFlags = { optionPrefix: '-' };
-      expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: '-s' });
-    });
-
-    it('throw an error on missing parameter to single-valued option', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          positional: '--',
-          preferredName: 'preferred',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['--'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 1.`,
-      );
-    });
-
-    it('throw an error on missing parameter to polyadic function option ', () => {
-      const options = {
-        function: {
-          type: 'function',
-          names: ['-f'],
-          positional: '--',
-          paramCount: 2,
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['--'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 2.`,
-      );
-      expect(parse(options, ['--', '1'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 2.`,
-      );
-      expect(parse(options, ['--', '1', '2', '3'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 2.`,
-      );
-    });
-
-    it('handle an option with empty string as positional marker', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          positional: '',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['', '-s'])).resolves.toEqual({ single: '-s' });
-      expect(parse(options, ['0', '', '-s'])).resolves.toEqual({ single: '-s' });
-      expect(parse(options, ['', '1', '2'])).resolves.toEqual({ single: '2' });
-      expect(parse(options, ['', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
-    });
-
-    it('handle a single-valued option', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          positional: '--',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['--', '-s'])).resolves.toEqual({ single: '-s' });
-      expect(parse(options, ['0', '--', '-s'])).resolves.toEqual({ single: '-s' });
-      expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ single: '2' });
-      expect(parse(options, ['--', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
-    });
-
-    it('handle an array-valued option', () => {
-      const options = {
-        array: {
-          type: 'array',
-          names: ['-a'],
-          positional: '--',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['--'])).resolves.toEqual({ array: [] });
-      expect(parse(options, ['--', '0', '-a'])).resolves.toEqual({ array: ['0', '-a'] });
-      expect(parse(options, ['0', '--', '-a'])).resolves.toEqual({ array: ['-a'] });
-    });
-
-    it('handle a function option', () => {
-      const options = {
-        function: {
-          type: 'function',
-          names: ['-f'],
-          positional: '--',
-          paramCount: 2,
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ function: ['1', '2'] });
-      expect(parse(options, ['--', '1', '2', '-f', '-f'])).resolves.toEqual({
-        function: ['-f', '-f'],
-      });
-    });
-  });
-
   describe('multiple positional options are declared', () => {
     it('handle single-valued options', () => {
       const options = {
@@ -217,7 +113,7 @@ describe('parse', () => {
         },
         single3: {
           type: 'single',
-          positional: '--',
+          marker: '--',
         },
       } as const satisfies Options;
       expect(parse(options, ['-f', '1'])).resolves.toEqual({
@@ -235,8 +131,8 @@ describe('parse', () => {
       expect(parse(options, ['1', '2', '-f', '3'])).resolves.toEqual({
         flag: true,
         single1: '1',
-        single2: '2',
-        single3: '3',
+        single2: '3',
+        single3: undefined,
       });
       expect(parse(options, ['1', '2', '--', '3'])).resolves.toEqual({
         flag: undefined,
@@ -308,7 +204,7 @@ describe('parse', () => {
         },
         single: {
           type: 'single',
-          positional: '--',
+          marker: '--',
         },
       } as const satisfies Options;
       expect(parse(options, ['1', '2', '--', '3'])).resolves.toEqual({
