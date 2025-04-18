@@ -464,15 +464,16 @@ export type WithArgumentInfo = {
   index: number;
   /**
    * The sequence number relative to positional arguments (1-based).
-   * It will be `NaN` if the sequence is not positional or comes after a trailing marker.
+   * It will be `NaN` if the sequence is not positional.
    */
   position: number;
   /**
    * The option name. Can be either of:
+   *
    * - the name supplied on the command-line;
-   * - the name of a data source, if the sequence comes from the environment;
-   * - the option's preferred name, if the sequence comes from positional arguments;
+   * - the preferred name, if the sequence comes from positional arguments;
    * - a trailing marker, if the sequence comes after such marker;
+   * - a data source, if the sequence comes from the environment;
    * - `'0'`, if the sequence comes from the standard input.
    */
   name: string;

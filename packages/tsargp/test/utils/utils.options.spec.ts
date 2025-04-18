@@ -19,75 +19,72 @@ describe('OptionRegistry', () => {
       expect(() => new OptionRegistry({})).not.toThrow();
     });
 
-    describe('registering option names', () => {
-      it('ignore null values', () => {
-        const options = {
-          flag: {
-            type: 'flag',
-            names: [null, '-f'], // should ignore null values
-          },
-        } as const satisfies Options;
-        const registry = new OptionRegistry(options);
-        expect(registry.names).toHaveLength(1);
-        expect(registry.names.get('-f')).toEqual('flag');
-      });
-
-      it('add positional options', () => {
-        const options = {
-          single: {
-            type: 'single',
-            positional: true,
-          },
-          array: {
-            type: 'array',
-            positional: true,
-            preferredName: 'preferred',
-          },
-        } as const satisfies Options;
-        const registry = new OptionRegistry(options);
-        expect(registry.names).toHaveLength(0);
-        expect(registry.positional).toEqual([
-          ['single', options.single, ''],
-          ['array', options.array, 'preferred'],
-        ]);
-      });
-
-      it('set preferred name', () => {
-        const options = {
-          flag: {
-            type: 'flag',
-            names: ['-f'],
-          },
-          single1: {
-            type: 'single',
-          },
-          single2: {
-            type: 'single',
-            marker: 'marker',
-          },
-        } as const satisfies Options;
-        const registry = new OptionRegistry(options);
-        expect(registry.names).toHaveLength(2);
-        expect(registry.names.get('marker')).toEqual('single2');
-        expect(options.flag).toHaveProperty('preferredName', '-f');
-        expect(options.single1).toHaveProperty('preferredName', '');
-        expect(options.single2).toHaveProperty('preferredName', 'marker');
-      });
+    it('ignore null values in option names', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: [null, '-f', '--flag'],
+        },
+      } as const satisfies Options;
+      const registry = new OptionRegistry(options);
+      expect(registry.names).toHaveLength(2);
+      expect(registry.names.get('-f')).toEqual('flag');
+      expect(registry.names.get('--flag')).toEqual('flag');
     });
 
-    describe('registering cluster letters', () => {
-      it('register each letter', () => {
-        const options = {
-          flag: {
-            type: 'flag',
-            cluster: 'fF',
-          },
-        } as const satisfies Options;
-        const registry = new OptionRegistry(options);
-        expect(registry.letters).toHaveLength(2);
-        expect(registry.letters.get('f')).toEqual('flag');
-        expect(registry.letters.get('F')).toEqual('flag');
-      });
+    it('register positional options', () => {
+      const options = {
+        single: {
+          type: 'single',
+          positional: true,
+        },
+        array: {
+          type: 'array',
+          positional: true,
+          preferredName: 'preferred',
+        },
+      } as const satisfies Options;
+      const registry = new OptionRegistry(options);
+      expect(registry.names).toHaveLength(0);
+      expect(registry.positional).toEqual([
+        ['single', options.single, ''],
+        ['array', options.array, 'preferred'],
+      ]);
+    });
+
+    it('set preferred name', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: [null, '-f', '--flag'],
+        },
+        single: {
+          type: 'single',
+        },
+        array: {
+          type: 'array',
+          marker: 'marker',
+        },
+      } as const satisfies Options;
+      const registry = new OptionRegistry(options);
+      expect(registry.names).toHaveLength(3);
+      expect(registry.names.get('marker')).toEqual('array');
+      expect(options.flag).toHaveProperty('preferredName', '-f');
+      expect(options.single).toHaveProperty('preferredName', '');
+      expect(options.array).toHaveProperty('preferredName', 'marker');
+    });
+
+    it('register cluster letters', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          cluster: 'fF',
+        },
+      } as const satisfies Options;
+      const registry = new OptionRegistry(options);
+      expect(registry.letters).toHaveLength(2);
+      expect(registry.letters.get('f')).toEqual('flag');
+      expect(registry.letters.get('F')).toEqual('flag');
     });
   });
 });

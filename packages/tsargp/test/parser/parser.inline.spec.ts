@@ -140,7 +140,7 @@ describe('parse', () => {
       expect(parse(options, ['1'])).resolves.toEqual({ single: '1' });
     });
 
-    it('disallow inline parameters for specific Options', () => {
+    it('disallow inline parameters for specific option names', () => {
       const options = {
         single: {
           type: 'single',
@@ -235,7 +235,7 @@ describe('parse', () => {
       );
     });
 
-    it('require inline parameters for specific Options', () => {
+    it('require inline parameters for specific option names', () => {
       const options = {
         single: {
           type: 'single',

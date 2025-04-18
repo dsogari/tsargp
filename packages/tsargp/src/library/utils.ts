@@ -199,7 +199,7 @@ export class OptionRegistry {
   readonly letters: Map<string, string> = new Map<string, string>();
 
   /**
-   * Information regarding the positional options, if any.
+   * Information regarding the positional options.
    */
   readonly positional: Array<OptionInfo> = [];
 

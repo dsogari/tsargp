@@ -172,19 +172,19 @@ type ParseEntry = [
    */
   value?: string,
   /**
-   * True if an argument is being completed.
+   * Whether the last argument is being completed.
    */
-  comp?: boolean,
+  isComp?: boolean,
   /**
-   * True if it is the trailing marker.
-   */
-  isMarker?: boolean,
-  /**
-   * True if it is a new specification.
+   * Whether it pertains to a new option specification.
    */
   isNew?: boolean,
   /**
-   * True if it is positional, but not with a marker.
+   * Whether it is trailing, or the trailing marker itself.
+   */
+  isTrailing?: boolean,
+  /**
+   * Whether it is positional.
    */
   isPositional?: boolean,
 ];
@@ -374,9 +374,9 @@ async function parseArgs(context: ParsingContext) {
   let suggestNames = false;
   for (let i = 0, k = 0; i < args.length; i = prev[0]) {
     const next = findNext(context, prev);
-    const [j, pos, info, value, comp, isMarker, isNew, isPositional] = next;
+    const [j, pos, info, value, isComp, isNew, isTrailing, isPositional] = next;
     const position = isPositional ? pos : NaN;
-    if (!info || isMarker || isNew) {
+    if (!info || isNew || isTrailing) {
       if (prev[2]) {
         // process the previous sequence
         const position = prev[7] ? prev[1] : NaN;
@@ -390,20 +390,13 @@ async function parseArgs(context: ParsingContext) {
       [minParams, maxParams] = getParamCount(option);
       const isNiladic = !maxParams;
       const hasValue = value !== undefined;
-      if (
-        isNiladic ||
-        (isMarker && isNew) ||
-        (!isPositional && checkInline(option, name) === false)
-      ) {
-        if (comp) {
+      if (isNiladic || (isTrailing && isNew) || (!isPositional && !checkInline(option, name))) {
+        if (isComp) {
           reportCompletion();
         }
         if (hasValue) {
           if (completing) {
-            // ignore disallowed inline parameters while completing
-            prev[2] = undefined;
-            prev[5] = false;
-            continue;
+            continue; // ignore disallowed inline parameters while completing
           }
           throw error(ErrorItem.disallowedInlineParameter, name);
         }
@@ -416,18 +409,18 @@ async function parseArgs(context: ParsingContext) {
         if (await handleNiladic(context, info, j, position, args.slice(j + 1))) {
           return; // skip requirements
         }
-        prev[0] += max(0, option.skipCount ?? 0);
-        prev[2] = undefined;
+        prev[0] += max(0, option.skipCount ?? 0); // skip arguments
+        prev[2] = undefined; // reset option
         continue; // fetch more
       }
-      if (!comp) {
-        if (isMarker || isPositional || !hasValue) {
+      if (!isComp) {
+        if (isTrailing || isPositional || !hasValue) {
           // trailing argument, first positional parameter or option name
           k = hasValue ? j : j + 1;
         } else {
           // option name with inline parameter
           await tryParseParams(context, info, j, position, [value]); // should return false
-          prev[2] = undefined;
+          prev[2] = undefined; // reset option
         }
         continue; // fetch more
       }
@@ -471,7 +464,7 @@ function addSupplied(context: ParsingContext, info: OptionInfo) {
  */
 function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
-  const [prevIndex, prevPos, , prevVal, , prevMarker, , prevPositional] = prev;
+  const [prevIndex, prevPos, , prevVal, , , prevTrailing, prevPositional] = prev;
   let prevInfo = prev[2];
   const { names, positional, options } = registry;
   const inc = prevVal !== undefined ? 1 : 0;
@@ -483,10 +476,10 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
     const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
-    const isParam = prevInfo && (prevMarker || i - prevIndex + inc <= minParams);
+    const isParam = prevInfo && (prevTrailing || i - prevIndex + inc <= minParams);
     const argType = isParam
-      ? !isForcedName || prevMarker
-        ? prevMarker && i - prevIndex + inc > maxParams
+      ? !isForcedName || prevTrailing
+        ? prevTrailing && i - prevIndex + inc > maxParams
           ? ArgType.trailing
           : ArgType.parameter
         : !optionKey
@@ -510,9 +503,9 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
           const { type, synopsis } = option;
           reportCompletion([{ type, name, synopsis: synopsis && '' + synopsis }]);
         }
-        const isMarker = name === option.marker;
+        const isTrailing = name === option.marker;
         const newInfo: OptionInfo = [optionKey!, option, name];
-        return [i, prevPos, newInfo, value, comp, isMarker, true];
+        return [i, prevPos, newInfo, value, comp, true, isTrailing];
       }
       case ArgType.cluster:
         if (comp) {
@@ -530,10 +523,10 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         break; // ignore unknown options during completion
       case ArgType.positional: {
         const newInfo: OptionInfo = positional[min(prevPos, positional.length - 1)];
-        return [i, prevPos + 1, newInfo, arg, comp, false, true, true];
+        return [i, prevPos + 1, newInfo, arg, comp, true, false, true];
       }
       case ArgType.trailing:
-        return [i, prevPos, prevInfo, arg, comp, true];
+        return [i, prevPos, prevInfo, arg, comp, false, true];
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
         if (checkInline(option, name) === 'always') {
@@ -544,7 +537,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
           prevInfo = undefined;
           i--; // reprocess the current argument
         } else if (comp) {
-          return [i, prevPos, prevInfo, arg, comp, prevMarker, false, prevPositional];
+          return [i, prevPos, prevInfo, arg, comp, false, prevTrailing, prevPositional];
         }
         break; // continue looking for parameters or option names
       }

@@ -371,8 +371,8 @@ describe('parse', () => {
       expect(parse(options, 'cmd -', { compIndex: 5 })).rejects.toThrow(/^--$/);
       expect(parse(options, 'cmd --', { compIndex: 6 })).rejects.toThrow(/^--$/);
       expect(parse(options, 'cmd -- ', { compIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/); // ignore error
+      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^$/); // ignore error
     });
 
     it('handle a positional option with choices', () => {
@@ -406,8 +406,8 @@ describe('parse', () => {
       expect(parse(options, 'cmd --', { compIndex: 6 })).rejects.toThrow(/^--$/);
       expect(parse(options, 'cmd -- ', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
       expect(parse(options, 'cmd -- o', { compIndex: 8 })).rejects.toThrow(/^one$/);
-      expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^-s\n--$/);
+      expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/); // ignore error
+      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^one\ntwo$/); // ignore error
     });
 
     it('handle a positional function option with parameter count', () => {
@@ -698,7 +698,7 @@ describe('parse', () => {
           paramCount: 2,
           positional: true,
           parse: jest.fn((param) => param),
-          complete: jest.fn((param) => [param]),
+          complete: jest.fn((param) => [param]), // complete with parameter
         },
       } as const satisfies Options;
       expect(parse(options, 'cmd a', { compIndex: 5 })).rejects.toThrow(/^a$/);

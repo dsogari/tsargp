@@ -153,7 +153,7 @@ describe('format', () => {
     expect(format(options).wrap()).toEqual(`  -s    Accepts positional arguments.\n`);
   });
 
-  it('handle a single-valued option that accepts positional arguments after marker', () => {
+  it('handle a single-valued option that accepts trailing arguments', () => {
     const options = {
       single: {
         type: 'single',

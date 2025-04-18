@@ -30,7 +30,7 @@ describe('parse', () => {
       expect(options.flag.parse).toHaveBeenCalledWith(null, {
         // should have been { flag: undefined } at the time of call
         values: { flag: null },
-        index: 0,
+        index: 1,
         position: NaN,
         name: '-f',
         comp: false,
@@ -100,7 +100,6 @@ describe('parse', () => {
         single: {
           type: 'single',
           marker: '--',
-          preferredName: 'preferred',
           parse: jest.fn((param) => param),
         },
       } as const satisfies Options;

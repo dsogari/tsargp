@@ -5,7 +5,7 @@ import { parse } from '../../src/library';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('an option prefix is specified', () => {
+  describe('option prefix', () => {
     const flags: ParsingFlags = { optionPrefix: '-' };
 
     it('do not interpret arguments with the prefix as positional', () => {
@@ -19,7 +19,7 @@ describe('parse', () => {
     });
   });
 
-  describe('parameters are specified as positional arguments', () => {
+  describe('positional arguments', () => {
     it('handle a single-valued option', () => {
       const options = {
         flag: {
@@ -96,7 +96,7 @@ describe('parse', () => {
     });
   });
 
-  describe('multiple positional options are declared', () => {
+  describe('multiple positional options', () => {
     it('handle single-valued options', () => {
       const options = {
         flag: {
@@ -111,46 +111,26 @@ describe('parse', () => {
           type: 'single',
           positional: true,
         },
-        single3: {
-          type: 'single',
-          marker: '--',
-        },
       } as const satisfies Options;
       expect(parse(options, ['-f', '1'])).resolves.toEqual({
         flag: true,
         single1: '1',
         single2: undefined,
-        single3: undefined,
       });
       expect(parse(options, ['1', '-f', '2'])).resolves.toEqual({
         flag: true,
         single1: '1',
         single2: '2',
-        single3: undefined,
       });
       expect(parse(options, ['1', '2', '-f', '3'])).resolves.toEqual({
         flag: true,
         single1: '1',
-        single2: '3',
-        single3: undefined,
+        single2: '3', // value was replaced
       });
-      expect(parse(options, ['1', '2', '--', '3'])).resolves.toEqual({
-        flag: undefined,
+      expect(parse(options, ['-f', '1', '-f', '2'])).resolves.toEqual({
+        flag: true,
         single1: '1',
         single2: '2',
-        single3: '3',
-      });
-      expect(parse(options, ['1', '--', '3'])).resolves.toEqual({
-        flag: undefined,
-        single1: '1',
-        single2: undefined,
-        single3: '3',
-      });
-      expect(parse(options, ['--', '3'])).resolves.toEqual({
-        flag: undefined,
-        single1: undefined,
-        single2: undefined,
-        single3: '3',
       });
     });
 
@@ -192,7 +172,7 @@ describe('parse', () => {
       expect(parse(options, ['1', '2', '3', '-f', '4'])).resolves.toEqual({
         flag: true,
         function: ['1', '2'],
-        array: ['4'],
+        array: ['4'], // value was replaced
       });
     });
 

@@ -97,16 +97,16 @@ describe('validate', () => {
 
     it('throw an error on option with duplicate trailing marker across different options', () => {
       const options = {
-        single1: {
+        single: {
           type: 'single',
           marker: 'dup',
         },
-        single2: {
+        array: {
           type: 'single',
           marker: 'dup',
         },
       } as const satisfies Options;
-      expect(validate(options)).rejects.toThrow(`Option single2 has duplicate name 'dup'.`);
+      expect(validate(options)).rejects.toThrow(`Option array has duplicate name 'dup'.`);
     });
 
     it('throw an error on duplicate environment variable in the same option', () => {
@@ -134,7 +134,7 @@ describe('validate', () => {
     });
   });
 
-  describe('name warnings', () => {
+  describe('naming warnings', () => {
     it('return a warning on mixed naming conventions in nested options', () => {
       const options = {
         command: {

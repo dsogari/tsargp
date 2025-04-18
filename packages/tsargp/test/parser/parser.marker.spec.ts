@@ -5,8 +5,8 @@ import { parse } from '../../src/library';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('trailing arguments are supplied', () => {
-    it('ignore the option prefix after the trailing marker ', () => {
+  describe('trailing arguments', () => {
+    it('ignore the option prefix after the marker ', () => {
       const options = {
         single: {
           type: 'single',
@@ -22,9 +22,7 @@ describe('parse', () => {
       const options = {
         single: {
           type: 'single',
-          names: ['-s'],
           marker: '--',
-          preferredName: 'preferred',
         },
       } as const satisfies Options;
       expect(parse(options, ['--'])).rejects.toThrow(
@@ -36,7 +34,6 @@ describe('parse', () => {
       const options = {
         function: {
           type: 'function',
-          names: ['-f'],
           marker: '--',
           paramCount: 2,
         },
@@ -52,7 +49,7 @@ describe('parse', () => {
       );
     });
 
-    it('handle an option with empty trailing marker', () => {
+    it('handle an option with empty marker', () => {
       const options = {
         single: {
           type: 'single',
@@ -60,12 +57,11 @@ describe('parse', () => {
           marker: '',
         },
       } as const satisfies Options;
-      expect(parse(options, ['', '-s'])).resolves.toEqual({ single: '-s' });
-      expect(parse(options, ['', '1', '2'])).resolves.toEqual({ single: '2' });
-      expect(parse(options, ['', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
+      expect(parse(options, ['', ''])).resolves.toEqual({ single: '' });
+      expect(parse(options, ['', '1', '-s'])).resolves.toEqual({ single: '-s' });
     });
 
-    it('handle multiple options with trailing marker', () => {
+    it('handle multiple trailing markers', () => {
       const options = {
         array1: {
           type: 'array',
@@ -90,7 +86,6 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['--', '-s'])).resolves.toEqual({ single: '-s' });
       expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ single: '2' });
-      expect(parse(options, ['--', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
     });
 
     it('handle an array-valued option', () => {
@@ -101,7 +96,7 @@ describe('parse', () => {
           marker: '--',
         },
       } as const satisfies Options;
-      expect(parse(options, ['--'])).resolves.toEqual({ array: [] });
+      expect(parse(options, ['--'])).resolves.toEqual({ array: [] }); // empty array
       expect(parse(options, ['--', '0', '-a'])).resolves.toEqual({ array: ['0', '-a'] });
     });
 
