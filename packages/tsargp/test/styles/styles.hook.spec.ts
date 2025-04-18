@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { AnsiString, tf } from '../../../src/library';
+import { AnsiString, tf } from '../../src/library';
 
 const bold = [tf.bold];
 
