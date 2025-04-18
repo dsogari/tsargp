@@ -141,10 +141,6 @@ Note that the library does not provide a deprecation mechanism for specific valu
 
 The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. If absent, the option will belong to the _default_ group, which is also denoted by the empty string. Alternatively, you can use the value `null{:ts}` to completely hide it from the help message.
 
-> [!TIP]
->
-> You can assign a unique group to [positional] options and place them _first_ in the option [definitions], in order to highlight them in the help message.
-
 #### Display styles
 
 The `styles` attribute, if present, specifies custom [styling attributes] for each of the option's [help columns]. It has the following optional properties:
@@ -425,6 +421,10 @@ If there are multiple positional options, their declaration order determines the
 > [!TIP]
 >
 > When using this attribute, we recommend also setting [preferred name] to some explanatory name.
+
+> [!TIP]
+>
+> You can assign a unique [group] to positional options and place them _first_ in the option [definitions], in order to highlight them in the help message.
 
 > [!NOTE]
 >
