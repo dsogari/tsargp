@@ -79,6 +79,10 @@ export type ParsingFlags = {
    * If not present, the standard input will not appear in usage statements.
    */
   readonly stdinSymbol?: string;
+  /**
+   * Whether similar option names should be suggested in case of an unknown option error.
+   */
+  readonly suggestNames?: boolean;
 };
 
 /**
@@ -566,14 +570,15 @@ function reportMissingParameter(min: number, max: number, name: string): never {
  * @param name The unknown option name
  */
 function reportUnknownName(context: ParsingContext, name: string): never {
-  const similar = findSimilar(name, context[0].names.keys(), 0.6);
+  const { suggestNames } = context[6];
+  const similar = suggestNames ? findSimilar(name, context[0].names.keys(), 0.6) : undefined;
   const flags = {
-    alt: similar.length ? 1 : 0,
+    alt: similar?.length ? 1 : 0,
     sep: config.connectives.optionSep,
     open: '',
     close: '',
   };
-  throw error(ErrorItem.unknownOption, name, flags, similar.map(getSymbol));
+  throw error(ErrorItem.unknownOption, name, flags, similar?.map(getSymbol));
 }
 
 /**

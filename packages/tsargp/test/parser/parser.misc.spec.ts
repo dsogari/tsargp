@@ -22,11 +22,13 @@ describe('parse', () => {
         names: ['--flag2'],
       },
     } as const satisfies Options;
-    expect(parse(options, ['fla'])).rejects.toThrow(`Unknown option fla.`);
-    expect(parse(options, ['flag'])).rejects.toThrow(
+    const flags: ParsingFlags = { suggestNames: true };
+    expect(parse(options, ['flag'])).rejects.toThrow(`Unknown option flag.`);
+    expect(parse(options, ['fl'], flags)).rejects.toThrow(`Unknown option fl.`);
+    expect(parse(options, ['flag'], flags)).rejects.toThrow(
       `Unknown option flag. Similar names are: --flag1, --flag2.`,
     );
-    expect(parse(options, ['flags'])).rejects.toThrow(
+    expect(parse(options, ['flags'], flags)).rejects.toThrow(
       `Unknown option flags. Similar names are: --flag1, --flag2.`,
     );
   });
