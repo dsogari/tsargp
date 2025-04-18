@@ -459,13 +459,22 @@ export type WithArgumentInfo = {
   values: OpaqueOptionValues;
   /**
    * The index of the occurrence of the option name, or of the first option parameter.
-   * It will be NaN if the sequence comes from environment data.
+   * It will be `NaN` if the sequence comes from environment data.
    */
   index: number;
   /**
-   * The option name as supplied on the command-line, or the environment data source.
-   * It will be the preferred name if the sequence comes from positional arguments.
-   * It will be the string '0' if the sequence comes from the standard input.
+   * The sequence number relative to positional arguments (1-based).
+   * It will be `NaN` if the sequence is not positional.
+   */
+  position: number;
+  /**
+   * The option name. Can be either of:
+   *
+   * - the name supplied on the command-line;
+   * - the preferred name, if the sequence comes from positional arguments;
+   * - a trailing marker, if the sequence comes after such marker;
+   * - a data source, if the sequence comes from the environment;
+   * - `'0'`, if the sequence comes from the standard input.
    */
   name: string;
 };
@@ -664,16 +673,23 @@ export type WithTemplateAttributes = {
 export type WithParameterAttributes = {
   /**
    * Whether the option accepts positional arguments.
-   * There may be at most one option with this setting.
    *
    * If set, then any argument not recognized as an option name will be considered positional.
-   * Additionally, if a string is specified as positional marker, then all arguments beyond this
-   * marker will be considered positional.
+   *
+   * If there are multiple positional options, their declaration order determines their relative
+   * position in the command line. Variadic options will take up all remaining positional arguments
+   * (up to a trailing marker).
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false
    */
-  readonly positional?: boolean | string;
+  readonly positional?: boolean;
+  /**
+   * Whether the option accepts trailing arguments.
+   *
+   * If set, then all arguments that appear beyond the marker will be considered trailing.
+   */
+  readonly marker?: string;
   /**
    * Whether inline parameters should be disallowed or required for this option.
    * Can be `false` to disallow or `'always'` to always require.

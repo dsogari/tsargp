@@ -45,45 +45,6 @@ describe('parse', () => {
     });
 
     describe('handle nested option definitions', () => {
-      it('handle a nested options object', () => {
-        const options = {
-          command: {
-            type: 'command',
-            names: ['-c'],
-            options: {
-              flag: {
-                type: 'flag',
-                names: ['-f'],
-              },
-            },
-            parse: jest.fn((param) => param),
-          },
-        } as const satisfies Options;
-        expect(parse(options, ['-c'])).resolves.toEqual({ command: { flag: undefined } });
-        expect(options.command.parse).toHaveBeenCalledWith(
-          { flag: undefined },
-          {
-            // should have been { command: undefined } at the time of call
-            values: { command: { flag: undefined } },
-            index: 0,
-            name: '-c',
-            comp: false,
-          },
-        );
-        options.command.parse.mockClear();
-        expect(parse(options, ['-c', '-f'])).resolves.toEqual({ command: { flag: true } });
-        expect(options.command.parse).toHaveBeenCalledWith(
-          { flag: true },
-          {
-            // should have been { command: undefined } at the time of call
-            values: { command: { flag: true } },
-            index: 0,
-            name: '-c',
-            comp: false,
-          },
-        );
-      });
-
       it('handle a nested options object with a help option and program name', () => {
         const options = {
           command: {

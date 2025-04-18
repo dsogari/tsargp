@@ -111,14 +111,16 @@ The information gathered by the parser is saved in an object that is passed as p
 
 - `values` -- The previously parsed values. It it passed as an opaque object and should be cast to `OptionValues<typeof your_options>{:ts}`.
 - `index` -- The starting index of the argument sequence. It will point to one of the following:
-  - the occurrence of the option name
-  - the first [option parameter], if the sequence comes from [positional] arguments
-  - `NaN{:ts}`, if the data comes from the [environment]
+  - the [supplied] option name, if the sequence comes after such occurrence;
+  - the first [option parameter], if the sequence comes from [positional] arguments;
+  - `NaN{:ts}`, if the sequence comes from the [environment]
+- `position` -- The sequence number relative to [positional] arguments (1-based), or `NaN{:ts}` if it is not positional.
 - `name` -- The option name. Can be either of:
-  - the name that was [supplied] on the command line
-  - the option's [preferred name], if the sequence comes from [positional] arguments
-  - an environment [data source], if the data comes from the [environment]
-  - `'0'{:ts}`, if the data comes from the [standard input]
+  - the name [supplied] on the command line;
+  - the [preferred name], if the sequence comes from [positional] arguments;
+  - a [trailing marker], if the sequence comes after such marker;
+  - a [data source], if the sequence comes from the [environment];
+  - `'0'{:ts}`, if the sequence comes from the [standard input]
 - `comp` -- True if performing [word completion]. Only available for the [parsing callback].
 - `prev` -- The option parameters preceding the word being completed, if any. Only available for the [completion callback]. Will be empty for [single-valued] options.
 
@@ -153,7 +155,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
-3. If the option was [supplied] neither through a [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
+3. If the option was [supplied] neither after a [trailing marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
@@ -205,7 +207,7 @@ An [option parameter] may be passed on the command line using the syntax `<name>
 
 > [!NOTE]
 >
-> This syntax cannot be used with the [positional marker].
+> This syntax cannot be used with the [trailing marker].
 
 As is the case with standalone parameters, inlined ones do not conflict with [option names], and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
@@ -273,8 +275,8 @@ Other [option names] are not used, not only because they would pollute the outpu
 [default value callback]: options#default-value-callback
 [parsing callback]: options#parsing-callback
 [completion callback]: options#completion-callback
-[positional]: options#positional--marker
-[positional marker]: options#positional--marker
+[positional]: options#positional
+[trailing marker]: options#trailing-marker
 [environment]: options#environment-attributes
 [data source]: options#data-sources
 [separator]: options#parameter-separator

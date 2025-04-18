@@ -58,6 +58,7 @@ describe('parse', () => {
         // should have been { single: undefined, command: undefined } at the time of call
         values: { single: 'data\n', command: undefined },
         index: NaN,
+        position: NaN,
         name: '0', // zero for standard input
         comp: false,
       });
@@ -80,6 +81,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { single: 'data\n' },
         index: NaN,
+        position: NaN,
         name: '0', // zero for standard input
         comp: false,
       });
@@ -100,6 +102,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { single: 'data\n' },
         index: NaN,
+        position: NaN,
         name: '0', // zero for standard input
         comp: false,
       });
@@ -137,6 +140,7 @@ describe('parse', () => {
         // should have been { array: undefined } at the time of call
         values: { array: ['test', 'read', 'file'] },
         index: NaN,
+        position: NaN,
         name: expect.stringMatching(/data\/test-read-file.txt$/),
         comp: false,
       });
@@ -147,6 +151,7 @@ describe('parse', () => {
         // should have been { array: undefined } at the time of call
         values: { array: ['1'] },
         index: NaN,
+        position: NaN,
         name: 'ARRAY',
         comp: false,
       });

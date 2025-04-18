@@ -28,7 +28,6 @@ import {
   isEnvironmentOnly,
   isMessage,
   isObject,
-  isPositional,
   matchNamingRules,
   normalizeArray,
   regex,
@@ -137,30 +136,17 @@ export async function validate(
 /**
  * Validates all option definitions, including nested options recursively.
  * @param context The validation context
- * @throws On duplicate positional option
  */
 async function validateOptions(context: ValidationContext) {
-  const [options, flags, , , prefix] = context;
+  const [options, flags] = context;
   const names = new Map<string, string>();
   const letters = new Map<string, string>();
   const envVars = new Map<string, string>();
-  let positional = ''; // to check for duplicate positional options
   for (const [key, option] of getEntries(options)) {
     validateNames(context, names, getOptionNames(option), key);
     validateNames(context, letters, option.cluster ?? '', key);
     validateNames(context, envVars, getOptionEnvVars(option) ?? [], key);
     await validateOption(context, key, option);
-    if (isPositional(option)) {
-      if (positional) {
-        throw error(
-          ErrorItem.duplicatePositionalOption,
-          prefix + key,
-          {},
-          getSymbol(prefix + positional),
-        );
-      }
-      positional = key;
-    }
   }
   if (!flags.noWarn) {
     detectNamingIssues(context, names);

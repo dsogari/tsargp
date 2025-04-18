@@ -6,11 +6,11 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
   describe('when an option is suppliable', () => {
-    it('accept an option with empty positional marker', () => {
+    it('accept an option with empty trailing marker', () => {
       const options = {
         single: {
           type: 'single',
-          positional: '',
+          marker: '',
         },
       } as const satisfies Options;
       expect(validate(options)).resolves.toEqual({});
@@ -90,7 +90,7 @@ describe('validate', () => {
     });
   });
 
-  it('accept a positional option and another that is explicitly not positional', () => {
+  it('accept multiple positional options', () => {
     const options = {
       single1: {
         type: 'single',
@@ -98,26 +98,24 @@ describe('validate', () => {
       },
       single2: {
         type: 'single',
-        positional: false,
+        positional: true,
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});
   });
 
-  it('throw an error on duplicate positional option', () => {
+  it('accept multiple trailing markers', () => {
     const options = {
       single1: {
         type: 'single',
-        positional: true,
+        marker: 'abc',
       },
       single2: {
         type: 'single',
-        positional: '',
+        marker: 'def',
       },
     } as const satisfies Options;
-    expect(validate(options)).rejects.toThrow(
-      `Duplicate positional option single2: previous was single1.`,
-    );
+    expect(validate(options)).resolves.toEqual({});
   });
 
   describe('when an option is not suppliable', () => {

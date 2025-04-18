@@ -199,9 +199,9 @@ export class OptionRegistry {
   readonly letters: Map<string, string> = new Map<string, string>();
 
   /**
-   * Information regarding the positional option, if any.
+   * Information regarding the positional options.
    */
-  readonly positional: OptionInfo | undefined;
+  readonly positional: Array<OptionInfo> = [];
 
   /**
    * Creates an option registry based on a set of option definitions.
@@ -210,8 +210,8 @@ export class OptionRegistry {
   constructor(readonly options: OpaqueOptions) {
     for (const [key, option] of getEntries(this.options)) {
       registerNames(this.names, this.letters, key, option);
-      if (isPositional(option)) {
-        this.positional = [key, option, option.preferredName ?? ''];
+      if (option.positional) {
+        this.positional.push([key, option, option.preferredName!]);
       }
     }
   }
@@ -238,7 +238,7 @@ function registerNames(
     nameToKey.set(name, key);
   }
   if (!option.preferredName) {
-    option.preferredName = names[0]; // may be undefined
+    option.preferredName = names[0] ?? '';
   }
   for (const letter of option.cluster ?? '') {
     letterToKey.set(letter, key);
@@ -246,14 +246,14 @@ function registerNames(
 }
 
 /**
- * Gets a list of option names, including the positional marker.
+ * Gets a list of option names, including the trailing marker.
  * @param option The option definition
  * @returns The option names
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
   const names = option.names?.slice().filter(isString) ?? [];
-  if (isString(option.positional)) {
-    names.push(option.positional);
+  if (option.marker !== undefined) {
+    names.push(option.marker);
   }
   return names;
 }
@@ -280,7 +280,7 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
 
 /**
  * Checks whether an option has a name that can be supplied on the command line.
- * Does not include the positional marker.
+ * Does not include the trailing marker.
  * @param option The option definition
  * @returns True if the option has a name that can be supplied
  */
@@ -295,7 +295,7 @@ export function hasSuppliableName(option: OpaqueOption): boolean {
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !hasSuppliableName(option) && option.positional === undefined;
+  return !hasSuppliableName(option) && !option.positional && option.marker === undefined;
 }
 
 /**
@@ -332,15 +332,6 @@ export function isNiladic(type: OptionType): type is NiladicOptionType {
  */
 export function isCommand(type: OptionType): type is 'command' {
   return type === 'command';
-}
-
-/**
- * Tests if an option accepts positional arguments.
- * @param option The option definition
- * @returns True if the option is positional
- */
-export function isPositional(option: OpaqueOption): boolean {
-  return !!option.positional || option.positional === '';
 }
 
 /**

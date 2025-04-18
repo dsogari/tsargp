@@ -230,7 +230,7 @@ In this mode, the terminal width is ignored, as it makes no sense. Instead, each
 
 > [!NOTE]
 >
-> The reason why an error may be raised is that we cannot split _words_, as they may have [inline styles] and those styles should not leak into subsequent columns.
+> The reason an error may occur is that we cannot split _words_, as they may have [styles] that should not leak into subsequent columns.
 
 ## Messages
 
@@ -351,7 +351,7 @@ The `errorPhrases` property specifies the phrases to use for [error messages]. I
 | `unsatisfiedRequirement`     | An option's forward requirement is not satisfied                                | `'Option #0 requires #1.'{:ts}`                                                                  | `#0` = the supplied option name; `#1` = the requirements                                      |
 | `missingRequiredOption`      | An option that is always required was not supplied                              | `'Option #0 is required.'{:ts}`                                                                  | `#0` = the option's preferred name                                                            |
 | `missingParameter`           | An option is supplied without one of its expected parameter(s)                  | `'Missing parameter(s) to option #0: requires (exactly\|at least\|between) #1.'{:ts}`            | `#0` = the supplied option name; `#1` = the expected parameter count                          |
-| `disallowedInlineParameter`  | An option is supplied with an inline parameter, despite being disallowed        | `'(Option\|Positional marker) #0 does not accept inline parameters.'{:ts}`                       | `#0` = the supplied option name or positional marker                                          |
+| `disallowedInlineParameter`  | An option is supplied with an inline parameter, despite being disallowed        | `'Option #0 does not accept inline parameters.'{:ts}`                                            | `#0` = the supplied option name                                                               |
 | `choiceConstraintViolation`  | An option parameter fails to satisfy a choice constraint                        | `'Invalid parameter to #0: #1. Value must be one of: #2.'{:ts}`                                  | `#0` = the supplied option name; `#1` = the supplied value; `#2` = the choices                |
 | `regexConstraintViolation`   | An option parameter fails to satisfy a regex constraint                         | `'Invalid parameter to #0: #1. Value must match the regex #2.'{:ts}`                             | `#0` = the supplied option name; `#1` = the supplied value; `#2` = the regex                  |
 | `limitConstraintViolation`   | An option value fails to satisfy a count limit constraint                       | `'Option #0 has too many values: #1. Should have at most #2.'{:ts}`                              | `#0` = the supplied option name; `#1` = the element count; `#2` = the limit                   |
@@ -365,7 +365,6 @@ The `errorPhrases` property specifies the phrases to use for [error messages]. I
 | `invalidRequiredOption`      | An option references a non-valued option in a requirement                       | `'Invalid option #0 in requirement.'{:ts}`                                                       | `#0` = the required option's key                                                              |
 | `invalidRequiredValue`       | An option uses an invalid value in a requirement                                | `'Invalid required value for option #0. Option is always required or has a default value.'{:ts}` | `#0` = the required option's key                                                              |
 | `duplicateOptionName`        | There are duplicate option names, cluster letters or environment variable names | `'Option #0 has duplicate name #1.'{:ts}`                                                        | `#0` = the option's key; `#1` = the duplicate name                                            |
-| `duplicatePositionalOption`  | There are two or more positional options                                        | `'Duplicate positional option #0: previous was #1.'{:ts}`                                        | `#0` = the duplicate option's key; `#1` = the previous option's key                           |
 | `duplicateParameterChoice`   | A choices constraint has a duplicate value                                      | `'Option #0 has duplicate choice #1.'{:ts}`                                                      | `#0` = the option's key; `#1` = the duplicate value                                           |
 | `tooSimilarOptionNames`      | An option name is too similar to other names                                    | `'#0: Option name #1 has too similar names: #2.'{:ts}`                                           | `#0` = the subcommand prefix[^1]; `#1` = the option name; `#2` = the similar names            |
 | `mixedNamingConvention`      | A name slot contains names with different naming conventions                    | `'#0: Name slot #1 has mixed naming conventions: #2.'{:ts}`                                      | `#0` = the subcommand prefix[^1]; `#1` = the [name slot] index; `#2` = the naming conventions |
@@ -388,7 +387,8 @@ The `helpPhrases` property specifies the phrases to use for [help items]. It has
 | `cluster`    | The option's cluster letters                                             | `'Can be clustered with #0.'{:ts}`                                               | `#0` = the [cluster letters]     |
 | `separator`  | The parameter delimiter of an array-valued option                        | `'Values can be delimited with #0.'{:ts}`                                        | `#0` = the [parameter separator] |
 | `paramCount` | The parameter count of a variadic or polyadic option                     | `'Accepts (multiple\|#0\|at most #0\|at least #0\|between #0) parameters.'{:ts}` | `#0` = the [parameter count]     |
-| `positional` | Whether the option accepts positional arguments                          | `'Accepts positional arguments(\| that may be preceded by #0).'{:ts}`            | `#0` = the [positional marker]   |
+| `positional` | Whether the option accepts positional arguments                          | `'Accepts positional arguments.'{:ts}`                                           |                                  |
+| `marker`     | Whether the option accepts trailing arguments                            | `'Accepts trailing arguments preceded by #0.'{:ts}`                              | `#0` = the [trailing marker]     |
 | `inline`     | The option's treatment of inline parameters                              | `'(Disallows\|Requires) inline parameters.'{:ts}`                                |                                  |
 | `append`     | Whether an array-valued option can be supplied multiple times            | `'Can be supplied multiple times.'{:ts}`                                         |                                  |
 | `choices`    | The option's parameter choices                                           | `'Values must be one of #0.'{:ts}`                                               | `#0` = the [parameter choices]   |
@@ -416,7 +416,6 @@ The `helpPhrases` property specifies the phrases to use for [help items]. It has
 
 [styles]: #style
 [styling attributes]: #styling-attribute
-[inline styles]: #inline-styles
 [text formatting]: #text-splitting
 [error messages]: #error-message
 [error phrases]: #error-phrases
@@ -435,7 +434,7 @@ The `helpPhrases` property specifies the phrases to use for [help items]. It has
 [cluster letters]: options#cluster-letters
 [parameter separator]: options#parameter-separator
 [parameter count]: options#parameter-count
-[positional marker]: options#positional--marker
+[trailing marker]: options#trailing-marker
 [parameter choices]: options#parameter-choices
 [regular expression]: options#regular-expression
 [count limit]: options#element-count-limit

@@ -108,7 +108,7 @@ All options share a set of attributes in addition to their type. They are descri
 The `names` attribute lists the option names as they may appear on the command line (e.g., `-h` or `--help`). The following rules apply to option names:
 
 - A name must _not_ contain the equals sign `'='{:ts}`, since the latter is used as option-parameter separator.
-- A name should not contain [inline styles], but may contain any other Unicode character (including whitespace) or even be the empty string.
+- A name should not contain [styles], but may contain any other Unicode character (including whitespace) or even be the empty string.
 - A name can be `null{:ts}`, in which case the corresponding [name slot] will be skipped in the help message.
 
 > [!TIP]
@@ -140,10 +140,6 @@ Note that the library does not provide a deprecation mechanism for specific valu
 #### Group | hide
 
 The `group` attribute, if present, specifies the name of a group under which the option should appear in the help message. If absent, the option will belong to the _default_ group, which is also denoted by the empty string. Alternatively, you can use the value `null{:ts}` to completely hide it from the help message.
-
-> [!TIP]
->
-> If there is a [positional] option, you can assign it a unique group and place it _first_ in the option [definitions], in order to highlight it in the help message.
 
 #### Display styles
 
@@ -413,19 +409,31 @@ The `usageParamName` attribute, if present, specifies a name to to display in pl
 
 All [non-niladic] options share a set of attributes, which are described below.
 
-#### Positional | marker
+#### Positional
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. There may be _at most one_ option with this setting in the same [definition] level.
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. If set, then any argument not recognized as an option name will be considered positional.
 
-If set to `true{:ts}`, then any argument not recognized as an option name will be considered positional. If set to a `string{:ts}`, then it is a positional _marker_, and all arguments that appear beyond the marker will be considered positional.
+If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments (up to a [trailing marker]).
 
 > [!TIP]
 >
 > When using this attribute, we recommend also setting [preferred name] to some explanatory name.
 
+> [!TIP]
+>
+> You can assign a unique [group] to positional options and place them _first_ in the option [definitions], in order to highlight them in the help message.
+
+#### Trailing marker
+
+The `marker` attribute, if present, indicates that the option accepts _trailing_ arguments. If set, then all arguments that appear beyond the marker will be considered trailing.
+
+> [!WARNING]
+>
+> If there are multiple trailing markers, their usage will be _mutually exclusive_ in the command line.
+
 > [!NOTE]
 >
-> The positional marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
+> The marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
 
 #### Inline constraint
 
@@ -765,7 +773,8 @@ Here is an example of how it might be used inside the callback:
 
 {/* parameter attributes */}
 
-[positional]: #positional--marker
+[positional]: #positional
+[trailing marker]: #trailing-marker
 [inline constraint]: #inline-constraint
 [inlined]: #inline-constraint
 
@@ -841,7 +850,7 @@ Here is an example of how it might be used inside the callback:
 [warning]: styles#error-message
 [error message]: styles#error-message
 [completion message]: styles#text-message
-[inline styles]: styles#inline-styles
+[styles]: styles#style
 
 {/* validator references */}
 
