@@ -167,7 +167,7 @@ A `HelpSectionFilter` object contains the following optional properties:
 
 > [!NOTE]
 >
-> Matches are exact. Exclusion properties have precedence over inclusion ones. Options and groups are listed in order of their [definitions]. The only exception is an option with a [positional marker], which comes _last_ in a usage statement.
+> Matches are exact. Exclusion properties have precedence over inclusion ones. Options and groups are listed in order of their [definitions]. The only exception is an option with a [trailing marker], which comes _last_ in a usage statement.
 
 ### Text section
 
@@ -207,6 +207,10 @@ In addition to the [basic properties], a **usage** section has the following opt
 - `exclusive` -- reserved for mutually exclusive [option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
 - `compact` -- whether to keep alternatives compact (defaults to true)
+
+> [!NOTE]
+>
+> There can be at most _one_ option with the [trailing marker] in a usage statement.
 
 #### Option dependencies
 
@@ -426,7 +430,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [environment variable]: options#data-sources
 [option group]: options#group--hide
 [option names]: options#option-names
-[positional marker]: options#positional--marker
+[trailing marker]: options#trailing-marker
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#option-parameters

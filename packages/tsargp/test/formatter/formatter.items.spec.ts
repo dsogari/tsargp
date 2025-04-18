@@ -161,9 +161,7 @@ describe('format', () => {
         marker: '--',
       },
     } as const satisfies Options;
-    expect(format(options).wrap()).toEqual(
-      `  -s    Accepts positional arguments that may be preceded by --.\n`,
-    );
+    expect(format(options).wrap()).toEqual(`  -s    Accepts trailing arguments preceded by --.\n`);
   });
 
   it('handle a unnamed positional option that reads data from the standard input', () => {
@@ -179,7 +177,7 @@ describe('format', () => {
     );
   });
 
-  it('handle a unnamed option with positional marker that reads data from the standard input', () => {
+  it('handle a unnamed option with trailing marker that reads data from the standard input', () => {
     const options = {
       single: {
         type: 'single',
@@ -188,7 +186,7 @@ describe('format', () => {
       },
     } as const satisfies Options;
     expect(format(options).wrap()).toEqual(
-      `      Accepts positional arguments that may be preceded by. If not supplied, will be read from the standard input.\n`,
+      `      Accepts trailing arguments preceded by. If not supplied, will be read from the standard input.\n`,
     );
   });
 

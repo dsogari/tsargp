@@ -176,7 +176,7 @@ type ParseEntry = [
    */
   comp?: boolean,
   /**
-   * True if it is the positional marker.
+   * True if it is the trailing marker.
    */
   isMarker?: boolean,
   /**
@@ -227,9 +227,9 @@ const enum ArgType {
    */
   positional,
   /**
-   * An argument that comes after the positional marker.
+   * A trailing argument.
    */
-  afterMarker,
+  trailing,
   /**
    * A cluster argument.
    */
@@ -422,7 +422,7 @@ async function parseArgs(context: ParsingContext) {
       }
       if (!comp) {
         if (isMarker || isPositional || !hasValue) {
-          // positional marker, first positional parameter or option name
+          // trailing argument, first positional parameter or option name
           k = hasValue ? j : j + 1;
         } else {
           // option name with inline parameter
@@ -487,7 +487,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     const argType = isParam
       ? !isForcedName || prevMarker
         ? prevMarker && i - prevIndex + inc > maxParams
-          ? ArgType.afterMarker
+          ? ArgType.trailing
           : ArgType.parameter
         : !optionKey
           ? ArgType.unknownOption
@@ -532,7 +532,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         const newInfo: OptionInfo = positional[min(prevPos, positional.length - 1)];
         return [i, prevPos + 1, newInfo, arg, comp, false, true, true];
       }
-      case ArgType.afterMarker:
+      case ArgType.trailing:
         return [i, prevPos, prevInfo, arg, comp, true];
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
@@ -734,7 +734,7 @@ async function parseParams(
   if (index >= 0) {
     const [min, max] = getParamCount(option);
     if (max > 0 && params.length < min) {
-      // may happen when parsing the positional marker or when reaching the end of the command line
+      // may happen when parsing the trailing marker or when reaching the end of the command line
       // comp === false, otherwise completion would have taken place by now
       // params.length <= max, due to how the `findNext` function works
       reportMissingParameter(min, max, name);

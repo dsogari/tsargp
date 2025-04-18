@@ -246,13 +246,13 @@ function registerNames(
 }
 
 /**
- * Gets a list of option names, including the positional marker.
+ * Gets a list of option names, including the trailing marker.
  * @param option The option definition
  * @returns The option names
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
   const names = option.names?.slice().filter(isString) ?? [];
-  if (isString(option.marker)) {
+  if (option.marker !== undefined) {
     names.push(option.marker);
   }
   return names;
@@ -280,7 +280,7 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
 
 /**
  * Checks whether an option has a name that can be supplied on the command line.
- * Does not include the positional marker.
+ * Does not include the trailing marker.
  * @param option The option definition
  * @returns True if the option has a name that can be supplied
  */
@@ -295,7 +295,7 @@ export function hasSuppliableName(option: OpaqueOption): boolean {
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !hasSuppliableName(option) && !option.positional && !isString(option.marker);
+  return !hasSuppliableName(option) && !option.positional && option.marker === undefined;
 }
 
 /**

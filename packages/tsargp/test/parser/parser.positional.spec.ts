@@ -196,7 +196,7 @@ describe('parse', () => {
       });
     });
 
-    it('handle a variadic option and another with positional marker', () => {
+    it('handle a variadic option and another with trailing marker', () => {
       const options = {
         array: {
           type: 'array',

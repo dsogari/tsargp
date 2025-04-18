@@ -145,7 +145,7 @@ export const enum HelpItem {
    */
   positional,
   /**
-   * Whether the option accepts arguments after positional marker.
+   * Whether the option accepts trailing arguments.
    */
   marker,
   /**

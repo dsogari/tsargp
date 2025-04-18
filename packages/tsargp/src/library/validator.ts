@@ -136,7 +136,6 @@ export async function validate(
 /**
  * Validates all option definitions, including nested options recursively.
  * @param context The validation context
- * @throws On duplicate option with positional marker
  */
 async function validateOptions(context: ValidationContext) {
   const [options, flags] = context;

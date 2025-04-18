@@ -459,19 +459,21 @@ export type WithArgumentInfo = {
   values: OpaqueOptionValues;
   /**
    * The index of the occurrence of the option name, or of the first option parameter.
-   * It will be NaN if the sequence comes from environment data.
+   * It will be `NaN` if the sequence comes from environment data.
    */
   index: number;
   /**
    * The sequence number relative to positional arguments (1-based).
-   * It will be NaN if the sequence is not positional or comes after the positional marker.
+   * It will be `NaN` if the sequence is not positional or comes after a trailing marker.
    */
   position: number;
   /**
-   * The option name as supplied on the command-line, or the environment data source.
-   * It will be the preferred name if the sequence comes from positional arguments.
-   * It will be the positional marker if the sequence comes after the marker.
-   * It will be `'0'` if the sequence comes from the standard input.
+   * The option name. Can be either of:
+   * - the name supplied on the command-line;
+   * - the name of a data source, if the sequence comes from the environment;
+   * - the option's preferred name, if the sequence comes from positional arguments;
+   * - a trailing marker, if the sequence comes after such marker;
+   * - `'0'`, if the sequence comes from the standard input.
    */
   name: string;
 };
@@ -671,20 +673,20 @@ export type WithParameterAttributes = {
   /**
    * Whether the option accepts positional arguments.
    *
-   * If `true`, then any argument not recognized as an option name will be considered positional.
+   * If set, then any argument not recognized as an option name will be considered positional.
    *
    * If there are multiple positional options, their declaration order determines their relative
    * position in the command line. Variadic options will take up all remaining positional arguments
-   * (up to a positional marker, if any).
+   * (up to a trailing marker).
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false
    */
   readonly positional?: boolean;
   /**
-   * The positional marker.
+   * Whether the option accepts trailing arguments.
    *
-   * If set, then all arguments beyond the positional marker will be considered positional.
+   * If set, then all arguments that appear beyond the marker will be considered trailing.
    */
   readonly marker?: string;
   /**

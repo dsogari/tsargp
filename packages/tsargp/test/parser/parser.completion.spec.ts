@@ -360,7 +360,7 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalled();
     });
 
-    it('handle a positional marker', () => {
+    it('handle a trailing marker', () => {
       const options = {
         single: {
           type: 'single',
@@ -392,7 +392,7 @@ describe('parse', () => {
       expect(parse(options, 'cmd one o', { compIndex: 9 })).rejects.toThrow(/^one$/);
     });
 
-    it('handle a positional marker with choices', () => {
+    it('handle a trailing marker with choices', () => {
       const options = {
         single: {
           type: 'single',

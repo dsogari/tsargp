@@ -95,7 +95,7 @@ describe('parse', () => {
       });
     });
 
-    it('handle a single-valued option with value after positional marker', () => {
+    it('handle a single-valued option with value from trailing argument', () => {
       const options = {
         single: {
           type: 'single',

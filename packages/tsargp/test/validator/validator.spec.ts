@@ -6,7 +6,7 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
   describe('when an option is suppliable', () => {
-    it('accept an option with empty positional marker', () => {
+    it('accept an option with empty trailing marker', () => {
       const options = {
         single: {
           type: 'single',
@@ -104,7 +104,7 @@ describe('validate', () => {
     expect(validate(options)).resolves.toEqual({});
   });
 
-  it('accept multiple positional markers', () => {
+  it('accept multiple trailing markers', () => {
     const options = {
       single1: {
         type: 'single',

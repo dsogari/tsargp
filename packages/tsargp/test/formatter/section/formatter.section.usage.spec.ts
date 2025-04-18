@@ -145,7 +145,7 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the options', () => {
-    it('throw error on multiple positional markers', () => {
+    it('throw error on multiple trailing markers', () => {
       const options = {
         single1: {
           type: 'single',
@@ -158,7 +158,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(() => format(options, sections)).toThrow(
-        'Cannot render usage statement with multiple markers: --,++',
+        'Cannot render usage statement with multiple trailing markers: --,++',
       );
     });
 
@@ -798,7 +798,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
     });
 
-    it('change order of always required options and positional marker', () => {
+    it('change order of options that are always required or have a trailing marker', () => {
       const options = {
         flag: {
           type: 'flag',

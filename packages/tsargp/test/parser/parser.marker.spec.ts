@@ -5,8 +5,8 @@ import { parse } from '../../src/library';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('parameters are specified after a positional marker', () => {
-    it('ignore the option prefix after the positional marker ', () => {
+  describe('trailing arguments are supplied', () => {
+    it('ignore the option prefix after the trailing marker ', () => {
       const options = {
         single: {
           type: 'single',
@@ -52,7 +52,7 @@ describe('parse', () => {
       );
     });
 
-    it('handle an option with empty string as positional marker', () => {
+    it('handle an option with empty trailing marker', () => {
       const options = {
         single: {
           type: 'single',
@@ -65,7 +65,7 @@ describe('parse', () => {
       expect(parse(options, ['', '1', '2', '-s'])).resolves.toEqual({ single: '-s' });
     });
 
-    it('handle multiple options with positional marker', () => {
+    it('handle multiple options with trailing marker', () => {
       const options = {
         array1: {
           type: 'array',

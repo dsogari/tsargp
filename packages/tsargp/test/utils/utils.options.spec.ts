@@ -26,23 +26,40 @@ describe('OptionRegistry', () => {
             type: 'flag',
             names: [null, '-f'], // should ignore null values
           },
-          single: {
-            type: 'single',
-            positional: true,
-          },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
         expect(registry.names).toHaveLength(1);
         expect(registry.names.get('-f')).toEqual('flag');
-        expect(options.flag).toHaveProperty('preferredName', '-f');
-        expect(options.single).toHaveProperty('preferredName', '');
       });
 
-      it('include the positional marker', () => {
+      it('add positional options', () => {
         const options = {
-          single1: {
+          single: {
             type: 'single',
             positional: true,
+          },
+          array: {
+            type: 'array',
+            positional: true,
+            preferredName: 'preferred',
+          },
+        } as const satisfies Options;
+        const registry = new OptionRegistry(options);
+        expect(registry.names).toHaveLength(0);
+        expect(registry.positional).toEqual([
+          ['single', options.single, ''],
+          ['array', options.array, 'preferred'],
+        ]);
+      });
+
+      it('set preferred name', () => {
+        const options = {
+          flag: {
+            type: 'flag',
+            names: ['-f'],
+          },
+          single1: {
+            type: 'single',
           },
           single2: {
             type: 'single',
@@ -50,10 +67,11 @@ describe('OptionRegistry', () => {
           },
         } as const satisfies Options;
         const registry = new OptionRegistry(options);
-        expect(registry.names).toHaveLength(1);
+        expect(registry.names).toHaveLength(2);
         expect(registry.names.get('marker')).toEqual('single2');
+        expect(options.flag).toHaveProperty('preferredName', '-f');
+        expect(options.single1).toHaveProperty('preferredName', '');
         expect(options.single2).toHaveProperty('preferredName', 'marker');
-        expect(registry.positional).toEqual([['single1', options.single1, '']]);
       });
     });
 
@@ -75,7 +93,7 @@ describe('OptionRegistry', () => {
 });
 
 describe('getOptionNames', () => {
-  it('handle null values and include the positional marker', () => {
+  it('handle null values and include the trailing marker', () => {
     const options = {
       single: {
         type: 'single',

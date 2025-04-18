@@ -32,7 +32,7 @@ describe('parse', () => {
       expect(parse(options, 'cmd -s= ', { compIndex: 8 })).rejects.toThrow(/^-s$/);
     });
 
-    it('throw an error on positional marker specified with inline parameter', () => {
+    it('throw an error on trailing marker supplied with inline parameter', () => {
       const options = {
         single: {
           type: 'single',
@@ -51,7 +51,7 @@ describe('parse', () => {
       expect(options.single.parse).not.toHaveBeenCalled();
     });
 
-    it('throw an error on flag option specified with inline parameter', () => {
+    it('throw an error on flag option supplied with inline parameter', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -72,7 +72,7 @@ describe('parse', () => {
       expect(options.flag.parse).not.toHaveBeenCalled();
     });
 
-    it('throw an error on single-valued option specified with inline parameter', () => {
+    it('throw an error on single-valued option supplied with inline parameter', () => {
       const options = {
         single: {
           type: 'single',
@@ -94,7 +94,7 @@ describe('parse', () => {
       expect(options.single.parse).not.toHaveBeenCalled();
     });
 
-    it('throw an error on function option specified with inline parameter', () => {
+    it('throw an error on function option supplied with inline parameter', () => {
       const options = {
         function: {
           type: 'function',
@@ -116,7 +116,7 @@ describe('parse', () => {
       expect(options.function.parse).not.toHaveBeenCalled();
     });
 
-    it('throw an error on command option specified with inline parameter', () => {
+    it('throw an error on command option supplied with inline parameter', () => {
       const options = {
         command: {
           type: 'command',
