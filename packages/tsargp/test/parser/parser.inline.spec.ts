@@ -43,10 +43,10 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['='])).rejects.toThrow(
-        `Positional marker does not accept inline parameters.`,
+        `Option name does not accept inline parameters.`,
       );
       expect(parse(options, ['=1'])).rejects.toThrow(
-        `Positional marker does not accept inline parameters.`,
+        `Option name does not accept inline parameters.`,
       );
       expect(options.single.parse).not.toHaveBeenCalled();
     });
@@ -60,10 +60,14 @@ describe('parse', () => {
           parse: jest.fn(),
         },
       } as const satisfies Options;
-      expect(parse(options, ['='])).rejects.toThrow(`Option does not accept inline parameters.`);
-      expect(parse(options, ['=1'])).rejects.toThrow(`Option does not accept inline parameters.`);
+      expect(parse(options, ['='])).rejects.toThrow(
+        `Option name does not accept inline parameters.`,
+      );
+      expect(parse(options, ['=1'])).rejects.toThrow(
+        `Option name does not accept inline parameters.`,
+      );
       expect(parse(options, ['-f1'], flags)).rejects.toThrow(
-        `Option does not accept inline parameters.`,
+        `Option name does not accept inline parameters.`,
       );
       expect(options.flag.parse).not.toHaveBeenCalled();
     });
@@ -79,13 +83,13 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-s='])).rejects.toThrow(
-        `Option -s does not accept inline parameters.`,
+        `Option name -s does not accept inline parameters.`,
       );
       expect(parse(options, ['-s=1'])).rejects.toThrow(
-        `Option -s does not accept inline parameters.`,
+        `Option name -s does not accept inline parameters.`,
       );
       expect(parse(options, ['-s1'], flags)).rejects.toThrow(
-        `Option -s does not accept inline parameters.`,
+        `Option name -s does not accept inline parameters.`,
       );
       expect(options.single.parse).not.toHaveBeenCalled();
     });
@@ -101,13 +105,13 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-f='])).rejects.toThrow(
-        `Option -f does not accept inline parameters.`,
+        `Option name -f does not accept inline parameters.`,
       );
       expect(parse(options, ['-f=1'])).rejects.toThrow(
-        `Option -f does not accept inline parameters.`,
+        `Option name -f does not accept inline parameters.`,
       );
       expect(parse(options, ['-f1'], flags)).rejects.toThrow(
-        `Option -f does not accept inline parameters.`,
+        `Option name -f does not accept inline parameters.`,
       );
       expect(options.function.parse).not.toHaveBeenCalled();
     });
@@ -122,13 +126,13 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-c='])).rejects.toThrow(
-        `Option -c does not accept inline parameters.`,
+        `Option name -c does not accept inline parameters.`,
       );
       expect(parse(options, ['-c=1'])).rejects.toThrow(
-        `Option -c does not accept inline parameters.`,
+        `Option name -c does not accept inline parameters.`,
       );
       expect(parse(options, ['-c1'], flags)).rejects.toThrow(
-        `Option -c does not accept inline parameters.`,
+        `Option name -c does not accept inline parameters.`,
       );
       expect(options.command.parse).not.toHaveBeenCalled();
     });
@@ -153,7 +157,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-s='])).rejects.toThrow(
-        `Option -s does not accept inline parameters.`,
+        `Option name -s does not accept inline parameters.`,
       );
       expect(parse(options, ['--single='])).resolves.toEqual({ single: '' });
     });

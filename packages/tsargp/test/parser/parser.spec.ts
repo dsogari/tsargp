@@ -50,7 +50,7 @@ describe('parse', () => {
         positional: true,
       },
     } as const satisfies Options;
-    expect(parse(options, [])).rejects.toThrow(`Option undefined is required.`);
+    expect(parse(options, [])).rejects.toThrow(`Option is required.`);
   });
 
   it('throw an error on unknown option when an option prefix is specified', () => {

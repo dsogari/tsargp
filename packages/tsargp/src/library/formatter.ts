@@ -1091,7 +1091,7 @@ function formatRequiredKey(
   if (negate) {
     result.append(config.connectives.no);
   }
-  const name = options[requiredKey].preferredName ?? '';
+  const name = options[requiredKey].preferredName!;
   result.value(getSymbol(name));
 }
 
@@ -1142,8 +1142,7 @@ function formatRequiredValue(
   if ((requireAbsent && !negate) || (requirePresent && negate)) {
     result.append(connectives.no);
   }
-  const name = option.preferredName ?? '';
-  result.value(getSymbol(name));
+  result.value(getSymbol(option.preferredName!));
   if (!requireAbsent && !requirePresent) {
     const connective = negate ? connectives.notEquals : connectives.equals;
     result.append(connective).value(value);

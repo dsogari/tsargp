@@ -35,7 +35,7 @@ describe('OptionRegistry', () => {
         expect(registry.names).toHaveLength(1);
         expect(registry.names.get('-f')).toEqual('flag');
         expect(options.flag).toHaveProperty('preferredName', '-f');
-        expect(options.single).toHaveProperty('preferredName', undefined);
+        expect(options.single).toHaveProperty('preferredName', '');
       });
 
       it('include the positional marker', () => {

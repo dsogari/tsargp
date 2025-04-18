@@ -21,6 +21,7 @@ describe('parse', () => {
         // should have been { flag: undefined } at the time of call
         values: { flag: null },
         index: 0,
+        position: NaN,
         name: '-f',
         comp: false,
       });
@@ -30,6 +31,7 @@ describe('parse', () => {
         // should have been { flag: undefined } at the time of call
         values: { flag: null },
         index: 0,
+        position: NaN,
         name: '-f',
         comp: false,
       });
@@ -68,11 +70,11 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-f1', '-f2'])).resolves.toEqual({ flag1: 'abc', flag2: undefined });
-      expect(options.flag1.parse).toHaveBeenCalled();
+      expect(options.flag1.parse).toHaveBeenCalledTimes(1);
       expect(options.flag2.parse).not.toHaveBeenCalled();
     });
 
-    it('handle a flag option with value from environment variable', () => {
+    it('handle a flag option with a parsing callback', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -87,9 +89,31 @@ describe('parse', () => {
         // should have been { flag: undefined } at the time of call
         values: { flag: true },
         index: NaN,
+        position: NaN,
         name: 'FLAG',
         comp: false,
       });
+    });
+
+    it('handle a single-valued option with value after positional marker', () => {
+      const options = {
+        single: {
+          type: 'single',
+          positional: '--',
+          preferredName: 'preferred',
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['--', '1'])).resolves.toEqual({ single: '1' });
+      expect(options.single.parse).toHaveBeenCalledWith('1', {
+        // should have been { single: undefined } at the time of call
+        values: { single: '1' },
+        index: 0,
+        position: NaN,
+        name: '--',
+        comp: false,
+      });
+      expect(options.single.parse).toHaveBeenCalledTimes(1);
     });
 
     it('handle a single-valued option with value from positional argument', () => {
@@ -106,6 +130,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { single: '2' },
         index: 0,
+        position: 1,
         name: 'preferred',
         comp: false,
       });
@@ -113,6 +138,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { single: '2' },
         index: 1,
+        position: 2,
         name: 'preferred',
         comp: false,
       });
@@ -133,6 +159,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { array: ['1', '2'] },
         index: 0,
+        position: 1,
         name: 'preferred',
         comp: false,
       });
@@ -140,6 +167,7 @@ describe('parse', () => {
         // should have been { single: undefined } at the time of call
         values: { array: ['1', '2'] },
         index: 0, // index of the first argument in the sequence
+        position: 1,
         name: 'preferred',
         comp: false,
       });
@@ -173,9 +201,51 @@ describe('parse', () => {
         // should have been { function: undefined } at the time of call
         values: { function: ['1'] },
         index: 0,
+        position: NaN,
         name: '-f',
         comp: false,
       });
+    });
+
+    it('handle a command option with nested options', () => {
+      const options = {
+        command: {
+          type: 'command',
+          names: ['-c'],
+          options: {
+            flag: {
+              type: 'flag',
+              names: ['-f'],
+            },
+          },
+          parse: jest.fn((param) => param),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['-c'])).resolves.toEqual({ command: { flag: undefined } });
+      expect(options.command.parse).toHaveBeenCalledWith(
+        { flag: undefined },
+        {
+          // should have been { command: undefined } at the time of call
+          values: { command: { flag: undefined } },
+          index: 0,
+          position: NaN,
+          name: '-c',
+          comp: false,
+        },
+      );
+      options.command.parse.mockClear();
+      expect(parse(options, ['-c', '-f'])).resolves.toEqual({ command: { flag: true } });
+      expect(options.command.parse).toHaveBeenCalledWith(
+        { flag: true },
+        {
+          // should have been { command: undefined } at the time of call
+          values: { command: { flag: true } },
+          index: 0,
+          position: NaN,
+          name: '-c',
+          comp: false,
+        },
+      );
     });
   });
 });

@@ -125,6 +125,7 @@ describe('parse', () => {
       expect(options.flag.parse).toHaveBeenCalledWith(null, {
         values: { flag: undefined },
         index: 0,
+        position: NaN,
         name: '-f',
         comp: true,
       });
@@ -144,6 +145,7 @@ describe('parse', () => {
       expect(options.single.parse).toHaveBeenCalledWith('1', {
         values: { single: undefined },
         index: 0,
+        position: NaN,
         name: '-s',
         comp: true,
       });
@@ -163,6 +165,7 @@ describe('parse', () => {
       expect(options.array.parse).toHaveBeenCalledWith('1', {
         values: { array: undefined },
         index: 0,
+        position: NaN,
         name: '-a',
         comp: true,
       });
@@ -182,6 +185,7 @@ describe('parse', () => {
       expect(options.function.parse).toHaveBeenCalledWith(['1'], {
         values: { function: undefined },
         index: 0,
+        position: NaN,
         name: '-f',
         comp: true,
       });
@@ -613,6 +617,7 @@ describe('parse', () => {
       expect(options.single.complete).toHaveBeenCalledWith('', {
         values: { strings: undefined },
         index: 0,
+        position: NaN,
         name: '-s',
         prev: [],
       });
@@ -621,6 +626,7 @@ describe('parse', () => {
       expect(options.single.complete).toHaveBeenCalledWith('1', {
         values: { single: undefined },
         index: 0,
+        position: NaN,
         name: '-s',
         prev: [],
       });
@@ -640,6 +646,7 @@ describe('parse', () => {
       expect(options.array.complete).toHaveBeenCalledWith('', {
         values: { strings: undefined },
         index: 0,
+        position: NaN,
         name: '-a',
         prev: [],
       });
@@ -648,6 +655,7 @@ describe('parse', () => {
       expect(options.array.complete).toHaveBeenCalledWith('1', {
         values: { array: undefined },
         index: 0,
+        position: NaN,
         name: '-a',
         prev: [],
       });
@@ -656,6 +664,7 @@ describe('parse', () => {
       expect(options.array.complete).toHaveBeenCalledWith('', {
         values: { array: undefined },
         index: 0,
+        position: NaN,
         name: '-a',
         prev: ['1'],
       });
@@ -696,6 +705,7 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalledWith('a', {
         values: { function: undefined },
         index: 0,
+        position: 1,
         name: '',
         prev: [],
       });
@@ -704,6 +714,7 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalledWith('a', {
         values: { function: undefined },
         index: 0,
+        position: 1,
         name: '',
         prev: ['a'],
       });
@@ -712,12 +723,14 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalledWith('a', {
         values: { function: ['a', 'a'] },
         index: 0,
+        position: 2,
         name: '',
         prev: [],
       });
       expect(options.function.parse).toHaveBeenCalledWith(['a', 'a'], {
         values: { function: ['a', 'a'] }, // should have been { function: undefined } at the time of call
         index: 0,
+        position: 1,
         name: '',
         comp: true,
       });

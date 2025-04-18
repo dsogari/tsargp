@@ -211,7 +211,7 @@ export class OptionRegistry {
     for (const [key, option] of getEntries(this.options)) {
       registerNames(this.names, this.letters, key, option);
       if (isPositional(option)) {
-        this.positional.push([key, option, option.preferredName ?? '']);
+        this.positional.push([key, option, option.preferredName!]);
       }
     }
   }
@@ -238,7 +238,7 @@ function registerNames(
     nameToKey.set(name, key);
   }
   if (!option.preferredName) {
-    option.preferredName = names[0]; // may be undefined
+    option.preferredName = names[0] ?? '';
   }
   for (const letter of option.cluster ?? '') {
     letterToKey.set(letter, key);

@@ -374,11 +374,13 @@ async function parseArgs(context: ParsingContext) {
   let suggestNames = false;
   for (let i = 0, k = 0; i < args.length; i = prev[0]) {
     const next = findNext(context, prev);
-    const [j, , info, value, comp, isMarker, isNew, isPositional] = next;
-    if (isNew || !info) {
+    const [j, pos, info, value, comp, isMarker, isNew, isPositional] = next;
+    const position = isPositional ? pos : NaN;
+    if (!info || isMarker || isNew) {
       if (prev[2]) {
         // process the previous sequence
-        await tryParseParams(context, prev[2], i, args.slice(k, j)); // should return false
+        const position = prev[7] ? prev[1] : NaN;
+        await tryParseParams(context, prev[2], i, position, args.slice(k, j)); // should return false
       }
       if (!info) {
         break; // finished
@@ -386,8 +388,13 @@ async function parseArgs(context: ParsingContext) {
       prev = next;
       const [key, option, name] = info;
       [minParams, maxParams] = getParamCount(option);
+      const isNiladic = !maxParams;
       const hasValue = value !== undefined;
-      if (!maxParams || (!isPositional && (isMarker || checkInline(option, name) === false))) {
+      if (
+        isNiladic ||
+        (isMarker && isNew) ||
+        (!isPositional && checkInline(option, name) === false)
+      ) {
         if (comp) {
           reportCompletion();
         }
@@ -398,16 +405,15 @@ async function parseArgs(context: ParsingContext) {
             prev[5] = false;
             continue;
           }
-          const [alt, name2] = isMarker ? [1, '' + option.positional] : [0, name];
-          throw error(ErrorItem.disallowedInlineParameter, name2, { alt });
+          throw error(ErrorItem.disallowedInlineParameter, name);
         }
       }
       if (!completing && !supplied.has(key)) {
         addSupplied(context, info);
       }
-      if (!maxParams) {
+      if (isNiladic) {
         // comp === false
-        if (await handleNiladic(context, info, j, args.slice(j + 1))) {
+        if (await handleNiladic(context, info, j, position, args.slice(j + 1))) {
           return; // skip requirements
         }
         prev[0] += max(0, option.skipCount ?? 0);
@@ -420,7 +426,7 @@ async function parseArgs(context: ParsingContext) {
           k = hasValue ? j : j + 1;
         } else {
           // option name with inline parameter
-          await tryParseParams(context, info, j, [value]); // should return false
+          await tryParseParams(context, info, j, position, [value]); // should return false
           prev[2] = undefined;
         }
         continue; // fetch more
@@ -433,7 +439,7 @@ async function parseArgs(context: ParsingContext) {
       break; // finished
     }
     // comp === true
-    const suggestions = await completeParameter(values, info, i, args.slice(k, j), value);
+    const suggestions = await completeParameter(values, info, i, position, args.slice(k, j), value);
     if (suggestNames || (j > i && j - k >= minParams)) {
       suggestions.push(...completeName(registry, value));
     }
@@ -465,7 +471,7 @@ function addSupplied(context: ParsingContext, info: OptionInfo) {
  */
 function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
-  const [prevIndex, prevPos, , prevVal, , prevMarker] = prev;
+  const [prevIndex, prevPos, , prevVal, , prevMarker, , prevPositional] = prev;
   let prevInfo = prev[2];
   const { names, positional, options } = registry;
   const inc = prevVal !== undefined ? 1 : 0;
@@ -505,8 +511,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
           reportCompletion([{ type, name, synopsis: synopsis && '' + synopsis }]);
         }
         const isMarker = name === option.positional;
-        const newName = isMarker ? option.preferredName! : name;
-        const newInfo: OptionInfo = [optionKey!, option, newName];
+        const newInfo: OptionInfo = [optionKey!, option, name];
         return [i, prevPos, newInfo, value, comp, isMarker, true];
       }
       case ArgType.cluster:
@@ -528,7 +533,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         return [i, prevPos + 1, newInfo, arg, comp, false, true, true];
       }
       case ArgType.afterMarker:
-        return [i, prevPos, prevInfo, arg, comp, prevMarker, true, true];
+        return [i, prevPos, prevInfo, arg, comp, true];
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
         if (checkInline(option, name) === 'always') {
@@ -539,7 +544,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
           prevInfo = undefined;
           i--; // reprocess the current argument
         } else if (comp) {
-          return [i, prevPos, prevInfo, arg, comp, prevMarker];
+          return [i, prevPos, prevInfo, arg, comp, prevMarker, false, prevPositional];
         }
         break; // continue looking for parameters or option names
       }
@@ -613,6 +618,7 @@ function completeName(registry: OptionRegistry, comp: string = ''): Array<Parser
  * @param values The option values
  * @param info The option information
  * @param index The starting index of the argument sequence
+ * @param position The position of the sequence relative to positional arguments
  * @param prev The preceding parameters, if any
  * @param comp The word being completed
  * @returns The completion suggestions
@@ -621,6 +627,7 @@ async function completeParameter(
   values: OpaqueOptionValues,
   info: OptionInfo,
   index: number,
+  position: number,
   prev: Array<string>,
   comp: string = '',
 ): Promise<Array<ParserSuggestion>> {
@@ -635,7 +642,7 @@ async function completeParameter(
   if (option.complete) {
     try {
       // avoid destructuring, because the callback might need to use `this`
-      const suggestions = await option.complete(comp, { values, index, name, prev });
+      const suggestions = await option.complete(comp, { values, index, position, name, prev });
       return suggestions.map((suggestion) =>
         isString(suggestion) ? { ...base, name: suggestion } : { ...base, ...suggestion },
       );
@@ -658,6 +665,7 @@ async function completeParameter(
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
+ * @param position The position of the sequence relative to positional arguments
  * @param params The option parameters, if any
  * @returns True if the parsing loop should be broken
  */
@@ -665,11 +673,12 @@ async function tryParseParams(
   context: ParsingContext,
   info: OptionInfo,
   index: number,
+  position: number,
   params: Array<string>,
 ): Promise<boolean> {
   try {
     // use await here instead of return, in order to catch errors
-    return await parseParams(context, info, index, params);
+    return await parseParams(context, info, index, position, params);
   } catch (err) {
     // do not propagate parsing errors during completion
     if (!context[4] || err instanceof TextMessage || err instanceof JsonMessage) {
@@ -684,6 +693,7 @@ async function tryParseParams(
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
+ * @param position The position of the sequence relative to positional arguments
  * @param params The option parameter(s)
  * @returns True if the parsing loop should be broken
  */
@@ -691,6 +701,7 @@ async function parseParams(
   context: ParsingContext,
   info: OptionInfo,
   index: number,
+  position: number,
   params: Array<string>,
 ): Promise<boolean> {
   /** @ignore */
@@ -705,7 +716,7 @@ async function parseParams(
   const [, values, , , comp] = context;
   const [key, option, name] = info;
   const breakLoop = !!option.break && !comp;
-  const seq = { values, index, name, comp };
+  const seq = { values, index, position, name, comp };
   const { type, regex, separator, append, choices, mapping, normalize } = option;
 
   // if index is NaN, we are in the middle of requirements checking (data comes from environment)
@@ -775,6 +786,7 @@ async function parseParams(
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
+ * @param position The position of the sequence relative to positional arguments
  * @param rest The remaining command-line arguments
  * @returns True if the parsing loop should be broken
  */
@@ -782,6 +794,7 @@ async function handleNiladic(
   context: ParsingContext,
   info: OptionInfo,
   index: number,
+  position: number,
   rest: Array<string>,
 ): Promise<boolean> {
   const comp = context[4];
@@ -798,11 +811,11 @@ async function handleNiladic(
       if (!comp) {
         await checkRequired(context, true);
       }
-      await handleCommand(context, info, index, rest);
+      await handleCommand(context, info, index, position, rest);
       return true;
     default:
       // flag or function option: reuse non-niladic handling
-      return await tryParseParams(context, info, index, rest);
+      return await tryParseParams(context, info, index, position, rest);
   }
 }
 
@@ -811,6 +824,7 @@ async function handleNiladic(
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
+ * @param position The position of the sequence relative to positional arguments
  * @param rest The remaining command-line arguments
  * @returns The result of parsing the command arguments
  */
@@ -818,6 +832,7 @@ async function handleCommand(
   context: ParsingContext,
   info: OptionInfo,
   index: number,
+  position: number,
   rest: Array<string>,
 ) {
   const [, values, , , comp, warning, flags] = context;
@@ -834,7 +849,7 @@ async function handleCommand(
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
-  const seq = { values, index, name, comp };
+  const seq = { values, index, position, name, comp };
   // comp === false, otherwise completion will have taken place by now
   // avoid destructuring, because the callback might need to use `this`
   values[key] = option.parse ? await option.parse(param, seq) : param;
@@ -938,7 +953,7 @@ async function checkDefaultValue(context: ParsingContext, key: string, isEarly: 
   /** @ignore */
   async function parseData(data: string, name: string) {
     const info: OptionInfo = [key, option, name];
-    await parseParams(context, info, NaN, [data]);
+    await parseParams(context, info, NaN, NaN, [data]);
     addSupplied(context, info);
   }
   const [registry, values, , supplied] = context;

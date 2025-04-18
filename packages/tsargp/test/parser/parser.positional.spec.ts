@@ -119,7 +119,7 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['--'])).rejects.toThrow(
-        `Missing parameter(s) to option preferred: requires exactly 1.`,
+        `Missing parameter(s) to option --: requires exactly 1.`,
       );
     });
 
@@ -130,17 +130,16 @@ describe('parse', () => {
           names: ['-f'],
           positional: '--',
           paramCount: 2,
-          preferredName: 'preferred',
         },
       } as const satisfies Options;
       expect(parse(options, ['--'])).rejects.toThrow(
-        `Missing parameter(s) to option preferred: requires exactly 2.`,
+        `Missing parameter(s) to option --: requires exactly 2.`,
       );
       expect(parse(options, ['--', '1'])).rejects.toThrow(
-        `Missing parameter(s) to option preferred: requires exactly 2.`,
+        `Missing parameter(s) to option --: requires exactly 2.`,
       );
       expect(parse(options, ['--', '1', '2', '3'])).rejects.toThrow(
-        `Missing parameter(s) to option preferred: requires exactly 2.`,
+        `Missing parameter(s) to option --: requires exactly 2.`,
       );
     });
 
@@ -194,8 +193,8 @@ describe('parse', () => {
           paramCount: 2,
         },
       } as const satisfies Options;
-      expect(parse(options, ['--', '1', '2', '3', '4'])).resolves.toEqual({ function: ['3', '4'] });
-      expect(parse(options, ['--', '1', '2', '3', '4', '-f', '-f'])).resolves.toEqual({
+      expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ function: ['1', '2'] });
+      expect(parse(options, ['--', '1', '2', '-f', '-f'])).resolves.toEqual({
         function: ['-f', '-f'],
       });
     });
