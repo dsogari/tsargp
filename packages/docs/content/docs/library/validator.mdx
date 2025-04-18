@@ -50,7 +50,7 @@ The following restrictions will raise an error for any option definition that fa
 - **Invalid required option** -- An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
 - **Invalid required value** -- An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is _nullish_ (i.e., `null{:ts}` or `undefined{:ts}`).
 - **Invalid inline constraint** -- An [inline constraint] should not be declared if the option has no name, or if it applies to all names and the option is polyadic, or if it applies to specific names and references an _unknown_ name.
-- **Option not suppliable** -- It must be possible for an option to be [supplied], i.e., the latter must either have an [option name], [cluster letter], [data source], or accept [positional] or [trailing] arguments.
+- **Option not suppliable** -- It must be possible for an option to be [supplied], i.e., the latter must either have an [option name], [cluster letter], [data source], [trailing marker], or accept [positional] arguments.
 
 > [!NOTE]
 >

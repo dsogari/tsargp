@@ -53,7 +53,7 @@ export const config: MessageConfig = {
     [ErrorItem.missingRequiredOption]: 'Option #0 is required.',
     [ErrorItem.missingParameter]:
       'Missing parameter(s) to option #0: requires (exactly|at least|between) #1.',
-    [ErrorItem.disallowedInlineParameter]: 'Option name #0 does not accept inline parameters.',
+    [ErrorItem.disallowedInlineParameter]: 'Option #0 does not accept inline parameters.',
     [ErrorItem.choiceConstraintViolation]: 'Invalid parameter to #0: #1. Value must be one of: #2.',
     [ErrorItem.regexConstraintViolation]:
       'Invalid parameter to #0: #1. Value must match the regex #2.',

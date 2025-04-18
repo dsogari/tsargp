@@ -114,12 +114,12 @@ The information gathered by the parser is saved in an object that is passed as p
   - the [supplied] option name, if the sequence comes after such occurrence
   - the first [option parameter], if the sequence comes from [positional] arguments
   - `NaN{:ts}`, if the sequence comes from the [environment]
-- `position` -- The sequence number relative to [positional] arguments (1-based), or `NaN{:ts}` if it is either not positional or comes after a trailing marker.
+- `position` -- The sequence number relative to [positional] arguments (1-based), or `NaN{:ts}` if it is either not positional or comes after a [trailing marker].
 - `name` -- The option name. Can be either of:
   - the [supplied] option name
   - the name of a [data source], if the sequence comes from the [environment]
   - the option's [preferred name], if the sequence comes from [positional] arguments
-  - a trailing marker, if the sequence comes after such marker
+  - a [trailing marker], if the sequence comes after such marker
   - `'0'{:ts}`, if the sequence comes from the [standard input]
 - `comp` -- True if performing [word completion]. Only available for the [parsing callback].
 - `prev` -- The option parameters preceding the word being completed, if any. Only available for the [completion callback]. Will be empty for [single-valued] options.
