@@ -81,8 +81,8 @@ export type ParsingFlags = {
   readonly stdinSymbol?: string;
   /**
    * The similarity threshold for option name suggestions in case of an unknown option error.
-   * Values are given in percentage (e.g., `0.6`). Zero means disabled.
-   * @default 0
+   * Values are given in percentage (e.g., `0.6`). Zero or `NaN` means disabled.
+   * @default NaN
    */
   readonly similarity?: number;
 };
