@@ -1,5 +1,17 @@
 # @tsargp/docs
 
+## 1.21.0
+
+### Minor Changes
+
+- 750f1a6: Document the new validation flag for similar option name validation.
+
+  - **Validator** page has been updated to document the new `similarity` field of the `ValidationFlags` type
+
+- 99b55a6: Document the new parsing flag for similar option name suggestions.
+
+  - **Parser** page has been updated to document the new `similarity` field of the `ParsingFlags` type
+
 ## 1.20.0
 
 ### Minor Changes
