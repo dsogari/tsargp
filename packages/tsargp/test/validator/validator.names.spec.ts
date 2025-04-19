@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options } from '../../src/library';
+import type { Options, ValidationFlags } from '../../src/library';
 import { validate } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -188,8 +188,10 @@ describe('validate', () => {
           },
         },
       } as const satisfies Options;
-      expect(validate(options, { noWarn: true })).resolves.toEqual({});
-      expect(validate(options)).resolves.toEqual({
+      const flags: ValidationFlags = { similarity: 0.8 };
+      expect(validate(options)).resolves.toEqual({});
+      expect(validate(options, { ...flags, noWarn: true })).resolves.toEqual({});
+      expect(validate(options, flags)).resolves.toEqual({
         warning: expect.objectContaining({
           message:
             `command: Option name 'abc' has too similar names: 'abcd'.\n` +

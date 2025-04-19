@@ -33,6 +33,10 @@ The `noWarn` property indicates whether the validator should skip generation of 
 
 The `noRecurse` property indicates whether the validator should skip recursion into [nested options].
 
+### Similarity threshold
+
+The `similarity` property indicates the similarity threshold for similar option name validation. Values are given in percentage (e.g., `0.8{:ts}`). Zero or `NaN{:ts}` means disabled.
+
 ## Validation rules
 
 There are two kinds of validation rules, depending on whether they generate an error or a warning. They are listed below.
@@ -64,7 +68,7 @@ The following restrictions will raise an error for any option definition that fa
 
 The following restrictions will produce a warning that is returned by the validation procedure.
 
-- **Too similar names** -- When two [option names] are very similar (e.g., if they differ by a single character in a five-character name), this could be a development mistake or, worse, it can become a source of headaches for end-users. Hence, the validator tries to find names that closely match a given name using the [Gestalt] algorithm.
+- **Too similar names** -- When two [option names] are very similar (e.g., if they differ by a single character in a five-character name), this could be a development mistake or, worse, it can become a source of headaches for end-users. Hence, when the [similarity threshold] flag is enabled, the validator tries to find names that closely match a given name using the [Gestalt] algorithm.
 - **Mixed naming convention** -- When a [name slot] contains names with different naming conventions (e.g., all uppercase vs all lowercase), this could be a sign of code review neglect or, worse, it can make reasoning about your application difficult. Thus, the validator tries to find names within a slot that contain mixed naming patterns.
 - **Variadic option with cluster letter** -- A [variadic] option that declares [cluster letters] must always be the _last_ option in a [cluster] argument. This includes [subcommands], [array] options and [function] options with a variable [parameter count]. This might not be the intended behavior and, if so, you should consider alternatives.
 
@@ -74,6 +78,7 @@ The following restrictions will produce a warning that is returned by the valida
 
 [value validation]: #value-validation
 [validation flags]: #validation-flags
+[similarity threshold]: #similarity-threshold
 
 {/* options references */}
 

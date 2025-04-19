@@ -73,6 +73,12 @@ export type ValidationFlags = {
    * Whether the validation procedure should skip recursion into nested options.
    */
   readonly noRecurse?: boolean;
+  /**
+   * The similarity threshold for similar option name validation.
+   * Values are given in percentage (e.g., `0.8`). Zero or `NaN` means disabled.
+   * @default NaN
+   */
+  readonly similarity?: number;
 };
 
 /**
@@ -186,16 +192,18 @@ function validateNames(
  */
 function detectNamingIssues(context: ValidationContext, nameToKey: Map<string, string>) {
   const formatFlags = { open: '', close: '' };
-  const [options, , warning, , prefix] = context;
+  const [options, flags, warning, , prefix] = context;
   const prefix2 = getSymbol(prefix.slice(0, -1)); // remove trailing dot
-  const visited = new Set<string>();
-  for (const name of nameToKey.keys()) {
-    if (!visited.has(name)) {
-      const similar = findSimilar(name, nameToKey.keys(), 0.8);
-      if (similar.length) {
-        warning.add(ErrorItem.tooSimilarOptionNames, formatFlags, prefix2, name, similar);
-        for (const similarName of similar) {
-          visited.add(similarName);
+  if (flags.similarity) {
+    const visited = new Set<string>();
+    for (const name of nameToKey.keys()) {
+      if (!visited.has(name)) {
+        const similar = findSimilar(name, nameToKey.keys(), flags.similarity);
+        if (similar.length) {
+          warning.add(ErrorItem.tooSimilarOptionNames, formatFlags, prefix2, name, similar);
+          for (const similarName of similar) {
+            visited.add(similarName);
+          }
         }
       }
     }
