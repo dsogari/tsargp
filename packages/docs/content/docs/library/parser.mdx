@@ -78,9 +78,9 @@ The `optionPrefix` property specifies the prefix for [option names]. If set, the
 
 The `stdinSymbol` property specifies a symbol for the [standard input] to be displayed in [usage statements] produced by [help] options. If not present, the standard input will not appear in usage statements.
 
-### Suggest names
+### Similarity threshold
 
-The `suggestNames` property indicates whether similar option names should be suggested in case of an unknown option error. Alternatively, a percentage can be specified for the similarity threshold (e.g., `0.6{:ts}`).
+The `similarity` property indicates the similarity threshold for option name suggestions in case of an unknown option error. Values are given in percentage (e.g., `0.6{:ts}`). Zero means disabled.
 
 > [!NOTE]
 >
