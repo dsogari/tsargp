@@ -14,7 +14,7 @@ Add parsing flag for option name suggestions.
 
 **Usage notes**:
 
-You can now configure the threshold for option name suggestions, e.g.:
+You can now configure the similarity threshold for option name suggestions, e.g.:
 
 ```ts
 const flags: ParsingFlags = {
