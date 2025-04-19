@@ -27,6 +27,7 @@ const flags: ParsingFlags = {
   clusterPrefix: '-',
   optionPrefix: '-',
   stdinSymbol: '-',
+  suggestNames: true,
 };
 
 try {
