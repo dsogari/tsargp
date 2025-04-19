@@ -74,8 +74,8 @@ export type ValidationFlags = {
    */
   readonly noRecurse?: boolean;
   /**
-   * The similarity threshold for option name validation, in percentage (e.g., `0.8`).
-   * Zero means disabled.
+   * The similarity threshold for option name validation.
+   * Values are given in percentage (e.g., `0.8`). Zero means disabled.
    * @default 0
    */
   readonly similarity?: number;
