@@ -82,7 +82,6 @@ export type ParsingFlags = {
   readonly stdinSymbol?: string;
   /**
    * Whether similar option names should be suggested in case of an unknown option error.
-   *
    * Alternatively, a percentage can be specified for the similarity threshold (e.g., `0.6`).
    * @default false
    */

@@ -14,7 +14,7 @@ Add parsing flag for option name suggestions.
 
 **Usage notes**:
 
-You can now enable or disable option name suggestions with a parsing flag, e.g.:
+You can now enable or disable option name suggestions, e.g.:
 
 ```ts
 const flags: ParsingFlags = {
