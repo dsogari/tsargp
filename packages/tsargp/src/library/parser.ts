@@ -37,6 +37,7 @@ import {
   isCommand,
   isFunction,
   isMessage,
+  isNumber,
   isString,
   max,
   min,
@@ -81,8 +82,11 @@ export type ParsingFlags = {
   readonly stdinSymbol?: string;
   /**
    * Whether similar option names should be suggested in case of an unknown option error.
+   *
+   * Alternatively, a percentage can be specified for the similarity threshold (e.g., `0.6`).
+   * @default false
    */
-  readonly suggestNames?: boolean;
+  readonly suggestNames?: boolean | number;
 };
 
 /**
@@ -571,7 +575,9 @@ function reportMissingParameter(min: number, max: number, name: string): never {
  */
 function reportUnknownName(context: ParsingContext, name: string): never {
   const { suggestNames } = context[6];
-  const similar = suggestNames ? findSimilar(name, context[0].names.keys(), 0.6) : undefined;
+  const similar = suggestNames
+    ? findSimilar(name, context[0].names.keys(), isNumber(suggestNames) ? suggestNames : 0.6)
+    : undefined;
   const flags = {
     alt: similar?.length ? 1 : 0,
     sep: config.connectives.optionSep,
