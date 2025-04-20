@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test';
 import type { Options } from '../../../src/library';
-import { parse } from '../../../src/library';
+import { format, parse } from '../../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -59,8 +59,8 @@ describe('parse', () => {
             },
           },
         } as const satisfies Options;
-        expect(parse(options, ['cmd', '-h'], { progName: '' })).rejects.toThrow('[-h]\n');
-        expect(parse(options, ['cmd', '-h'], { progName: 'prog' })).rejects.toThrow(
+        expect(parse(options, ['cmd', '-h'], { progName: '', format })).rejects.toThrow('[-h]\n');
+        expect(parse(options, ['cmd', '-h'], { progName: 'prog', format })).rejects.toThrow(
           'prog cmd [-h]\n',
         );
       });

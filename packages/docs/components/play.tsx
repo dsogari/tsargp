@@ -3,9 +3,9 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import React, { type JSX } from 'react';
-import { type Options } from 'tsargp';
+import { type JSX } from 'react';
 import * as tsargp from 'tsargp';
+import { type Options } from 'tsargp';
 import * as enums from 'tsargp/enums';
 import { type Props, Command } from './classes/command';
 

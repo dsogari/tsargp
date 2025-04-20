@@ -3,13 +3,13 @@ import type { Options } from '../../src/library';
 import {
   OptionRegistry,
   allOf,
-  not,
-  oneOf,
-  valuesFor,
   getOptionNames,
   getParamCount,
   isMessage,
   isNiladic,
+  not,
+  oneOf,
+  valuesFor,
   visitRequirements,
 } from '../../src/library/utils';
 

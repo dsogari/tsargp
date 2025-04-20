@@ -1,5 +1,5 @@
+import { calc as options } from 'tsargp/examples';
 import { createGenerator } from './generator.js';
-import options from '../../../calc.options.js';
 
 /**
  * The completion specification for the Calc command.

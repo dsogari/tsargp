@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test';
-import { gestaltSimilarity, findSimilar, matchNamingRules } from '../../src/library/utils';
+import { findSimilar, gestaltSimilarity, matchNamingRules } from '../../src/library/utils';
 
 describe('gestaltSimilarity', () => {
   it('return NaN on empty strings', () => {

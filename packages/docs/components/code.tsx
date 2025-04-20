@@ -3,12 +3,12 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import React, { createRef, type JSX } from 'react';
 import {
   compressToEncodedURIComponent as compress,
   decompressFromEncodedURIComponent as decompress,
 } from 'lz-string';
-import { type Props, Editor } from './classes/editor';
+import { createRef, type JSX } from 'react';
+import { Editor, type Props } from './classes/editor';
 
 //--------------------------------------------------------------------------------------------------
 // Classes

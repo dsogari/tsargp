@@ -1,5 +1,6 @@
-import type { Options, ParsingFlags, ParserSuggestion } from 'tsargp';
-import { parse, JsonMessage } from 'tsargp';
+import type { Options, ParserSuggestion, ParsingFlags } from 'tsargp';
+
+import { JsonMessage, parse } from 'tsargp';
 
 /**
  * Converts a suggestion emitted by the parser to one that can be consumed by Fig.

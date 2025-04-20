@@ -4,6 +4,7 @@
 'use no memo';
 
 import type { ComponentProps, FC, ReactNode } from 'react';
+
 import clsx from 'clsx';
 
 type CustomComponentType = FC<{ type: AlertType; children: ReactNode }>;

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 import {
   findValue,
-  readFile,
-  makeUnique,
-  setUnion,
-  setDifference,
   handleError,
+  makeUnique,
+  readFile,
+  setDifference,
+  setUnion,
 } from '../../src/library/utils';
 
 describe('findValue', () => {

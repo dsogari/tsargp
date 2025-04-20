@@ -16,8 +16,8 @@ In a nutshell, here are the most interesting features offered:
 | -------------------- | ---------------------- | ----------------------- |
 | Zero-dependency      | Word completion        | Help message formatting |
 | Fully declarative    | Option validation      | Text wrapping/alignment |
-| Type-checked         | Option requirements    | Paragraphs and lists    |
-| Highly configurable  | Value constraints      | Custom error phrases    |
+| Type-checked[^1]     | Option requirements    | Paragraphs and lists    |
+| Tree-shakeable[^2]   | Value constraints      | Custom error phrases    |
 | Browser-compatible   | Name suggestions       | [SGR] colors and styles |
 | 36KB minified        | Subcommands            | Option grouping/hiding  |
 | ESM-native           | Asynchronous callbacks | Usage statements        |
@@ -36,7 +36,7 @@ Among other things, it offers three distinctive features:
 <details>
   <summary>A **declarative** API</summary>
   
-Few libraries that we know of support this[^1]. Most others have either an imperative or a fluent interface, whereas **tsargp** provides a way to declare all of your command-line options in a single `object`.
+Few libraries that we know of support this[^3]. Most others have either an imperative or a fluent interface, whereas **tsargp** provides a way to declare all of your command-line options in a single `object`.
 
 </details>
 
@@ -278,7 +278,11 @@ When users install through a package manager, the latter will probably create a 
 
 {/* external references */}
 
-[^1]: At the time of writing, it's worth mentioning [meow], [yargs], [oclif] and [command-line-usage].
+[^1]: Besides TypeScript, you can leverage an external package like [levn] to parse option parameters.
+
+[^2]: The most important library components (parser, formatter, validator) can be used independently.
+
+[^3]: At the time of writing, it's worth mentioning [meow], [yargs], [oclif], [optionator] and [command-line-usage].
 
 [SGR]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [meow]: https://www.npmjs.com/package/meow
@@ -296,3 +300,5 @@ When users install through a package manager, the latter will probably create a 
 [roadmap]: https://github.com/dsogari/tsargp/issues/253
 [releases]: https://github.com/dsogari/tsargp/milestones
 [request]: https://github.com/dsogari/tsargp/issues/new?template=feature-request.yml
+[levn]: https://www.npmjs.com/package/levn
+[optionator]: https://www.npmjs.com/package/optionator

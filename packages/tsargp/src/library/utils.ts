@@ -179,7 +179,7 @@ const jsonImportOptions: ImportCallOptions = {
 };
 
 const { min, max } = Math;
-export { min, max }; // to avoid typing `Math` all the time and reduce footprint
+export { max, min }; // to avoid typing `Math` all the time and reduce footprint
 
 //--------------------------------------------------------------------------------------------------
 // Classes

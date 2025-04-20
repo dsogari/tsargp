@@ -1,5 +1,5 @@
+import { demo as options } from 'tsargp/examples';
 import { createGenerator } from './generator.js';
-import options from '../../../demo.options.js';
 
 /**
  * The completion specification for the Demo command.

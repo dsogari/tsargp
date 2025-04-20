@@ -3,10 +3,10 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import React, { type JSX } from 'react';
-import { parseInto, AnsiMessage, valuesFor, type ParsingFlags } from 'tsargp';
-import { type Props, Command } from './classes/command';
+import { type JSX } from 'react';
+import { AnsiMessage, format, parseInto, valuesFor, type ParsingFlags } from 'tsargp';
 import { demo as options } from 'tsargp/examples';
+import { Command, type Props } from './classes/command';
 
 //--------------------------------------------------------------------------------------------------
 // Constants
@@ -17,6 +17,7 @@ const flags: ParsingFlags = {
   optionPrefix: '-',
   stdinSymbol: '-',
   similarity: 0.6,
+  format,
 };
 
 //--------------------------------------------------------------------------------------------------

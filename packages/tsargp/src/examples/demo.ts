@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import type { HelpTextSection, ParsingFlags } from 'tsargp';
-import { getVersion, handleError, parseInto, sectionFooter, valuesFor } from 'tsargp';
+import { format, getVersion, handleError, parseInto, sectionFooter, valuesFor } from 'tsargp';
 import options from './demo.options.js';
 
 // cannot be used in the browser
@@ -28,6 +28,7 @@ const flags: ParsingFlags = {
   optionPrefix: '-',
   stdinSymbol: '-',
   similarity: 0.6,
+  format,
 };
 
 try {
