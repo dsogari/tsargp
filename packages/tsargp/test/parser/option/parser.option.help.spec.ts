@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../../src/library';
-import { parse } from '../../../src/library';
+import { format, parse } from '../../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
@@ -13,8 +13,8 @@ describe('parse', () => {
           names: [''],
         },
       } as const satisfies Options;
-      expect(parse(options, [])).resolves.toEqual({});
-      expect(parse(options, [''])).rejects.toThrow(`\n`);
+      expect(parse(options, [], { format })).resolves.toEqual({});
+      expect(parse(options, [''], { format })).rejects.toThrow(`\n`);
     });
 
     it('save the help message when the option explicitly asks so', () => {
@@ -25,8 +25,8 @@ describe('parse', () => {
           saveMessage: true,
         },
       } as const satisfies Options;
-      expect(parse(options, [])).resolves.toEqual({ help: undefined });
-      expect(parse(options, ['-h'])).resolves.toEqual({
+      expect(parse(options, [], { format })).resolves.toEqual({ help: undefined });
+      expect(parse(options, ['-h'], { format })).resolves.toEqual({
         help: expect.objectContaining({ message: '  -h\n' }),
       });
     });
@@ -51,10 +51,12 @@ describe('parse', () => {
           useFilter: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-F', '-S'])).rejects.toThrow(`  -f, --flag\n  -s, --single\n`);
+      expect(parse(options, ['-h', '-F', '-S'], { format })).rejects.toThrow(
+        `  -f, --flag\n  -s, --single\n`,
+      );
     });
 
-    it('throw the help message of a subcommand with nested options', () => {
+    it('throw the help message of a subcommand with nested options object', () => {
       const options = {
         help: {
           type: 'help',
@@ -80,17 +82,17 @@ describe('parse', () => {
           },
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', 'cm'])).rejects.toThrow(/^ {2}cmd\n$/);
-      expect(parse(options, ['-h', 'cmd'], { progName: '' })).rejects.toThrow(/^\[-h\]\n$/);
-      expect(parse(options, ['-h', 'cmd'], { progName: 'prog' })).rejects.toThrow(
+      expect(parse(options, ['-h', 'cm'], { format })).rejects.toThrow(/^ {2}cmd\n$/);
+      expect(parse(options, ['-h', 'cmd'], { progName: '', format })).rejects.toThrow(/^\[-h\]\n$/);
+      expect(parse(options, ['-h', 'cmd'], { progName: 'prog', format })).rejects.toThrow(
         /^prog cmd \[-h\]\n$/,
       );
-      expect(parse(options, ['-h', 'cmd'], { progName: '', clusterPrefix: '-' })).rejects.toThrow(
-        /^\[-h\] \[-s\]\n$/,
-      );
-      expect(parse(options, ['-h', 'cmd'], { progName: '', stdinSymbol: '-' })).rejects.toThrow(
-        /^\[-h\] \[-\]\n$/,
-      );
+      expect(
+        parse(options, ['-h', 'cmd'], { progName: '', clusterPrefix: '-', format }),
+      ).rejects.toThrow(/^\[-h\] \[-s\]\n$/);
+      expect(
+        parse(options, ['-h', 'cmd'], { progName: '', stdinSymbol: '-', format }),
+      ).rejects.toThrow(/^\[-h\] \[-\]\n$/);
     });
 
     it('throw the help message of a subcommand with nested options callback', () => {
@@ -120,9 +122,9 @@ describe('parse', () => {
             }) as const satisfies Options,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-h'])).rejects.toThrow('  -h\n');
-      expect(parse(options, ['-h', 'cmd'])).rejects.toThrow('  -f\n  -h\n');
-      expect(parse(options, ['-h', 'cmd', '-f'])).rejects.toThrow('  -f\n');
+      expect(parse(options, ['-h', '-h'], { format })).rejects.toThrow('  -h\n');
+      expect(parse(options, ['-h', 'cmd'], { format })).rejects.toThrow('  -f\n  -h\n');
+      expect(parse(options, ['-h', 'cmd', '-f'], { format })).rejects.toThrow('  -f\n');
     });
 
     it('throw the help message of a subcommand with a dynamic module with no help option', () => {
@@ -140,7 +142,7 @@ describe('parse', () => {
           options: async () => (await import('../../data/no-help')).default,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -c\n');
+      expect(parse(options, ['-h', '-c'], { format })).rejects.toThrow('  -c\n');
     });
 
     it('throw the help message of a subcommand with a dynamic module with a help option', () => {
@@ -157,7 +159,7 @@ describe('parse', () => {
           options: async () => (await import('../../data/with-help')).default,
         },
       } as const satisfies Options;
-      expect(parse(options, ['-h', '-c'])).rejects.toThrow('  -f\n');
+      expect(parse(options, ['-h', '-c'], { format })).rejects.toThrow('  -f\n');
     });
   });
 });

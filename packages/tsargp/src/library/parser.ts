@@ -1,6 +1,7 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
+import type { format, FormatterFlags } from './formatter.js';
 import type {
   ICompletionSuggestion,
   OpaqueOption,
@@ -16,7 +17,6 @@ import type {
 
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
-import { format, FormatterFlags } from './formatter.js';
 import { AnsiMessage, AnsiString, ErrorMessage, JsonMessage, TextMessage } from './styles.js';
 import {
   areEqual,
@@ -85,6 +85,11 @@ export type ParsingFlags = {
    * @default NaN
    */
   readonly similarity?: number;
+  /**
+   * The formatting function for help options. Use the {@link format} function.
+   * (Injection is necessary for tree-shaking.)
+   */
+  readonly format?: typeof format;
 };
 
 /**
@@ -845,6 +850,7 @@ async function handleCommand(
     clusterPrefix: option.clusterPrefix,
     optionPrefix: option.optionPrefix,
     stdinSymbol: flags.stdinSymbol,
+    format: flags.format,
   };
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
@@ -887,8 +893,9 @@ async function handleHelp(
   option: OpaqueOption,
   rest: Array<string>,
 ): Promise<AnsiMessage> {
+  const flags = context[6];
   let registry = context[0];
-  let progName = context[6].progName;
+  let progName = flags.progName;
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
@@ -904,13 +911,13 @@ async function handleHelp(
       }
     }
   }
-  const flags: FormatterFlags = {
+  const formatterFlags: FormatterFlags = {
     progName,
-    clusterPrefix: context[6].clusterPrefix,
+    clusterPrefix: flags.clusterPrefix,
     optionFilter: option.useFilter ? rest : undefined,
-    stdinSymbol: context[6].stdinSymbol,
+    stdinSymbol: flags.stdinSymbol,
   };
-  return format(registry.options, option.sections, flags);
+  return flags.format?.(registry.options, option.sections, formatterFlags) ?? new AnsiMessage();
 }
 
 /**
