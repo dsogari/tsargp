@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { HelpSections, Options } from '../../../src/library';
-import { format, config } from '../../../src/library';
+import { config, format } from '../../../src/library';
 
 describe('format', () => {
   it('not break columns in the help message when configured with non-positive values', () => {

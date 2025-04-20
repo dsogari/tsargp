@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { stronglyConnected, createUsage } from '../../src/library/utils';
+import { createUsage, stronglyConnected } from '../../src/library/utils';
 
 describe('stronglyConnected and createUsage', () => {
   it('create a usage statement for mutually dependent options', () => {

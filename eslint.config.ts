@@ -1,10 +1,10 @@
+import cspell from '@cspell/eslint-plugin/configs';
 import js from '@eslint/js';
 import json from '@eslint/json';
-import ts from 'typescript-eslint';
 import md from '@eslint/markdown';
-import * as mdx from 'eslint-plugin-mdx';
 import jsdoc from 'eslint-plugin-jsdoc';
-import cspell from '@cspell/eslint-plugin/configs';
+import * as mdx from 'eslint-plugin-mdx';
+import ts from 'typescript-eslint';
 
 export default ts.config(
   {

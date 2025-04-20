@@ -2,11 +2,11 @@
 // Exports
 //--------------------------------------------------------------------------------------------------
 export {
+  BackgroundColor as bg,
   ControlSequence as cs,
+  ForegroundColor as fg,
   ResetStyle as rs,
   TypeFace as tf,
-  ForegroundColor as fg,
-  BackgroundColor as bg,
   UnderlineColor as ul,
 };
 

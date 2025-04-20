@@ -1,10 +1,9 @@
 export * from './config.js';
-export { ErrorItem, HelpItem, tf, fg, bg, ul } from './enums.js';
+export { ErrorItem, HelpItem, bg, fg, tf, ul } from './enums.js';
 export * from './formatter.js';
 export * from './options.js';
 export * from './parser.js';
 export * from './styles.js';
-export * from './validator.js';
 export {
   allOf,
   arrayWithPhrase,
@@ -16,3 +15,4 @@ export {
   sectionFooter,
   valuesFor,
 } from './utils.js';
+export * from './validator.js';

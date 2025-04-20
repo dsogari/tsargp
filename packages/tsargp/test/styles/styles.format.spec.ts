@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { ansi, AnsiString, config } from '../../src/library';
-import { arrayWithPhrase } from '../../src/library/utils';
 import { rs } from '../../src/library/enums';
+import { arrayWithPhrase } from '../../src/library/utils';
 
 const noColor = [rs.defaultForeground];
 

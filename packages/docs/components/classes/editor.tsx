@@ -3,11 +3,11 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import React, { Component, createRef, type JSX } from 'react';
-import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import { EditorView, basicSetup } from 'codemirror';
+import { Component, createRef, type JSX } from 'react';
 
-export { type Props, Editor };
+export { Editor, type Props };
 
 //--------------------------------------------------------------------------------------------------
 // Types

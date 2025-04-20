@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { Options, HelpSections, FormatterFlags } from '../../../src/library';
+import type { FormatterFlags, HelpSections, Options } from '../../../src/library';
 import { ansi, AnsiString, format } from '../../../src/library';
 
 const boldStr = '\x1b[1m';

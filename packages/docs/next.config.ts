@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
-import nextra from 'nextra';
+
 import { PHASE_PRODUCTION_BUILD } from 'next/constants';
+import nextra from 'nextra';
 
 const withNextra = nextra({
   // ... Your additional nextra config

@@ -1,7 +1,7 @@
 // nextra-theme-blog or your custom theme
+import { withAlert } from '@components/alert';
 import { useMDXComponents as getThemeComponents } from 'nextra-theme-docs';
 import { Callout } from 'nextra/components';
-import { withAlert } from '@components/alert';
 
 // Get the default MDX components
 const themeComponents = getThemeComponents();

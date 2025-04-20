@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { AnsiString, fg, bg, tf, ul, ext8, rgb } from '../../src/library';
+import { AnsiString, bg, ext8, fg, rgb, tf, ul } from '../../src/library';
 import { rs } from '../../src/library/enums';
 
 const bold = [tf.bold];

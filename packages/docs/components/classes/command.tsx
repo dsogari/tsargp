@@ -3,14 +3,15 @@
 //--------------------------------------------------------------------------------------------------
 // Imports and Exports
 //--------------------------------------------------------------------------------------------------
-import React, { Component, createRef } from 'react';
-import { Terminal } from '@xterm/xterm';
-import { WebLinksAddon } from '@xterm/addon-web-links';
 import { FitAddon } from '@xterm/addon-fit';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { Terminal } from '@xterm/xterm';
+import React, { Component, createRef } from 'react';
 import { Readline } from 'xterm-readline';
+
 import 'xterm/css/xterm.css';
 
-export { type Props, type State, Command };
+export { Command, type Props, type State };
 
 //--------------------------------------------------------------------------------------------------
 // Types

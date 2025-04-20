@@ -3,7 +3,7 @@
 //--------------------------------------------------------------------------------------------------
 import type { Style } from './styles.js';
 
-import { fg, ErrorItem, HelpItem } from './enums.js';
+import { ErrorItem, fg, HelpItem } from './enums.js';
 
 //--------------------------------------------------------------------------------------------------
 // Constants

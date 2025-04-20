@@ -6,7 +6,7 @@ import type { ErrorItem } from './enums.js';
 import type { Alias, Args, Enumerate, UnknownRecord } from './utils.js';
 
 import { config } from './config.js';
-import { cs, rs, tf, fg, bg, ul } from './enums.js';
+import { bg, cs, fg, rs, tf, ul } from './enums.js';
 import {
   getEntries,
   getKeys,
@@ -24,7 +24,7 @@ import {
   streamWidth,
 } from './utils.js';
 
-export { indexedColor as ext8, rgbColor as rgb, taggedTemplate as ansi };
+export { taggedTemplate as ansi, indexedColor as ext8, rgbColor as rgb };
 
 //--------------------------------------------------------------------------------------------------
 // Constants

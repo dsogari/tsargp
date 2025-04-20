@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { Options } from '../../src/library';
-import { format, allOf, oneOf, not } from '../../src/library';
+import { allOf, format, not, oneOf } from '../../src/library';
 import { OptionRegistry } from '../../src/library/utils';
 
 describe('format', () => {

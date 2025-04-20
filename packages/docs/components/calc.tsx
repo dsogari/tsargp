@@ -3,10 +3,10 @@
 //--------------------------------------------------------------------------------------------------
 // Imports
 //--------------------------------------------------------------------------------------------------
-import React, { type JSX } from 'react';
-import { parse, AnsiMessage } from 'tsargp';
-import { type Props, Command } from './classes/command';
+import { type JSX } from 'react';
+import { AnsiMessage, parse } from 'tsargp';
 import { calc as options } from 'tsargp/examples';
+import { type Props, Command } from './classes/command';
 
 //--------------------------------------------------------------------------------------------------
 // Classes
