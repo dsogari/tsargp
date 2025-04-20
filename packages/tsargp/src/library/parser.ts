@@ -86,8 +86,8 @@ export type ParsingFlags = {
    */
   readonly similarity?: number;
   /**
-   * The formatting function for help options. Use the {@link format} function.
-   * (Injection is necessary for tree-shaking.)
+   * The formatting function for help messages. Use the {@link format} function.
+   * (Injection is necessary for tree-shaking of the formatter component.)
    */
   readonly format?: typeof format;
 };

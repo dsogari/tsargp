@@ -1,4 +1,4 @@
-import options from '../../../calc.options.js';
+import { calc as options } from 'tsargp/examples';
 import { createGenerator } from './generator.js';
 
 /**

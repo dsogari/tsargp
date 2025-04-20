@@ -1,4 +1,4 @@
-import options from '../../../demo.options.js';
+import { demo as options } from 'tsargp/examples';
 import { createGenerator } from './generator.js';
 
 /**
