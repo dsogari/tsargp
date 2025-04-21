@@ -385,13 +385,16 @@ function parseCluster(context: ParsingContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParsingContext) {
-  const [, , args, supplied, completing] = context;
-  for (let prev: ParseEntry = [-1, 0]; prev[2] !== null; ) {
-    let find = true;
-    const [i, pos, info, value, , isComp, isTrailing, isPositional] = prev;
+  const [, , args, , completing] = context;
+  for (
+    let entry: ParseEntry = [-1, 0], find = true;
+    entry[2] !== null;
+    entry = find ? findNext(context, entry) : entry
+  ) {
+    const [i, pos, info, value, , isComp, isTrailing, isPositional] = entry;
     if (info) {
       // process the previous sequence
-      const [key, option, name] = info;
+      const [, option, name] = info;
       const [minParams, maxParams] = getParamCount(option);
       const isNiladic = !maxParams;
       const isInline = value !== undefined;
@@ -400,23 +403,22 @@ async function parseArgs(context: ParsingContext) {
           reportCompletion();
         }
         if (completing) {
-          prev = findNext(context, prev);
+          find = true;
           continue; // ignore disallowed inline parameters while completing
         }
         throw error(ErrorItem.disallowedInlineParameter, name);
       }
       const [k, position] = isPositional ? [i, pos] : [i + 1, NaN];
       if (isComp) {
-        const params = isInline ? [value] : args.slice(k);
-        const paramCount = params.length;
         let suggestions: Array<ParserSuggestion>;
-        if (paramCount) {
-          const comp = params.pop()!;
+        const params = isInline ? [value] : args.slice(k);
+        const comp = params.pop();
+        if (comp !== undefined) {
           suggestions = await completeParameter(context, info, i, position, params, comp);
           if (
             !isInline &&
             !isTrailing &&
-            ((isPositional && paramCount === 1) || paramCount > minParams)
+            ((isPositional && !params.length) || params.length >= minParams)
           ) {
             suggestions.push(...completeName(context, comp));
           }
@@ -425,38 +427,18 @@ async function parseArgs(context: ParsingContext) {
         }
         reportCompletion(suggestions);
       }
-      const [j, , , , isNew] = isNiladic ? [] : (prev = findNext(context, prev));
+      const [j, , , , isNew] = isNiladic ? [] : (entry = findNext(context, entry));
       if (isNiladic || isNew) {
-        if (!completing && !supplied.has(key)) {
-          addSupplied(context, info);
-        }
         const params = isInline ? [value] : args.slice(k, j);
         if (await handleOption(context, info, i, position, params)) {
           return; // break loop and skip requirements
         }
-        prev[0] += max(0, option.skipCount || 0); // skip arguments (niladic only)
+        entry[0] += max(0, option.skipCount || 0); // skip arguments (niladic only)
       }
       find = isNiladic;
     }
-    if (find) {
-      prev = findNext(context, prev);
-    }
   }
   await checkRequired(context, false);
-}
-
-/**
- * Adds an option to the set of supplied options.
- * @param context The parsing context
- * @param info The option information
- */
-function addSupplied(context: ParsingContext, info: OptionInfo) {
-  const [, , , supplied, , warning] = context;
-  const [key, option, name] = info;
-  if (option.deprecated !== undefined) {
-    warning.add(ErrorItem.deprecatedOption, {}, getSymbol(name));
-  }
-  supplied.add(key);
 }
 
 /**
@@ -801,8 +783,15 @@ async function handleOption(
   position: number,
   params: Array<string>,
 ): Promise<boolean> {
-  const completing = context[4];
-  switch (info[1].type) {
+  const [, , , supplied, completing, warning] = context;
+  const [key, option, name] = info;
+  if (!completing && !supplied.has(key)) {
+    if (option.deprecated !== undefined) {
+      warning.add(ErrorItem.deprecatedOption, {}, getSymbol(name));
+    }
+    supplied.add(key);
+  }
+  switch (option.type) {
     case 'help':
     case 'version':
       // skip message-valued options during completion
@@ -969,9 +958,7 @@ async function checkRequired(context: ParsingContext, isEarly: boolean) {
 async function checkDefaultValue(context: ParsingContext, key: string, isEarly: boolean) {
   /** @ignore */
   async function parseData(data: string, name: string) {
-    const info: OptionInfo = [key, option, name];
-    await parseParams(context, info, NaN, NaN, [data]);
-    addSupplied(context, info);
+    return handleOption(context, [key, option, name], NaN, NaN, [data]);
   }
   const [registry, values, , supplied] = context;
   if (supplied.has(key)) {

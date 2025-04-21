@@ -9,7 +9,7 @@ describe('parse', () => {
     expect(parse({}, 'cmd', { compIndex: 4 })).rejects.toThrow(/^$/);
   });
 
-  it('ignore disallowed inline parameter during word completion', () => {
+  it('ignore disallowed inline parameter during completion', () => {
     const options = {
       single: {
         type: 'single',
@@ -20,9 +20,10 @@ describe('parse', () => {
     } as const satisfies Options;
     expect(parse(options, 'cmd -s=', { compIndex: 7 })).rejects.toThrow(/^$/);
     expect(parse(options, 'cmd -s= ', { compIndex: 8 })).rejects.toThrow(/^-s$/);
+    expect(parse(options, 'cmd -s 1 -s= ', { compIndex: 13 })).rejects.toThrow(/^-s$/);
   });
 
-  it('ignore required inline parameter during word completion', () => {
+  it('ignore required inline parameter during completion', () => {
     const options = {
       single: {
         type: 'single',
