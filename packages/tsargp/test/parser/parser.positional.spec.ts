@@ -175,22 +175,5 @@ describe('parse', () => {
         array: ['4'], // value was replaced
       });
     });
-
-    it('handle a variadic option and another with trailing marker', () => {
-      const options = {
-        array: {
-          type: 'array',
-          positional: true,
-        },
-        single: {
-          type: 'single',
-          marker: '--',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['1', '2', '--', '3'])).resolves.toEqual({
-        array: ['1', '2'],
-        single: '3',
-      });
-    });
   });
 });

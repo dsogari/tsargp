@@ -10,7 +10,6 @@ describe('validate', () => {
       single: {
         type: 'single',
         names: [null, '', ' '],
-        marker: '  ',
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});
@@ -36,16 +35,6 @@ describe('validate', () => {
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag has invalid name '='.`);
-    });
-
-    it('throw an error on option with invalid trailing marker', () => {
-      const options = {
-        single: {
-          type: 'single',
-          marker: '=',
-        },
-      } as const satisfies Options;
-      expect(validate(options)).rejects.toThrow(`Option single has invalid name '='.`);
     });
 
     it('throw an error on option with invalid environment variable name', () => {
@@ -82,31 +71,6 @@ describe('validate', () => {
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag2 has duplicate name 'dup'.`);
-    });
-
-    it('throw an error on option with duplicate trailing marker in the same option', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['dup'],
-          marker: 'dup',
-        },
-      } as const satisfies Options;
-      expect(validate(options)).rejects.toThrow(`Option single has duplicate name 'dup'.`);
-    });
-
-    it('throw an error on option with duplicate trailing marker across different options', () => {
-      const options = {
-        single: {
-          type: 'single',
-          marker: 'dup',
-        },
-        array: {
-          type: 'single',
-          marker: 'dup',
-        },
-      } as const satisfies Options;
-      expect(validate(options)).rejects.toThrow(`Option array has duplicate name 'dup'.`);
     });
 
     it('throw an error on duplicate environment variable in the same option', () => {

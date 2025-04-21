@@ -9,6 +9,46 @@ describe('parse', () => {
     expect(parse({}, 'cmd', { compIndex: 4 })).rejects.toThrow(/^$/);
   });
 
+  it('ignore disallowed inline parameter during word completion', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        choices: ['one', 'two'],
+        inline: false,
+      },
+    } as const satisfies Options;
+    expect(parse(options, 'cmd -s=', { compIndex: 7 })).rejects.toThrow(/^$/);
+    expect(parse(options, 'cmd -s= ', { compIndex: 8 })).rejects.toThrow(/^-s$/);
+  });
+
+  it('ignore required inline parameter during word completion', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+        choices: ['one', 'two'],
+        inline: 'always',
+      },
+    } as const satisfies Options;
+    expect(parse(options, 'cmd -s ', { compIndex: 9 })).rejects.toThrow(/^-s$/);
+    expect(parse(options, 'cmd -s=', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+    expect(parse(options, 'cmd -s= ', { compIndex: 10 })).rejects.toThrow(/^-s$/);
+  });
+
+  it('ignore trailing arguments if there is no positional option ', () => {
+    const options = {
+      single: {
+        type: 'single',
+        names: ['-s'],
+      },
+    } as const satisfies Options;
+    expect(parse(options, 'cmd --', { compIndex: 6, trailingMarker: '--' })).rejects.toThrow(
+      /^--$/,
+    );
+    expect(parse(options, 'cmd -- ', { compIndex: 7, trailingMarker: '--' })).rejects.toThrow(/^$/);
+  });
+
   it('ignore the last parsing callback when completing an option name', () => {
     const options = {
       single: {
@@ -32,6 +72,7 @@ describe('parse', () => {
       },
     } as const satisfies Options;
     expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^abc$/);
+    expect(parse(options, 'cmd -f -f', { compIndex: 9 })).rejects.toThrow(/^abc$/);
   });
 
   it('throw completion suggestions from a parsing callback', () => {
@@ -45,6 +86,7 @@ describe('parse', () => {
       },
     } as const satisfies Options;
     expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^\[{"name":"abc"}]$/);
+    expect(parse(options, 'cmd -f -f', { compIndex: 9 })).rejects.toThrow(/^\[{"name":"abc"}]$/);
   });
 
   describe('parsing errors occur during completion', () => {
@@ -121,7 +163,7 @@ describe('parse', () => {
           }),
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^-f$/);
+      expect(parse(options, 'cmd -f -f', { compIndex: 9 })).rejects.toThrow(/^-f$/);
       expect(options.flag.parse).toHaveBeenCalledWith(null, {
         values: { flag: undefined },
         index: 0,
@@ -360,19 +402,19 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalled();
     });
 
-    it('handle a trailing marker', () => {
+    it('handle trailing arguments', () => {
       const options = {
         single: {
           type: 'single',
-          marker: '--',
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd ', { compIndex: 4 })).rejects.toThrow(/^--$/);
-      expect(parse(options, 'cmd -', { compIndex: 5 })).rejects.toThrow(/^--$/);
-      expect(parse(options, 'cmd --', { compIndex: 6 })).rejects.toThrow(/^--$/);
-      expect(parse(options, 'cmd -- ', { compIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/); // ignore error
-      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^$/); // ignore error
+      const flags: ParsingFlags = { trailingMarker: '--' };
+      expect(parse(options, 'cmd ', { ...flags, compIndex: 4 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd -', { ...flags, compIndex: 5 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd --', { ...flags, compIndex: 6 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd -- ', { ...flags, compIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd --=', { ...flags, compIndex: 7 })).rejects.toThrow(/^$/); // ignore error
+      expect(parse(options, 'cmd --= ', { ...flags, compIndex: 8 })).rejects.toThrow(/^$/); // ignore error
     });
 
     it('handle a positional option with choices', () => {
@@ -392,22 +434,25 @@ describe('parse', () => {
       expect(parse(options, 'cmd one o', { compIndex: 9 })).rejects.toThrow(/^one$/);
     });
 
-    it('handle a trailing marker with choices', () => {
+    it('handle trailing arguments with choices', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
           choices: ['one', 'two'],
-          marker: '--',
+          positional: true,
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd ', { compIndex: 4 })).rejects.toThrow(/^-s\n--$/);
-      expect(parse(options, 'cmd -', { compIndex: 5 })).rejects.toThrow(/^-s\n--$/);
-      expect(parse(options, 'cmd --', { compIndex: 6 })).rejects.toThrow(/^--$/);
-      expect(parse(options, 'cmd -- ', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
-      expect(parse(options, 'cmd -- o', { compIndex: 8 })).rejects.toThrow(/^one$/);
-      expect(parse(options, 'cmd --=', { compIndex: 7 })).rejects.toThrow(/^$/); // ignore error
-      expect(parse(options, 'cmd --= ', { compIndex: 8 })).rejects.toThrow(/^one\ntwo$/); // ignore error
+      const flags: ParsingFlags = { trailingMarker: '--' };
+      expect(parse(options, 'cmd ', { ...flags, compIndex: 4 })).rejects.toThrow(
+        /^one\ntwo\n-s\n--$/,
+      );
+      expect(parse(options, 'cmd -', { ...flags, compIndex: 5 })).rejects.toThrow(/^-s\n--$/);
+      expect(parse(options, 'cmd --', { ...flags, compIndex: 6 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd -- ', { ...flags, compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+      expect(parse(options, 'cmd -- o', { ...flags, compIndex: 8 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd --=', { ...flags, compIndex: 7 })).rejects.toThrow(/^$/); // ignore error
+      expect(parse(options, 'cmd --= ', { ...flags, compIndex: 8 })).rejects.toThrow(/^one\ntwo$/); // ignore error
     });
 
     it('handle a positional function option with parameter count', () => {
@@ -457,6 +502,20 @@ describe('parse', () => {
       } as const satisfies Options;
       const flags: ParsingFlags = { clusterPrefix: '', compIndex: 7 };
       expect(parse(options, 'cmd sf  rest', flags)).rejects.toThrow(/^one$/);
+    });
+
+    it('handle option names with the same prefix', () => {
+      const options = {
+        flag1: {
+          type: 'flag',
+          names: ['-f'],
+        },
+        flag2: {
+          type: 'flag',
+          names: ['-f2'],
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -f', { compIndex: 6 })).rejects.toThrow(/^-f\n-f2$/);
     });
   });
 
@@ -683,6 +742,7 @@ describe('parse', () => {
           },
         },
       } as const satisfies Options;
+      expect(parse(options, 'cmd -f', { compIndex: 6 })).rejects.toThrow(/^-f$/);
       expect(parse(options, 'cmd -f ', { compIndex: 7 })).rejects.toThrow(/^function$/);
       expect(parse(options, 'cmd -f 1', { compIndex: 8 })).rejects.toThrow(/^function$/);
       expect(parse(options, 'cmd -f 1 ', { compIndex: 9 })).rejects.toThrow(/^function$/);
@@ -722,7 +782,7 @@ describe('parse', () => {
       expect(parse(options, 'cmd a a a', { compIndex: 9 })).rejects.toThrow(/^a$/);
       expect(options.function.complete).toHaveBeenCalledWith('a', {
         values: { function: ['a', 'a'] },
-        index: 0,
+        index: 2,
         position: 2,
         name: '',
         prev: [],

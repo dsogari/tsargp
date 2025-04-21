@@ -257,6 +257,11 @@ export type WithSectionUsage = {
    * @default true
    */
   readonly compact?: boolean;
+  /**
+   * Whether to display the trailing marker.
+   * @default false
+   */
+  readonly showMarker?: boolean;
 };
 
 /**
@@ -472,7 +477,7 @@ export type WithArgumentInfo = {
    *
    * - the name supplied on the command-line;
    * - the preferred name, if the sequence comes from positional arguments;
-   * - a trailing marker, if the sequence comes after such marker;
+   * - the trailing marker, if the sequence comes after such marker;
    * - a data source, if the sequence comes from the environment;
    * - `'0'`, if the sequence comes from the standard input.
    */
@@ -674,23 +679,15 @@ export type WithParameterAttributes = {
   /**
    * Whether the option accepts positional arguments.
    *
-   * If set, then any argument not recognized as an option name will be considered positional.
-   *
    * If there are multiple positional options, their declaration order determines their relative
-   * position in the command line. Variadic options will take up all remaining positional arguments
-   * (up to a trailing marker). If there are more positional arguments than positional options, the
-   * last such option will take up the excess.
+   * position in the command line. Variadic options will take up all remaining positional arguments.
+   * If there are more positional arguments than positional options, the last such option will take
+   * up the excess.
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false
    */
   readonly positional?: boolean;
-  /**
-   * Whether the option accepts trailing arguments.
-   *
-   * If set, then all arguments that appear beyond the marker will be considered trailing.
-   */
-  readonly marker?: string;
   /**
    * Whether inline parameters should be disallowed or required for this option.
    * Can be `false` to disallow or `'always'` to always require.

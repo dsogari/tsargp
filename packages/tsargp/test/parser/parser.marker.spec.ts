@@ -5,47 +5,52 @@ import { parse } from '../../src/library';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  describe('trailing arguments', () => {
-    it('ignore the option prefix after the marker ', () => {
+  const flags: ParsingFlags = { trailingMarker: '--' };
+
+  describe('trailing positional arguments', () => {
+    it('ignore trailing arguments if there is no positional option ', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
-          marker: '--',
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { optionPrefix: '-' };
-      expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: '-s' });
+      const flags: ParsingFlags = { trailingMarker: '--' };
+      expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: undefined });
+      expect(parse(options, ['-s', '--'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option -s: requires exactly 1.`,
+      );
     });
 
-    it('throw an error on missing parameter to single-valued option', () => {
+    it('ignore the option prefix', () => {
       const options = {
         single: {
           type: 'single',
-          marker: '--',
+          names: ['-s'],
+          positional: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['--'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 1.`,
-      );
+      const flags: ParsingFlags = { optionPrefix: '-', trailingMarker: '--' };
+      expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: '-s' });
     });
 
     it('throw an error on missing parameter to polyadic function option ', () => {
       const options = {
         function: {
           type: 'function',
-          marker: '--',
+          positional: true,
           paramCount: 2,
+          preferredName: 'preferred',
         },
       } as const satisfies Options;
-      expect(parse(options, ['--'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 2.`,
+      expect(parse(options, ['1', '--'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
       );
-      expect(parse(options, ['--', '1'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 2.`,
+      expect(parse(options, ['--', '1'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
       );
-      expect(parse(options, ['--', '1', '2', '3'])).rejects.toThrow(
-        `Missing parameter(s) to option --: requires exactly 2.`,
+      expect(parse(options, ['--', '1', '2', '3'], flags)).rejects.toThrow(
+        `Missing parameter(s) to option preferred: requires exactly 2.`,
       );
     });
 
@@ -54,26 +59,12 @@ describe('parse', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          marker: '',
+          positional: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['', ''])).resolves.toEqual({ single: '' });
-      expect(parse(options, ['', '1', '-s'])).resolves.toEqual({ single: '-s' });
-    });
-
-    it('handle multiple trailing markers', () => {
-      const options = {
-        array1: {
-          type: 'array',
-          marker: '--',
-        },
-        array2: {
-          type: 'array',
-          marker: '++',
-        },
-      } as const satisfies Options;
-      expect(parse(options, ['--', '++'])).resolves.toEqual({ array1: ['++'], array2: undefined });
-      expect(parse(options, ['++', '--'])).resolves.toEqual({ array1: undefined, array2: ['--'] });
+      const flags: ParsingFlags = { trailingMarker: '' };
+      expect(parse(options, ['', ''], flags)).resolves.toEqual({ single: '' });
+      expect(parse(options, ['', '1', '-s'], flags)).resolves.toEqual({ single: '-s' });
     });
 
     it('handle a single-valued option', () => {
@@ -81,11 +72,14 @@ describe('parse', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          marker: '--',
+          positional: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['--', '-s'])).resolves.toEqual({ single: '-s' });
-      expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['--'], flags)).resolves.toEqual({ single: undefined }); // ignore marker
+      expect(parse(options, ['1', '--'], flags)).resolves.toEqual({ single: '1' });
+      expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: '-s' });
+      expect(parse(options, ['--', '1', '2'], flags)).resolves.toEqual({ single: '2' });
+      expect(parse(options, ['1', '--', '--'], flags)).resolves.toEqual({ single: '--' });
     });
 
     it('handle an array-valued option', () => {
@@ -93,11 +87,13 @@ describe('parse', () => {
         array: {
           type: 'array',
           names: ['-a'],
-          marker: '--',
+          positional: true,
         },
       } as const satisfies Options;
-      expect(parse(options, ['--'])).resolves.toEqual({ array: [] }); // empty array
-      expect(parse(options, ['--', '0', '-a'])).resolves.toEqual({ array: ['0', '-a'] });
+      expect(parse(options, ['--'], flags)).resolves.toEqual({ array: undefined }); // ignore marker
+      expect(parse(options, ['1', '--'], flags)).resolves.toEqual({ array: ['1'] });
+      expect(parse(options, ['--', '0', '-a'], flags)).resolves.toEqual({ array: ['0', '-a'] });
+      expect(parse(options, ['1', '--', '--'], flags)).resolves.toEqual({ array: ['1', '--'] });
     });
 
     it('handle a function option', () => {
@@ -105,13 +101,16 @@ describe('parse', () => {
         function: {
           type: 'function',
           names: ['-f'],
-          marker: '--',
+          positional: true,
           paramCount: 2,
         },
       } as const satisfies Options;
-      expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ function: ['1', '2'] });
-      expect(parse(options, ['--', '1', '2', '-f', '-f'])).resolves.toEqual({
+      expect(parse(options, ['--', '1', '2'], flags)).resolves.toEqual({ function: ['1', '2'] });
+      expect(parse(options, ['--', '1', '2', '-f', '-f'], flags)).resolves.toEqual({
         function: ['-f', '-f'],
+      });
+      expect(parse(options, ['1', '2', '--', '--', '--'], flags)).resolves.toEqual({
+        function: ['--', '--'],
       });
     });
   });

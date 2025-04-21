@@ -19,31 +19,24 @@ describe('parse', () => {
   });
 
   describe('inline parameters are disallowed', () => {
-    it('ignore disallowed inline parameter during word completion', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          choices: ['one', 'two'],
-          inline: false,
-        },
-      } as const satisfies Options;
-      expect(parse(options, 'cmd -s=', { compIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -s= ', { compIndex: 8 })).rejects.toThrow(/^-s$/);
-    });
-
     it('throw an error on trailing marker supplied with inline parameter', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
-          marker: '', // test empty marker
           cluster: 's',
+          positional: true,
+          preferredName: 'preferred',
           parse: jest.fn(),
         },
       } as const satisfies Options;
-      expect(parse(options, ['='])).rejects.toThrow(`Option does not accept inline parameters.`);
-      expect(parse(options, ['=1'])).rejects.toThrow(`Option does not accept inline parameters.`);
+      const flags: ParsingFlags = { trailingMarker: '' }; // test empty marker
+      expect(parse(options, ['='], flags)).rejects.toThrow(
+        `Option does not accept inline parameters.`,
+      );
+      expect(parse(options, ['=1'], flags)).rejects.toThrow(
+        `Option does not accept inline parameters.`,
+      );
       expect(options.single.parse).not.toHaveBeenCalled();
     });
 
@@ -156,20 +149,6 @@ describe('parse', () => {
   });
 
   describe('inline parameters are required', () => {
-    it('ignore required inline parameter during word completion', () => {
-      const options = {
-        single: {
-          type: 'single',
-          names: ['-s'],
-          choices: ['one', 'two'],
-          inline: 'always',
-        },
-      } as const satisfies Options;
-      expect(parse(options, 'cmd -s ', { compIndex: 9 })).rejects.toThrow(/^-s$/);
-      expect(parse(options, 'cmd -s=', { compIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
-      expect(parse(options, 'cmd -s= ', { compIndex: 10 })).rejects.toThrow(/^-s$/);
-    });
-
     it('accept an array-valued option with no parameters', () => {
       const options = {
         array: {
@@ -261,6 +240,7 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['-s=1'])).resolves.toEqual({ single: '1' });
       expect(parse(options, ['-s1'], flags)).resolves.toEqual({ single: '1' });
+      expect(parse(options, ['-s=1', '-s', '2'], flags)).resolves.toEqual({ single: '2' });
     });
 
     it('parse an array-valued option with inline parameter', () => {
@@ -274,6 +254,7 @@ describe('parse', () => {
       } as const satisfies Options;
       expect(parse(options, ['-a=1,2'])).resolves.toEqual({ array: ['1', '2'] });
       expect(parse(options, ['-a1,2'], flags)).resolves.toEqual({ array: ['1', '2'] });
+      expect(parse(options, ['-a=1', '-a', '2'], flags)).resolves.toEqual({ array: ['2'] });
     });
   });
 });

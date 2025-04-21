@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test';
-import type { OptionValues, Options } from '../../src/library';
+import type { OptionValues, Options, ParsingFlags } from '../../src/library';
 import { parse } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -99,17 +99,19 @@ describe('parse', () => {
       const options = {
         single: {
           type: 'single',
-          marker: '--',
+          positional: true,
+          preferredName: 'preferred',
           parse: jest.fn((param) => param),
         },
       } as const satisfies Options;
-      expect(parse(options, ['--', '1'])).resolves.toEqual({ single: '1' });
+      const flags: ParsingFlags = { trailingMarker: '--' };
+      expect(parse(options, ['--', '1'], flags)).resolves.toEqual({ single: '1' });
       expect(options.single.parse).toHaveBeenCalledWith('1', {
         // should have been { single: undefined } at the time of call
         values: { single: '1' },
-        index: 0,
-        position: NaN,
-        name: '--',
+        index: 0, // trailing marker does not count
+        position: 1,
+        name: 'preferred',
         comp: false,
       });
       expect(options.single.parse).toHaveBeenCalledTimes(1);

@@ -75,10 +75,17 @@ export type ParsingFlags = {
    */
   readonly optionPrefix?: string;
   /**
-   * The symbol for the standard input (e.g., '-') to display in usage statements.
+   * The symbol for the standard input (e.g., `'-'`) to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
+   * Should not conflict with an option name.
    */
   readonly stdinSymbol?: string;
+  /**
+   * The marker for trailing positional arguments (e.g. `'--'`).
+   * If set, then all arguments that appear beyond the marker will be considered positional.
+   * Should not conflict with an option name or include an equals sign.
+   */
+  readonly trailingMarker?: string;
   /**
    * The similarity threshold for option name suggestions in case of an unknown option error.
    * Values are given in percentage (e.g., `0.6`). Zero or `NaN` means disabled.
@@ -114,7 +121,7 @@ export type ParserSuggestion = ICompletionSuggestion & {
   /**
    * The type of argument being suggested.
    */
-  type: OptionType | 'parameter';
+  type: OptionType | 'marker' | 'parameter';
   /**
    * The option name, in case of parameter suggestions.
    */
@@ -177,21 +184,21 @@ type ParseEntry = [
   /**
    * The option information.
    */
-  info?: OptionInfo,
+  info?: OptionInfo | null,
   /**
-   * The option value.
+   * The inline value.
    */
   value?: string,
+  /**
+   * Whether it is a new sequence.
+   */
+  isNew?: boolean,
   /**
    * Whether the last argument is being completed.
    */
   isComp?: boolean,
   /**
-   * Whether it pertains to a new option specification.
-   */
-  isNew?: boolean,
-  /**
-   * Whether it is trailing, or the trailing marker itself.
+   * Whether it is trailing.
    */
   isTrailing?: boolean,
   /**
@@ -238,9 +245,9 @@ const enum ArgType {
    */
   positional,
   /**
-   * A trailing argument.
+   * The trailing marker.
    */
-  trailing,
+  marker,
   /**
    * A cluster argument.
    */
@@ -378,76 +385,62 @@ function parseCluster(context: ParsingContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParsingContext) {
-  const [registry, values, args, supplied, completing] = context;
-  let prev: ParseEntry = [-1, 0];
-  let minParams = 0;
-  let maxParams = 0;
-  let suggestNames = false;
-  for (let i = 0, k = 0; i < args.length; i = prev[0]) {
-    const next = findNext(context, prev);
-    const [j, pos, info, value, isComp, isNew, isTrailing, isPositional] = next;
-    const position = isPositional ? pos : NaN;
-    if (!info || isNew || isTrailing) {
-      if (prev[2]) {
-        // process the previous sequence
-        const position = prev[7] ? prev[1] : NaN;
-        await tryParseParams(context, prev[2], i, position, args.slice(k, j)); // should return false
-      }
-      if (!info) {
-        break; // finished
-      }
-      prev = next;
+  const [, , args, supplied, completing] = context;
+  for (let prev: ParseEntry = [-1, 0]; prev[2] !== null; ) {
+    let find = true;
+    const [i, pos, info, value, , isComp, isTrailing, isPositional] = prev;
+    if (info) {
+      // process the previous sequence
       const [key, option, name] = info;
-      [minParams, maxParams] = getParamCount(option);
+      const [minParams, maxParams] = getParamCount(option);
       const isNiladic = !maxParams;
-      const hasValue = value !== undefined;
-      if (isNiladic || (isTrailing && isNew) || (!isPositional && !checkInline(option, name))) {
+      const isInline = value !== undefined;
+      if (isInline && (isNiladic || !checkInline(option, name))) {
         if (isComp) {
           reportCompletion();
         }
-        if (hasValue) {
-          if (completing) {
-            continue; // ignore disallowed inline parameters while completing
+        if (completing) {
+          prev = findNext(context, prev);
+          continue; // ignore disallowed inline parameters while completing
+        }
+        throw error(ErrorItem.disallowedInlineParameter, name);
+      }
+      const [k, position] = isPositional ? [i, pos] : [i + 1, NaN];
+      if (isComp) {
+        const params = isInline ? [value] : args.slice(k);
+        const paramCount = params.length;
+        let suggestions: Array<ParserSuggestion>;
+        if (paramCount) {
+          const comp = params.pop()!;
+          suggestions = await completeParameter(context, info, i, position, params, comp);
+          if (
+            !isInline &&
+            !isTrailing &&
+            ((isPositional && paramCount === 1) || paramCount > minParams)
+          ) {
+            suggestions.push(...completeName(context, comp));
           }
-          throw error(ErrorItem.disallowedInlineParameter, name);
-        }
-      }
-      if (!completing && !supplied.has(key)) {
-        addSupplied(context, info);
-      }
-      if (isNiladic) {
-        // comp === false
-        if (await handleNiladic(context, info, j, position, args.slice(j + 1))) {
-          return; // skip requirements
-        }
-        prev[0] += max(0, option.skipCount ?? 0); // skip arguments
-        prev[2] = undefined; // reset option
-        continue; // fetch more
-      }
-      if (!isComp) {
-        if (isTrailing || isPositional || !hasValue) {
-          // trailing argument, first positional parameter or option name
-          k = hasValue ? j : j + 1;
         } else {
-          // option name with inline parameter
-          await tryParseParams(context, info, j, position, [value]); // should return false
-          prev[2] = undefined; // reset option
+          suggestions = completeName(context, name);
         }
-        continue; // fetch more
+        reportCompletion(suggestions);
       }
-      // perform completion of first positional or inline parameter
-      suggestNames = !!isPositional;
-      k = j;
+      const [j, , , , isNew] = isNiladic ? [] : (prev = findNext(context, prev));
+      if (isNiladic || isNew) {
+        if (!completing && !supplied.has(key)) {
+          addSupplied(context, info);
+        }
+        const params = isInline ? [value] : args.slice(k, j);
+        if (await handleOption(context, info, i, position, params)) {
+          return; // break loop and skip requirements
+        }
+        prev[0] += max(0, option.skipCount || 0); // skip arguments (niladic only)
+      }
+      find = isNiladic;
     }
-    if (!info) {
-      break; // finished
+    if (find) {
+      prev = findNext(context, prev);
     }
-    // comp === true
-    const suggestions = await completeParameter(values, info, i, position, args.slice(k, j), value);
-    if (suggestNames || (j > i && j - k >= minParams)) {
-      suggestions.push(...completeName(registry, value));
-    }
-    reportCompletion(suggestions);
   }
   await checkRequired(context, false);
 }
@@ -475,48 +468,48 @@ function addSupplied(context: ParsingContext, info: OptionInfo) {
  */
 function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
-  const [prevIndex, prevPos, , prevVal, , , prevTrailing, prevPositional] = prev;
-  let prevInfo = prev[2];
+  const [prevIndex, prevPos, , prevValue, , , , prevPositional] = prev;
+  let [, , prevInfo, , , , prevTrailing] = prev;
+  if (prevValue !== undefined) {
+    prevInfo = undefined; // reset because the previous option had an inline value
+  }
   const { names, positional, options } = registry;
-  const inc = prevVal !== undefined ? 1 : 0;
-  const prefix = flags.optionPrefix;
+  const { optionPrefix, trailingMarker } = flags;
+  const inc = prevPositional ? 0 : 1;
   const [minParams, maxParams] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
     const comp = completing && i + 1 === args.length;
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
-    const isForcedName = prefix && name.startsWith(prefix); // matches whole word as well
-    const isParam = prevInfo && (prevTrailing || i - prevIndex + inc <= minParams);
-    const argType = isParam
-      ? !isForcedName || prevTrailing
-        ? prevTrailing && i - prevIndex + inc > maxParams
-          ? ArgType.trailing
-          : ArgType.parameter
-        : !optionKey
-          ? ArgType.unknownOption
-          : !completing
-            ? ArgType.missingParameter
-            : ArgType.optionName
-      : optionKey
-        ? ArgType.optionName
-        : parseCluster(context, i)
-          ? ArgType.cluster
-          : prevInfo && i - prevIndex + inc <= maxParams
+    const isPrefix = optionPrefix && name.startsWith(optionPrefix); // matches whole word as well
+    const argType = prevTrailing
+      ? !prevPositional || i - prevIndex - inc >= maxParams
+        ? ArgType.positional
+        : ArgType.parameter
+      : name === trailingMarker
+        ? ArgType.marker
+        : prevInfo && i - prevIndex - inc < minParams
+          ? !isPrefix
             ? ArgType.parameter
-            : positional.length && !isForcedName
-              ? ArgType.positional
-              : ArgType.unknownOption;
+            : !optionKey
+              ? ArgType.unknownOption
+              : !completing
+                ? ArgType.missingParameter
+                : ArgType.optionName
+          : optionKey
+            ? ArgType.optionName
+            : parseCluster(context, i)
+              ? ArgType.cluster
+              : prevInfo && i - prevIndex - inc < maxParams
+                ? ArgType.parameter
+                : positional.length && !isPrefix
+                  ? ArgType.positional
+                  : ArgType.unknownOption;
     switch (argType) {
       case ArgType.optionName: {
-        const option = options[optionKey!];
-        if (comp && value === undefined) {
-          const { type, synopsis } = option;
-          reportCompletion([{ type, name, synopsis: synopsis && '' + synopsis }]);
-        }
-        const isTrailing = name === option.marker;
-        const newInfo: OptionInfo = [optionKey!, option, name];
-        return [i, prevPos, newInfo, value, comp, true, isTrailing];
+        const newInfo: OptionInfo = [optionKey!, options[optionKey!], name];
+        return [i, prevPos, newInfo, value, true, comp];
       }
       case ArgType.cluster:
         if (comp) {
@@ -526,29 +519,49 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         break; // the cluster argument was canonicalized
       case ArgType.unknownOption:
         if (comp) {
-          reportCompletion(completeName(registry, arg));
+          reportCompletion(completeName(context, arg));
         }
         if (!completing) {
           reportUnknownName(context, name);
         }
         break; // ignore unknown options during completion
+      case ArgType.marker:
+        if (value !== undefined) {
+          if (comp) {
+            reportCompletion();
+          }
+          if (!completing) {
+            throw error(ErrorItem.disallowedInlineParameter, name);
+          }
+        } else if (comp) {
+          reportCompletion([{ type: 'marker', name: trailingMarker! }]);
+        }
+        args.splice(i--, 1); // remove marker
+        prevTrailing = true;
+        if (!positional.length) {
+          if (completing) {
+            reportCompletion();
+          }
+          i = args.length - 1; // ignore trailing positional arguments
+        }
+        break;
       case ArgType.positional: {
-        const newInfo: OptionInfo = positional[min(prevPos, positional.length - 1)];
-        return [i, prevPos + 1, newInfo, arg, comp, true, false, true];
+        const newInfo = positional[min(prevPos, positional.length - 1)];
+        return [i, prevPos + 1, newInfo, undefined, true, comp, prevTrailing, true];
       }
-      case ArgType.trailing:
-        return [i, prevPos, prevInfo, arg, comp, false, true];
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
         if (checkInline(option, name) === 'always') {
           if (!completing) {
-            // ignore required inline parameters while completing
             throw error(ErrorItem.missingInlineParameter, name);
           }
+          // ignore required inline parameters while completing
           prevInfo = undefined;
           i--; // reprocess the current argument
         } else if (comp) {
-          return [i, prevPos, prevInfo, arg, comp, false, prevTrailing, prevPositional];
+          prev[4] = false;
+          prev[5] = true;
+          return prev;
         }
         break; // continue looking for parameters or option names
       }
@@ -556,9 +569,12 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         reportMissingParameter(minParams, maxParams, prevInfo![2]);
     }
   }
-  return [args.length, prevPos];
+  return [args.length, prevPos, null, undefined, true];
 }
 
+//--------------------------------------------------------------------------------------------------
+// Error handling
+//--------------------------------------------------------------------------------------------------
 /**
  * Reports a missing parameter to a non-niladic option.
  * @param min The minimum parameter count
@@ -588,6 +604,9 @@ function reportUnknownName(context: ParsingContext, name: string): never {
   throw error(ErrorItem.unknownOption, name, flags, similar?.map(getSymbol));
 }
 
+//--------------------------------------------------------------------------------------------------
+// Completion handling
+//--------------------------------------------------------------------------------------------------
 /**
  * Reports a completion message.
  * @param suggestions The completion suggestions
@@ -600,27 +619,33 @@ function reportCompletion(suggestions: Array<ParserSuggestion> = []): never {
 
 /**
  * Completes an option name.
- * @param registry The option registry
+ * @param context The parsing context
  * @param comp The word being completed
  * @returns The completion suggestions
  */
-function completeName(registry: OptionRegistry, comp: string = ''): Array<ParserSuggestion> {
+function completeName(context: ParsingContext, comp: string): Array<ParserSuggestion> {
   /** @ignore */
   function fromName(name: string): ParserSuggestion {
     const { type, synopsis } = options[names.get(name)!];
     return { type, name, synopsis: synopsis && '' + synopsis };
   }
+  const [registry, , , , , , flags] = context;
+  const marker = flags.trailingMarker;
   const { options, names } = registry;
-  return names
+  const result = names
     .keys()
     .filter((name) => name.startsWith(comp))
     .map(fromName)
     .toArray();
+  if (marker?.startsWith(comp)) {
+    result.push({ type: 'marker', name: marker });
+  }
+  return result;
 }
 
 /**
  * Completes an option parameter.
- * @param values The option values
+ * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
  * @param position The position of the sequence relative to positional arguments
@@ -629,13 +654,14 @@ function completeName(registry: OptionRegistry, comp: string = ''): Array<Parser
  * @returns The completion suggestions
  */
 async function completeParameter(
-  values: OpaqueOptionValues,
+  context: ParsingContext,
   info: OptionInfo,
   index: number,
   position: number,
   prev: Array<string>,
-  comp: string = '',
+  comp: string,
 ): Promise<Array<ParserSuggestion>> {
+  const [, values] = context;
   const [, option, name] = info;
   const { synopsis, choices, normalize } = option;
   const base: ParserSuggestion = {
@@ -647,7 +673,8 @@ async function completeParameter(
   if (option.complete) {
     try {
       // avoid destructuring, because the callback might need to use `this`
-      const suggestions = await option.complete(comp, { values, index, position, name, prev });
+      const seq = { values, index, position, name, prev };
+      const suggestions = await option.complete(comp, seq);
       return suggestions.map((suggestion) =>
         isString(suggestion) ? { ...base, name: suggestion } : { ...base, ...suggestion },
       );
@@ -665,34 +692,6 @@ async function completeParameter(
 //--------------------------------------------------------------------------------------------------
 // Parameter handling
 //--------------------------------------------------------------------------------------------------
-/**
- * Handles a non-niladic option, ignoring parsing errors when performing word completion.
- * @param context The parsing context
- * @param info The option information
- * @param index The starting index of the argument sequence
- * @param position The position of the sequence relative to positional arguments
- * @param params The option parameters, if any
- * @returns True if the parsing loop should be broken
- */
-async function tryParseParams(
-  context: ParsingContext,
-  info: OptionInfo,
-  index: number,
-  position: number,
-  params: Array<string>,
-): Promise<boolean> {
-  try {
-    // use await here instead of return, in order to catch errors
-    return await parseParams(context, info, index, position, params);
-  } catch (err) {
-    // do not propagate parsing errors during completion
-    if (!context[4] || err instanceof TextMessage || err instanceof JsonMessage) {
-      throw err;
-    }
-    return false;
-  }
-}
-
 /**
  * Handles a non-niladic option.
  * @param context The parsing context
@@ -784,46 +783,57 @@ async function parseParams(
 }
 
 //--------------------------------------------------------------------------------------------------
-// Niladic option handling
+// Option handling
 //--------------------------------------------------------------------------------------------------
 /**
- * Handles a niladic option.
+ * Handles an option.
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
  * @param position The position of the sequence relative to positional arguments
- * @param rest The remaining command-line arguments
+ * @param params The option parameters
  * @returns True if the parsing loop should be broken
  */
-async function handleNiladic(
+async function handleOption(
   context: ParsingContext,
   info: OptionInfo,
   index: number,
   position: number,
-  rest: Array<string>,
+  params: Array<string>,
 ): Promise<boolean> {
-  const comp = context[4];
+  const completing = context[4];
   switch (info[1].type) {
     case 'help':
     case 'version':
       // skip message-valued options during completion
-      if (!comp) {
-        await handleMessage(context, info, rest);
+      if (!completing) {
+        await handleMessage(context, info, params);
       }
-      return !comp;
+      return !completing;
     case 'command':
       // skip requirements checking during completion
-      if (!comp) {
+      if (!completing) {
         await checkRequired(context, true);
       }
-      await handleCommand(context, info, index, position, rest);
+      await handleCommand(context, info, index, position, params);
       return true;
     default:
-      // flag or function option: reuse non-niladic handling
-      return await tryParseParams(context, info, index, position, rest);
+      try {
+        // use await here instead of return, in order to catch errors
+        return await parseParams(context, info, index, position, params);
+      } catch (err) {
+        // do not propagate parsing errors during completion
+        if (!completing || err instanceof TextMessage || err instanceof JsonMessage) {
+          throw err;
+        }
+        return false;
+      }
   }
 }
 
+//--------------------------------------------------------------------------------------------------
+// Niladic option handling
+//--------------------------------------------------------------------------------------------------
 /**
  * Handles a command option.
  * @param context The parsing context
@@ -846,11 +856,10 @@ async function handleCommand(
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
   const cmdFlags: ParsingFlags = {
+    ...flags,
     progName: flags.progName && flags.progName + ' ' + name,
     clusterPrefix: option.clusterPrefix,
     optionPrefix: option.optionPrefix,
-    stdinSymbol: flags.stdinSymbol,
-    format: flags.format,
   };
   const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
   await parseArgs(cmdContext);
@@ -916,6 +925,7 @@ async function handleHelp(
     clusterPrefix: flags.clusterPrefix,
     optionFilter: option.useFilter ? rest : undefined,
     stdinSymbol: flags.stdinSymbol,
+    trailingMarker: flags.trailingMarker,
   };
   return flags.format?.(registry.options, option.sections, formatterFlags) ?? new AnsiMessage();
 }

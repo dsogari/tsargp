@@ -60,6 +60,7 @@ export default {
         content: { indent: 2 },
         filter: { excludeOptions: ['help', 'version', 'helpEnv', 'hello'] },
         inclusive: { boolean: 'strChoice' },
+        showMarker: true,
       },
     ],
     useCommand: true,
@@ -239,7 +240,6 @@ export default {
     group: 'String options:',
     example: ['one'],
     positional: true,
-    marker: '--',
     limit: 3,
   },
   /**

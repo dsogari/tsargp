@@ -6,16 +6,6 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
   describe('when an option is suppliable', () => {
-    it('accept an option with empty trailing marker', () => {
-      const options = {
-        single: {
-          type: 'single',
-          marker: '',
-        },
-      } as const satisfies Options;
-      expect(validate(options)).resolves.toEqual({});
-    });
-
     it('accept a version option with empty version', () => {
       const options = {
         version: {
@@ -99,20 +89,6 @@ describe('validate', () => {
       single2: {
         type: 'single',
         positional: true,
-      },
-    } as const satisfies Options;
-    expect(validate(options)).resolves.toEqual({});
-  });
-
-  it('accept multiple trailing markers', () => {
-    const options = {
-      single1: {
-        type: 'single',
-        marker: 'abc',
-      },
-      single2: {
-        type: 'single',
-        marker: 'def',
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});
