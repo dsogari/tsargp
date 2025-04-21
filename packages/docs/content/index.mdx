@@ -35,8 +35,7 @@ title: Home
                                 parameters. Values can be delimited with [32m','[39m. If not supplied, will
                                 be read from the standard input. Defaults to [[32m'one'[39m].
    [35m--strArrayLimit[39m  [90m[[32m'one'[90m...][39m  A string array option. Accepts multiple parameters. Accepts
-                                positional arguments. Accepts trailing arguments preceded by [35m--[39m.
-                                Element count is limited to [33m3[39m.
+                                positional arguments. Element count is limited to [33m3[39m.
 
 [1mNumber options:[22m
 
@@ -56,8 +55,8 @@ title: Home
   tsargp [35mhello[39m [90m...[39m [32m# execute the hello command[39m
   tsargp [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m] [([35m-sc[39m|[35m--strChoice[39m) [90m[32m'one'[90m[39m [([35m-b[39m|[35m--boolean[39m) [90m<param>[39m]] [([35m-sr[39m|[35m--strRegex[39m|[35m-s[39m) [4;90mmy
          str[24;39m] [([35m-nr[39m|[35m--numRange[39m|[35m-n[39m) [4;90mmy num[24;39m] [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m] [([35m-sa[39m|[35m--strArray[39m|[35m-S[39m) [90m[<str>...][39m|[35m-[39m]
-         [([35m-na[39m|[35m--numArray[39m|[35m-N[39m) [90m[<num>...][39m] [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m] [[35m--strArrayLimit[39m|[35m--[39m]
-         [90m[[32m'one'[90m...][39m
+         [([35m-na[39m|[35m--numArray[39m|[35m-N[39m) [90m[<num>...][39m] [[35m--strArrayLimit[39m] [90m[[32m'one'[90m...][39m [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m]
+         [[35m--[39m [90m[...][39m]
 
 Report bugs: [36mhttps://github.com/dsogari/tsargp/issues[39m
 ```

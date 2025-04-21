@@ -76,7 +76,15 @@ The `optionPrefix` property specifies the prefix for [option names]. If set, the
 
 ### Standard input symbol
 
-The `stdinSymbol` property specifies a symbol for the [standard input] to be displayed in [usage statements] produced by [help] options. If not present, the standard input will not appear in usage statements.
+The `stdinSymbol` property specifies a symbol for the [standard input], to be displayed in [usage statements]. If not present, the standard input will not appear in usage statements.
+
+#### Trailing marker
+
+The `trailingMarker` attribute, if present, specifies the marker for trailing positional arguments. If set, then all arguments that appear beyond the marker will be considered positional.
+
+> [!NOTE]
+>
+> The marker should not conflict with [option names], although it is subject to the same restrictions.
 
 ### Similarity threshold
 
@@ -134,7 +142,7 @@ The information gathered by the parser is saved in an object that is passed as p
 - `name` -- The option name. Can be either of:
   - the name [supplied] on the command line;
   - the [preferred name], if the sequence comes from [positional] arguments;
-  - a [trailing marker], if the sequence comes after such marker;
+  - the [trailing marker], if the sequence comes after such marker;
   - a [data source], if the sequence comes from the [environment];
   - `'0'{:ts}`, if the sequence comes from the [standard input]
 - `comp` -- True if performing [word completion]. Only available for the [parsing callback].
@@ -171,7 +179,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
-3. If the option was [supplied] neither after a [trailing marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
+3. If the option was [supplied] neither after the [trailing marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
@@ -263,6 +271,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [cluster]: #cluster-prefix
 [option values]: #option-values
 [completion suggestions]: #completion-suggestions
+[trailing marker]: #trailing-marker
 
 {/* options references */}
 
@@ -293,7 +302,6 @@ Other [option names] are not used, not only because they would pollute the outpu
 [parsing callback]: options#parsing-callback
 [completion callback]: options#completion-callback
 [positional]: options#positional
-[trailing marker]: options#trailing-marker
 [environment]: options#environment-attributes
 [data source]: options#data-sources
 [separator]: options#parameter-separator

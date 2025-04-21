@@ -167,7 +167,7 @@ A `HelpSectionFilter` object contains the following optional properties:
 
 > [!NOTE]
 >
-> Matches are exact. Exclusion properties have precedence over inclusion ones. Options and groups are listed in order of their [definitions]. The only exception is an option with a [trailing marker], which comes _last_ in a usage statement.
+> Matches are exact. Exclusion properties have precedence over inclusion ones. Options and groups are listed in order of their [definitions].
 
 ### Text section
 
@@ -191,8 +191,9 @@ tsargp [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m]
        [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m]
        [([35m-sa[39m|[35m--strArray[39m|[35m-S[39m) [90m[<str>...][39m|[35m-[39m]
        [([35m-na[39m|[35m--numArray[39m|[35m-N[39m) [90m[<num>...][39m]
+       [[35m--strArrayLimit[39m] [90m[[32m'one'[90m...][39m
        [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m]
-       [[35m--strArrayLimit[39m|[35m--[39m] [90m[[32m'one'[90m...][39m
+       [[35m--[39m [90m[...][39m]
 ```
 
 {/* cSpell:enable */}
@@ -206,11 +207,8 @@ In addition to the [basic properties], a **usage** section has the following opt
 - `inclusive` -- a record that specifies inclusive [option dependencies] (defaults to none)
 - `exclusive` -- reserved for mutually exclusive [option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
-- `compact` -- whether to keep alternatives compact (defaults to true)
-
-> [!NOTE]
->
-> There can be at most _one_ option with the [trailing marker] in a usage; otherwise an error will be raised.
+- `compact` -- whether to keep alternatives compact (defaults to `true{:ts}`)
+- `showMarker` -- whether to display the [trailing marker] (defaults to `false{:ts}`)
 
 #### Option dependencies
 

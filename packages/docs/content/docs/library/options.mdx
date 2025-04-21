@@ -411,9 +411,9 @@ All [non-niladic] options share a set of attributes, which are described below.
 
 #### Positional
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. If set, then any argument not recognized as an option name will be considered positional.
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. An argument is considered positional if it is not recognized as an option name or appears after the [trailing marker].
 
-If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments (up to a [trailing marker]). If there are more positional arguments than positional options, the last such option will take up the excess.
+If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments. If there are more positional arguments than positional options, the last such option will take up the excess.
 
 > [!TIP]
 >
@@ -422,18 +422,6 @@ If there are multiple positional options, their declaration order determines the
 > [!TIP]
 >
 > You can assign a unique [group] to positional options and declare them first in the [definitions], so as to highlight them in the help message.
-
-#### Trailing marker
-
-The `marker` attribute, if present, indicates that the option accepts _trailing_ arguments. If set, then all arguments that appear beyond the marker will be considered trailing.
-
-> [!WARNING]
->
-> If there are multiple trailing markers, their usage will be _mutually exclusive_ in the command line.
-
-> [!NOTE]
->
-> The marker should _not_ be included in the list of [option names], although it is subject to the same restrictions.
 
 #### Inline constraint
 
@@ -774,7 +762,6 @@ Here is an example of how it might be used inside the callback:
 {/* parameter attributes */}
 
 [positional]: #positional
-[trailing marker]: #trailing-marker
 [inline constraint]: #inline-constraint
 [inlined]: #inline-constraint
 
@@ -828,6 +815,7 @@ Here is an example of how it might be used inside the callback:
 [cluster prefix]: parser#cluster-prefix
 [inline parameters]: parser#inline-parameters
 [suggestions]: parser#completion-suggestions
+[trailing marker]: parser#trailing-marker
 
 {/* formatter references */}
 
