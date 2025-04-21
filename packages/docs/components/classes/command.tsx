@@ -229,16 +229,16 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
    * Performs the final completion step.
    * @param words The completion words
    * @param line The command line
-   * @param compIndex The completion index
+   * @param comp The completion index
    */
-  private onComplete(words: Array<string>, line: string, compIndex: number) {
+  private onComplete(words: Array<string>, line: string, comp: number) {
     if (words.length > 1) {
       this.readline.print(`\n> ${words.join(' ')}\n> `);
     } else {
       const word = words[0];
-      for (let i = compIndex - word.length; i < compIndex; ++i) {
-        if (line.slice(i, compIndex) === word.slice(0, compIndex - i)) {
-          this.term.paste(word.slice(compIndex - i) + ' ');
+      for (let i = comp - word.length; i < comp; ++i) {
+        if (line.slice(i, comp) === word.slice(0, comp - i)) {
+          this.term.paste(word.slice(comp - i) + ' ');
           break;
         }
       }
@@ -277,9 +277,9 @@ abstract class Command<P extends Props = Props, S extends State = State> extends
   /**
    * Runs or completes a command.
    * @param _line The command line
-   * @param _compIndex The completion index, if any
+   * @param _comp The completion index, if any
    */
-  protected async run(_line: string, _compIndex?: number) {}
+  protected async run(_line: string, _comp?: number) {}
 
   /**
    * Prints a line on the terminal.

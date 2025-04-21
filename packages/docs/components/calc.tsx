@@ -16,9 +16,9 @@ class CalcCommand extends Command {
     super(props, 'calc');
   }
 
-  override async run(line: string, compIndex?: number) {
+  override async run(line: string, comp?: number) {
     try {
-      const values = await parse(options, line, { compIndex });
+      const values = await parse(options, line, { completionIndex: comp });
       const result = values.add ?? values.sub ?? values.mult ?? values.div ?? NaN;
       this.println(`${result}`);
     } catch (err) {

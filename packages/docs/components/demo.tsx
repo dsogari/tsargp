@@ -12,11 +12,11 @@ import { Command, type Props } from './classes/command';
 // Constants
 //--------------------------------------------------------------------------------------------------
 const flags: ParsingFlags = {
-  progName: 'tsargp',
+  programName: 'tsargp',
   clusterPrefix: '-',
   optionPrefix: '-',
   stdinSymbol: '-',
-  trailingMarker: '--',
+  positionalMarker: '--',
   similarity: 0.6,
   format,
 };
@@ -29,10 +29,13 @@ class DemoCommand extends Command {
     super(props, 'tsargp');
   }
 
-  override async run(line: string, compIndex?: number) {
+  override async run(line: string, comp?: number) {
     try {
       const values = valuesFor(options);
-      const { warning } = await parseInto(options, values, line, { ...flags, compIndex });
+      const { warning } = await parseInto(options, values, line, {
+        ...flags,
+        completionIndex: comp,
+      });
       if (warning) {
         this.println(warning.wrap(this.state.width));
       }

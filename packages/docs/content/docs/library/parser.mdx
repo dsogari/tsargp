@@ -44,7 +44,7 @@ The parsing procedure can be configured via a `ParsingFlags` object that has som
 
 ### Program name
 
-The `progName` property is a custom name for the main command. It may be used in two places: the [process title] and in [usage statements]. It defaults to the _basename_ of the executing script, and can be suppressed by setting it to an empty string.
+The `programName` property is a custom name for the main command. It may be used in two places: the [process title] and in [usage statements]. It defaults to the _basename_ of the executing script, and can be suppressed by setting it to an empty string.
 
 > [!NOTE]
 >
@@ -52,7 +52,7 @@ The `progName` property is a custom name for the main command. It may be used in
 
 ### Completion index
 
-The `compIndex` property is the cursor position in a command line for which the user pressed `<Tab>`. It defaults to the value of the `COMP_POINT` or `CURSOR` environment variables, or to the length of the `BUFFER` variable (whichever is present, otherwise `undefined{:ts}`):
+The `completionIndex` property is the cursor position in a command line for which the user pressed `<Tab>`. It defaults to the value of the `COMP_POINT` or `CURSOR` environment variables, or to the length of the `BUFFER` variable (whichever is present, otherwise `undefined{:ts}`):
 
 ```ts
 Number(process.env['COMP_POINT'] ?? process.env['CURSOR']) || process.env['BUFFER']?.length;
@@ -78,13 +78,13 @@ The `optionPrefix` property specifies the prefix for [option names]. If set, the
 
 The `stdinSymbol` property specifies a symbol for the [standard input], to be displayed in [usage statements]. If not present, the standard input will not appear in usage statements.
 
-#### Trailing marker
+### Positional marker
 
-The `trailingMarker` attribute, if present, specifies the marker for trailing positional arguments. If set, then all arguments that appear beyond the marker will be considered positional.
+The `positionalMarker` attribute, if present, specifies the marker(s) to delimit positional arguments. If set, then all arguments that appear after/within the marker(s) will be considered positional.
 
 > [!NOTE]
 >
-> The marker should not conflict with [option names], although it is subject to the same restrictions.
+> The marker(s) should not conflict with [option names], although they are subject to the same restrictions.
 
 ### Similarity threshold
 
@@ -129,24 +129,54 @@ For example, if the option initiating a sequence is [array-valued], the parser s
 
 The same is true for variadic [function] options. For example, if the option expects between 1 and 3 parameters, the parser treats the next argument as a parameter to the option, regardless of whether it is an option name. Once the first parameter is saved, the parser resumes searching for options until 3 parameters are accumulated, after which it _must_ find an option specification (even if it is a new occurrence of the same option).
 
-#### Argument information
+### Sequence information
 
-The information gathered by the parser is saved in an object that is passed as parameter to some of the [custom callbacks]. It contains details about the current argument sequence in the parsing loop, as listed below:
+The information gathered by the parser is saved in an object that is passed as parameter to some of the [custom callbacks]. It contains details about the current [argument sequence] in the parsing loop, as described below.
 
-- `values` -- The previously parsed values. It it passed as an opaque object and should be cast to `OptionValues<typeof your_options>{:ts}`.
-- `index` -- The starting index of the argument sequence. It will point to one of the following:
-  - the [supplied] option name, if the sequence comes after such occurrence;
-  - the first [option parameter], if the sequence comes from [positional] arguments;
-  - `NaN{:ts}`, if the sequence comes from the [environment]
-- `position` -- The sequence number relative to [positional] arguments (1-based), or `NaN{:ts}` if it is not positional.
-- `name` -- The option name. Can be either of:
-  - the name [supplied] on the command line;
-  - the [preferred name], if the sequence comes from [positional] arguments;
-  - the [trailing marker], if the sequence comes after such marker;
-  - a [data source], if the sequence comes from the [environment];
-  - `'0'{:ts}`, if the sequence comes from the [standard input]
-- `comp` -- True if performing [word completion]. Only available for the [parsing callback].
-- `prev` -- The option parameters preceding the word being completed, if any. Only available for the [completion callback]. Will be empty for [single-valued] options.
+> [!NOTE]
+>
+> The command line may change from its original form due to parsing. More specifically, [cluster] arguments are canonicalized and the [positional marker] is removed.
+
+#### Parsed values
+
+The `values` property holds the previously parsed values. It it passed as an opaque object and should be cast to `OptionValues<typeof your_options>{:ts}`.
+
+#### Sequence index
+
+The `index` property specifies the starting index of the sequence. It will point to one of the following:
+
+- the [supplied] option name, if the sequence comes after such occurrence;
+- the first [option parameter], if the sequence comes from [positional] arguments;
+- `NaN{:ts}`, if the sequence comes from the [environment]
+
+#### Sequence position
+
+The `position` property specifies the sequence number relative to [positional] arguments (1-based), or `NaN{:ts}` if it is not positional.
+
+#### Option name
+
+The `name` property specifies the option name. It can be either of:
+
+- the name [supplied] on the command line;
+- the [preferred name], if the sequence comes from [positional] arguments;
+- a [data source], if the sequence comes from the [environment];
+- `'0'{:ts}`, if the sequence comes from the [standard input]
+
+#### Completion flag
+
+The `completing` property indicates whether [word completion] is in effect.
+
+> [!NOTE]
+>
+> Only available for the [parsing callback].
+
+#### Previous parameters
+
+The `prev` property holds the option parameters preceding the word being completed, if any.
+
+> [!NOTE]
+>
+> Only available for the [completion callback]. Will be empty for [single-valued] options.
 
 ### Word completion
 
@@ -179,7 +209,7 @@ The completion algorithm implemented by the library is explained below. In what 
    - If the option has a [completion callback], it is called with _comp_; else
    - If it has [parameter choices], they are filtered by the prefix _comp_; else
    - An empty list is returned
-3. If the option was [supplied] neither after the [trailing marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
+3. If the option was [supplied] neither through the [positional marker] nor as an [inline parameter], then, if either of the following holds true, the available [option names] are filtered by the prefix _comp_ and returned:
    - It is the first argument in a sequence of positional arguments; or
    - It is not short of the minimum expected parameter count of an option
 
@@ -231,7 +261,7 @@ An [option parameter] may be passed on the command line using the syntax `<name>
 
 > [!NOTE]
 >
-> This syntax cannot be used with the [trailing marker].
+> This syntax cannot be used with the [positional marker].
 
 As is the case with standalone parameters, inlined ones do not conflict with [option names], and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
@@ -271,7 +301,8 @@ Other [option names] are not used, not only because they would pollute the outpu
 [cluster]: #cluster-prefix
 [option values]: #option-values
 [completion suggestions]: #completion-suggestions
-[trailing marker]: #trailing-marker
+[positional marker]: #positional-marker
+[argument sequence]: #argument-sequence
 
 {/* options references */}
 

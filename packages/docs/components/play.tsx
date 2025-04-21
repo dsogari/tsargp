@@ -47,15 +47,15 @@ class PlayCommand extends Command<PlayProps> {
     this.options = options;
   }
 
-  override async run(line: string, compIndex?: number) {
+  override async run(line: string, comp?: number) {
     try {
       if (line.startsWith('init')) {
-        if (!compIndex) {
+        if (!comp) {
           await this.init();
         }
       } else if (this.options) {
         const values = {};
-        const flags = { progName: 'play', compIndex };
+        const flags = { programName: 'play', completionIndex: comp };
         const { warning } = await tsargp.parseInto(this.options, values, line, flags);
         if (warning) {
           this.println(warning.wrap(this.state.width));

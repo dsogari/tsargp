@@ -38,7 +38,7 @@ The formatter procedure can be configured via a `FormatterFlags` object that has
 
 ### Program name
 
-The `progName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
+The `programName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
 
 ### Cluster prefix
 
@@ -57,6 +57,10 @@ The patterns are case-insensitive and match [option names], [synopsis] and [envi
 ### Standard input symbol
 
 The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage sections]. If not present, the standard input will not appear in usage statements.
+
+### Positional marker
+
+The `positionalMarker` attribute, if present, specifies the marker(s) to delimit positional arguments. If not present, no marker will appear in usage statements.
 
 ## Help columns
 
@@ -208,7 +212,7 @@ In addition to the [basic properties], a **usage** section has the following opt
 - `exclusive` -- reserved for mutually exclusive [option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
 - `compact` -- whether to keep alternatives compact (defaults to `true{:ts}`)
-- `showMarker` -- whether to display the [trailing marker] (defaults to `false{:ts}`)
+- `showMarker` -- whether to display the [positional marker] (defaults to `false{:ts}`)
 
 #### Option dependencies
 
@@ -428,7 +432,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [environment variable]: options#data-sources
 [option group]: options#group--hide
 [option names]: options#option-names
-[trailing marker]: options#trailing-marker
+[positional marker]: options#positional-marker
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#option-parameters

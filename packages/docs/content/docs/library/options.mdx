@@ -314,7 +314,7 @@ options.flag.default.toString = () => 'this and that ...';
 The `parse` attribute, if present, specifies a [custom callback] to parse the option parameter(s). It receives two parameters:
 
 - `param` -- depends on the option type (see below)
-- `info` -- the current [argument information]
+- `info` -- the current [sequence information]
 
 The `param` will be of a different kind for each option:
 
@@ -411,7 +411,7 @@ All [non-niladic] options share a set of attributes, which are described below.
 
 #### Positional
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. An argument is considered positional if it is not recognized as an option name or appears after the [trailing marker].
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. An argument is considered positional if it is not recognized as an option name or appears within the [positional marker].
 
 If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments. If there are more positional arguments than positional options, the last such option will take up the excess.
 
@@ -438,7 +438,7 @@ By default, parameters are allowed (but not required) to be inlined with any opt
 The `complete` attribute, if present, specifies a custom callback for [word completion], which can be used to make better suggestions than the built-in algorithm would for the option. It receives two parameters:
 
 - `param` -- the word being completed
-- `info` -- the current [argument information]
+- `info` -- the current [sequence information]
 
 It should return the list of completion words or [suggestions] (or a promise thereof). If an error is thrown, it will be ignored and the default [completion message] will be thrown instead.
 
@@ -592,7 +592,7 @@ This option has the following sets of attributes: [basic], [value] and [environm
 
 > [!NOTE]
 >
-> Old library versions provided an attribute to indicate alternate [option names] to turn the option value `false{:ts}` (e.g., _--no-flag_). This can now be achieved by inspecting the `name` property of the [argument information].
+> Old library versions provided an attribute to indicate alternate [option names] to turn the option value `false{:ts}` (e.g., _--no-flag_). This can now be achieved by inspecting the `name` property of the [sequence information].
 
 ## Non-niladic options
 
@@ -655,7 +655,7 @@ In case of a numeric range, the minimum should be strictly less than the maximum
 
 > [!WARNING]
 >
-> If the data comes from the [environment], then the callback will receive a single-element tuple as parameter, which may be _less_ than the expected count. To check if this is the case, you should inspect the `index` property of the [argument information], which should have the value `NaN{:ts}`.
+> If the data comes from the [environment], then the callback will receive a single-element tuple as parameter, which may be _less_ than the expected count. To check if this is the case, you should inspect the `index` property of the [sequence information], which should have the value `NaN{:ts}`.
 
 Note that this option cannot have a [parameter separator], since it would conflict with the parameter count. To see why, consider the case with a minimum count of 2. Then, the second subsequent argument would always be treated as a parameter, regardless of whether it is an option name, _even if the previous argument had two or more delimited parameters_. This is because the parser does not look for delimiters when forming an [argument sequence].
 
@@ -681,7 +681,7 @@ Here is an example of how it might be used inside the callback:
 
 > [!NOTE]
 >
-> When [word completion] is in effect, the last argument will be the word to complete. If the latter pertains to the current sequence, you can throw a [completion message] from the callback. (See also the `comp` property of the [argument information].)
+> When [word completion] is in effect, the last argument will be the word to complete. If the latter pertains to the current sequence, you can throw a [completion message] from the callback. (See also the `completing` property of the [sequence information].)
 
 {/* self references */}
 
@@ -808,14 +808,14 @@ Here is an example of how it might be used inside the callback:
 [completion algorithm]: parser#completion-algorithm
 [custom callback]: parser#custom-callbacks
 [argument sequence]: parser#argument-sequence
-[argument information]: parser#argument-information
+[sequence information]: parser#sequence-information
 [`parse`]: parser#obtaining-a-fresh-object
 [`parseInto`]: parser#using-an-existing-object
 [option prefix]: parser#option-prefix
 [cluster prefix]: parser#cluster-prefix
 [inline parameters]: parser#inline-parameters
 [suggestions]: parser#completion-suggestions
-[trailing marker]: parser#trailing-marker
+[positional marker]: parser#positional-marker
 
 {/* formatter references */}
 

@@ -167,7 +167,7 @@ export default {
     async parse(param) {
       const vals = param as OptionValues<typeof helpOpts>;
       const opts = vals.name === 'cmd1' ? cmd1Opts : cmd2Opts;
-      await parse(opts, ['--help'], { progName: vals.name }); // will throw the help message
+      await parse(opts, ['--help'], { programName: vals.name }); // will throw the help message
     },
   },
 } as const satisfies Options;
