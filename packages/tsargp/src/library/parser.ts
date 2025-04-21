@@ -31,6 +31,7 @@ import {
   getEntries,
   getEnv,
   getKeys,
+  getMarker,
   getNestedOptions,
   getParamCount,
   getSymbol,
@@ -81,11 +82,11 @@ export type ParsingFlags = {
    */
   readonly stdinSymbol?: string;
   /**
-   * The marker for trailing positional arguments (e.g. `'--'`).
-   * If set, then all arguments that appear beyond the marker will be considered positional.
+   * The marker(s) for positional arguments (e.g. `'--'`).
+   * If set, then all arguments that appear within the marker(s) will be considered positional.
    * Should not conflict with an option name or include an equals sign.
    */
-  readonly trailingMarker?: string;
+  readonly trailingMarker?: string | [string, string];
   /**
    * The similarity threshold for option name suggestions in case of an unknown option error.
    * Values are given in percentage (e.g., `0.6`). Zero or `NaN` means disabled.
@@ -198,9 +199,9 @@ type ParseEntry = [
    */
   isComp?: boolean,
   /**
-   * Whether it is trailing.
+   * Whether it is delimited by the positional marker.
    */
-  isTrailing?: boolean,
+  isMarked?: boolean,
   /**
    * Whether it is positional.
    */
@@ -391,7 +392,7 @@ async function parseArgs(context: ParsingContext) {
     entry[2] !== null;
     entry = find ? findNext(context, entry) : entry
   ) {
-    const [i, pos, info, value, , isComp, isTrailing, isPositional] = entry;
+    const [i, pos, info, value, , isComp, isMarked, isPositional] = entry;
     if (info) {
       // process the previous sequence
       const [, option, name] = info;
@@ -417,7 +418,7 @@ async function parseArgs(context: ParsingContext) {
           suggestions = await completeParameter(context, info, i, position, params, comp);
           if (
             !isInline &&
-            !isTrailing &&
+            !isMarked &&
             ((isPositional && !params.length) || params.length >= minParams)
           ) {
             suggestions.push(...completeName(context, comp));
@@ -436,6 +437,8 @@ async function parseArgs(context: ParsingContext) {
         entry[0] += max(0, option.skipCount || 0); // skip arguments (niladic only)
       }
       find = isNiladic;
+    } else if (isComp && isMarked) {
+      reportCompletion(); // there is no positional option
     }
   }
   await checkRequired(context, false);
@@ -451,12 +454,13 @@ async function parseArgs(context: ParsingContext) {
 function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
   const [prevIndex, prevPos, , prevValue, , , , prevPositional] = prev;
-  let [, , prevInfo, , , , prevTrailing] = prev;
+  let [, , prevInfo, , , , prevMarked] = prev;
   if (prevValue !== undefined) {
     prevInfo = undefined; // reset because the previous option had an inline value
   }
   const { names, positional, options } = registry;
   const { optionPrefix, trailingMarker } = flags;
+  const [markBegin, markEnd] = getMarker(trailingMarker);
   const inc = prevPositional ? 0 : 1;
   const [minParams, maxParams] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
@@ -465,11 +469,13 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
     const isPrefix = optionPrefix && name.startsWith(optionPrefix); // matches whole word as well
-    const argType = prevTrailing
-      ? !prevPositional || i - prevIndex - inc >= maxParams
-        ? ArgType.positional
-        : ArgType.parameter
-      : name === trailingMarker
+    const argType = prevMarked
+      ? name === markEnd
+        ? ArgType.marker
+        : !prevPositional || i - prevIndex - inc >= maxParams
+          ? ArgType.positional
+          : ArgType.parameter
+      : name === markBegin
         ? ArgType.marker
         : prevInfo && i - prevIndex - inc < minParams
           ? !isPrefix
@@ -516,20 +522,14 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
             throw error(ErrorItem.disallowedInlineParameter, name);
           }
         } else if (comp) {
-          reportCompletion([{ type: 'marker', name: trailingMarker! }]);
+          reportCompletion([{ type: 'marker', name }]);
         }
         args.splice(i--, 1); // remove marker
-        prevTrailing = true;
-        if (!positional.length) {
-          if (completing) {
-            reportCompletion();
-          }
-          i = args.length - 1; // ignore trailing positional arguments
-        }
+        prevMarked = !prevMarked; // toggle marker state
         break;
       case ArgType.positional: {
-        const newInfo = positional[min(prevPos, positional.length - 1)];
-        return [i, prevPos + 1, newInfo, undefined, true, comp, prevTrailing, true];
+        const newInfo = positional[min(prevPos, positional.length - 1)]; // may be undefined
+        return [i, prevPos + 1, newInfo, undefined, true, comp, prevMarked, true];
       }
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
@@ -611,18 +611,14 @@ function completeName(context: ParsingContext, comp: string): Array<ParserSugges
     const { type, synopsis } = options[names.get(name)!];
     return { type, name, synopsis: synopsis && '' + synopsis };
   }
+  const startsWith = (name?: string): name is string => !!name?.startsWith(comp);
   const [registry, , , , , , flags] = context;
-  const marker = flags.trailingMarker;
   const { options, names } = registry;
-  const result = names
-    .keys()
-    .filter((name) => name.startsWith(comp))
-    .map(fromName)
-    .toArray();
-  if (marker?.startsWith(comp)) {
-    result.push({ type: 'marker', name: marker });
-  }
-  return result;
+  const suggestions = names.keys().filter(startsWith).map(fromName);
+  const markers = getMarker(flags.trailingMarker)
+    .filter(startsWith)
+    .map((name): ParserSuggestion => ({ type: 'marker', name }));
+  return [...suggestions, ...markers];
 }
 
 /**

@@ -30,6 +30,7 @@ import {
   createUsage,
   getEntries,
   getLastOptionName,
+  getMarker,
   getOptionEnvVars,
   getOptionNames,
   getParamCount,
@@ -78,7 +79,7 @@ export type FormatterFlags = {
    * If not present, the marker will not appear in usage statements.
    * Should not conflict with an option name.
    */
-  readonly trailingMarker?: string;
+  readonly trailingMarker?: string | [string, string];
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -795,19 +796,31 @@ function formatUsage(
   result: AnsiString,
 ) {
   const { filter, required, inclusive, compact, showMarker } = section;
-  const { trailingMarker } = flags;
   const requiredSet = new Set(required?.filter((key) => key in options));
   const deps = normalizeDependencies(refilterKeys(keys, filter), requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
   const usage = createUsage(adjacency);
   formatUsageStatement(requiredSet, options, flags, result, components, usage, compact);
-  if (showMarker && trailingMarker) {
+  if (showMarker) {
+    formatMarker(flags, result);
+  }
+}
+
+/**
+ * Formats the positional marker(s) to be included in a usage section.
+ * @param flags The formatter flags
+ * @param result The resulting string
+ */
+function formatMarker(flags: FormatterFlags, result: AnsiString) {
+  const [markBegin, markEnd] = getMarker(flags.trailingMarker);
+  if (markBegin) {
     const { optionalOpen, optionalClose } = config.connectives;
-    result
-      .open(optionalOpen)
-      .value(getSymbol(trailingMarker))
-      .word(optionalOpen + '...' + optionalClose, config.styles.value)
-      .close(optionalClose);
+    const params = optionalOpen + '...' + optionalClose;
+    result.open(optionalOpen).value(getSymbol(markBegin)).word(params, config.styles.value);
+    if (markEnd) {
+      result.open(optionalOpen).value(getSymbol(markEnd)).close(optionalClose);
+    }
+    result.close(optionalClose);
   }
 }
 

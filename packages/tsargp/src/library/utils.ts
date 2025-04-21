@@ -1110,3 +1110,12 @@ export function arrayWithPhrase<T>(
 export function getBaseName(path: string): string {
   return path.split(regex.pathSep).at(-1)!;
 }
+
+/**
+ * Gets the normalized value of the positional marker(s).
+ * @param marker The positional marker(s)
+ * @returns The normalized value
+ */
+export function getMarker(marker?: string | [string, string]): [string?, string?] {
+  return isString(marker) ? [marker] : (marker ?? []);
+}
