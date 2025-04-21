@@ -57,7 +57,7 @@ export type FormatterFlags = {
    * The program name.
    * If not present or empty, usage statements will contain no program name.
    */
-  readonly progName?: string;
+  readonly programName?: string;
   /**
    * The cluster argument prefix.
    * If not present, cluster letters will not appear in usage statements.
@@ -71,15 +71,13 @@ export type FormatterFlags = {
   /**
    * The symbol for the standard input (e.g., `'-'`) to display in usage statements.
    * If not present, the standard input will not appear in usage statements.
-   * Should not conflict with an option name.
    */
   readonly stdinSymbol?: string;
   /**
-   * The marker for trailing positional arguments (e.g. `'--'`).
-   * If not present, the marker will not appear in usage statements.
-   * Should not conflict with an option name.
+   * The marker(s) for positional arguments (e.g. `'--'`).
+   * If not present, no marker will not appear in usage statements.
    */
-  readonly trailingMarker?: string | [string, string];
+  readonly positionalMarker?: string | [string, string];
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -741,7 +739,7 @@ function formatUsageSection(
   result: AnsiMessage,
 ) {
   const { text, style, align, noSplit, noBreakFirst } = section.content ?? {};
-  const progName = text ?? flags.progName;
+  const progName = text ?? flags.programName;
   const baseSty = config.styles.base;
   const prev: Array<AnsiString> = [];
   let indent = section.content?.indent ?? 0;
@@ -812,7 +810,7 @@ function formatUsage(
  * @param result The resulting string
  */
 function formatMarker(flags: FormatterFlags, result: AnsiString) {
-  const [markBegin, markEnd] = getMarker(flags.trailingMarker);
+  const [markBegin, markEnd] = getMarker(flags.positionalMarker);
   if (markBegin) {
     const { optionalOpen, optionalClose } = config.connectives;
     const params = optionalOpen + '...' + optionalClose;

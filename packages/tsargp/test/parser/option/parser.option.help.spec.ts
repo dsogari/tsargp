@@ -83,15 +83,17 @@ describe('parse', () => {
         },
       } as const satisfies Options;
       expect(parse(options, ['-h', 'cm'], { format })).rejects.toThrow(/^ {2}cmd\n$/);
-      expect(parse(options, ['-h', 'cmd'], { progName: '', format })).rejects.toThrow(/^\[-h\]\n$/);
-      expect(parse(options, ['-h', 'cmd'], { progName: 'prog', format })).rejects.toThrow(
+      expect(parse(options, ['-h', 'cmd'], { programName: '', format })).rejects.toThrow(
+        /^\[-h\]\n$/,
+      );
+      expect(parse(options, ['-h', 'cmd'], { programName: 'prog', format })).rejects.toThrow(
         /^prog cmd \[-h\]\n$/,
       );
       expect(
-        parse(options, ['-h', 'cmd'], { progName: '', clusterPrefix: '-', format }),
+        parse(options, ['-h', 'cmd'], { programName: '', clusterPrefix: '-', format }),
       ).rejects.toThrow(/^\[-h\] \[-s\]\n$/);
       expect(
-        parse(options, ['-h', 'cmd'], { progName: '', stdinSymbol: '-', format }),
+        parse(options, ['-h', 'cmd'], { programName: '', stdinSymbol: '-', format }),
       ).rejects.toThrow(/^\[-h\] \[-\]\n$/);
     });
 

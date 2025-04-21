@@ -6,7 +6,7 @@ const boldStr = '\x1b[1m';
 
 describe('rendering a usage section', () => {
   const flags: FormatterFlags = {
-    progName: 'prog',
+    programName: 'prog',
     clusterPrefix: '-',
     stdinSymbol: '-',
   };
@@ -223,7 +223,7 @@ describe('rendering a usage section', () => {
       expect(format(options, sections).wrap()).toEqual('(-f2|--flag2) [-f1] [-f3|--flag3]\n');
     });
 
-    it('render trailing positional arguments', () => {
+    it('render positional arguments between markers', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -232,9 +232,11 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const case0: HelpSections = [{ type: 'usage' }];
       const case1: HelpSections = [{ type: 'usage', showMarker: true }];
-      const flags: FormatterFlags = { trailingMarker: '--' };
-      expect(format(options, case0, flags).wrap()).toEqual('[-f]\n');
-      expect(format(options, case1, flags).wrap()).toEqual('[-f] [-- [...]]\n');
+      const flags0: FormatterFlags = { positionalMarker: '--' };
+      const flags1: FormatterFlags = { positionalMarker: ['--', '++'] };
+      expect(format(options, case0, flags0).wrap()).toEqual('[-f]\n');
+      expect(format(options, case1, flags0).wrap()).toEqual('[-f] [-- [...]]\n');
+      expect(format(options, case1, flags1).wrap()).toEqual('[-f] [-- [...] [++]]\n');
     });
 
     it('render a single-valued option', () => {
@@ -794,7 +796,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
     });
 
-    it('change order of options that are always required or have a trailing marker', () => {
+    it('change order of options that are always required', () => {
       const options = {
         flag: {
           type: 'flag',

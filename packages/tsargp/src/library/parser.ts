@@ -26,8 +26,8 @@ import {
   findValue,
   getArgs,
   getBaseName,
-  getCmdLine,
-  getCompIndex,
+  getCommandLine,
+  getCompletionIndex,
   getEntries,
   getEnv,
   getKeys,
@@ -59,11 +59,11 @@ export type ParsingFlags = {
   /**
    * The program name. It may be changed by the parser.
    */
-  progName?: string;
+  programName?: string;
   /**
    * The completion index of a raw command line.
    */
-  readonly compIndex?: number;
+  readonly completionIndex?: number;
   /**
    * The prefix of cluster arguments.
    * If set, then eligible arguments that have this prefix will be considered a cluster.
@@ -82,11 +82,11 @@ export type ParsingFlags = {
    */
   readonly stdinSymbol?: string;
   /**
-   * The marker(s) for positional arguments (e.g. `'--'`).
-   * If set, then all arguments that appear within the marker(s) will be considered positional.
+   * The marker(s) to delimit positional arguments (e.g. `'--'`).
+   * If set, then all arguments that appear after/within the marker(s) will be considered positional.
    * Should not conflict with an option name or include an equals sign.
    */
-  readonly trailingMarker?: string | [string, string];
+  readonly positionalMarker?: string | [string, string];
   /**
    * The similarity threshold for option name suggestions in case of an unknown option error.
    * Values are given in percentage (e.g., `0.6`). Zero or `NaN` means disabled.
@@ -246,7 +246,7 @@ const enum ArgType {
    */
   positional,
   /**
-   * The trailing marker.
+   * A positional marker.
    */
   marker,
   /**
@@ -286,13 +286,13 @@ export async function parse<T extends Options>(
 export async function parseInto<T extends Options>(
   options: T,
   values: OptionValues<T>,
-  cmdLine: CommandLine = getCmdLine(),
+  cmdLine: CommandLine = getCommandLine(),
   flags: ParsingFlags = {},
 ): Promise<ParsingResult> {
   const registry = new OptionRegistry(options);
-  const compIndex = flags?.compIndex ?? getCompIndex();
-  const args = isString(cmdLine) ? getArgs(cmdLine, compIndex) : cmdLine;
-  const context = createContext(registry, values, args, !!compIndex, flags);
+  const comp = flags?.completionIndex ?? getCompletionIndex();
+  const args = isString(cmdLine) ? getArgs(cmdLine, comp) : cmdLine;
+  const context = createContext(registry, values, args, !!comp, flags);
   await parseArgs(context);
   const warning = context[5];
   return warning.length ? { warning } : {};
@@ -315,9 +315,9 @@ function createContext(
   flags: ParsingFlags,
 ): ParsingContext {
   if (process) {
-    flags.progName ??= process.argv.slice(0, 2).map(getBaseName).join(' ');
-    if (!completing && flags.progName) {
-      process.title = flags.progName;
+    flags.programName ??= process.argv.slice(0, 2).map(getBaseName).join(' ');
+    if (!completing && flags.programName) {
+      process.title = flags.programName;
     }
   }
   for (const [key, option] of getEntries(registry.options)) {
@@ -459,8 +459,8 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     prevInfo = undefined; // reset because the previous option had an inline value
   }
   const { names, positional, options } = registry;
-  const { optionPrefix, trailingMarker } = flags;
-  const [markBegin, markEnd] = getMarker(trailingMarker);
+  const { optionPrefix, positionalMarker } = flags;
+  const [markBegin, markEnd] = getMarker(positionalMarker);
   const inc = prevPositional ? 0 : 1;
   const [minParams, maxParams] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
@@ -614,11 +614,11 @@ function completeName(context: ParsingContext, comp: string): Array<ParserSugges
   const startsWith = (name?: string): name is string => !!name?.startsWith(comp);
   const [registry, , , , , , flags] = context;
   const { options, names } = registry;
-  const suggestions = names.keys().filter(startsWith).map(fromName);
-  const markers = getMarker(flags.trailingMarker)
+  const nameSuggestions = names.keys().filter(startsWith).map(fromName);
+  const markerSuggestions = getMarker(flags.positionalMarker)
     .filter(startsWith)
     .map((name): ParserSuggestion => ({ type: 'marker', name }));
-  return [...suggestions, ...markers];
+  return [...nameSuggestions, ...markerSuggestions];
 }
 
 /**
@@ -695,10 +695,10 @@ async function parseParams(
   function parse2(param: string): unknown {
     return mapping && param in mapping ? mapping[param] : parse1(param);
   }
-  const [, values, , , comp] = context;
+  const [, values, , , completing] = context;
   const [key, option, name] = info;
-  const breakLoop = !!option.break && !comp;
-  const seq = { values, index, position, name, comp };
+  const breakLoop = !!option.break && !completing;
+  const seq = { values, index, position, name, completing };
   const { type, regex, separator, append, choices, mapping, normalize } = option;
 
   // if index is NaN, we are in the middle of requirements checking (data comes from environment)
@@ -716,7 +716,7 @@ async function parseParams(
   if (index >= 0) {
     const [min, max] = getParamCount(option);
     if (max > 0 && params.length < min) {
-      // may happen when parsing the trailing marker or when reaching the end of the command line
+      // may happen when reaching the end of the command line
       // comp === false, otherwise completion would have taken place by now
       // params.length <= max, due to how the `findNext` function works
       reportMissingParameter(min, max, name);
@@ -835,21 +835,21 @@ async function handleCommand(
   position: number,
   rest: Array<string>,
 ) {
-  const [, values, , , comp, warning, flags] = context;
+  const [, values, , , completing, warning, flags] = context;
   const [key, option, name] = info;
   const cmdOptions = await getNestedOptions(option);
   const cmdRegistry = new OptionRegistry(cmdOptions);
   const param: OpaqueOptionValues = {};
   const cmdFlags: ParsingFlags = {
     ...flags,
-    progName: flags.progName && flags.progName + ' ' + name,
+    programName: flags.programName && flags.programName + ' ' + name,
     clusterPrefix: option.clusterPrefix,
     optionPrefix: option.optionPrefix,
   };
-  const cmdContext = createContext(cmdRegistry, param, rest, comp, cmdFlags);
+  const cmdContext = createContext(cmdRegistry, param, rest, completing, cmdFlags);
   await parseArgs(cmdContext);
   warning.push(...cmdContext[5]);
-  const seq = { values, index, position, name, comp };
+  const seq = { values, index, position, name, completing };
   // comp === false, otherwise completion will have taken place by now
   // avoid destructuring, because the callback might need to use `this`
   values[key] = option.parse ? await option.parse(param, seq) : param;
@@ -889,7 +889,7 @@ async function handleHelp(
 ): Promise<AnsiMessage> {
   const flags = context[6];
   let registry = context[0];
-  let progName = flags.progName;
+  let { programName } = flags;
   if (option.useCommand && rest.length) {
     const cmdOpt = findValue(
       registry.options,
@@ -901,16 +901,16 @@ async function handleHelp(
       if (helpOpt) {
         registry = new OptionRegistry(cmdOptions);
         option = helpOpt;
-        progName &&= progName + ' ' + rest.splice(0, 1)[0];
+        programName &&= programName + ' ' + rest.splice(0, 1)[0];
       }
     }
   }
   const formatterFlags: FormatterFlags = {
-    progName,
+    programName,
     clusterPrefix: flags.clusterPrefix,
     optionFilter: option.useFilter ? rest : undefined,
     stdinSymbol: flags.stdinSymbol,
-    trailingMarker: flags.trailingMarker,
+    positionalMarker: flags.positionalMarker,
   };
   return flags.format?.(registry.options, option.sections, formatterFlags) ?? new AnsiMessage();
 }

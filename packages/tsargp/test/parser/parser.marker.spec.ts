@@ -5,17 +5,17 @@ import { parse } from '../../src/library';
 process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('parse', () => {
-  const flags: ParsingFlags = { trailingMarker: '--' };
+  const flags: ParsingFlags = { positionalMarker: '--' };
 
-  describe('trailing positional arguments', () => {
-    it('ignore trailing arguments if there is no positional option ', () => {
+  describe('positional marker', () => {
+    it('ignore marked arguments if there is no positional option ', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { trailingMarker: '--' };
+      const flags: ParsingFlags = { positionalMarker: '--' };
       expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: undefined });
       expect(parse(options, ['-s', '--'], flags)).rejects.toThrow(
         `Missing parameter(s) to option -s: requires exactly 1.`,
@@ -30,7 +30,7 @@ describe('parse', () => {
           positional: true,
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { optionPrefix: '-', trailingMarker: '--' };
+      const flags: ParsingFlags = { optionPrefix: '-', positionalMarker: '--' };
       expect(parse(options, ['--', '-s'], flags)).resolves.toEqual({ single: '-s' });
     });
 
@@ -62,7 +62,7 @@ describe('parse', () => {
           positional: true,
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { trailingMarker: '' };
+      const flags: ParsingFlags = { positionalMarker: '' };
       expect(parse(options, ['', ''], flags)).resolves.toEqual({ single: '' });
       expect(parse(options, ['', '1', '-s'], flags)).resolves.toEqual({ single: '-s' });
     });

@@ -194,11 +194,12 @@ function detectNamingIssues(context: ValidationContext, nameToKey: Map<string, s
   const formatFlags = { open: '', close: '' };
   const [options, flags, warning, , prefix] = context;
   const prefix2 = getSymbol(prefix.slice(0, -1)); // remove trailing dot
-  if (flags.similarity) {
+  const { similarity } = flags;
+  if (similarity) {
     const visited = new Set<string>();
     for (const name of nameToKey.keys()) {
       if (!visited.has(name)) {
-        const similar = findSimilar(name, nameToKey.keys(), flags.similarity);
+        const similar = findSimilar(name, nameToKey.keys(), similarity);
         if (similar.length) {
           warning.add(ErrorItem.tooSimilarOptionNames, formatFlags, prefix2, name, similar);
           for (const similarName of similar) {

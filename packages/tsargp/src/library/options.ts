@@ -258,7 +258,7 @@ export type WithSectionUsage = {
    */
   readonly compact?: boolean;
   /**
-   * Whether to display the trailing marker.
+   * Whether to display the positional marker.
    * @default false
    */
   readonly showMarker?: boolean;
@@ -465,6 +465,9 @@ export type WithArgumentInfo = {
   /**
    * The index of the occurrence of the option name, or of the first option parameter.
    * It will be `NaN` if the sequence comes from environment data.
+   *
+   * Note that the actual command line may change due to parsing. More specifically, cluster
+   * arguments are canonicalized and positional marker(s) are removed.
    */
   index: number;
   /**
@@ -477,7 +480,6 @@ export type WithArgumentInfo = {
    *
    * - the name supplied on the command-line;
    * - the preferred name, if the sequence comes from positional arguments;
-   * - the trailing marker, if the sequence comes after such marker;
    * - a data source, if the sequence comes from the environment;
    * - `'0'`, if the sequence comes from the standard input.
    */
@@ -491,7 +493,7 @@ export type WithCompletionInfo = {
   /**
    * Whether word completion is in effect.
    */
-  comp: boolean;
+  completing: boolean;
 };
 
 /**

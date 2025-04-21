@@ -19,7 +19,7 @@ describe('parse', () => {
   });
 
   describe('inline parameters are disallowed', () => {
-    it('throw an error on trailing marker supplied with inline parameter', () => {
+    it('throw an error on positional marker supplied with inline parameter', () => {
       const options = {
         single: {
           type: 'single',
@@ -30,7 +30,7 @@ describe('parse', () => {
           parse: jest.fn(),
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { trailingMarker: '' }; // test empty marker
+      const flags: ParsingFlags = { positionalMarker: '' }; // test empty marker
       expect(parse(options, ['='], flags)).rejects.toThrow(
         `Option does not accept inline parameters.`,
       );

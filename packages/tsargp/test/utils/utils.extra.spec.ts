@@ -20,7 +20,7 @@ describe('numberInRange', () => {
         parse: numberInRange([1, Infinity], '#0 #1 #2.'),
       },
     } as const satisfies Options;
-    expect(parse(options, 'cmd -s 0 ', { compIndex: 9 })).rejects.toThrow(/^-s$/);
+    expect(parse(options, 'cmd -s 0 ', { completionIndex: 9 })).rejects.toThrow(/^-s$/);
   });
 
   it('handle a single-valued option with a parsing callback that throws', () => {

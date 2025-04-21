@@ -77,7 +77,7 @@ describe('parse', () => {
       },
     } as const satisfies Options;
     process.title = 'dummy';
-    expect(parse(options, ['c'], { progName: '' })).resolves.toEqual({ command: {} });
+    expect(parse(options, ['c'], { programName: '' })).resolves.toEqual({ command: {} });
     expect(process.title).toEqual('dummy');
   });
 
