@@ -661,11 +661,12 @@ describe('parse', () => {
   });
 
   describe('a completion callback is specified', () => {
-    it('ignore an error thrown by the completion callback', () => {
+    it('suppress an error thrown by the completion callback', () => {
       const options = {
         single: {
           type: 'single',
           names: ['-s'],
+          choices: ['one'], // should not be suggested
           complete: jest.fn(() => {
             throw 'abc';
           }),

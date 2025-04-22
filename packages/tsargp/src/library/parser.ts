@@ -17,7 +17,14 @@ import type {
 
 import { config } from './config.js';
 import { ErrorItem } from './enums.js';
-import { AnsiMessage, AnsiString, ErrorMessage, JsonMessage, TextMessage } from './styles.js';
+import {
+  AnsiMessage,
+  AnsiString,
+  ErrorMessage,
+  FormattingFlags,
+  JsonMessage,
+  TextMessage,
+} from './styles.js';
 import {
   areEqual,
   checkInline,
@@ -256,6 +263,14 @@ const enum ArgType {
 }
 
 //--------------------------------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------------------------------
+/**
+ * The formatting flags for arrays and objects with no brackets.
+ */
+const openArrayFlags: FormattingFlags = { open: '', close: '' };
+
+//--------------------------------------------------------------------------------------------------
 // Functions
 //--------------------------------------------------------------------------------------------------
 /**
@@ -386,7 +401,7 @@ function parseCluster(context: ParsingContext, index: number): boolean {
  * @param context The parsing context
  */
 async function parseArgs(context: ParsingContext) {
-  const [, , args, , completing] = context;
+  const args = context[2];
   for (
     let entry: ParseEntry = [-1, 0], find = true;
     entry[2] !== null;
@@ -400,33 +415,18 @@ async function parseArgs(context: ParsingContext) {
       const isNiladic = !maxParams;
       const isInline = value !== undefined;
       if (isInline && (isNiladic || !checkInline(option, name))) {
-        if (isComp) {
-          reportCompletion();
-        }
-        if (completing) {
-          find = true;
-          continue; // ignore disallowed inline parameters while completing
-        }
-        throw error(ErrorItem.disallowedInlineParameter, name);
+        reportDisallowedInline(context, name, isComp);
+        find = true;
+        continue; // ignore disallowed inline parameters while completing
       }
       const [k, position] = isPositional ? [i, pos] : [i + 1, NaN];
       if (isComp) {
-        let suggestions: Array<ParserSuggestion>;
         const params = isInline ? [value] : args.slice(k);
-        const comp = params.pop();
-        if (comp !== undefined) {
-          suggestions = await completeParameter(context, info, i, position, params, comp);
-          if (
-            !isInline &&
-            !isMarked &&
-            ((isPositional && !params.length) || params.length >= minParams)
-          ) {
-            suggestions.push(...completeName(context, comp));
-          }
-        } else {
-          suggestions = completeName(context, name);
-        }
-        reportCompletion(suggestions);
+        const suggestNames =
+          !isInline &&
+          !isMarked &&
+          ((isPositional && params.length === 1) || params.length > minParams);
+        await handleCompletion(context, info, i, position, params, suggestNames);
       }
       const [j, , , , isNew] = isNiladic ? [] : (entry = findNext(context, entry));
       if (isNiladic || isNew) {
@@ -465,7 +465,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [minParams, maxParams] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
-    const comp = completing && i + 1 === args.length;
+    const isComp = completing && i + 1 === args.length;
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
     const isPrefix = optionPrefix && name.startsWith(optionPrefix); // matches whole word as well
@@ -497,31 +497,21 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     switch (argType) {
       case ArgType.optionName: {
         const newInfo: OptionInfo = [optionKey!, options[optionKey!], name];
-        return [i, prevPos, newInfo, value, true, comp];
+        return [i, prevPos, newInfo, value, true, isComp];
       }
       case ArgType.cluster:
-        if (comp) {
+        if (isComp) {
           reportCompletion();
         }
         i--; // the cluster argument was removed
         break; // the cluster argument was canonicalized
       case ArgType.unknownOption:
-        if (comp) {
-          reportCompletion(completeName(context, arg));
-        }
-        if (!completing) {
-          reportUnknownName(context, name);
-        }
+        reportUnknownOption(context, name, arg, isComp);
         break; // ignore unknown options during completion
       case ArgType.marker:
         if (value !== undefined) {
-          if (comp) {
-            reportCompletion();
-          }
-          if (!completing) {
-            throw error(ErrorItem.disallowedInlineParameter, name);
-          }
-        } else if (comp) {
+          reportDisallowedInline(context, name, isComp);
+        } else if (isComp) {
           reportCompletion([{ type: 'marker', name }]);
         }
         args.splice(i--, 1); // remove marker
@@ -529,7 +519,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         break;
       case ArgType.positional: {
         const newInfo = positional[min(prevPos, positional.length - 1)]; // may be undefined
-        return [i, prevPos + 1, newInfo, undefined, true, comp, prevMarked, true];
+        return [i, prevPos + 1, newInfo, undefined, true, isComp, prevMarked, true];
       }
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
@@ -540,7 +530,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
           // ignore required inline parameters while completing
           prevInfo = undefined;
           i--; // reprocess the current argument
-        } else if (comp) {
+        } else if (isComp) {
           prev[4] = false;
           prev[5] = true;
           return prev;
@@ -561,29 +551,57 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
  * Reports a missing parameter to a non-niladic option.
  * @param min The minimum parameter count
  * @param max The maximum parameter count
- * @param name The unknown option name
+ * @param name The option name
  */
 function reportMissingParameter(min: number, max: number, name: string): never {
   const [alt, val] = min === max ? [0, min] : isFinite(max) ? [2, [min, max]] : [1, min];
-  const flags = { alt, sep: config.connectives.and, open: '', close: '', mergePrev: false };
+  const flags: FormattingFlags = {
+    ...openArrayFlags,
+    alt,
+    sep: config.connectives.and,
+    mergePrev: false,
+  };
   throw error(ErrorItem.missingParameter, name, flags, val);
 }
 
 /**
- * Reports an error of unknown option name.
+ * Reports disallowed inline parameter.
+ * Does nothing if another argument is being completed.
  * @param context The parsing context
- * @param name The unknown option name
+ * @param name The option name
+ * @param isComp Whether the argument is being completed
  */
-function reportUnknownName(context: ParsingContext, name: string): never {
-  const { similarity } = context[6];
-  const similar = similarity ? findSimilar(name, context[0].names.keys(), similarity) : undefined;
-  const flags = {
-    alt: similar?.length ? 1 : 0,
-    sep: config.connectives.optionSep,
-    open: '',
-    close: '',
-  };
-  throw error(ErrorItem.unknownOption, name, flags, similar?.map(getSymbol));
+function reportDisallowedInline(context: ParsingContext, name: string, isComp: boolean = false) {
+  if (isComp) {
+    reportCompletion();
+  }
+  if (!context[4]) {
+    throw error(ErrorItem.disallowedInlineParameter, name);
+  }
+}
+
+/**
+ * Reports an unknown option.
+ * Does nothing if another argument is being completed.
+ * @param context The parsing context
+ * @param name The option name
+ * @param arg The original argument
+ * @param isComp Whether the argument is being completed
+ */
+function reportUnknownOption(context: ParsingContext, name: string, arg: string, isComp: boolean) {
+  if (isComp) {
+    reportCompletion(completeName(context, arg));
+  }
+  if (!context[4]) {
+    const { similarity } = context[6];
+    const similar = similarity ? findSimilar(name, context[0].names.keys(), similarity) : undefined;
+    const flags: FormattingFlags = {
+      ...openArrayFlags,
+      alt: similar?.length ? 1 : 0,
+      sep: config.connectives.optionSep,
+    };
+    throw error(ErrorItem.unknownOption, name, flags, similar?.map(getSymbol));
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -611,60 +629,69 @@ function completeName(context: ParsingContext, comp: string): Array<ParserSugges
     const { type, synopsis } = options[names.get(name)!];
     return { type, name, synopsis: synopsis && '' + synopsis };
   }
+  const { options, names } = context[0];
   const startsWith = (name?: string): name is string => !!name?.startsWith(comp);
-  const [registry, , , , , , flags] = context;
-  const { options, names } = registry;
   const nameSuggestions = names.keys().filter(startsWith).map(fromName);
-  const markerSuggestions = getMarker(flags.positionalMarker)
+  const markerSuggestions = getMarker(context[6].positionalMarker)
     .filter(startsWith)
     .map((name): ParserSuggestion => ({ type: 'marker', name }));
   return [...nameSuggestions, ...markerSuggestions];
 }
 
 /**
- * Completes an option parameter.
+ * Handles completion of an option name or parameter.
  * @param context The parsing context
  * @param info The option information
  * @param index The starting index of the argument sequence
  * @param position The position of the sequence relative to positional arguments
- * @param prev The preceding parameters, if any
- * @param comp The word being completed
- * @returns The completion suggestions
+ * @param params The option parameters
+ * @param suggestNames Whether option names should be suggested
  */
-async function completeParameter(
+async function handleCompletion(
   context: ParsingContext,
   info: OptionInfo,
   index: number,
   position: number,
-  prev: Array<string>,
-  comp: string,
-): Promise<Array<ParserSuggestion>> {
-  const [, values] = context;
+  params: Array<string>,
+  suggestNames: boolean,
+): Promise<never> {
   const [, option, name] = info;
-  const { synopsis, choices, normalize } = option;
-  const base: ParserSuggestion = {
-    type: 'parameter',
-    name: '',
-    displayName: name,
-    synopsis: synopsis && '' + synopsis,
-  };
-  if (option.complete) {
-    try {
+  const suggestions: Array<ParserSuggestion> = [];
+  let comp = params.pop();
+  if (comp !== undefined) {
+    // complete option parameter
+    const [, values] = context;
+    const { synopsis, choices } = option;
+    const base: ParserSuggestion = {
+      type: 'parameter',
+      name: '',
+      displayName: name,
+      synopsis: synopsis && '' + synopsis,
+    };
+    if (option.complete) {
+      const seq = { values, index, position, name, prev: params };
+      const fromSuggestion = (suggestion: string | ICompletionSuggestion) =>
+        isString(suggestion) ? { ...base, name: suggestion } : { ...base, ...suggestion };
+      try {
+        // avoid destructuring, because the callback might need to use `this`
+        suggestions.push(...(await option.complete(comp, seq)).map(fromSuggestion));
+      } catch (_err) {
+        // suppress error thrown by the callback
+      }
+    } else if (choices) {
       // avoid destructuring, because the callback might need to use `this`
-      const seq = { values, index, position, name, prev };
-      const suggestions = await option.complete(comp, seq);
-      return suggestions.map((suggestion) =>
-        isString(suggestion) ? { ...base, name: suggestion } : { ...base, ...suggestion },
-      );
-    } catch (_err) {
-      return [];
+      const prefix = option.normalize?.(comp) ?? comp;
+      const startsWith = (word: string) => word.startsWith(prefix);
+      suggestions.push(...choices.filter(startsWith).map((name) => ({ ...base, name })));
     }
+  } else {
+    comp = name;
+    suggestNames = true;
   }
-  if (choices) {
-    comp &&= normalize?.(comp) ?? comp;
-    return choices.filter((word) => word.startsWith(comp)).map((name) => ({ ...base, name }));
+  if (suggestNames) {
+    suggestions.push(...completeName(context, comp));
   }
-  return [];
+  reportCompletion(suggestions);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -738,13 +765,7 @@ async function parseParams(
   if (choices) {
     const mismatch = params.find((param) => !choices.includes(param));
     if (mismatch) {
-      throw error(
-        ErrorItem.choiceConstraintViolation,
-        name,
-        { open: '', close: '' },
-        mismatch,
-        choices,
-      );
+      throw error(ErrorItem.choiceConstraintViolation, name, openArrayFlags, mismatch, choices);
     }
   }
   if (type === 'single') {
