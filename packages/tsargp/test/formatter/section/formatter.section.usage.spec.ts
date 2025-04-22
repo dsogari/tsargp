@@ -5,7 +5,11 @@ import { ansi, AnsiString, format } from '../../../src/library';
 const boldStr = '\x1b[1m';
 
 describe('rendering a usage section', () => {
-  const flags: FormatterFlags = { progName: 'prog', clusterPrefix: '-', stdinSymbol: '-' };
+  const flags: FormatterFlags = {
+    programName: 'prog',
+    clusterPrefix: '-',
+    stdinSymbol: '-',
+  };
 
   it('skip a section with no heading and no content', () => {
     const sections: HelpSections = [{ type: 'usage' }];
@@ -145,21 +149,20 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the options', () => {
-    it('throw error on multiple trailing markers', () => {
+    it('render positional arguments between markers', () => {
       const options = {
-        single1: {
-          type: 'single',
-          marker: '--',
-        },
-        single2: {
-          type: 'single',
-          marker: '++',
+        flag: {
+          type: 'flag',
+          names: ['-f'],
         },
       } as const satisfies Options;
-      const sections: HelpSections = [{ type: 'usage' }];
-      expect(() => format(options, sections)).toThrow(
-        'Cannot render usage statement with multiple trailing markers: --,++',
-      );
+      const case0: HelpSections = [{ type: 'usage' }];
+      const case1: HelpSections = [{ type: 'usage', showMarker: true }];
+      const flags0: FormatterFlags = { positionalMarker: '--' };
+      const flags1: FormatterFlags = { positionalMarker: ['--', '++'] };
+      expect(format(options, case0, flags0).wrap()).toEqual('[-f]\n');
+      expect(format(options, case1, flags0).wrap()).toEqual('[-f] [-- [...]]\n');
+      expect(format(options, case1, flags1).wrap()).toEqual('[-f] [-- [...] [++]]\n');
     });
 
     it('render usage with comment and usage parameter name', () => {
@@ -252,11 +255,9 @@ describe('rendering a usage section', () => {
           required: true, // should appear first
           paramName: '<arg>',
         },
-        emptyMarker: {
+        unnamedWithEmptyParamName: {
           type: 'single',
-          names: ['-s3'],
-          marker: '', // should appear last
-          paramName: '<arg>',
+          paramName: '',
         },
         requiredInline: {
           type: 'single',
@@ -290,7 +291,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections, flags).wrap()).toEqual(
-        'prog (-s2|-x) <arg> [-s <param>] [-s4=true] [-] [-s7] [-x <arg>] [(-s3|) <arg>]\n',
+        'prog (-s2|-x) <arg> [-s <param>] [] [-s4=true] [-] [-s7] [-x <arg>]\n',
       );
     });
 
@@ -309,10 +310,8 @@ describe('rendering a usage section', () => {
           required: true, // should appear first
           paramName: '<arg>',
         },
-        positionalWithMarkerWithEmptyParamName: {
+        unnamedWithEmptyParamName: {
           type: 'array',
-          positional: true,
-          marker: '--', // should appear last
           paramName: '',
         },
         requiredInline: {
@@ -347,7 +346,7 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual(
-        '-a2 [<arg>...] [-a1 [<param>...]] [-a4[=true]] [-a7] [-a9 [<arg>...]] [--] [...]\n',
+        '-a2 [<arg>...] [-a1 [<param>...]] [...] [-a4[=true]] [-a7] [-a9 [<arg>...]]\n',
       );
     });
 
@@ -499,7 +498,6 @@ describe('rendering a usage section', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          marker: '--',
           paramName: '<param>',
         },
       } as const satisfies Options;
@@ -546,11 +544,11 @@ describe('rendering a usage section', () => {
       expect(format(options, case3, flags).wrap()).toEqual('-f1\n');
       expect(format(options, case4, flags).wrap()).toEqual('[-f1] [-f2]\n'); // definition order
       expect(format(options, case5, flags).wrap()).toEqual(''); // usage was skipped
-      expect(format(options, case6, flags).wrap()).toEqual('[-f1] [(-s|--) <param>]\n'); // default group
+      expect(format(options, case6, flags).wrap()).toEqual('[-f1] [-s <param>]\n'); // default group
       expect(format(options, case7, flags).wrap()).toEqual('');
       expect(format(options, case8, flags).wrap()).toEqual('');
       expect(format(options, case9, flags).wrap()).toEqual('[-f1] [-f2]\n');
-      expect(format(options, case10, flags).wrap()).toEqual('[(-s|--) <param>]\n');
+      expect(format(options, case10, flags).wrap()).toEqual('[-s <param>]\n');
       expect(format(options, case11, flags).wrap()).toEqual('');
     });
   });
@@ -798,7 +796,7 @@ describe('rendering a usage section', () => {
       expect(format(options, case2).wrap()).toEqual('[-a] [...]\n');
     });
 
-    it('change order of options that are always required or have a trailing marker', () => {
+    it('change order of options that are always required', () => {
       const options = {
         flag: {
           type: 'flag',
@@ -807,7 +805,6 @@ describe('rendering a usage section', () => {
         single: {
           type: 'single',
           names: ['-s'],
-          marker: '--',
           paramName: '<arg>',
         },
         array: {
@@ -824,9 +821,9 @@ describe('rendering a usage section', () => {
         { type: 'usage', inclusive: { flag: ['single', 'array'] }, required: ['single', 'array'] },
       ];
       const flags: FormatterFlags = { optionFilter: ['-f'] };
-      expect(format(options, case0).wrap()).toEqual('[-a [<arg>...]] [[-f] (-s|--) <arg>]\n');
-      expect(format(options, case1, flags).wrap()).toEqual('[-a [<arg>...] [-f]] (-s|--) <arg>\n');
-      expect(format(options, case2, flags).wrap()).toEqual('[-f] -a [<arg>...] (-s|--) <arg>\n');
+      expect(format(options, case0).wrap()).toEqual('[-s <arg> [-f]] [-a [<arg>...]]\n');
+      expect(format(options, case1, flags).wrap()).toEqual('-s <arg> [-a [<arg>...] [-f]]\n');
+      expect(format(options, case2, flags).wrap()).toEqual('-s <arg> -a [<arg>...] [-f]\n');
     });
   });
 });

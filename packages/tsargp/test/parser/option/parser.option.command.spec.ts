@@ -59,8 +59,10 @@ describe('parse', () => {
             },
           },
         } as const satisfies Options;
-        expect(parse(options, ['cmd', '-h'], { progName: '', format })).rejects.toThrow('[-h]\n');
-        expect(parse(options, ['cmd', '-h'], { progName: 'prog', format })).rejects.toThrow(
+        expect(parse(options, ['cmd', '-h'], { programName: '', format })).rejects.toThrow(
+          '[-h]\n',
+        );
+        expect(parse(options, ['cmd', '-h'], { programName: 'prog', format })).rejects.toThrow(
           'prog cmd [-h]\n',
         );
       });

@@ -36,9 +36,13 @@ It returns a [ANSI message] with the formatted sections.
 
 The formatter procedure can be configured via a `FormatterFlags` object that has some optional properties, as described below.
 
+> [!NOTE]
+>
+> Some of these flags have the same semantics as their homonymous [parsing flag].
+
 ### Program name
 
-The `progName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
+The `programName` property is the [program name]. If not present or empty, usage statements will contain no program name.
 
 ### Cluster prefix
 
@@ -56,7 +60,11 @@ The patterns are case-insensitive and match [option names], [synopsis] and [envi
 
 ### Standard input symbol
 
-The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage sections]. If not present, the standard input will not appear in usage statements.
+The `stdinSymbol` property specifies a symbol for the [standard input]. If not present, the standard input will not appear in usage statements.
+
+### Positional marker
+
+The `positionalMarker` property specifies the marker(s) to delimit positional arguments. If not present, no marker will appear in usage statements.
 
 ## Help columns
 
@@ -167,7 +175,7 @@ A `HelpSectionFilter` object contains the following optional properties:
 
 > [!NOTE]
 >
-> Matches are exact. Exclusion properties have precedence over inclusion ones. Options and groups are listed in order of their [definitions]. The only exception is an option with a [trailing marker], which comes _last_ in a usage statement.
+> Matches are exact. Exclusion properties have precedence over inclusion ones. Options and groups are listed in order of their [definitions].
 
 ### Text section
 
@@ -191,8 +199,9 @@ tsargp [[38;2;160;100;64m-f[39m|[38;2;160;100;64m--no-flag[39m]
        [([35m-nc[39m|[35m--numChoice[39m)[90m=[33m1[90m[39m]
        [([35m-sa[39m|[35m--strArray[39m|[35m-S[39m) [90m[<str>...][39m|[35m-[39m]
        [([35m-na[39m|[35m--numArray[39m|[35m-N[39m) [90m[<num>...][39m]
+       [[35m--strArrayLimit[39m] [90m[[32m'one'[90m...][39m
        [[35m--numArrayUnique[39m [90m[[32m'1,2'[90m...][39m]
-       [[35m--strArrayLimit[39m|[35m--[39m] [90m[[32m'one'[90m...][39m
+       [[35m--[39m [90m[...][39m]
 ```
 
 {/* cSpell:enable */}
@@ -206,11 +215,8 @@ In addition to the [basic properties], a **usage** section has the following opt
 - `inclusive` -- a record that specifies inclusive [option dependencies] (defaults to none)
 - `exclusive` -- reserved for mutually exclusive [option dependencies] (not yet implemented)
 - `comment` -- a commentary to append to the usage (defaults to none)
-- `compact` -- whether to keep alternatives compact (defaults to true)
-
-> [!NOTE]
->
-> There can be at most _one_ option with the [trailing marker] in a usage; otherwise an error will be raised.
+- `compact` -- whether to keep alternatives compact (defaults to `true{:ts}`)
+- `showMarker` -- whether to display the [positional marker] (defaults to `false{:ts}`)
 
 #### Option dependencies
 
@@ -422,6 +428,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [parameter column]: #parameter-column
 [description column]: #description-column
 [parameter rules]: #parameter-rules
+[positional marker]: #positional-marker
 
 {/* options references */}
 
@@ -430,7 +437,6 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [environment variable]: options#data-sources
 [option group]: options#group--hide
 [option names]: options#option-names
-[trailing marker]: options#trailing-marker
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#option-parameters
@@ -446,6 +452,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [inline parameters]: parser#inline-parameters
 [program name]: parser#program-name
 [cluster arguments]: parser#cluster-prefix
+[parsing flag]: parser#parsing-flags
 
 {/* styles references */}
 

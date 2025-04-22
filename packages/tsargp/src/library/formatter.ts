@@ -30,6 +30,7 @@ import {
   createUsage,
   getEntries,
   getLastOptionName,
+  getMarker,
   getOptionEnvVars,
   getOptionNames,
   getParamCount,
@@ -56,7 +57,7 @@ export type FormatterFlags = {
    * The program name.
    * If not present or empty, usage statements will contain no program name.
    */
-  readonly progName?: string;
+  readonly programName?: string;
   /**
    * The cluster argument prefix.
    * If not present, cluster letters will not appear in usage statements.
@@ -68,10 +69,15 @@ export type FormatterFlags = {
    */
   readonly optionFilter?: ReadonlyArray<string>;
   /**
-   * The symbol for the standard input (e.g., '-') to display in usage statements.
+   * The symbol for the standard input (e.g., `'-'`).
    * If not present, the standard input will not appear in usage statements.
    */
   readonly stdinSymbol?: string;
+  /**
+   * The marker(s) to delimit positional arguments (e.g. `'--'`).
+   * If not present, no marker will appear in usage statements.
+   */
+  readonly positionalMarker?: string | [string, string];
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -213,12 +219,6 @@ const helpFunctions: HelpFunctions = {
   [HelpItem.positional]: (option, phrase, _options, result) => {
     if (option.positional) {
       result.split(phrase);
-    }
-  },
-  [HelpItem.marker]: (option, phrase, _options, result) => {
-    const { marker } = option;
-    if (marker !== undefined) {
-      result.format(phrase, {}, getSymbol(marker));
     }
   },
   [HelpItem.append]: (option, phrase, _options, result) => {
@@ -588,7 +588,6 @@ function getAlignment(column: ColumnLayout = {}): [align?: TextAlignment, breaks
 
 /**
  * Formats an option's names to be printed in a groups section.
- * This does not include the trailing marker.
  * @param option The option definition
  * @param layout The layout settings
  * @param useEnv Whether option names should be replaced by environment variable names
@@ -652,7 +651,7 @@ function formatParams(option: OpaqueOption, layout: HelpLayout): HelpColumn {
 
 /**
  * Formats an option's description to be printed in a groups section.
- * The description always ends with a single line break.
+ * The description always ends with a single line feed.
  * @param options The option definitions
  * @param option The option definition
  * @param flags The formatter flags
@@ -740,7 +739,7 @@ function formatUsageSection(
   result: AnsiMessage,
 ) {
   const { text, style, align, noSplit, noBreakFirst } = section.content ?? {};
-  const progName = text ?? flags.progName;
+  const progName = text ?? flags.programName;
   const baseSty = config.styles.base;
   const prev: Array<AnsiString> = [];
   let indent = section.content?.indent ?? 0;
@@ -794,27 +793,15 @@ function formatUsage(
   flags: FormatterFlags,
   result: AnsiString,
 ) {
-  const { filter, required, inclusive, compact } = section;
+  const { filter, required, inclusive, compact, showMarker } = section;
   const requiredSet = new Set(required?.filter((key) => key in options));
   const deps = normalizeDependencies(refilterKeys(keys, filter), requiredSet, options, inclusive);
   const [, components, adjacency] = stronglyConnected(deps);
-  const markerSet = new Set<string>(); // set of trailing markers
-  const withMarkerSet = new Set<string>(); // set of components that include a trailing marker
-  for (const [comp, keys] of getEntries(components)) {
-    const index = keys.findIndex((key) => options[key].marker !== undefined);
-    if (index >= 0) {
-      markerSet.add(options[keys[index]].marker!);
-      keys.push(...keys.splice(index, 1)); // leave trailing marker for last
-      withMarkerSet.add(comp);
-    }
-  }
-  if (markerSet.size > 1) {
-    // developer mistake: see documentation
-    throw Error(`Cannot render usage statement with multiple trailing markers: ${[...markerSet]}`);
-  }
   const usage = createUsage(adjacency);
-  sortUsageStatement(withMarkerSet, usage);
   formatUsageStatement(requiredSet, options, flags, result, components, usage, compact);
+  if (showMarker) {
+    formatMarker(flags, result);
+  }
 }
 
 /**
@@ -848,24 +835,21 @@ function normalizeDependencies(
 }
 
 /**
- * Sorts a usage statement to leave the trailing marker for last.
- * @param withMarker The set of components that include a trailing marker
- * @param usage The usage statement
- * @returns True if the usage includes a trailing marker
+ * Formats the positional marker(s) to be included in a usage section.
+ * @param flags The formatter flags
+ * @param result The resulting string
  */
-function sortUsageStatement(withMarker: ReadonlySet<string>, usage: UsageStatement): boolean {
-  let containsMarker = false;
-  for (let i = 0, length = usage.length; i < length; ) {
-    const element = usage[i];
-    if (isArray(element) ? sortUsageStatement(withMarker, element) : withMarker.has(element)) {
-      usage.push(...usage.splice(i, 1)); // leave trailing marker for last
-      containsMarker = true;
-      length--;
-    } else {
-      i++;
+function formatMarker(flags: FormatterFlags, result: AnsiString) {
+  const [markBegin, markEnd] = getMarker(flags.positionalMarker);
+  if (markBegin) {
+    const { optionalOpen, optionalClose } = config.connectives;
+    const params = optionalOpen + '...' + optionalClose;
+    result.open(optionalOpen).value(getSymbol(markBegin)).word(params, config.styles.value);
+    if (markEnd) {
+      result.open(optionalOpen).value(getSymbol(markEnd)).close(optionalClose);
     }
+    result.close(optionalClose);
   }
-  return containsMarker;
 }
 
 /**

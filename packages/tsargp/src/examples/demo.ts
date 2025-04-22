@@ -23,10 +23,11 @@ options.help.sections.push(footerSection);
 options.helpEnv.sections.push(footerSection);
 
 const flags: ParsingFlags = {
-  progName: 'tsargp',
+  programName: 'tsargp',
   clusterPrefix: '-',
   optionPrefix: '-',
   stdinSymbol: '-',
+  positionalMarker: '--',
   similarity: 0.6,
   format,
 };

@@ -246,16 +246,12 @@ function registerNames(
 }
 
 /**
- * Gets a list of option names, including the trailing marker.
+ * Gets a list of option names.
  * @param option The option definition
  * @returns The option names
  */
 export function getOptionNames(option: OpaqueOption): Array<string> {
-  const names = option.names?.slice().filter(isString) ?? [];
-  if (option.marker !== undefined) {
-    names.push(option.marker);
-  }
-  return names;
+  return option.names?.slice().filter(isString) ?? [];
 }
 
 /**
@@ -280,7 +276,6 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
 
 /**
  * Checks whether an option has a name that can be supplied on the command line.
- * Does not include the trailing marker.
  * @param option The option definition
  * @returns True if the option has a name that can be supplied
  */
@@ -295,7 +290,7 @@ export function hasSuppliableName(option: OpaqueOption): boolean {
  * @returns True if the option can only be supplied through the environment
  */
 export function isEnvironmentOnly(option: OpaqueOption): boolean {
-  return !hasSuppliableName(option) && !option.positional && option.marker === undefined;
+  return !hasSuppliableName(option) && !option.positional;
 }
 
 /**
@@ -497,7 +492,7 @@ export function numberInRange(
   const [min, max] = range;
   return function (param, info) {
     const num = Number(param);
-    if (info.comp || (min <= num && num <= max)) {
+    if (info.completing || (min <= num && num <= max)) {
       return num; // handle NaN; avoid throwing errors when completion is in effect
     }
     throw error(phrase, info.name, {}, param, range);
@@ -563,17 +558,17 @@ export function handleError(err: unknown): never {
 /**
  * Gets a list of arguments from a raw command line.
  * @param line The command line, including the command name
- * @param compIndex The completion index, if any (should be non-negative)
+ * @param comp The completion index, if any (should be non-negative)
  * @returns The list of arguments, up to the completion index
  */
-export function getArgs(line: string, compIndex = NaN): Array<string> {
+export function getArgs(line: string, comp = NaN): Array<string> {
   /** @ignore */
   function append(char: string) {
     arg = (arg ?? '') + char;
   }
   const result: Array<string> = [];
-  const rest = line.length - compIndex;
-  line = rest < 0 ? line + ' ' : rest >= 0 ? line.slice(0, compIndex) : line.trimEnd();
+  const rest = line.length - comp;
+  line = rest < 0 ? line + ' ' : rest >= 0 ? line.slice(0, comp) : line.trimEnd();
   let arg: string | undefined;
   let quote = '';
   let escape = false;
@@ -1047,14 +1042,14 @@ export function omitSpaces(width: number): boolean {
 /**
  * @returns The default value of the command line
  */
-export function getCmdLine(): string | Array<string> {
+export function getCommandLine(): string | Array<string> {
   return getEnv('COMP_LINE') ?? getEnv('BUFFER') ?? process?.argv.slice(2) ?? [];
 }
 
 /**
  * @returns The default value of the completion index
  */
-export function getCompIndex(): number | undefined {
+export function getCompletionIndex(): number | undefined {
   return Number(getEnv('COMP_POINT') ?? getEnv('CURSOR')) || getEnv('BUFFER')?.length;
 }
 
@@ -1114,4 +1109,13 @@ export function arrayWithPhrase<T>(
  */
 export function getBaseName(path: string): string {
   return path.split(regex.pathSep).at(-1)!;
+}
+
+/**
+ * Gets the normalized value of the positional marker(s).
+ * @param marker The positional marker(s)
+ * @returns The normalized value
+ */
+export function getMarker(marker?: string | [string, string]): [string?, string?] {
+  return isString(marker) ? [marker] : (marker ?? []);
 }

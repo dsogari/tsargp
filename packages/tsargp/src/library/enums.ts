@@ -145,10 +145,6 @@ export const enum HelpItem {
    */
   positional,
   /**
-   * Whether the option accepts trailing arguments.
-   */
-  marker,
-  /**
    * The option's treatment of inline parameters.
    */
   inline,

@@ -61,17 +61,11 @@ describe('OptionRegistry', () => {
         single: {
           type: 'single',
         },
-        array: {
-          type: 'array',
-          marker: 'marker',
-        },
       } as const satisfies Options;
       const registry = new OptionRegistry(options);
-      expect(registry.names).toHaveLength(3);
-      expect(registry.names.get('marker')).toEqual('array');
+      expect(registry.names).toHaveLength(2);
       expect(options.flag).toHaveProperty('preferredName', '-f');
       expect(options.single).toHaveProperty('preferredName', '');
-      expect(options.array).toHaveProperty('preferredName', 'marker');
     });
 
     it('register cluster letters', () => {
@@ -90,15 +84,14 @@ describe('OptionRegistry', () => {
 });
 
 describe('getOptionNames', () => {
-  it('handle null values and include the trailing marker', () => {
+  it('handle null values', () => {
     const options = {
-      single: {
-        type: 'single',
-        names: [null, '-s'],
-        marker: 'marker',
+      flag: {
+        type: 'flag',
+        names: [null, '-f', '--flag'],
       },
     } as const satisfies Options;
-    expect(getOptionNames(options.single)).toEqual(['-s', 'marker']);
+    expect(getOptionNames(options.flag)).toEqual(['-f', '--flag']);
   });
 });
 

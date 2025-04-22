@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test';
-import type { OptionValues, Options } from '../../src/library';
+import type { OptionValues, Options, ParsingFlags } from '../../src/library';
 import { parse } from '../../src/library';
 
 process.env['FORCE_WIDTH'] = '0'; // omit styles
@@ -23,7 +23,7 @@ describe('parse', () => {
         index: 0,
         position: NaN,
         name: '-f',
-        comp: false,
+        completing: false,
       });
       options.flag.parse.mockClear();
       expect(parse(options, ['-f', '-f'])).resolves.toEqual({ flag: null });
@@ -33,7 +33,7 @@ describe('parse', () => {
         index: 1,
         position: NaN,
         name: '-f',
-        comp: false,
+        completing: false,
       });
       expect(options.flag.parse).toHaveBeenCalledTimes(2);
     });
@@ -91,26 +91,28 @@ describe('parse', () => {
         index: NaN,
         position: NaN,
         name: 'FLAG',
-        comp: false,
+        completing: false,
       });
     });
 
-    it('handle a single-valued option with value from trailing argument', () => {
+    it('handle a single-valued option with value from positional marker', () => {
       const options = {
         single: {
           type: 'single',
-          marker: '--',
+          positional: true,
+          preferredName: 'preferred',
           parse: jest.fn((param) => param),
         },
       } as const satisfies Options;
-      expect(parse(options, ['--', '1'])).resolves.toEqual({ single: '1' });
+      const flags: ParsingFlags = { positionalMarker: '--' };
+      expect(parse(options, ['--', '1'], flags)).resolves.toEqual({ single: '1' });
       expect(options.single.parse).toHaveBeenCalledWith('1', {
         // should have been { single: undefined } at the time of call
         values: { single: '1' },
-        index: 0,
-        position: NaN,
-        name: '--',
-        comp: false,
+        index: 0, // positional marker does not count
+        position: 1,
+        name: 'preferred',
+        completing: false,
       });
       expect(options.single.parse).toHaveBeenCalledTimes(1);
     });
@@ -131,7 +133,7 @@ describe('parse', () => {
         index: 0,
         position: 1,
         name: 'preferred',
-        comp: false,
+        completing: false,
       });
       expect(options.single.parse).toHaveBeenCalledWith('2', {
         // should have been { single: undefined } at the time of call
@@ -139,7 +141,7 @@ describe('parse', () => {
         index: 1,
         position: 2,
         name: 'preferred',
-        comp: false,
+        completing: false,
       });
       expect(options.single.parse).toHaveBeenCalledTimes(2);
     });
@@ -160,7 +162,7 @@ describe('parse', () => {
         index: 0,
         position: 1,
         name: 'preferred',
-        comp: false,
+        completing: false,
       });
       expect(options.array.parse).toHaveBeenCalledWith('2', {
         // should have been { single: undefined } at the time of call
@@ -168,7 +170,7 @@ describe('parse', () => {
         index: 0, // index of the first argument in the sequence
         position: 1,
         name: 'preferred',
-        comp: false,
+        completing: false,
       });
       expect(options.array.parse).toHaveBeenCalledTimes(2);
     });
@@ -202,7 +204,7 @@ describe('parse', () => {
         index: 0,
         position: NaN,
         name: '-f',
-        comp: false,
+        completing: false,
       });
     });
 
@@ -229,7 +231,7 @@ describe('parse', () => {
           index: 0,
           position: NaN,
           name: '-c',
-          comp: false,
+          completing: false,
         },
       );
       options.command.parse.mockClear();
@@ -242,7 +244,7 @@ describe('parse', () => {
           index: 0,
           position: NaN,
           name: '-c',
-          comp: false,
+          completing: false,
         },
       );
     });

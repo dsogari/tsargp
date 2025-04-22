@@ -60,7 +60,7 @@ describe('parse', () => {
         index: NaN,
         position: NaN,
         name: '0', // zero for standard input
-        comp: false,
+        completing: false,
       });
       expect(options.single.parse).toHaveBeenCalledTimes(1);
     });
@@ -83,7 +83,7 @@ describe('parse', () => {
         index: NaN,
         position: NaN,
         name: '0', // zero for standard input
-        comp: false,
+        completing: false,
       });
     });
 
@@ -104,7 +104,7 @@ describe('parse', () => {
         index: NaN,
         position: NaN,
         name: '0', // zero for standard input
-        comp: false,
+        completing: false,
       });
     });
 
@@ -142,7 +142,7 @@ describe('parse', () => {
         index: NaN,
         position: NaN,
         name: expect.stringMatching(/data\/test-read-file.txt$/),
-        comp: false,
+        completing: false,
       });
       options.array.parse.mockClear();
       process.env['ARRAY'] = '1';
@@ -153,7 +153,7 @@ describe('parse', () => {
         index: NaN,
         position: NaN,
         name: 'ARRAY',
-        comp: false,
+        completing: false,
       });
     });
   });
