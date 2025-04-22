@@ -489,13 +489,13 @@ describe('parse', () => {
           cluster: 'f',
         },
       } as const satisfies Options;
-      const flags1: ParsingFlags = { clusterPrefix: '', completionIndex: 6 };
-      expect(parse(options, 'cmd  f', flags1)).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd ff', flags1)).rejects.toThrow(/^$/);
-      const flags2: ParsingFlags = { clusterPrefix: '-', completionIndex: 7 };
-      expect(parse(options, 'cmd   -', flags2)).rejects.toThrow(/^-f$/);
-      expect(parse(options, 'cmd  -f', flags2)).rejects.toThrow(/^-f$/);
-      expect(parse(options, 'cmd -ff', flags2)).rejects.toThrow(/^$/);
+      const flags0: ParsingFlags = { clusterPrefix: '', completionIndex: 6 };
+      const flags1: ParsingFlags = { clusterPrefix: '-', completionIndex: 7 };
+      expect(parse(options, 'cmd  f', flags0)).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd ff', flags0)).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd   -', flags1)).rejects.toThrow(/^-f$/);
+      expect(parse(options, 'cmd  -f', flags1)).rejects.toThrow(/^-f$/);
+      expect(parse(options, 'cmd -ff', flags1)).rejects.toThrow(/^$/);
     });
 
     it('complete the parameter of a clustered option (and ignore the rest)', () => {
