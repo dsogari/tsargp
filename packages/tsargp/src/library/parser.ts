@@ -129,7 +129,7 @@ export type ParserSuggestion = ICompletionSuggestion & {
   /**
    * The type of argument being suggested.
    */
-  type: OptionType | 'marker' | 'parameter';
+  type: OptionType | 'parameter';
   /**
    * The option name, in case of parameter suggestions.
    */
@@ -330,9 +330,9 @@ function createContext(
   flags: ParsingFlags,
 ): ParsingContext {
   if (process) {
-    flags.programName ??= process.argv.slice(0, 2).map(getBaseName).join(' ');
-    if (!completing && flags.programName) {
-      process.title = flags.programName;
+    const progName = (flags.programName ??= process.argv.slice(0, 2).map(getBaseName).join(' '));
+    if (!completing && progName) {
+      process.title = progName;
     }
   }
   for (const [key, option] of getEntries(registry.options)) {
@@ -512,7 +512,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         if (value !== undefined) {
           reportDisallowedInline(context, name, isComp);
         } else if (isComp) {
-          reportCompletion([{ type: 'marker', name }]);
+          reportCompletion(); // marker does not get completed
         }
         args.splice(i--, 1); // remove marker
         prevMarked = !prevMarked; // toggle marker state
@@ -630,12 +630,8 @@ function completeName(context: ParsingContext, comp: string): Array<ParserSugges
     return { type, name, synopsis: synopsis && '' + synopsis };
   }
   const { options, names } = context[0];
-  const startsWith = (name?: string): name is string => !!name?.startsWith(comp);
-  const nameSuggestions = names.keys().filter(startsWith).map(fromName);
-  const markerSuggestions = getMarker(context[6].positionalMarker)
-    .filter(startsWith)
-    .map((name): ParserSuggestion => ({ type: 'marker', name }));
-  return [...nameSuggestions, ...markerSuggestions];
+  const startsWith = (name: string) => name.startsWith(comp);
+  return names.keys().filter(startsWith).map(fromName).toArray();
 }
 
 /**

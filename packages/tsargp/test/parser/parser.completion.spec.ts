@@ -45,7 +45,7 @@ describe('parse', () => {
       },
     } as const satisfies Options;
     const flags: ParsingFlags = { positionalMarker: '--' };
-    expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^--$/);
+    expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
     expect(parse(options, 'cmd -- ', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/);
   });
 
@@ -410,16 +410,16 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalled();
     });
 
-    it('handle the positional marker', () => {
+    it('ignore the positional marker', () => {
       const options = {
         single: {
           type: 'single',
         },
       } as const satisfies Options;
       const flags: ParsingFlags = { positionalMarker: '--' };
-      expect(parse(options, 'cmd ', { ...flags, completionIndex: 4 })).rejects.toThrow(/^--$/);
-      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^--$/);
-      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd ', { ...flags, completionIndex: 4 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
       expect(parse(options, 'cmd -- ', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/);
       expect(parse(options, 'cmd --=', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/); // ignore error
       expect(parse(options, 'cmd --= ', { ...flags, completionIndex: 8 })).rejects.toThrow(/^$/); // ignore error
@@ -442,7 +442,7 @@ describe('parse', () => {
       expect(parse(options, 'cmd one o', { completionIndex: 9 })).rejects.toThrow(/^one$/);
     });
 
-    it('handle the positional marker with choices', () => {
+    it('handle marked positional arguments with choices', () => {
       const options = {
         single: {
           type: 'single',
@@ -453,10 +453,10 @@ describe('parse', () => {
       } as const satisfies Options;
       const flags: ParsingFlags = { positionalMarker: '--' };
       expect(parse(options, 'cmd ', { ...flags, completionIndex: 4 })).rejects.toThrow(
-        /^one\ntwo\n-s\n--$/,
+        /^one\ntwo\n-s$/,
       );
-      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^-s\n--$/);
-      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^-s$/);
+      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
       expect(parse(options, 'cmd -- ', { ...flags, completionIndex: 7 })).rejects.toThrow(
         /^one\ntwo$/,
       );

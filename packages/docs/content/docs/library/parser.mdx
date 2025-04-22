@@ -192,13 +192,7 @@ The parser does not use the completion facilities, because it relies on the raw 
 - `COMP_LINE` or `BUFFER` -- the current command line
 - `COMP_POINT` or `CURSOR` -- the index of the cursor position relative to the beginning of the command line
 
-When these variables are available, the parser enters into _completion_ mode: it truncates the command line at the cursor position and performs completion of the last argument.
-
-The result of completion is either a [text message] or a [JSON message], which should be printed in the terminal so that the completion builtins can perform the final completion step.
-
-> [!NOTE]
->
-> The parser ignores any errors thrown by callbacks during completion. If an error is thrown by a completion callback, the default completion message (an empty list) will be thrown instead.
+When these variables are available, the parser enters into _completion_ mode: it truncates the command line at the cursor position and performs completion of the last argument. The result is either a [text message] or a [JSON message], which should be printed in the terminal so that the completion builtins can perform the final completion step.
 
 #### Completion algorithm
 
@@ -218,19 +212,27 @@ The completion algorithm implemented by the library is explained below. In what 
 
 If all of the above results in an empty list, the default completion (usually file completion, if enabled) will be attempted by the completion engine.
 
+> [!NOTE]
+>
+> The [positional marker] does not get completed.
+
 #### Altered parsing behavior
 
 Since completion builtins always expect a word list as a result, the parser must suppress all errors that occur in the parsing procedure until completion is done. Furthermore, it does not make sense to perform some operations that may throw errors. Therefore, when completion is in effect, the parsing behavior changes in the following ways:
 
-- parsing errors, such as unknown [option names], are suppressed
+- parsing errors, such as unknown [option names] or errors thrown by callbacks, are suppressed
 - non-valued options ([help] and [version]) are skipped
-- the parsing callback of [subcommands] do not get executed
+- the parsing callback of [subcommands] does not get executed
 - option [requirements] are not verified
-- [cluster] arguments are immediately completed with the default completion message
+- [cluster] arguments are completed with the default completion message
 
 > [!TIP]
 >
 > Other arguments are processed as usual, which means that a [completion callback] can inspect the previously parsed values, in order to make better suggestions based on those values.
+
+> [!NOTE]
+>
+> If an error is thrown by a [completion callback], the default completion message will be thrown instead.
 
 #### Completion suggestions
 
