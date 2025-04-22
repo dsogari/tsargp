@@ -768,88 +768,54 @@ export type OptionAttributes = {
 /**
  * An option that throws a help message.
  */
-export type HelpOption = WithOptionType<'help'> &
-  Pick<OptionAttributes, BasicAttributes | 'saveMessage' | 'sections' | 'useCommand' | 'useFilter'>;
+export type HelpOption = WithOptionType<'help'> & Pick<OptionAttributes, HelpAttributes>;
 
 /**
  * An option that throws a version message.
  */
-export type VersionOption = WithOptionType<'version'> &
-  Pick<OptionAttributes, BasicAttributes | 'saveMessage' | 'version'>;
+export type VersionOption = WithOptionType<'version'> & Pick<OptionAttributes, VersionAttributes>;
 
 /**
  * An option that executes a command.
  */
 export type CommandOption = WithOptionType<'command'> &
   WithParsingCallback<OpaqueOptionValues> &
-  (WithDefault | WithRequired) &
-  Pick<
-    OptionAttributes,
-    BasicAttributes | TemplateAttributes | 'options' | 'clusterPrefix' | 'optionPrefix'
-  >;
+  Pick<OptionAttributes, CommandAttributes> &
+  (WithDefault | WithRequired);
 
 /**
  * An option that has a value, but is niladic.
  */
 export type FlagOption = WithOptionType<'flag'> &
   WithParsingCallback<null> &
-  (WithDefault | WithRequired) &
-  Pick<OptionAttributes, BasicAttributes | ValueAttributes | EnvironmentAttributes>;
+  Pick<OptionAttributes, FlagAttributes> &
+  (WithDefault | WithRequired);
 
 /**
  * An option that has a single value and requires a single parameter.
  */
 export type SingleOption = WithOptionType<'single'> &
   WithParsingCallback<string> &
+  Pick<OptionAttributes, SingleAttributes> &
   (WithDefault | WithRequired) &
-  (WithChoices | WithRegex) &
-  Pick<
-    OptionAttributes,
-    | BasicAttributes
-    | ValueAttributes
-    | EnvironmentAttributes
-    | TemplateAttributes
-    | ParameterAttributes
-    | SelectionAttributes
-  >;
+  (WithChoices | WithRegex);
 
 /**
  * An option that has an array value and accepts zero or more parameters.
  */
 export type ArrayOption = WithOptionType<'array'> &
   WithParsingCallback<string> &
+  Pick<OptionAttributes, ArrayAttributes> &
   (WithDefault | WithRequired) &
-  (WithChoices | WithRegex) &
-  Pick<
-    OptionAttributes,
-    | BasicAttributes
-    | ValueAttributes
-    | EnvironmentAttributes
-    | TemplateAttributes
-    | ParameterAttributes
-    | SelectionAttributes
-    | 'separator'
-    | 'unique'
-    | 'append'
-    | 'limit'
-  >;
+  (WithChoices | WithRegex);
 
 /**
  * An option that has any value and can be configured with a parameter count.
  */
 export type FunctionOption = WithOptionType<'function'> &
   WithParsingCallback<Array<string>> &
-  (WithDefault | WithRequired) &
-  Pick<
-    OptionAttributes,
-    | BasicAttributes
-    | ValueAttributes
-    | EnvironmentAttributes
-    | TemplateAttributes
-    | ParameterAttributes
-    | 'paramCount'
-    | 'skipCount'
-  >;
+  Pick<OptionAttributes, FunctionAttributes> &
+  (WithDefault | WithRequired);
 
 /**
  * The public option types.
@@ -959,6 +925,70 @@ type ParameterAttributes = 'positional' | 'inline' | 'complete';
  * The keys of selection-enabled option attributes.
  */
 type SelectionAttributes = 'regex' | 'choices' | 'mapping' | 'normalize';
+
+/**
+ * The keys of help option attributes.
+ */
+type HelpAttributes = BasicAttributes | 'saveMessage' | 'sections' | 'useCommand' | 'useFilter';
+
+/**
+ * The keys of version option attributes.
+ */
+type VersionAttributes = BasicAttributes | 'saveMessage' | 'version';
+
+/**
+ * The keys of command option attributes.
+ */
+type CommandAttributes =
+  | BasicAttributes
+  | ValueAttributes
+  | TemplateAttributes
+  | 'options'
+  | 'clusterPrefix'
+  | 'optionPrefix';
+
+/**
+ * The keys of flag option attributes.
+ */
+type FlagAttributes = BasicAttributes | ValueAttributes | EnvironmentAttributes;
+
+/**
+ * The keys of single option attributes.
+ */
+type SingleAttributes =
+  | BasicAttributes
+  | ValueAttributes
+  | EnvironmentAttributes
+  | TemplateAttributes
+  | ParameterAttributes
+  | SelectionAttributes;
+
+/**
+ * The keys of array option attributes.
+ */
+type ArrayAttributes =
+  | BasicAttributes
+  | ValueAttributes
+  | EnvironmentAttributes
+  | TemplateAttributes
+  | ParameterAttributes
+  | SelectionAttributes
+  | 'separator'
+  | 'unique'
+  | 'append'
+  | 'limit';
+
+/**
+ * The keys of function option attributes.
+ */
+type FunctionAttributes =
+  | BasicAttributes
+  | ValueAttributes
+  | EnvironmentAttributes
+  | TemplateAttributes
+  | ParameterAttributes
+  | 'paramCount'
+  | 'skipCount';
 
 /**
  * Removes mutually exclusive attributes from an option with the `required` attribute.
