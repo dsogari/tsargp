@@ -149,6 +149,22 @@ describe('rendering a usage section', () => {
   });
 
   describe('rendering the options', () => {
+    it('render positional arguments between markers', () => {
+      const options = {
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+        },
+      } as const satisfies Options;
+      const case0: HelpSections = [{ type: 'usage' }];
+      const case1: HelpSections = [{ type: 'usage', showMarker: true }];
+      const flags0: FormatterFlags = { positionalMarker: '--' };
+      const flags1: FormatterFlags = { positionalMarker: ['--', '++'] };
+      expect(format(options, case0, flags0).wrap()).toEqual('[-f]\n');
+      expect(format(options, case1, flags0).wrap()).toEqual('[-f] [-- [...]]\n');
+      expect(format(options, case1, flags1).wrap()).toEqual('[-f] [-- [...] [++]]\n');
+    });
+
     it('render usage with comment and usage parameter name', () => {
       const options = {
         single: {
@@ -221,22 +237,6 @@ describe('rendering a usage section', () => {
       } as const satisfies Options;
       const sections: HelpSections = [{ type: 'usage' }];
       expect(format(options, sections).wrap()).toEqual('(-f2|--flag2) [-f1] [-f3|--flag3]\n');
-    });
-
-    it('render positional arguments between markers', () => {
-      const options = {
-        flag: {
-          type: 'flag',
-          names: ['-f'],
-        },
-      } as const satisfies Options;
-      const case0: HelpSections = [{ type: 'usage' }];
-      const case1: HelpSections = [{ type: 'usage', showMarker: true }];
-      const flags0: FormatterFlags = { positionalMarker: '--' };
-      const flags1: FormatterFlags = { positionalMarker: ['--', '++'] };
-      expect(format(options, case0, flags0).wrap()).toEqual('[-f]\n');
-      expect(format(options, case1, flags0).wrap()).toEqual('[-f] [-- [...]]\n');
-      expect(format(options, case1, flags1).wrap()).toEqual('[-f] [-- [...] [++]]\n');
     });
 
     it('render a single-valued option', () => {

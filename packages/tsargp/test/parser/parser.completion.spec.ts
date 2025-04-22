@@ -171,7 +171,7 @@ describe('parse', () => {
           }),
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd -f -f', { completionIndex: 9 })).rejects.toThrow(/^-f$/);
+      expect(parse(options, 'cmd -f ', { completionIndex: 7 })).rejects.toThrow(/^-f$/);
       expect(options.flag.parse).toHaveBeenCalledWith(null, {
         values: { flag: undefined },
         index: 0,

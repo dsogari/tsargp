@@ -805,24 +805,6 @@ function formatUsage(
 }
 
 /**
- * Formats the positional marker(s) to be included in a usage section.
- * @param flags The formatter flags
- * @param result The resulting string
- */
-function formatMarker(flags: FormatterFlags, result: AnsiString) {
-  const [markBegin, markEnd] = getMarker(flags.positionalMarker);
-  if (markBegin) {
-    const { optionalOpen, optionalClose } = config.connectives;
-    const params = optionalOpen + '...' + optionalClose;
-    result.open(optionalOpen).value(getSymbol(markBegin)).word(params, config.styles.value);
-    if (markEnd) {
-      result.open(optionalOpen).value(getSymbol(markEnd)).close(optionalClose);
-    }
-    result.close(optionalClose);
-  }
-}
-
-/**
  * Normalizes the option dependencies for a usage statement.
  * @param keys The filtered option keys
  * @param requiredKeys The set of options to consider always required (may be updated)
@@ -850,6 +832,24 @@ function normalizeDependencies(
     result[key].push(...requiredKeys); // options depended upon by all other options
   }
   return result;
+}
+
+/**
+ * Formats the positional marker(s) to be included in a usage section.
+ * @param flags The formatter flags
+ * @param result The resulting string
+ */
+function formatMarker(flags: FormatterFlags, result: AnsiString) {
+  const [markBegin, markEnd] = getMarker(flags.positionalMarker);
+  if (markBegin) {
+    const { optionalOpen, optionalClose } = config.connectives;
+    const params = optionalOpen + '...' + optionalClose;
+    result.open(optionalOpen).value(getSymbol(markBegin)).word(params, config.styles.value);
+    if (markEnd) {
+      result.open(optionalOpen).value(getSymbol(markEnd)).close(optionalClose);
+    }
+    result.close(optionalClose);
+  }
 }
 
 /**
