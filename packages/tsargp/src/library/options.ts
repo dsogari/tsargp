@@ -682,9 +682,8 @@ export type WithParameterAttributes = {
    * Whether the option accepts positional arguments.
    *
    * If there are multiple positional options, their declaration order determines their relative
-   * position in the command line. Variadic options will take up all remaining positional arguments.
-   * If there are more positional arguments than positional options, the last such option will take
-   * up the excess.
+   * position in the command line. A variadic option will take all remaining positional arguments.
+   * Otherwise, if there are more arguments than options, the last such option will take the excess.
    *
    * We recommend also setting {@link WithBasicAttributes.preferredName} to some explanatory name.
    * @default false

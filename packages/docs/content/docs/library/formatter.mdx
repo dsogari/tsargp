@@ -36,9 +36,13 @@ It returns a [ANSI message] with the formatted sections.
 
 The formatter procedure can be configured via a `FormatterFlags` object that has some optional properties, as described below.
 
+> [!NOTE]
+>
+> Some of these flags have the same semantics as their homonymous [parsing flag].
+
 ### Program name
 
-The `programName` property is the [program name] to display in [usage sections]. If not present or empty, usage statements will contain no program name.
+The `programName` property is the [program name]. If not present or empty, usage statements will contain no program name.
 
 ### Cluster prefix
 
@@ -56,11 +60,11 @@ The patterns are case-insensitive and match [option names], [synopsis] and [envi
 
 ### Standard input symbol
 
-The `stdinSymbol` property specifies a symbol for the [standard input] to display in [usage sections]. If not present, the standard input will not appear in usage statements.
+The `stdinSymbol` property specifies a symbol for the [standard input]. If not present, the standard input will not appear in usage statements.
 
 ### Positional marker
 
-The `positionalMarker` attribute, if present, specifies the marker(s) to delimit positional arguments. If not present, no marker will appear in usage statements.
+The `positionalMarker` property specifies the marker(s) to delimit positional arguments. If not present, no marker will appear in usage statements.
 
 ## Help columns
 
@@ -424,6 +428,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [parameter column]: #parameter-column
 [description column]: #description-column
 [parameter rules]: #parameter-rules
+[positional marker]: #positional-marker
 
 {/* options references */}
 
@@ -432,7 +437,6 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [environment variable]: options#data-sources
 [option group]: options#group--hide
 [option names]: options#option-names
-[positional marker]: options#positional-marker
 [example value]: options#example-value
 [parameter name]: options#parameter-name
 [niladic]: options#option-parameters
@@ -448,6 +452,7 @@ Here's an excerpt of a help message produced with non-responsive layout, with ri
 [inline parameters]: parser#inline-parameters
 [program name]: parser#program-name
 [cluster arguments]: parser#cluster-prefix
+[parsing flag]: parser#parsing-flags
 
 {/* styles references */}
 

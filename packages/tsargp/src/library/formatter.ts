@@ -69,13 +69,13 @@ export type FormatterFlags = {
    */
   readonly optionFilter?: ReadonlyArray<string>;
   /**
-   * The symbol for the standard input (e.g., `'-'`) to display in usage statements.
+   * The symbol for the standard input (e.g., `'-'`).
    * If not present, the standard input will not appear in usage statements.
    */
   readonly stdinSymbol?: string;
   /**
-   * The marker(s) for positional arguments (e.g. `'--'`).
-   * If not present, no marker will not appear in usage statements.
+   * The marker(s) to delimit positional arguments (e.g. `'--'`).
+   * If not present, no marker will appear in usage statements.
    */
   readonly positionalMarker?: string | [string, string];
 };

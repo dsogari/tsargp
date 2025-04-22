@@ -80,11 +80,14 @@ The `stdinSymbol` property specifies a symbol for the [standard input], to be di
 
 ### Positional marker
 
-The `positionalMarker` attribute, if present, specifies the marker(s) to delimit positional arguments. If set, then all arguments that appear after/within the marker(s) will be considered positional.
+The `positionalMarker` attribute, if present, specifies the marker(s) to delimit [positional] arguments. If set, then all arguments appearing after or within the marker(s) will be considered positional. Its value can be either of:
+
+- `string{:ts}` -- a trailing marker (e.g. `'--'{:ts}`)
+- pair of `string{:ts}` -- starting and ending markers
 
 > [!NOTE]
 >
-> The marker(s) should not conflict with [option names], although they are subject to the same restrictions.
+> The marker(s) should not conflict with [option names], although they share the same restrictions.
 
 ### Similarity threshold
 

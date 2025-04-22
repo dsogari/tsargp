@@ -90,7 +90,7 @@ export type ParsingFlags = {
   readonly stdinSymbol?: string;
   /**
    * The marker(s) to delimit positional arguments (e.g. `'--'`).
-   * If set, then all arguments that appear after/within the marker(s) will be considered positional.
+   * If set, then all arguments appearing after/within the marker(s) will be considered positional.
    * Should not conflict with an option name or include an equals sign.
    */
   readonly positionalMarker?: string | [string, string];
@@ -548,7 +548,7 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
 // Error handling
 //--------------------------------------------------------------------------------------------------
 /**
- * Reports a missing parameter to a non-niladic option.
+ * Reports missing parameter to a non-niladic option.
  * @param min The minimum parameter count
  * @param max The maximum parameter count
  * @param name The option name

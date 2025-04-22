@@ -177,7 +177,7 @@ The `cluster` attribute, if present, specifies letters that can be used to combi
 
 > [!NOTE]
 >
-> Cluster letters should _not_ be included in the list of [option names], although they are subject to the same restrictions.
+> Cluster letters should _not_ be included in the list of [option names], although they share the same restrictions.
 
 Here is an example that illustrates how it works. Suppose we have the following options:
 
@@ -348,7 +348,7 @@ The reason why we did not use a dedicated `env` attribute for environment variab
 
 > [!NOTE]
 >
-> Variable names should _not_ be included in the list of [option names], although they are subject to the same restrictions.
+> Variable names should _not_ be included in the list of [option names], although they share the same restrictions.
 
 > [!WARNING]
 >
@@ -411,9 +411,9 @@ All [non-niladic] options share a set of attributes, which are described below.
 
 #### Positional
 
-The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. An argument is considered positional if it is not recognized as an option name or appears within the [positional marker].
+The `positional` attribute, if present, indicates that the option accepts _positional_ arguments. An argument is considered positional if it is not recognized as an option name or is supplied through the [positional marker].
 
-If there are multiple positional options, their declaration order determines their relative position in the command line. Variadic options will take up all remaining positional arguments. If there are more positional arguments than positional options, the last such option will take up the excess.
+If there are multiple positional options, their declaration order determines their relative position in the command line. A variadic option will take all remaining positional arguments. Otherwise, if there are more arguments than options, the last such option will take the excess.
 
 > [!TIP]
 >
