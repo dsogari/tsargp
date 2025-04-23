@@ -41,11 +41,11 @@ describe('validate', () => {
       expect(validate(options)).rejects.toThrow(`Option single has invalid inline constraint.`);
     });
 
-    it('accept an option with parameter marker and inline constraint for no name', () => {
+    it('accept an option with parameter marker', () => {
       const options = {
         array: {
           type: 'array',
-          marker: 'a',
+          marker: '--',
           inline: {},
         },
       } as const satisfies Options;

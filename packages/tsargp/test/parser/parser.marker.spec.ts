@@ -63,7 +63,7 @@ describe('parse', () => {
       expect(parse(options, ['--', '--', '++'], flags)).resolves.toEqual({ array: ['--'] });
     });
 
-    it('ignore arguments after trailing marker if there is no positional option', () => {
+    it('ignore arguments after starting marker if there is no positional option', () => {
       const options = {
         single: {
           type: 'single',
@@ -199,7 +199,7 @@ describe('parse', () => {
   });
 
   describe('parameter marker', () => {
-    it('handle an array-valued option with arguments after trailing marker', () => {
+    it('handle an array-valued option with arguments after starting marker', () => {
       const options = {
         array: {
           type: 'array',
@@ -242,7 +242,7 @@ describe('parse', () => {
     expect(parse(options, ['[', '--', ']'])).resolves.toEqual({ array: ['--'] });
   });
 
-  it('handle a function option with with arguments after trailing marker', () => {
+  it('handle a function option with arguments after starting marker', () => {
     const options = {
       function: {
         type: 'function',
@@ -252,7 +252,7 @@ describe('parse', () => {
         marker: '--',
       },
     } as const satisfies Options;
-    expect(parse(options, ['0', '--'])).resolves.toEqual({ function: ['0', '--'] });
+    expect(parse(options, ['0', '--'])).resolves.toEqual({ function: ['0', '--'] }); // no precedence
     expect(parse(options, ['--', '1', '2'])).resolves.toEqual({ function: ['1', '2'] });
     expect(parse(options, ['--', '1', '2', '-f', '-f'])).resolves.toEqual({
       function: ['-f', '-f'],
@@ -262,7 +262,7 @@ describe('parse', () => {
     });
   });
 
-  it('handle a function option with with arguments between identical markers', () => {
+  it('handle a function option with arguments between identical markers', () => {
     const options = {
       function: {
         type: 'function',
@@ -278,7 +278,7 @@ describe('parse', () => {
     });
   });
 
-  it('handle a function option with with arguments between different markers', () => {
+  it('handle a function option with arguments between different markers', () => {
     const options = {
       function: {
         type: 'function',

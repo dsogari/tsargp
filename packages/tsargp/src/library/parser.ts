@@ -129,7 +129,7 @@ export type ParserSuggestion = ICompletionSuggestion & {
   /**
    * The type of argument being suggested.
    */
-  type: OptionType | 'marker' | 'parameter';
+  type: OptionType | 'parameter' | 'marker';
   /**
    * The option name, in case of parameter suggestions.
    */
@@ -502,8 +502,8 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     switch (argType) {
       case ArgType.optionName: {
         const option = options[optionKey!];
-        const [markBegin, markEnd] = getMarker(option.marker);
         const newInfo: OptionInfo = [optionKey!, option, name];
+        const [markBegin, markEnd] = getMarker(option.marker);
         return [i, prevPos, newInfo, value, true, isComp, name === markBegin, false, markEnd];
       }
       case ArgType.cluster:
@@ -563,20 +563,6 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
 // Error handling
 //--------------------------------------------------------------------------------------------------
 /**
- * Reports a disallowed inline parameter.
- * @param context The parsing context
- * @param name The option name
- * @param isComp Whether the argument is being completed
- */
-function reportDisallowedInline(context: ParsingContext, name: string, isComp: boolean = false) {
-  if (!context[4]) {
-    throw error(ErrorItem.disallowedInlineParameter, name);
-  }
-  if (isComp) {
-    reportCompletion();
-  }
-}
-/**
  * Reports missing parameter to a non-niladic option.
  * @param min The minimum parameter count
  * @param max The maximum parameter count
@@ -591,6 +577,22 @@ function reportMissingParameter(min: number, max: number, name: string): never {
     mergePrev: false,
   };
   throw error(ErrorItem.missingParameter, name, flags, val);
+}
+
+/**
+ * Reports disallowed inline parameter.
+ * Does nothing if another argument is being completed.
+ * @param context The parsing context
+ * @param name The option name
+ * @param isComp Whether the argument is being completed
+ */
+function reportDisallowedInline(context: ParsingContext, name: string, isComp: boolean = false) {
+  if (isComp) {
+    reportCompletion();
+  }
+  if (!context[4]) {
+    throw error(ErrorItem.disallowedInlineParameter, name);
+  }
 }
 
 /**

@@ -1117,8 +1117,8 @@ export function getBaseName(path: string): string {
 }
 
 /**
- * Gets the normalized value of the positional/option marker(s).
- * @param marker The positional or option marker(s)
+ * Gets the normalized value of the positional/parameter marker(s).
+ * @param marker The positional or parameter marker(s)
  * @returns The normalized value
  */
 export function getMarker(marker?: string | [string, string]): [string?, string?] {

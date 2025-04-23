@@ -19,7 +19,7 @@ describe('parse', () => {
   });
 
   describe('inline parameters are disallowed', () => {
-    it('throw an error on option marker supplied with inline parameter', () => {
+    it('throw an error on parameter marker supplied with inline parameter', () => {
       const options = {
         array: {
           type: 'array',

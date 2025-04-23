@@ -159,7 +159,7 @@ describe('format', () => {
     const options = {
       array: {
         type: 'array',
-        marker: '', // test empty marker; should look strange in the description
+        marker: '--',
         stdin: true,
       },
     } as const satisfies Options;

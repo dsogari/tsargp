@@ -587,6 +587,8 @@ export type OptionAttributes<P = any> = {
   readonly saveMessage?: boolean;
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
+   *
+   * Letters are subject to the same restrictions as {@link OptionAttributes.names}.
    */
   readonly cluster?: string;
   /**
@@ -615,9 +617,11 @@ export type OptionAttributes<P = any> = {
   readonly parse?: ParsingCallback<P>;
   /**
    * The names of data sources to try reading from (in that order), if the option was not supplied
-   * on the command line. A string means an environment variable, while a URL means a local file.
+   * on the command line. A `string` means an environment variable, while a `URL` means a local file.
    *
-   * This has precedence over {@link OptionAttributes.stdin}.
+   * Environment variable names are subject to the same restrictions as {@link OptionAttributes.names}.
+   *
+   * Has precedence over {@link OptionAttributes.stdin}.
    */
   readonly sources?: ReadonlyArray<string | URL>;
   /**
