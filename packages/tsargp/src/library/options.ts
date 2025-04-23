@@ -758,6 +758,12 @@ export type OptionAttributes<P = any> = {
    * @default 0
    */
   skipCount?: number;
+  /**
+   * The marker(s) to delimit option parameters.
+   * If set, then all arguments appearing after/within the marker(s) will pertain to this option.
+   * It is subject to the same restrictions as {@link OptionAttributes.names}.
+   */
+  readonly marker?: string | [string, string];
 };
 
 /**
@@ -872,7 +878,7 @@ export type RequiresEntry = readonly [key: string, value: unknown];
 /**
  * Information regarding an option.
  */
-export type OptionInfo = [key: string, option: OpaqueOption, name: string];
+export type OptionInfo = readonly [key: string, option: OpaqueOption, name: string];
 
 //--------------------------------------------------------------------------------------------------
 // Internal types
@@ -962,6 +968,7 @@ type ArrayAttributes =
   | TemplateAttributes
   | ParameterAttributes
   | SelectionAttributes
+  | 'marker'
   | 'separator'
   | 'unique'
   | 'append'
@@ -976,6 +983,7 @@ type FunctionAttributes =
   | EnvironmentAttributes
   | TemplateAttributes
   | ParameterAttributes
+  | 'marker'
   | 'paramCount'
   | 'skipCount';
 
@@ -1123,6 +1131,6 @@ type OptionKeyType<T extends Option, K> = T extends WithOptionType<MessageOption
  * @template T The option definition type
  */
 type OptionDataType<T extends Option> =
-  T extends WithOptionType<'help' | 'version'>
+  T extends WithOptionType<MessageOptionType>
     ? MessageDataType<T>
     : ValueDataType<T> | DefaultDataType<T>;
