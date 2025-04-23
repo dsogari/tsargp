@@ -82,12 +82,12 @@ The `stdinSymbol` property specifies a symbol for the [standard input] (for info
 
 The `positionalMarker` attribute, if present, specifies the marker(s) to delimit [positional] arguments. If set, then all arguments appearing after or within the marker(s) will be considered positional. Its value can be either of:
 
-- `string{:ts}` -- a trailing marker (e.g. `'--'{:ts}`)
+- `string{:ts}` -- a starting marker (e.g. `'--'{:ts}`)
 - pair of `string{:ts}` -- starting and ending markers
 
 > [!NOTE]
 >
-> The marker(s) should not conflict with [option names], although they share the same restrictions.
+> The starting marker has precedence over [option names] and [parameter marker]. It is also considered by the [completion algorithm], although the ending marker is not. Both markers may appear in [usage statements].
 
 ### Similarity threshold
 
@@ -266,7 +266,7 @@ An [option parameter] may be passed on the command line using the syntax `<name>
 
 > [!NOTE]
 >
-> This syntax cannot be used with the [positional marker].
+> This syntax cannot be used with the [positional marker] or [parameter marker].
 
 As is the case with standalone parameters, inlined ones do not conflict with [option names], and so they may contain any number of equals signs. They may even start with one (e.g., `-opt=='my val'` would be parsed as `'=my val'{:ts}`).
 
@@ -308,6 +308,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [completion suggestions]: #completion-suggestions
 [positional marker]: #positional-marker
 [argument sequence]: #argument-sequence
+[completion algorithm]: #completion-algorithm
 
 {/* options references */}
 
@@ -343,6 +344,7 @@ Other [option names] are not used, not only because they would pollute the outpu
 [separator]: options#parameter-separator
 [array]: options#array-valued-option
 [function]: options#function-option
+[parameter marker]: options#parameter-marker
 
 {/* styles references */}
 

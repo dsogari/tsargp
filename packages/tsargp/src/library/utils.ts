@@ -285,7 +285,7 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
  * @returns True if the option has a name that can be supplied
  */
 export function hasSuppliableName(option: OpaqueOption): boolean {
-  return !!option.cluster || getLastOptionName(option) !== undefined;
+  return !!option.cluster || (getLastOptionName(option) ?? option.marker) !== undefined;
 }
 
 /**

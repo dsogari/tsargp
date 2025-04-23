@@ -155,6 +155,19 @@ describe('format', () => {
     );
   });
 
+  it('handle a unnamed option with parameter marker that reads data from the standard input', () => {
+    const options = {
+      array: {
+        type: 'array',
+        marker: '', // test empty marker; should look strange in the description
+        stdin: true,
+      },
+    } as const satisfies Options;
+    expect(format(options).wrap()).toEqual(
+      `      Accepts multiple parameters. If not supplied, will be read from the standard input.\n`,
+    );
+  });
+
   it('handle an array-valued option whose parameters can be delimited', () => {
     const options = {
       array: {

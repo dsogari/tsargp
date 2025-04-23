@@ -198,7 +198,7 @@ describe('parse', () => {
     });
   });
 
-  describe('option marker', () => {
+  describe('parameter marker', () => {
     it('handle an array-valued option with arguments after trailing marker', () => {
       const options = {
         array: {
@@ -235,11 +235,11 @@ describe('parse', () => {
         type: 'array',
         names: ['-a'],
         positional: true,
-        marker: ['--', '++'],
+        marker: ['[', ']'],
       },
     } as const satisfies Options;
-    expect(parse(options, ['--', '++'])).resolves.toEqual({ array: [] });
-    expect(parse(options, ['--', '--', '++'])).resolves.toEqual({ array: ['--'] });
+    expect(parse(options, ['[', ']'])).resolves.toEqual({ array: [] });
+    expect(parse(options, ['[', '--', ']'])).resolves.toEqual({ array: ['--'] });
   });
 
   it('handle a function option with with arguments after trailing marker', () => {
@@ -285,11 +285,11 @@ describe('parse', () => {
         names: ['-f'],
         positional: true,
         paramCount: 2,
-        marker: ['--', '++'],
+        marker: ['[', ']'],
       },
     } as const satisfies Options;
-    expect(parse(options, ['--', '--', '--', '++'])).resolves.toEqual({ function: ['--', '--'] });
-    expect(parse(options, ['--', '-f', '-f', '++', '0', '1'])).resolves.toEqual({
+    expect(parse(options, ['[', '[', '[', ']'])).resolves.toEqual({ function: ['[', '['] });
+    expect(parse(options, ['[', '-f', '-f', ']', '0', '1'])).resolves.toEqual({
       function: ['0', '1'],
     });
   });

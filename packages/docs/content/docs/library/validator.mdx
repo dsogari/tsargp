@@ -45,7 +45,7 @@ There are two kinds of validation rules, depending on whether they generate an e
 
 The following restrictions will raise an error for any option definition that fails to satisfy it, with an explanatory message that may include the option's key.
 
-- **Invalid option name** -- An [option name], [cluster letter] or [environment variable] name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. Any other Unicode character is allowed (including whitespace).
+- **Invalid option name** -- An [option name], [cluster letter], [parameter marker], [environment variable] name must not contain the equals sign `'='{:ts}`, since this character can be used as option-parameter separator. Any other Unicode character is allowed (including whitespace).
 - **Duplicate option name** -- An option should not have duplicate names (including all of the above), and there cannot be two options with the same name.
 - **Duplicate parameter choice** -- In an option with [parameter choices], the choices must not contain duplicate values.
 - **Invalid parameter count** -- A [function] option should have a valid [parameter count].
@@ -54,7 +54,7 @@ The following restrictions will raise an error for any option definition that fa
 - **Invalid required option** -- An option must not declare a requirement that references a non-valued option ([help] or [version]) in a requirement.
 - **Invalid required value** -- An option must not declare a requirement that references another option that is either [always required] or has a [default value], if the required value is _nullish_ (i.e., `null{:ts}` or `undefined{:ts}`).
 - **Invalid inline constraint** -- An [inline constraint] should not be declared if the option has no name, or if it applies to all names and the option is polyadic, or if it applies to specific names and references an _unknown_ name.
-- **Option not suppliable** -- It must be possible for an option to be [supplied], i.e., the latter must either have an [option name], [cluster letter], [data source], or accept [positional] arguments.
+- **Option not suppliable** -- It must be possible for an option to be [supplied], i.e., the latter must either have an [option name], [cluster letter], [data source], [parameter marker], or accept [positional] arguments.
 
 > [!NOTE]
 >
@@ -109,6 +109,7 @@ The following restrictions will produce a warning that is returned by the valida
 [requirement callbacks]: options#requirement-callback
 [requirement expressions]: options#requirement-expression
 [supplied]: options#option-supply
+[parameter marker]: options#parameter-marker
 
 {/* styles references */}
 

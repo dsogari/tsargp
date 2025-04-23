@@ -82,7 +82,7 @@ An option can be configured with _requirements_, which are specifications of int
 
 ### Option constraints
 
-All [non-niladic] options can be configured with constraint attributes, which may be of two kinds:
+[Non-niladic] options can be configured with constraint attributes, which may be of two kinds:
 
 - **parameter** constraint -- a restriction applied to option parameter(s)
 - **value** constraint -- a restriction applied to the parsed value(s)
@@ -383,7 +383,7 @@ The `break` attribute indicates whether the parser should exit the parsing loop 
 
 ### Template attributes
 
-All [non-niladic] options and [subcommands] share a set of attributes, which are described below.
+[Non-niladic] options and [subcommands] share a set of attributes, which are described below.
 
 #### Example value
 
@@ -407,7 +407,7 @@ The `usageParamName` attribute, if present, specifies a name to to display in pl
 
 ### Parameter attributes
 
-All [non-niladic] options share a set of attributes, which are described below.
+[Non-niladic] options share a set of attributes, which are described below.
 
 #### Positional
 
@@ -441,6 +441,42 @@ The `complete` attribute, if present, specifies a custom callback for [word comp
 - `info` -- the current [sequence information]
 
 It should return the list of completion words or [suggestions] (or a promise thereof). If an error is thrown, it will be ignored and the default [completion message] will be thrown instead.
+
+#### Parameter marker
+
+The `marker` attribute, if present, specifies marker(s) to delimit the option parameters. It has the same semantics as the [positional marker], except that the parameters are not treated as positional.
+
+> [!NOTE]
+>
+> This attribute is not available for the [single] option. It also does not appear in help messages.
+
+> [!NOTE]
+>
+> Marker(s) should _not_ be included in the list of [option names], although they share the same restrictions.
+
+Here is an example that illustrates how it works. Suppose we have the following option:
+
+```ts twoslash
+import type { Options } from 'tsargp';
+// ---cut---
+const options = {
+  array: {
+    type: 'array',
+    names: ['-a'],
+    marker: ['[', ']'],
+  },
+} as const satisfies Options;
+```
+
+Given these definitions, the following invocations would be equivalent:
+
+```sh
+cli -a abc 1 2 3
+cli [ abc 1 2 3
+cli [ abc 1 2 3 ]
+```
+
+However, the last two invocations would allow passing option names as parameters (e.g., `'-a'{:ts}`), whereas the first would not. Additionally, the last invocation would allow more arguments to come after.
 
 ### Selection attributes
 
@@ -706,7 +742,7 @@ Here is an example of how it might be used inside the callback:
 [single]: #single-valued-option
 [array]: #array-valued-option
 [function]: #function-option
-[non-niladic]: #non-niladic-options
+[Non-niladic]: #non-niladic-options
 
 {/* attribute classes */}
 
