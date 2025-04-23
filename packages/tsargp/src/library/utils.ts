@@ -233,14 +233,19 @@ function registerNames(
   key: string,
   option: OpaqueOption,
 ) {
+  const { cluster, marker } = option;
+  const [markBegin] = getMarker(marker);
   const names = getOptionNames(option);
   for (const name of names) {
     nameToKey.set(name, key);
   }
+  if (markBegin !== undefined) {
+    nameToKey.set(markBegin, key);
+  }
   if (!option.preferredName) {
     option.preferredName = names[0] ?? '';
   }
-  for (const letter of option.cluster ?? '') {
+  for (const letter of cluster ?? '') {
     letterToKey.set(letter, key);
   }
 }
@@ -280,7 +285,7 @@ export function hasTemplate(option: OpaqueOption, isUsage: boolean): boolean {
  * @returns True if the option has a name that can be supplied
  */
 export function hasSuppliableName(option: OpaqueOption): boolean {
-  return !!option.cluster || getLastOptionName(option) !== undefined;
+  return !!option.cluster || (getLastOptionName(option) ?? option.marker) !== undefined;
 }
 
 /**
@@ -1112,8 +1117,8 @@ export function getBaseName(path: string): string {
 }
 
 /**
- * Gets the normalized value of the positional marker(s).
- * @param marker The positional marker(s)
+ * Gets the normalized value of the positional/parameter marker(s).
+ * @param marker The positional or parameter marker(s)
  * @returns The normalized value
  */
 export function getMarker(marker?: string | [string, string]): [string?, string?] {

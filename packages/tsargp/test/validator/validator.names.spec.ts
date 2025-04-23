@@ -7,9 +7,10 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 describe('validate', () => {
   it('accept an option with phantom names', () => {
     const options = {
-      single: {
-        type: 'single',
+      array: {
+        type: 'array',
         names: [null, '', ' '],
+        marker: '  ',
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});
@@ -35,6 +36,16 @@ describe('validate', () => {
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag has invalid name '='.`);
+    });
+
+    it('throw an error on option with invalid parameter marker', () => {
+      const options = {
+        array: {
+          type: 'array',
+          marker: '=',
+        },
+      } as const satisfies Options;
+      expect(validate(options)).rejects.toThrow(`Option array has invalid name '='.`);
     });
 
     it('throw an error on option with invalid environment variable name', () => {
@@ -71,6 +82,31 @@ describe('validate', () => {
         },
       } as const satisfies Options;
       expect(validate(options)).rejects.toThrow(`Option flag2 has duplicate name 'dup'.`);
+    });
+
+    it('throw an error on option with duplicate parameter marker in the same option', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['dup'],
+          marker: 'dup',
+        },
+      } as const satisfies Options;
+      expect(validate(options)).rejects.toThrow(`Option array has duplicate name 'dup'.`);
+    });
+
+    it('throw an error on option with duplicate parameter marker across different options', () => {
+      const options = {
+        array1: {
+          type: 'array',
+          marker: 'dup',
+        },
+        array2: {
+          type: 'array',
+          marker: 'dup',
+        },
+      } as const satisfies Options;
+      expect(validate(options)).rejects.toThrow(`Option array2 has duplicate name 'dup'.`);
     });
 
     it('throw an error on duplicate environment variable in the same option', () => {

@@ -6,6 +6,16 @@ process.env['FORCE_WIDTH'] = '0'; // omit styles
 
 describe('validate', () => {
   describe('when an option is suppliable', () => {
+    it('accept an option with empty parameter marker', () => {
+      const options = {
+        array: {
+          type: 'array',
+          marker: '',
+        },
+      } as const satisfies Options;
+      expect(validate(options)).resolves.toEqual({});
+    });
+
     it('accept a version option with empty version', () => {
       const options = {
         version: {
@@ -89,6 +99,20 @@ describe('validate', () => {
       single2: {
         type: 'single',
         positional: true,
+      },
+    } as const satisfies Options;
+    expect(validate(options)).resolves.toEqual({});
+  });
+
+  it('accept multiple parameter markers', () => {
+    const options = {
+      array1: {
+        type: 'array',
+        marker: 'abc',
+      },
+      array2: {
+        type: 'array',
+        marker: 'def',
       },
     } as const satisfies Options;
     expect(validate(options)).resolves.toEqual({});

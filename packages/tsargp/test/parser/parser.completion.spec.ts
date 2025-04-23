@@ -9,46 +9,6 @@ describe('parse', () => {
     expect(parse({}, 'cmd', { completionIndex: 4 })).rejects.toThrow(/^$/);
   });
 
-  it('ignore disallowed inline parameter during completion', () => {
-    const options = {
-      single: {
-        type: 'single',
-        names: ['-s'],
-        choices: ['one', 'two'],
-        inline: false,
-      },
-    } as const satisfies Options;
-    expect(parse(options, 'cmd -s=', { completionIndex: 7 })).rejects.toThrow(/^$/);
-    expect(parse(options, 'cmd -s= ', { completionIndex: 8 })).rejects.toThrow(/^-s$/);
-    expect(parse(options, 'cmd -s 1 -s= ', { completionIndex: 13 })).rejects.toThrow(/^-s$/);
-  });
-
-  it('ignore required inline parameter during completion', () => {
-    const options = {
-      single: {
-        type: 'single',
-        names: ['-s'],
-        choices: ['one', 'two'],
-        inline: 'always',
-      },
-    } as const satisfies Options;
-    expect(parse(options, 'cmd -s ', { completionIndex: 9 })).rejects.toThrow(/^-s$/);
-    expect(parse(options, 'cmd -s=', { completionIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
-    expect(parse(options, 'cmd -s= ', { completionIndex: 10 })).rejects.toThrow(/^-s$/);
-  });
-
-  it('ignore positional marker if there is no positional option ', () => {
-    const options = {
-      single: {
-        type: 'single',
-        names: ['-s'],
-      },
-    } as const satisfies Options;
-    const flags: ParsingFlags = { positionalMarker: '--' };
-    expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
-    expect(parse(options, 'cmd -- ', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/);
-  });
-
   it('ignore the last parsing callback when completing an option name', () => {
     const options = {
       single: {
@@ -94,7 +54,73 @@ describe('parse', () => {
   });
 
   describe('parsing errors occur during completion', () => {
-    it('ignore a missing parameter', () => {
+    it('ignore disallowed inline parameter', () => {
+      const options = {
+        help: {
+          type: 'help',
+          names: ['-h'],
+        },
+        version: {
+          type: 'version',
+          names: ['-v'],
+        },
+        command: {
+          type: 'command',
+          names: ['-c'],
+        },
+        flag: {
+          type: 'flag',
+          names: ['-f'],
+        },
+        single: {
+          type: 'single',
+          names: ['-s'],
+          choices: ['abc'],
+          inline: false,
+        },
+        array: {
+          type: 'array',
+          names: ['-a'],
+          choices: ['abc'],
+          marker: '--',
+        },
+      } as const satisfies Options;
+      const regex = /^-h\n-v\n-c\n-f\n-s\n-a\n--$/;
+      expect(parse(options, 'cmd -h=', { completionIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -v=', { completionIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -c=', { completionIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -f=', { completionIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -s=', { completionIndex: 7 })).rejects.toThrow(/^abc$/);
+      expect(parse(options, 'cmd --=', { completionIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -h= ', { completionIndex: 8 })).rejects.toThrow(regex);
+      expect(parse(options, 'cmd -v= ', { completionIndex: 8 })).rejects.toThrow(regex);
+      expect(parse(options, 'cmd -c= ', { completionIndex: 8 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -f= ', { completionIndex: 8 })).rejects.toThrow(regex);
+      expect(parse(options, 'cmd -s= ', { completionIndex: 8 })).rejects.toThrow(regex);
+      expect(parse(options, 'cmd --= ', { completionIndex: 8 })).rejects.toThrow(/^abc$/);
+      expect(parse(options, 'cmd --=o ', { completionIndex: 9 })).rejects.toThrow(/^abc$/);
+    });
+
+    it('ignore disallowed inline parameter to positional marker', () => {
+      const options = {
+        single: {
+          type: 'single',
+          positional: true,
+          choices: ['abc'],
+          parse: jest.fn(),
+        },
+      } as const satisfies Options;
+      const flags: ParsingFlags = { positionalMarker: '--' };
+      expect(parse(options, 'cmd --=', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd --= ', { ...flags, completionIndex: 8 })).rejects.toThrow(/^abc$/);
+      expect(parse(options, 'cmd -s --=', { ...flags, completionIndex: 10 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -s 1 --=', { ...flags, completionIndex: 12 })).rejects.toThrow(
+        /^$/,
+      );
+      expect(options.single.parse).not.toHaveBeenCalled();
+    });
+
+    it('ignore a missing parameter to single-valued option', () => {
       const options = {
         single: {
           type: 'single',
@@ -112,7 +138,21 @@ describe('parse', () => {
       );
     });
 
-    it('ignore missing inline parameter of array-valued option', () => {
+    it('ignore a missing inline parameter to single-valued option', () => {
+      const options = {
+        single: {
+          type: 'single',
+          names: ['-s'],
+          choices: ['one', 'two'],
+          inline: 'always',
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd -s ', { completionIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+      expect(parse(options, 'cmd -s o', { completionIndex: 8 })).rejects.toThrow(/^one$/);
+      expect(parse(options, 'cmd -s= ', { completionIndex: 8 })).rejects.toThrow(/^-s$/);
+    });
+
+    it('ignore a missing inline parameter to array-valued option', () => {
       const options = {
         array: {
           type: 'array',
@@ -121,9 +161,10 @@ describe('parse', () => {
           inline: 'always',
         },
       } as const satisfies Options;
-      expect(parse(options, 'cmd -a a', { completionIndex: 8 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -a ', { completionIndex: 7 })).rejects.toThrow(/^abc\n-a$/);
+      expect(parse(options, 'cmd -a a', { completionIndex: 8 })).rejects.toThrow(/^abc$/);
       expect(parse(options, 'cmd -a -', { completionIndex: 8 })).rejects.toThrow(/^-a$/);
-      expect(parse(options, 'cmd -a - -', { completionIndex: 10 })).rejects.toThrow(/^-a$/);
+      expect(parse(options, 'cmd -a= ', { completionIndex: 8 })).rejects.toThrow(/^-a$/);
     });
 
     it('ignore an unknown cluster letter', () => {
@@ -254,8 +295,6 @@ describe('parse', () => {
       expect(parse(options, 'cmd -', { completionIndex: 5 })).rejects.toThrow(/^-h$/);
       expect(parse(options, 'cmd -h', { completionIndex: 6 })).rejects.toThrow(/^-h$/);
       expect(parse(options, 'cmd -h ', { completionIndex: 7 })).rejects.toThrow(/^-h$/);
-      expect(parse(options, 'cmd -h=', { completionIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -h= ', { completionIndex: 8 })).rejects.toThrow(/^-h$/);
     });
 
     it('handle a version option', () => {
@@ -269,8 +308,6 @@ describe('parse', () => {
       expect(parse(options, 'cmd -', { completionIndex: 5 })).rejects.toThrow(/^-v$/);
       expect(parse(options, 'cmd -v', { completionIndex: 6 })).rejects.toThrow(/^-v$/);
       expect(parse(options, 'cmd -v ', { completionIndex: 7 })).rejects.toThrow(/^-v$/);
-      expect(parse(options, 'cmd -v=', { completionIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -v= ', { completionIndex: 8 })).rejects.toThrow(/^-v$/);
     });
 
     it('handle a command option', () => {
@@ -291,8 +328,6 @@ describe('parse', () => {
       expect(parse(options, 'cmd -', { completionIndex: 5 })).rejects.toThrow(/^-c$/);
       expect(parse(options, 'cmd -c', { completionIndex: 6 })).rejects.toThrow(/^-c$/);
       expect(parse(options, 'cmd -c ', { completionIndex: 7 })).rejects.toThrow(/^-f$/);
-      expect(parse(options, 'cmd -c=', { completionIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -c= ', { completionIndex: 8 })).rejects.toThrow(/^-c$/);
       expect(options.command.parse).not.toHaveBeenCalled();
     });
 
@@ -310,10 +345,6 @@ describe('parse', () => {
       expect(options.flag.parse).not.toHaveBeenCalled();
       expect(parse(options, 'cmd -f ', { completionIndex: 7 })).rejects.toThrow(/^-f$/);
       expect(options.flag.parse).toHaveBeenCalled();
-      options.flag.parse.mockClear();
-      expect(parse(options, 'cmd -f=', { completionIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -f= ', { completionIndex: 8 })).rejects.toThrow(/^-f$/);
-      expect(options.flag.parse).not.toHaveBeenCalled(); // option was ignored
     });
 
     it('handle a single-valued option with choices', () => {
@@ -410,19 +441,22 @@ describe('parse', () => {
       expect(options.function.complete).toHaveBeenCalled();
     });
 
-    it('ignore the positional marker', () => {
+    it('handle the positional marker', () => {
       const options = {
         single: {
           type: 'single',
+          names: ['-s'],
+          parse: jest.fn(),
         },
       } as const satisfies Options;
-      const flags: ParsingFlags = { positionalMarker: '--' };
-      expect(parse(options, 'cmd ', { ...flags, completionIndex: 4 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd -- ', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/);
-      expect(parse(options, 'cmd --=', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/); // ignore error
-      expect(parse(options, 'cmd --= ', { ...flags, completionIndex: 8 })).rejects.toThrow(/^$/); // ignore error
+      const flags: ParsingFlags = { positionalMarker: '-' };
+      expect(parse(options, 'cmd ', { ...flags, completionIndex: 4 })).rejects.toThrow(/^-s\n-$/);
+      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^-s\n-$/);
+      expect(parse(options, 'cmd - ', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -s 1 -', { ...flags, completionIndex: 10 })).rejects.toThrow(
+        /^-s\n-$/,
+      );
+      expect(options.single.parse).not.toHaveBeenCalled();
     });
 
     it('handle a positional option with choices', () => {
@@ -442,6 +476,22 @@ describe('parse', () => {
       expect(parse(options, 'cmd one o', { completionIndex: 9 })).rejects.toThrow(/^one$/);
     });
 
+    it('handle marked arguments with choices', () => {
+      const options = {
+        array: {
+          type: 'array',
+          names: ['-a'],
+          choices: ['one', 'two'],
+          marker: '--',
+        },
+      } as const satisfies Options;
+      expect(parse(options, 'cmd ', { completionIndex: 4 })).rejects.toThrow(/^-a\n--$/);
+      expect(parse(options, 'cmd -', { completionIndex: 5 })).rejects.toThrow(/^-a\n--$/);
+      expect(parse(options, 'cmd --', { completionIndex: 6 })).rejects.toThrow(/^--$/);
+      expect(parse(options, 'cmd -- ', { completionIndex: 7 })).rejects.toThrow(/^one\ntwo$/);
+      expect(parse(options, 'cmd -- o', { completionIndex: 8 })).rejects.toThrow(/^one$/);
+    });
+
     it('handle marked positional arguments with choices', () => {
       const options = {
         single: {
@@ -453,18 +503,14 @@ describe('parse', () => {
       } as const satisfies Options;
       const flags: ParsingFlags = { positionalMarker: '--' };
       expect(parse(options, 'cmd ', { ...flags, completionIndex: 4 })).rejects.toThrow(
-        /^one\ntwo\n-s$/,
+        /^one\ntwo\n-s\n--$/,
       );
-      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^-s$/);
-      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^$/);
+      expect(parse(options, 'cmd -', { ...flags, completionIndex: 5 })).rejects.toThrow(/^-s\n--$/);
+      expect(parse(options, 'cmd --', { ...flags, completionIndex: 6 })).rejects.toThrow(/^--$/);
       expect(parse(options, 'cmd -- ', { ...flags, completionIndex: 7 })).rejects.toThrow(
         /^one\ntwo$/,
       );
       expect(parse(options, 'cmd -- o', { ...flags, completionIndex: 8 })).rejects.toThrow(/^one$/);
-      expect(parse(options, 'cmd --=', { ...flags, completionIndex: 7 })).rejects.toThrow(/^$/); // ignore error
-      expect(parse(options, 'cmd --= ', { ...flags, completionIndex: 8 })).rejects.toThrow(
-        /^one\ntwo$/,
-      ); // ignore error
     });
 
     it('handle a positional function option with parameter count', () => {

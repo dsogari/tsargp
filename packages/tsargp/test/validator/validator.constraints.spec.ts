@@ -41,6 +41,17 @@ describe('validate', () => {
       expect(validate(options)).rejects.toThrow(`Option single has invalid inline constraint.`);
     });
 
+    it('accept an option with parameter marker', () => {
+      const options = {
+        array: {
+          type: 'array',
+          marker: '--',
+          inline: {},
+        },
+      } as const satisfies Options;
+      expect(validate(options, { noWarn: true })).resolves.toEqual({});
+    });
+
     it('accept an option with cluster letter and inline constraint for no name', () => {
       const options = {
         array: {

@@ -17,6 +17,7 @@ import {
   findSimilar,
   getEntries,
   getKeys,
+  getMarker,
   getNestedOptions,
   getOptionEnvVars,
   getOptionNames,
@@ -28,6 +29,7 @@ import {
   isEnvironmentOnly,
   isMessage,
   isObject,
+  isString,
   matchNamingRules,
   normalizeArray,
   regex,
@@ -152,6 +154,7 @@ async function validateOptions(context: ValidationContext) {
     validateNames(context, names, getOptionNames(option), key);
     validateNames(context, letters, option.cluster ?? '', key);
     validateNames(context, envVars, getOptionEnvVars(option) ?? [], key);
+    validateNames(context, names, getMarker(option.marker).filter(isString), key);
     await validateOption(context, key, option);
   }
   if (!flags.noWarn) {

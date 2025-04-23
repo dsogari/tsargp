@@ -129,7 +129,7 @@ export type ParserSuggestion = ICompletionSuggestion & {
   /**
    * The type of argument being suggested.
    */
-  type: OptionType | 'parameter';
+  type: OptionType | 'parameter' | 'marker';
   /**
    * The option name, in case of parameter suggestions.
    */
@@ -206,13 +206,17 @@ type ParseEntry = [
    */
   isComp?: boolean,
   /**
-   * Whether it is delimited by the positional marker.
+   * Whether it is delimited by a marker.
    */
   isMarked?: boolean,
   /**
    * Whether it is positional.
    */
   isPositional?: boolean,
+  /**
+   * The end marker.
+   */
+  markEnd?: string,
 ];
 
 /**
@@ -407,38 +411,37 @@ async function parseArgs(context: ParsingContext) {
     entry[2] !== null;
     entry = find ? findNext(context, entry) : entry
   ) {
-    const [i, pos, info, value, , isComp, isMarked, isPositional] = entry;
+    const [i, pos, info, value, isNew, isComp, isMarked, isPositional] = entry;
     if (info) {
       // process the previous sequence
       const [, option, name] = info;
       const [minParams, maxParams] = getParamCount(option);
       const isNiladic = !maxParams;
-      const isInline = value !== undefined;
-      if (isInline && (isNiladic || !checkInline(option, name))) {
-        reportDisallowedInline(context, name, isComp);
-        find = true;
-        continue; // ignore disallowed inline parameters while completing
+      const isInline = isNew && value !== undefined;
+      if (isInline && (isMarked || isNiladic || !checkInline(option, name))) {
+        reportDisallowedInline(context, name, isMarked && isComp);
       }
-      const [k, position] = isPositional ? [i, pos] : [i + 1, NaN];
+      const [j, position] = isPositional ? [i, pos] : [i + 1, NaN];
+      const [k, , , , nextNew] = isNiladic ? [] : (entry = findNext(context, entry));
+      const params = isInline ? [value] : args.slice(j, nextNew ? k : undefined);
       if (isComp) {
-        const params = isInline ? [value] : args.slice(k);
+        const { length } = params;
         const suggestNames =
-          !isInline &&
-          !isMarked &&
-          ((isPositional && params.length === 1) || params.length > minParams);
+          !isInline && !isMarked && ((isPositional && length === 1) || length > minParams);
         await handleCompletion(context, info, i, position, params, suggestNames);
       }
-      const [j, , , , isNew] = isNiladic ? [] : (entry = findNext(context, entry));
-      if (isNiladic || isNew) {
-        const params = isInline ? [value] : args.slice(k, j);
+      if (isNiladic || nextNew) {
         if (await handleOption(context, info, i, position, params)) {
           return; // break loop and skip requirements
         }
         entry[0] += max(0, option.skipCount || 0); // skip arguments (niladic only)
       }
       find = isNiladic;
-    } else if (isComp && isMarked) {
-      reportCompletion(); // there is no positional option
+    } else {
+      if (isComp && isMarked) {
+        reportCompletion(); // there is no positional option
+      }
+      find = true;
     }
   }
   await checkRequired(context, false);
@@ -454,14 +457,13 @@ async function parseArgs(context: ParsingContext) {
 function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
   const [registry, , args, , completing, , flags] = context;
   const [prevIndex, prevPos, , prevValue, , , , prevPositional] = prev;
-  let [, , prevInfo, , , , prevMarked] = prev;
-  if (prevValue !== undefined) {
+  let [, , prevInfo, , , , prevMarked, , prevMarkEnd] = prev;
+  if (prevValue !== undefined && !prevMarked) {
     prevInfo = undefined; // reset because the previous option had an inline value
   }
   const { names, positional, options } = registry;
   const { optionPrefix, positionalMarker } = flags;
   const [markBegin, markEnd] = getMarker(positionalMarker);
-  const inc = prevPositional ? 0 : 1;
   const [minParams, maxParams] = prevInfo ? getParamCount(prevInfo[1]) : [0, 0];
   for (let i = prevIndex + 1; i < args.length; ++i) {
     const arg = args[i];
@@ -469,15 +471,18 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
     const [name, value] = arg.split(regex.valSep, 2);
     const optionKey = names.get(name);
     const isPrefix = optionPrefix && name.startsWith(optionPrefix); // matches whole word as well
+    const paramCount = i - prevIndex - (prevPositional ? 0 : 1);
+    const lessThanMin = prevInfo && paramCount < minParams;
+    const lessThanMax = prevInfo && paramCount < maxParams;
     const argType = prevMarked
-      ? name === markEnd
+      ? name === prevMarkEnd
         ? ArgType.marker
-        : !prevPositional || i - prevIndex - inc >= maxParams
-          ? ArgType.positional
-          : ArgType.parameter
+        : lessThanMax
+          ? ArgType.parameter
+          : ArgType.positional
       : name === markBegin
         ? ArgType.marker
-        : prevInfo && i - prevIndex - inc < minParams
+        : lessThanMin
           ? !isPrefix
             ? ArgType.parameter
             : !optionKey
@@ -489,15 +494,17 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
             ? ArgType.optionName
             : parseCluster(context, i)
               ? ArgType.cluster
-              : prevInfo && i - prevIndex - inc < maxParams
+              : lessThanMax
                 ? ArgType.parameter
                 : positional.length && !isPrefix
                   ? ArgType.positional
                   : ArgType.unknownOption;
     switch (argType) {
       case ArgType.optionName: {
-        const newInfo: OptionInfo = [optionKey!, options[optionKey!], name];
-        return [i, prevPos, newInfo, value, true, isComp];
+        const option = options[optionKey!];
+        const newInfo: OptionInfo = [optionKey!, option, name];
+        const [markBegin, markEnd] = getMarker(option.marker);
+        return [i, prevPos, newInfo, value, true, isComp, name === markBegin, false, markEnd];
       }
       case ArgType.cluster:
         if (isComp) {
@@ -506,31 +513,39 @@ function findNext(context: ParsingContext, prev: ParseEntry): ParseEntry {
         i--; // the cluster argument was removed
         break; // the cluster argument was canonicalized
       case ArgType.unknownOption:
-        reportUnknownOption(context, name, arg, isComp);
-        break; // ignore unknown options during completion
+        if (isComp) {
+          reportCompletion(completeName(context, arg));
+        }
+        if (!completing) {
+          reportUnknownOption(context, name);
+        }
+        break;
       case ArgType.marker:
         if (value !== undefined) {
           reportDisallowedInline(context, name, isComp);
-        } else if (isComp) {
-          reportCompletion(); // marker does not get completed
+        }
+        if (isComp) {
+          reportCompletion(completeName(context, name));
         }
         args.splice(i--, 1); // remove marker
         prevMarked = !prevMarked; // toggle marker state
+        if (prevMarked) {
+          prevMarkEnd = markEnd;
+        }
+        if (!prevPositional) {
+          prevInfo = undefined; // reset option at marker end or if the previous was not positional
+        }
         break;
       case ArgType.positional: {
         const newInfo = positional[min(prevPos, positional.length - 1)]; // may be undefined
-        return [i, prevPos + 1, newInfo, undefined, true, isComp, prevMarked, true];
+        return [i, prevPos + 1, newInfo, undefined, true, isComp, prevMarked, true, prevMarkEnd];
       }
       case ArgType.parameter: {
         const [, option, name] = prevInfo!;
-        if (checkInline(option, name) === 'always') {
-          if (!completing) {
-            throw error(ErrorItem.missingInlineParameter, name);
-          }
-          // ignore required inline parameters while completing
-          prevInfo = undefined;
-          i--; // reprocess the current argument
-        } else if (isComp) {
+        if (!completing && checkInline(option, name) === 'always') {
+          throw error(ErrorItem.missingInlineParameter, name);
+        }
+        if (isComp) {
           prev[4] = false;
           prev[5] = true;
           return prev;
@@ -582,26 +597,18 @@ function reportDisallowedInline(context: ParsingContext, name: string, isComp: b
 
 /**
  * Reports an unknown option.
- * Does nothing if another argument is being completed.
  * @param context The parsing context
  * @param name The option name
- * @param arg The original argument
- * @param isComp Whether the argument is being completed
  */
-function reportUnknownOption(context: ParsingContext, name: string, arg: string, isComp: boolean) {
-  if (isComp) {
-    reportCompletion(completeName(context, arg));
-  }
-  if (!context[4]) {
-    const { similarity } = context[6];
-    const similar = similarity ? findSimilar(name, context[0].names.keys(), similarity) : undefined;
-    const flags: FormattingFlags = {
-      ...openArrayFlags,
-      alt: similar?.length ? 1 : 0,
-      sep: config.connectives.optionSep,
-    };
-    throw error(ErrorItem.unknownOption, name, flags, similar?.map(getSymbol));
-  }
+function reportUnknownOption(context: ParsingContext, name: string): never {
+  const { similarity } = context[6];
+  const similar = similarity ? findSimilar(name, context[0].names.keys(), similarity) : undefined;
+  const flags: FormattingFlags = {
+    ...openArrayFlags,
+    alt: similar?.length ? 1 : 0,
+    sep: config.connectives.optionSep,
+  };
+  throw error(ErrorItem.unknownOption, name, flags, similar?.map(getSymbol));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -631,7 +638,12 @@ function completeName(context: ParsingContext, comp: string): Array<ParserSugges
   }
   const { options, names } = context[0];
   const startsWith = (name: string) => name.startsWith(comp);
-  return names.keys().filter(startsWith).map(fromName).toArray();
+  const suggestions = names.keys().filter(startsWith).map(fromName).toArray();
+  const [markBegin] = getMarker(context[6].positionalMarker);
+  if (markBegin?.startsWith(comp)) {
+    suggestions.push({ type: 'marker', name: markBegin });
+  }
+  return suggestions;
 }
 
 /**

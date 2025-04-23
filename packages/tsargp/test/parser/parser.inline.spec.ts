@@ -19,13 +19,24 @@ describe('parse', () => {
   });
 
   describe('inline parameters are disallowed', () => {
+    it('throw an error on parameter marker supplied with inline parameter', () => {
+      const options = {
+        array: {
+          type: 'array',
+          preferredName: 'preferred',
+          marker: '', // test empty marker
+          parse: jest.fn(),
+        },
+      } as const satisfies Options;
+      expect(parse(options, ['='])).rejects.toThrow(`Option does not accept inline parameters.`);
+      expect(parse(options, ['=1'])).rejects.toThrow(`Option does not accept inline parameters.`);
+      expect(options.array.parse).not.toHaveBeenCalled();
+    });
+
     it('throw an error on positional marker supplied with inline parameter', () => {
       const options = {
         single: {
           type: 'single',
-          names: ['-s'],
-          cluster: 's',
-          positional: true,
           preferredName: 'preferred',
           parse: jest.fn(),
         },

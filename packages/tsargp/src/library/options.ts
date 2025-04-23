@@ -535,20 +535,11 @@ export type WithOptionType<T extends OptionType> = {
 };
 
 /**
- * Defines the attribute for the parsing callback.
- * @template T The type of parse parameter
+ * Defines all option attributes.
+ * @template P The type of parse parameter
  */
-export type WithParsingCallback<T> = {
-  /**
-   * A custom callback for parsing the option parameter(s).
-   */
-  readonly parse?: ParsingCallback<T>;
-};
-
-/**
- * Defines all option attributes, except the parsing callback.
- */
-export type OptionAttributes = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type OptionAttributes<P = any> = {
   /**
    * The option names, as they appear on the command-line (e.g. `-h` or `--help`).
    *
@@ -561,7 +552,7 @@ export type OptionAttributes = {
    * when evaluating option requirements or processing positional arguments). It is not validated
    * and can be anything.
    *
-   * If not specified, the first name in the {@link OpaqueOption.names} array will be used.
+   * If not specified, the first name in the {@link OptionAttributes.names} array will be used.
    */
   preferredName?: string;
   /**
@@ -596,6 +587,8 @@ export type OptionAttributes = {
   readonly saveMessage?: boolean;
   /**
    * The letters used for clustering in short-option style (e.g., 'fF').
+   *
+   * Letters are subject to the same restrictions as {@link OptionAttributes.names}.
    */
   readonly cluster?: string;
   /**
@@ -619,10 +612,16 @@ export type OptionAttributes = {
    */
   readonly default?: NonCallable | DefaultValueCallback;
   /**
+   * A custom callback for parsing the option parameter(s).
+   */
+  readonly parse?: ParsingCallback<P>;
+  /**
    * The names of data sources to try reading from (in that order), if the option was not supplied
-   * on the command line. A string means an environment variable, while a URL means a local file.
+   * on the command line. A `string` means an environment variable, while a `URL` means a local file.
    *
-   * This has precedence over {@link OptionAttributes.stdin}.
+   * Environment variable names are subject to the same restrictions as {@link OptionAttributes.names}.
+   *
+   * Has precedence over {@link OptionAttributes.stdin}.
    */
   readonly sources?: ReadonlyArray<string | URL>;
   /**
@@ -763,6 +762,12 @@ export type OptionAttributes = {
    * @default 0
    */
   skipCount?: number;
+  /**
+   * The marker(s) to delimit option parameters.
+   * If set, then all arguments appearing after/within the marker(s) will pertain to this option.
+   * It is subject to the same restrictions as {@link OptionAttributes.names}.
+   */
+  readonly marker?: string | [string, string];
 };
 
 /**
@@ -779,24 +784,21 @@ export type VersionOption = WithOptionType<'version'> & Pick<OptionAttributes, V
  * An option that executes a command.
  */
 export type CommandOption = WithOptionType<'command'> &
-  WithParsingCallback<OpaqueOptionValues> &
-  Pick<OptionAttributes, CommandAttributes> &
+  Pick<OptionAttributes<OpaqueOptionValues>, CommandAttributes> &
   (WithDefault | WithRequired);
 
 /**
  * An option that has a value, but is niladic.
  */
 export type FlagOption = WithOptionType<'flag'> &
-  WithParsingCallback<null> &
-  Pick<OptionAttributes, FlagAttributes> &
+  Pick<OptionAttributes<null>, FlagAttributes> &
   (WithDefault | WithRequired);
 
 /**
  * An option that has a single value and requires a single parameter.
  */
 export type SingleOption = WithOptionType<'single'> &
-  WithParsingCallback<string> &
-  Pick<OptionAttributes, SingleAttributes> &
+  Pick<OptionAttributes<string>, SingleAttributes> &
   (WithDefault | WithRequired) &
   (WithChoices | WithRegex);
 
@@ -804,8 +806,7 @@ export type SingleOption = WithOptionType<'single'> &
  * An option that has an array value and accepts zero or more parameters.
  */
 export type ArrayOption = WithOptionType<'array'> &
-  WithParsingCallback<string> &
-  Pick<OptionAttributes, ArrayAttributes> &
+  Pick<OptionAttributes<string>, ArrayAttributes> &
   (WithDefault | WithRequired) &
   (WithChoices | WithRegex);
 
@@ -813,8 +814,7 @@ export type ArrayOption = WithOptionType<'array'> &
  * An option that has any value and can be configured with a parameter count.
  */
 export type FunctionOption = WithOptionType<'function'> &
-  WithParsingCallback<Array<string>> &
-  Pick<OptionAttributes, FunctionAttributes> &
+  Pick<OptionAttributes<Array<string>>, FunctionAttributes> &
   (WithDefault | WithRequired);
 
 /**
@@ -862,8 +862,7 @@ export type OptionType = NiladicOptionType | 'single' | 'array' | 'function';
 /**
  * An opaque option definition.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type OpaqueOption = WithOptionType<OptionType> & WithParsingCallback<any> & OptionAttributes;
+export type OpaqueOption = WithOptionType<OptionType> & OptionAttributes;
 
 /**
  * A collection of opaque option definitions.
@@ -883,7 +882,7 @@ export type RequiresEntry = readonly [key: string, value: unknown];
 /**
  * Information regarding an option.
  */
-export type OptionInfo = [key: string, option: OpaqueOption, name: string];
+export type OptionInfo = readonly [key: string, option: OpaqueOption, name: string];
 
 //--------------------------------------------------------------------------------------------------
 // Internal types
@@ -904,7 +903,7 @@ type BasicAttributes =
 /**
  * The keys of value-enabled option attributes.
  */
-type ValueAttributes = 'cluster' | 'required' | 'requires' | 'requiredIf' | 'default';
+type ValueAttributes = 'cluster' | 'required' | 'requires' | 'requiredIf' | 'default' | 'parse';
 
 /**
  * The keys of environment-enabled option attributes.
@@ -973,6 +972,7 @@ type ArrayAttributes =
   | TemplateAttributes
   | ParameterAttributes
   | SelectionAttributes
+  | 'marker'
   | 'separator'
   | 'unique'
   | 'append'
@@ -987,6 +987,7 @@ type FunctionAttributes =
   | EnvironmentAttributes
   | TemplateAttributes
   | ParameterAttributes
+  | 'marker'
   | 'paramCount'
   | 'skipCount';
 
@@ -1134,6 +1135,6 @@ type OptionKeyType<T extends Option, K> = T extends WithOptionType<MessageOption
  * @template T The option definition type
  */
 type OptionDataType<T extends Option> =
-  T extends WithOptionType<'help' | 'version'>
+  T extends WithOptionType<MessageOptionType>
     ? MessageDataType<T>
     : ValueDataType<T> | DefaultDataType<T>;
