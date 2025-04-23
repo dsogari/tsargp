@@ -125,7 +125,8 @@ cli cmd --help
 To achieve this, we have to create a "helper" subcommand that accepts the name of another subcommand for which the help message should be produced. Below is an example where we define the options for the subcommands, and then define those for the main command:
 
 ```ts twoslash
-import { type Options, type OptionValues, parse } from 'tsargp';
+import type { Options, OptionValues } from 'tsargp';
+import { format, parse } from 'tsargp';
 // ---cut---
 const cmd1Opts = {
   // option definitions for cmd1, including its '--help'...
@@ -167,7 +168,7 @@ export default {
     async parse(param) {
       const vals = param as OptionValues<typeof helpOpts>;
       const opts = vals.name === 'cmd1' ? cmd1Opts : cmd2Opts;
-      await parse(opts, ['--help'], { programName: vals.name }); // will throw the help message
+      await parse(opts, ['--help'], { programName: vals.name, format }); // will throw the help message
     },
   },
 } as const satisfies Options;
