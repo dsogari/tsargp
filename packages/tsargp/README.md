@@ -61,11 +61,12 @@ There are multiple ways to parse the command-line arguments. Below is an example
 
 ```ts
 #!/usr/bin/env node
-import { parse, handleError } from 'tsargp';
+import { format, handleError, parse, type ParsingFlags } from 'tsargp';
 import options from './cli.options.js';
 
 try {
-  const values = await parse(options);
+  const flags: ParsingFlags = { format }; // inject the formatting function for help messages
+  const values = await parse(options, undefined, flags); // parse the command-line arguments
   // do something with the option values...
 } catch (err) {
   // do your own handling here, if necessary, or...

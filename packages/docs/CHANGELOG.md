@@ -1,5 +1,27 @@
 # @tsargp/docs
 
+## 1.22.0
+
+### Minor Changes
+
+- 42d6fdf: Document the new `marker` option attribute.
+
+  - **Options** page has been updated to document the new `marker` option attribute
+  - **Parser** page has been updated to document the revised behavior of positional marker(s)
+  - **Validator** page has been updated to document the validation rules for parameter markers
+
+- 3ff1eee: Document the injection of the formatting function for help messages.
+
+  - **Parser** page has been updated to document the new `format` field of the `ParsingFlags` type
+
+- 8b1961e: Document the new behavior of positional marker.
+
+  - **Options** page has been updated to remove the `marker` attribute
+  - **Parser** page has been updated to document the new `positionalMarker` parsing flag
+  - **Validator** page has been updated to reflect the changes made to positional marker validation
+  - **Formatter** page has been updated to document the new `positionalMarker` formatter flag
+  - **Styles** page has been updated to remove the `marker` help item
+
 ## 1.21.0
 
 ### Minor Changes

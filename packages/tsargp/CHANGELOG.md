@@ -1,5 +1,81 @@
 # tsargp
 
+## 1.22.0
+
+### Minor Changes
+
+- 42d6fdf: Add support for parameter markers.
+
+  **Breaking changes**:
+
+  - the completion algorithm now ignores inline constraints
+
+  **Other changes**:
+
+  - the `marker` option attribute has been added to `array` and `function` option types
+
+  **Usage notes**:
+
+  You can now configure parameter delimiters for array and function options, e.g.:
+
+  ```ts
+  const options = {
+    array: {
+      type: 'array',
+      marker: '--', // starting marker
+    },
+    function: {
+      type: 'function',
+      marker: ['[', ']'], // starting and ending markers
+    },
+  } as const satisfies Options;
+  ```
+
+- 8b1961e: Add parsing flag for the positional marker(s).
+
+  **Breaking changes**:
+
+  - the `marker` option attribute was removed; the related parsing flag should be used instead
+  - some parsing flags were renamed to be more explicit:
+    - `progName` becomes `programName`
+    - `compIndex` becomes `completionIndex`
+
+  **Other changes**:
+
+  - the `positionalMarker` field has been added to the `ParsingFlags` type, to specify the positional marker(s)
+
+  **Usage notes**:
+
+  You can now specify the positional marker(s) at parsing level, e.g.:
+
+  ```ts
+  const flags: ParsingFlags = {
+    // other flags...
+    positionalMarker: '--', // trailing marker for positional arguments
+  };
+  ```
+
+- 3ff1eee: Make the formatter component tree-shakeable.
+
+  **Breaking changes**:
+
+  - the parser no longer imports the formatting function for help messages; instead, it should be injected
+
+  **Other changes**:
+
+  - the `format` field has been added to the `ParsingFlags` type, to specify the formatting function for help messages
+
+  **Usage notes**:
+
+  You should now specify the formatting function for help messages, e.g.:
+
+  ```ts
+  const flags: ParsingFlags = {
+    // other flags...
+    format, // imported from 'tsargp'
+  };
+  ```
+
 ## 1.21.0
 
 ### Minor Changes
